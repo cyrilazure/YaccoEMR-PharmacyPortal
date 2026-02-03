@@ -709,6 +709,7 @@ async def add_order_result(order_id: str, result: str, current_user: dict = Depe
 async def create_appointment(appt_data: AppointmentCreate, current_user: dict = Depends(get_current_user)):
     appt = Appointment(**appt_data.model_dump())
     appt.created_by = current_user["id"]
+    appt.organization_id = current_user.get("organization_id")
     appt_dict = appt.model_dump()
     appt_dict["created_at"] = appt_dict["created_at"].isoformat()
     await db.appointments.insert_one(appt_dict)
@@ -722,6 +723,9 @@ async def get_appointments(
     current_user: dict = Depends(get_current_user)
 ):
     query = {}
+    org_id = current_user.get("organization_id")
+    if org_id and current_user.get("role") != "super_admin":
+        query["organization_id"] = org_id
     if date:
         query["date"] = date
     if provider_id:
