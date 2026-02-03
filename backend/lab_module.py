@@ -343,6 +343,9 @@ def create_lab_endpoints(db, get_current_user):
         
         await db["lab_orders"].insert_one(order_dict)
         
+        # Remove MongoDB _id field if it exists
+        order_dict.pop('_id', None)
+        
         return {"message": "Lab order created", "order": order_dict}
     
     @lab_router.get("/orders/{patient_id}", response_model=dict)
