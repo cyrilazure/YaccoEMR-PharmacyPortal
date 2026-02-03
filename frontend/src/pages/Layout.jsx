@@ -16,7 +16,7 @@ import { cn, getRoleDisplayName } from '@/lib/utils';
 import {
   Activity, LayoutDashboard, Users, FileText, Calendar,
   ClipboardList, Settings, LogOut, ChevronLeft, ChevronRight,
-  Pill, AlertTriangle, Stethoscope, BarChart3, Heart, UserCog, Shield
+  Pill, AlertTriangle, Stethoscope, BarChart3, Heart, UserCog, Shield, Video
 } from 'lucide-react';
 
 const navItems = [
@@ -27,6 +27,7 @@ const navItems = [
   { to: '/patients', icon: Users, label: 'Patients', roles: ['physician', 'nurse', 'scheduler', 'admin'] },
   { to: '/appointments', icon: Calendar, label: 'Appointments', roles: ['physician', 'nurse', 'scheduler', 'admin'] },
   { to: '/orders', icon: ClipboardList, label: 'Orders', roles: ['physician', 'nurse', 'admin'] },
+  { to: '/telehealth', icon: Video, label: 'Telehealth', roles: ['physician', 'nurse', 'admin'] },
   { to: '/analytics', icon: BarChart3, label: 'Analytics', roles: ['physician', 'admin'] },
 ];
 
