@@ -514,7 +514,7 @@ def create_lab_endpoints(db, get_current_user):
         patient = await db["patients"].find_one({"mrn": parsed.patient_id}, {"_id": 0})
         if not patient:
             # Try by ID
-            patient = await db["patients"].find_one({"id": parsed.patient_id})
+            patient = await db["patients"].find_one({"id": parsed.patient_id}, {"_id": 0})
         
         patient_id = patient.get("id") if patient else parsed.patient_id
         patient_name = f"{patient.get('first_name', '')} {patient.get('last_name', '')}".strip() if patient else parsed.patient_name
