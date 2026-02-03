@@ -262,6 +262,55 @@ export default function PatientChart() {
     }
   };
 
+  const handleSaveLabOrder = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const selectedPanel = labPanels.find(p => p.code === newLabOrder.panel_code);
+      await labAPI.createOrder({
+        ...newLabOrder,
+        patient_id: id,
+        patient_name: `${patient?.first_name} ${patient?.last_name}`,
+        ordering_provider_id: user.id,
+        ordering_provider_name: `${user.first_name} ${user.last_name}`,
+        panel_name: selectedPanel?.name || newLabOrder.panel_code
+      });
+      toast.success('Lab order placed');
+      setLabOrderDialogOpen(false);
+      setNewLabOrder({ panel_code: 'CBC', priority: 'routine', clinical_notes: '', diagnosis: '', fasting_required: false });
+      fetchLabData();
+    } catch (err) {
+      toast.error('Failed to place lab order');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSimulateLabResults = async (orderId) => {
+    setSimulatingLab(orderId);
+    try {
+      await labAPI.simulateResults(orderId, 'mixed');
+      toast.success('Lab results generated');
+      fetchLabData();
+    } catch (err) {
+      toast.error('Failed to generate lab results');
+    } finally {
+      setSimulatingLab(null);
+    }
+  };
+
+  const getLabResultFlag = (flag) => {
+    const flagStyles = {
+      'N': { label: 'Normal', className: 'bg-green-100 text-green-700' },
+      'L': { label: 'Low', className: 'bg-amber-100 text-amber-700' },
+      'H': { label: 'High', className: 'bg-amber-100 text-amber-700' },
+      'LL': { label: 'Critical Low', className: 'bg-red-100 text-red-700' },
+      'HH': { label: 'Critical High', className: 'bg-red-100 text-red-700' },
+      'A': { label: 'Abnormal', className: 'bg-orange-100 text-orange-700' }
+    };
+    return flagStyles[flag] || { label: flag, className: 'bg-slate-100 text-slate-700' };
+  };
+
   const handleGenerateAINote = async () => {
     setAiGenerating(true);
     try {
