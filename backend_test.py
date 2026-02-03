@@ -1159,8 +1159,11 @@ class YaccoEMRTester:
         original_token = self.token
         self.token = self.super_admin_token
         
+        import time
+        timestamp = str(int(time.time()))
+        
         org_data = {
-            "name": "Direct Created Hospital",
+            "name": f"Direct Created Hospital {timestamp}",
             "organization_type": "hospital",
             "address_line1": "456 Healthcare Blvd",
             "city": "Medical City",
@@ -1168,11 +1171,11 @@ class YaccoEMRTester:
             "zip_code": "75001",
             "country": "USA",
             "phone": "555-987-6543",
-            "email": "admin@directhospital.com",
-            "license_number": "LIC-67890",
+            "email": f"admin{timestamp}@directhospital.com",
+            "license_number": f"LIC-{timestamp}",
             "admin_first_name": "Direct",
             "admin_last_name": "Admin",
-            "admin_email": "direct@directhospital.com",
+            "admin_email": f"direct{timestamp}@directhospital.com",
             "admin_phone": "555-999-8888"
         }
         
