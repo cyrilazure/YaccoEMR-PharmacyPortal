@@ -124,6 +124,7 @@ class Patient(PatientCreate):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     mrn: str = Field(default_factory=lambda: f"MRN{str(uuid.uuid4())[:8].upper()}")
+    organization_id: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -141,6 +142,7 @@ class PatientResponse(BaseModel):
     emergency_contact_phone: Optional[str] = None
     insurance_provider: Optional[str] = None
     insurance_id: Optional[str] = None
+    organization_id: Optional[str] = None
     created_at: str
     updated_at: str
 
