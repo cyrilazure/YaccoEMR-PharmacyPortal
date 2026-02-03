@@ -1099,6 +1099,216 @@ export default function PatientChart() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* Labs Tab */}
+        <TabsContent value="labs" className="mt-6 space-y-6">
+          {/* Lab Orders Card */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <FlaskConical className="w-5 h-5" /> Lab Orders
+              </CardTitle>
+              <Dialog open={labOrderDialogOpen} onOpenChange={setLabOrderDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm" className="gap-2" data-testid="add-lab-order-btn">
+                    <Plus className="w-4 h-4" /> Order Lab
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Order Lab Test</DialogTitle>
+                    <DialogDescription>Select lab panel and specify details</DialogDescription>
+                  </DialogHeader>
+                  <form onSubmit={handleSaveLabOrder} className="space-y-4 mt-4">
+                    <div className="space-y-2">
+                      <Label>Lab Panel</Label>
+                      <Select value={newLabOrder.panel_code} onValueChange={(v) => setNewLabOrder({ ...newLabOrder, panel_code: v })}>
+                        <SelectTrigger data-testid="lab-panel-select">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {labPanels.map((panel) => (
+                            <SelectItem key={panel.code} value={panel.code}>
+                              {panel.name} ({panel.test_count} tests)
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Priority</Label>
+                      <Select value={newLabOrder.priority} onValueChange={(v) => setNewLabOrder({ ...newLabOrder, priority: v })}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="routine">Routine</SelectItem>
+                          <SelectItem value="urgent">Urgent</SelectItem>
+                          <SelectItem value="stat">STAT</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Clinical Notes</Label>
+                      <Textarea 
+                        value={newLabOrder.clinical_notes} 
+                        onChange={(e) => setNewLabOrder({ ...newLabOrder, clinical_notes: e.target.value })}
+                        placeholder="Relevant clinical information..."
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Diagnosis/Indication</Label>
+                      <Input 
+                        value={newLabOrder.diagnosis} 
+                        onChange={(e) => setNewLabOrder({ ...newLabOrder, diagnosis: e.target.value })}
+                        placeholder="e.g., Annual wellness exam, R73.03"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input 
+                        type="checkbox" 
+                        id="fasting"
+                        checked={newLabOrder.fasting_required}
+                        onChange={(e) => setNewLabOrder({ ...newLabOrder, fasting_required: e.target.checked })}
+                        className="rounded"
+                      />
+                      <Label htmlFor="fasting">Fasting Required</Label>
+                    </div>
+                    <Button type="submit" className="w-full" disabled={saving}>
+                      {saving ? 'Ordering...' : 'Place Lab Order'}
+                    </Button>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </CardHeader>
+            <CardContent>
+              {labOrders.length === 0 ? (
+                <p className="text-slate-500 text-center py-8">No lab orders placed</p>
+              ) : (
+                <div className="space-y-2">
+                  {labOrders.map((order) => (
+                    <div key={order.id} className="p-4 rounded-lg border border-slate-200 hover:border-sky-200 transition-colors" data-testid={`lab-order-${order.id}`}>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium text-slate-900">{order.panel_name}</span>
+                            <Badge className={order.priority === 'stat' ? 'bg-red-100 text-red-700' : order.priority === 'urgent' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-700'}>
+                              {order.priority}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-slate-500">
+                            Accession: <span className="font-mono">{order.accession_number}</span> • 
+                            Ordered: {formatDateTime(order.ordered_at)}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge className={getStatusColor(order.status)}>{order.status}</Badge>
+                          {order.status === 'ordered' && (
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={() => handleSimulateLabResults(order.id)}
+                              disabled={simulatingLab === order.id}
+                              data-testid={`simulate-results-${order.id}`}
+                            >
+                              {simulatingLab === order.id ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Simulate Results'}
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Lab Results Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="w-5 h-5" /> Lab Results
+              </CardTitle>
+              <CardDescription>Recent laboratory test results</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {labResults.length === 0 ? (
+                <p className="text-slate-500 text-center py-8">No lab results available</p>
+              ) : (
+                <div className="space-y-4">
+                  {labResults.map((result) => (
+                    <Card key={result.id} className="border-l-4 border-l-sky-500">
+                      <CardHeader className="py-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <CardTitle className="text-base">{result.panel_name}</CardTitle>
+                            <CardDescription>
+                              {formatDateTime(result.resulted_at)} • {result.performing_lab}
+                            </CardDescription>
+                          </div>
+                          <Badge variant="outline" className="font-mono text-xs">{result.accession_number}</Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="border-b">
+                                <th className="text-left py-2 font-medium text-slate-600">Test</th>
+                                <th className="text-right py-2 font-medium text-slate-600">Result</th>
+                                <th className="text-center py-2 font-medium text-slate-600">Flag</th>
+                                <th className="text-right py-2 font-medium text-slate-600">Reference Range</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {result.results?.map((r, idx) => {
+                                const flagInfo = getLabResultFlag(r.flag);
+                                return (
+                                  <tr key={idx} className="border-b last:border-0">
+                                    <td className="py-2">
+                                      <span className="font-medium">{r.test_name}</span>
+                                      <span className="text-slate-400 ml-1 text-xs">({r.test_code})</span>
+                                    </td>
+                                    <td className="text-right py-2 font-mono">
+                                      <span className={r.flag !== 'N' ? 'font-bold' : ''}>
+                                        {r.value}
+                                      </span>
+                                      <span className="text-slate-500 ml-1">{r.unit}</span>
+                                    </td>
+                                    <td className="text-center py-2">
+                                      {r.flag !== 'N' && (
+                                        <Badge className={`${flagInfo.className} text-xs`}>
+                                          {r.flag === 'H' || r.flag === 'HH' ? (
+                                            <TrendingUp className="w-3 h-3 mr-1" />
+                                          ) : r.flag === 'L' || r.flag === 'LL' ? (
+                                            <TrendingDown className="w-3 h-3 mr-1" />
+                                          ) : null}
+                                          {flagInfo.label}
+                                        </Badge>
+                                      )}
+                                    </td>
+                                    <td className="text-right py-2 text-slate-500">
+                                      {r.reference_low} - {r.reference_high} {r.unit}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                        {result.notes && (
+                          <p className="text-sm text-slate-500 mt-3 p-2 bg-slate-50 rounded">
+                            <span className="font-medium">Note:</span> {result.notes}
+                          </p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
     </div>
   );
