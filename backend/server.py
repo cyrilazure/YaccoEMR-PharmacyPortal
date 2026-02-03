@@ -272,6 +272,7 @@ class AppointmentCreate(BaseModel):
 class Appointment(AppointmentCreate):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    organization_id: Optional[str] = None
     status: AppointmentStatus = AppointmentStatus.SCHEDULED
     created_by: str = ""
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
