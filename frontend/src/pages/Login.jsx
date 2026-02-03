@@ -5,8 +5,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Activity, Shield, Users, Calendar, Building2, LogIn } from 'lucide-react';
+import { Activity, Shield, Users, Calendar, Building2, LogIn, Smartphone } from 'lucide-react';
 
 const getRoleRedirect = (role) => {
   switch (role) {
@@ -21,10 +28,11 @@ const getRoleRedirect = (role) => {
 };
 
 export default function LoginPage() {
-  const { user, login } = useAuth();
+  const { user, login, requires2FA, complete2FALogin, cancel2FA } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
+  const [totpCode, setTotpCode] = useState('');
 
   if (user) {
     return <Navigate to={getRoleRedirect(user.role)} replace />;
@@ -38,10 +46,39 @@ export default function LoginPage() {
       toast.success('Welcome back!');
       navigate(getRoleRedirect(userData.role));
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Login failed');
+      if (err.message === '2FA_REQUIRED') {
+        // 2FA dialog will be shown
+        toast.info('Please enter your 2FA code');
+      } else {
+        toast.error(err.response?.data?.detail || 'Login failed');
+      }
     } finally {
       setLoading(false);
     }
+  };
+
+  const handle2FASubmit = async (e) => {
+    e.preventDefault();
+    if (totpCode.length !== 6 && !totpCode.includes('-')) {
+      toast.error('Please enter a valid code');
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const userData = await complete2FALogin(totpCode);
+      toast.success('Welcome back!');
+      navigate(getRoleRedirect(userData.role));
+    } catch (err) {
+      toast.error(err.message || 'Invalid 2FA code');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancel2FA = () => {
+    cancel2FA();
+    setTotpCode('');
   };
 
   return (
