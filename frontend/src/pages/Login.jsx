@@ -302,6 +302,17 @@ export default function LoginPage() {
                   </form>
                 </TabsContent>
               </Tabs>
+              
+              {/* Hospital Registration Link */}
+              <div className="mt-6 pt-6 border-t text-center">
+                <p className="text-sm text-slate-500 mb-3">Are you a healthcare organization?</p>
+                <Link to="/register-hospital">
+                  <Button variant="outline" className="w-full gap-2">
+                    <Building2 className="w-4 h-4" />
+                    Register Your Hospital
+                  </Button>
+                </Link>
+              </div>
             </CardContent>
           </Card>
         </div>
