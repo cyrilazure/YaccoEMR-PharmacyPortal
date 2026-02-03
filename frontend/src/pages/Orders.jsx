@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ordersAPI, patientAPI } from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { formatDateTime, getStatusColor } from '@/lib/utils';
-import { ClipboardList, Search, FlaskConical, Scan, Pill, Clock, Check, X } from 'lucide-react';
+import { ClipboardList, Search, FlaskConical, Scan, Pill, Clock, Check } from 'lucide-react';
 
 export default function Orders() {
   const [orders, setOrders] = useState([]);
@@ -24,11 +24,7 @@ export default function Orders() {
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
 
-  useEffect(() => {
-    fetchOrders();
-  }, [filter]);
-
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     try {
       const params = filter !== 'all' ? { status: filter } : {};
       const [ordersRes, patientsRes] = await Promise.all([
@@ -38,10 +34,9 @@ export default function Orders() {
       
       setOrders(ordersRes.data);
       
-      // Create patient lookup
       const patientMap = {};
       patientsRes.data.forEach(p => {
-        patientMap[p.id] = `${p.first_name} ${p.last_name}`;
+        patientMap[p.id] = p.first_name + ' ' + p.last_name;
       });
       setPatients(patientMap);
     } catch (err) {
@@ -49,7 +44,11 @@ export default function Orders() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filter]);
+
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
 
   const handleStatusChange = async (orderId, newStatus) => {
     try {
@@ -62,12 +61,10 @@ export default function Orders() {
   };
 
   const getOrderIcon = (type) => {
-    switch (type) {
-      case 'lab': return <FlaskConical className="w-5 h-5 text-purple-600" />;
-      case 'imaging': return <Scan className="w-5 h-5 text-blue-600" />;
-      case 'medication': return <Pill className="w-5 h-5 text-emerald-600" />;
-      default: return <ClipboardList className="w-5 h-5 text-slate-600" />;
-    }
+    if (type === 'lab') return <FlaskConical className="w-5 h-5 text-purple-600" />;
+    if (type === 'imaging') return <Scan className="w-5 h-5 text-blue-600" />;
+    if (type === 'medication') return <Pill className="w-5 h-5 text-emerald-600" />;
+    return <ClipboardList className="w-5 h-5 text-slate-600" />;
   };
 
   const filteredOrders = orders.filter(order => {
@@ -77,16 +74,17 @@ export default function Orders() {
            patientName.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
-  const ordersByType = {
-    lab: filteredOrders.filter(o => o.order_type === 'lab'),
-    imaging: filteredOrders.filter(o => o.order_type === 'imaging'),
-    medication: filteredOrders.filter(o => o.order_type === 'medication')
-  };
+  const labOrders = filteredOrders.filter(o => o.order_type === 'lab');
+  const imagingOrders = filteredOrders.filter(o => o.order_type === 'imaging');
+  const medOrders = filteredOrders.filter(o => o.order_type === 'medication');
+  const pendingCount = orders.filter(o => o.status === 'pending').length;
+  const completedCount = orders.filter(o => o.status === 'completed').length;
+  const statCount = orders.filter(o => o.priority === 'stat').length;
 
   const OrderCard = ({ order }) => (
     <div 
       className="p-4 rounded-lg border border-slate-200 hover:border-sky-200 transition-colors"
-      data-testid={`order-card-${order.id}`}
+      data-testid={'order-card-' + order.id}
     >
       <div className="flex items-start justify-between">
         <div className="flex gap-3">
@@ -97,16 +95,11 @@ export default function Orders() {
               Patient: {patients[order.patient_id] || 'Unknown'}
             </p>
             <p className="text-xs text-slate-400 mt-1">
-              Ordered by {order.ordered_by_name} • {formatDateTime(order.created_at)}
+              Ordered by {order.ordered_by_name} - {formatDateTime(order.created_at)}
             </p>
             {order.diagnosis && (
               <p className="text-sm text-slate-600 mt-2">
                 <span className="font-medium">Dx:</span> {order.diagnosis}
-              </p>
-            )}
-            {order.instructions && (
-              <p className="text-sm text-slate-600 mt-1">
-                <span className="font-medium">Instructions:</span> {order.instructions}
               </p>
             )}
             {order.result && (
@@ -127,7 +120,7 @@ export default function Orders() {
           </div>
           {order.status !== 'completed' && order.status !== 'cancelled' && (
             <Select onValueChange={(v) => handleStatusChange(order.id, v)}>
-              <SelectTrigger className="w-[140px] h-8 text-sm" data-testid={`order-status-${order.id}`}>
+              <SelectTrigger className="w-[140px] h-8 text-sm" data-testid={'order-status-' + order.id}>
                 <SelectValue placeholder="Update status" />
               </SelectTrigger>
               <SelectContent>
@@ -145,7 +138,6 @@ export default function Orders() {
 
   return (
     <div className="space-y-6 animate-fade-in" data-testid="orders-page">
-      {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-slate-900" style={{ fontFamily: 'Manrope' }}>
           Orders
@@ -153,7 +145,6 @@ export default function Orders() {
         <p className="text-slate-500 mt-1">Manage lab, imaging, and medication orders</p>
       </div>
 
-      {/* Filters */}
       <Card>
         <CardContent className="py-4">
           <div className="flex flex-col sm:flex-row gap-4">
@@ -183,7 +174,6 @@ export default function Orders() {
         </CardContent>
       </Card>
 
-      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4 flex items-center gap-3">
@@ -191,7 +181,7 @@ export default function Orders() {
               <Clock className="w-5 h-5 text-amber-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-slate-900">{orders.filter(o => o.status === 'pending').length}</p>
+              <p className="text-2xl font-bold text-slate-900">{pendingCount}</p>
               <p className="text-sm text-slate-500">Pending</p>
             </div>
           </CardContent>
@@ -202,7 +192,7 @@ export default function Orders() {
               <FlaskConical className="w-5 h-5 text-purple-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-slate-900">{ordersByType.lab.length}</p>
+              <p className="text-2xl font-bold text-slate-900">{labOrders.length}</p>
               <p className="text-sm text-slate-500">Lab Orders</p>
             </div>
           </CardContent>
@@ -213,7 +203,7 @@ export default function Orders() {
               <Scan className="w-5 h-5 text-blue-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-slate-900">{ordersByType.imaging.length}</p>
+              <p className="text-2xl font-bold text-slate-900">{imagingOrders.length}</p>
               <p className="text-sm text-slate-500">Imaging</p>
             </div>
           </CardContent>
@@ -224,20 +214,19 @@ export default function Orders() {
               <Check className="w-5 h-5 text-emerald-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-slate-900">{orders.filter(o => o.status === 'completed').length}</p>
+              <p className="text-2xl font-bold text-slate-900">{completedCount}</p>
               <p className="text-sm text-slate-500">Completed</p>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Orders by Type */}
       <Tabs defaultValue="all">
         <TabsList>
           <TabsTrigger value="all" data-testid="tab-all-orders">All ({filteredOrders.length})</TabsTrigger>
-          <TabsTrigger value="lab" data-testid="tab-lab-orders">Labs ({ordersByType.lab.length})</TabsTrigger>
-          <TabsTrigger value="imaging" data-testid="tab-imaging-orders">Imaging ({ordersByType.imaging.length})</TabsTrigger>
-          <TabsTrigger value="medication" data-testid="tab-med-orders">Medications ({ordersByType.medication.length})</TabsTrigger>
+          <TabsTrigger value="lab" data-testid="tab-lab-orders">Labs ({labOrders.length})</TabsTrigger>
+          <TabsTrigger value="imaging" data-testid="tab-imaging-orders">Imaging ({imagingOrders.length})</TabsTrigger>
+          <TabsTrigger value="medication" data-testid="tab-med-orders">Medications ({medOrders.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="all" className="mt-6">
@@ -249,7 +238,9 @@ export default function Orders() {
             <CardContent>
               {loading ? (
                 <div className="space-y-3">
-                  {[1, 2, 3].map(i => <Skeleton key={i} className="h-24 w-full" />)}
+                  <Skeleton className="h-24 w-full" />
+                  <Skeleton className="h-24 w-full" />
+                  <Skeleton className="h-24 w-full" />
                 </div>
               ) : filteredOrders.length === 0 ? (
                 <div className="text-center py-12 text-slate-500">
@@ -273,11 +264,11 @@ export default function Orders() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {ordersByType.lab.length === 0 ? (
+              {labOrders.length === 0 ? (
                 <p className="text-center py-8 text-slate-500">No lab orders</p>
               ) : (
                 <div className="space-y-3">
-                  {ordersByType.lab.map(order => <OrderCard key={order.id} order={order} />)}
+                  {labOrders.map(order => <OrderCard key={order.id} order={order} />)}
                 </div>
               )}
             </CardContent>
@@ -292,11 +283,11 @@ export default function Orders() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {ordersByType.imaging.length === 0 ? (
+              {imagingOrders.length === 0 ? (
                 <p className="text-center py-8 text-slate-500">No imaging orders</p>
               ) : (
                 <div className="space-y-3">
-                  {ordersByType.imaging.map(order => <OrderCard key={order.id} order={order} />)}
+                  {imagingOrders.map(order => <OrderCard key={order.id} order={order} />)}
                 </div>
               )}
             </CardContent>
@@ -311,11 +302,11 @@ export default function Orders() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {ordersByType.medication.length === 0 ? (
+              {medOrders.length === 0 ? (
                 <p className="text-center py-8 text-slate-500">No medication orders</p>
               ) : (
                 <div className="space-y-3">
-                  {ordersByType.medication.map(order => <OrderCard key={order.id} order={order} />)}
+                  {medOrders.map(order => <OrderCard key={order.id} order={order} />)}
                 </div>
               )}
             </CardContent>
