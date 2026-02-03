@@ -87,6 +87,9 @@ export default function PatientChart() {
   const [newOrder, setNewOrder] = useState({
     order_type: 'lab', description: '', priority: 'routine', instructions: '', diagnosis: ''
   });
+  const [newLabOrder, setNewLabOrder] = useState({
+    panel_code: 'CBC', priority: 'routine', clinical_notes: '', diagnosis: '', fasting_required: false
+  });
   const [aiRequest, setAiRequest] = useState({
     note_type: 'progress_note', symptoms: '', findings: '', context: ''
   });
