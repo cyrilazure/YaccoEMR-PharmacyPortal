@@ -749,3 +749,122 @@ agent_communication:
       - Real-time notification system working correctly
       
       **RECOMMENDATION:** Records Sharing / HIE module is production-ready. Main agent can proceed to summarize and finish the implementation.
+  - agent: "main"
+    message: |
+      Implemented 3 major security enhancements for Yacco EMR:
+      
+      1. **Granular RBAC (Role-Based Access Control)** (rbac_module.py):
+         - 60+ granular permissions across all modules
+         - Role-specific permission sets (Physician, Nurse, Scheduler, Admin, Hospital Admin, Super Admin)
+         - Nurses can view/administer medications but CANNOT prescribe
+         - Nurses can view/update order status but CANNOT create orders
+         - Permission checking APIs for frontend validation
+         - Permission matrix endpoint for admin dashboard
+      
+      2. **Two-Factor Authentication (2FA)** (twofa_module.py):
+         - TOTP-based 2FA (Google Authenticator/Authy compatible)
+         - QR code generation for easy setup
+         - Backup codes (10 codes) for recovery
+         - 2FA verification during login flow
+         - Enable/disable/regenerate functionality
+         - Time-window tolerance for clock drift
+      
+      3. **Enhanced Audit Logging** (audit_module.py):
+         - Comprehensive security event tracking
+         - Advanced filtering (user, action, resource, severity, date range)
+         - Security analytics dashboard (failed logins, 2FA adoption)
+         - Real-time security alerts
+         - CSV/JSON export functionality
+         - Hourly activity patterns
+         - User activity tracking
+      
+      **Frontend Updates:**
+      - SecuritySettings.jsx - 2FA setup with QR code, backup codes, permissions view
+      - AuditLogs.jsx - Comprehensive audit viewer with analytics
+      - Login.jsx - 2FA verification dialog during login
+      - Layout.jsx - Added Security Settings and Audit Logs navigation
+      
+      Please test the new security enhancement APIs.
+
+backend:
+  - task: "RBAC Module - Granular Permissions"
+    implemented: true
+    working: "NA"
+    file: "backend/rbac_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented 60+ granular permissions with role-specific access control"
+
+  - task: "Two-Factor Authentication Module"
+    implemented: true
+    working: "NA"
+    file: "backend/twofa_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "TOTP-based 2FA with QR code setup, backup codes, and login verification"
+
+  - task: "Enhanced Audit Logging"
+    implemented: true
+    working: "NA"
+    file: "backend/audit_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Enhanced with security analytics, export, alerts, and comprehensive filtering"
+
+frontend:
+  - task: "Security Settings Page"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/pages/SecuritySettings.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "2FA setup, backup codes, password change, permissions view"
+
+  - task: "Audit Logs Page"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/pages/AuditLogs.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Comprehensive audit viewer with analytics, filtering, export"
+
+  - task: "Login 2FA Support"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/pages/Login.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Added 2FA verification dialog during login"
+
+test_plan:
+  current_focus:
+    - "RBAC Module - Granular Permissions"
+    - "Two-Factor Authentication Module"
+    - "Enhanced Audit Logging"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
