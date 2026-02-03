@@ -435,7 +435,7 @@ def create_telehealth_endpoints(db, get_current_user):
                 {"patient_id": user_id}
             ],
             "status": {"$in": [SessionStatus.SCHEDULED.value, SessionStatus.WAITING.value]}
-        }).sort("scheduled_time", 1).to_list(20)
+        }, {"_id": 0}).sort("scheduled_time", 1).to_list(20)
         
         return {"sessions": sessions}
     
