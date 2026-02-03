@@ -1,0 +1,645 @@
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/lib/auth';
+import { billingAPI, patientAPI } from '@/lib/api';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
+import {
+  CreditCard, DollarSign, FileText, Receipt, Plus, Send, Eye,
+  TrendingUp, Clock, CheckCircle, XCircle, AlertCircle, Building2
+} from 'lucide-react';
+
+export default function BillingPage() {
+  const { user } = useAuth();
+  const [invoices, setInvoices] = useState([]);
+  const [claims, setClaims] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [patients, setPatients] = useState([]);
+  const [serviceCodes, setServiceCodes] = useState([]);
+  const [paystackConfig, setPaystackConfig] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('invoices');
+  
+  // Invoice creation state
+  const [showCreateInvoice, setShowCreateInvoice] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState(null);
+  const [lineItems, setLineItems] = useState([{ description: '', service_code: '', quantity: 1, unit_price: 0, discount: 0 }]);
+  const [invoiceNotes, setInvoiceNotes] = useState('');
+  
+  // View invoice state
+  const [viewInvoice, setViewInvoice] = useState(null);
+  const [paymentEmail, setPaymentEmail] = useState('');
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [invoicesRes, claimsRes, statsRes, patientsRes, codesRes, paystackRes] = await Promise.all([
+        billingAPI.getInvoices(),
+        billingAPI.getClaims(),
+        billingAPI.getStats(),
+        patientAPI.getAll(),
+        billingAPI.getServiceCodes(),
+        billingAPI.getPaystackConfig()
+      ]);
+      
+      setInvoices(invoicesRes.data.invoices || []);
+      setClaims(claimsRes.data.claims || []);
+      setStats(statsRes.data);
+      setPatients(patientsRes.data || []);
+      setServiceCodes(codesRes.data.service_codes || []);
+      setPaystackConfig(paystackRes.data);
+    } catch (err) {
+      console.error('Error loading billing data:', err);
+      toast.error('Failed to load billing data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddLineItem = () => {
+    setLineItems([...lineItems, { description: '', service_code: '', quantity: 1, unit_price: 0, discount: 0 }]);
+  };
+
+  const handleRemoveLineItem = (index) => {
+    setLineItems(lineItems.filter((_, i) => i !== index));
+  };
+
+  const handleLineItemChange = (index, field, value) => {
+    const updated = [...lineItems];
+    updated[index][field] = value;
+    
+    // Auto-fill price from service code
+    if (field === 'service_code') {
+      const code = serviceCodes.find(c => c.code === value);
+      if (code) {
+        updated[index].description = code.description;
+        updated[index].unit_price = code.price;
+      }
+    }
+    
+    setLineItems(updated);
+  };
+
+  const calculateTotal = () => {
+    return lineItems.reduce((sum, item) => {
+      return sum + (item.quantity * item.unit_price) - (item.discount || 0);
+    }, 0);
+  };
+
+  const handleCreateInvoice = async () => {
+    if (!selectedPatient) {
+      toast.error('Please select a patient');
+      return;
+    }
+    
+    if (lineItems.length === 0 || !lineItems[0].description) {
+      toast.error('Please add at least one line item');
+      return;
+    }
+    
+    try {
+      const patient = patients.find(p => p.id === selectedPatient);
+      await billingAPI.createInvoice({
+        patient_id: selectedPatient,
+        patient_name: `${patient.first_name} ${patient.last_name}`,
+        line_items: lineItems.filter(item => item.description),
+        notes: invoiceNotes
+      });
+      
+      toast.success('Invoice created successfully');
+      setShowCreateInvoice(false);
+      setSelectedPatient(null);
+      setLineItems([{ description: '', service_code: '', quantity: 1, unit_price: 0, discount: 0 }]);
+      setInvoiceNotes('');
+      loadData();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to create invoice');
+    }
+  };
+
+  const handleSendInvoice = async (invoiceId) => {
+    try {
+      await billingAPI.sendInvoice(invoiceId);
+      toast.success('Invoice sent to patient');
+      loadData();
+    } catch (err) {
+      toast.error('Failed to send invoice');
+    }
+  };
+
+  const handleInitiatePayment = async () => {
+    if (!viewInvoice || !paymentEmail) {
+      toast.error('Please enter an email address');
+      return;
+    }
+    
+    try {
+      const res = await billingAPI.initializePaystack(viewInvoice.id, paymentEmail);
+      window.open(res.data.authorization_url, '_blank');
+      toast.success('Payment page opened in new tab');
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to initialize payment');
+    }
+  };
+
+  const handleRecordPayment = async (invoice, method) => {
+    try {
+      await billingAPI.recordPayment({
+        invoice_id: invoice.id,
+        amount: invoice.balance_due,
+        payment_method: method,
+        notes: `${method} payment recorded`
+      });
+      toast.success('Payment recorded');
+      loadData();
+      setViewInvoice(null);
+    } catch (err) {
+      toast.error('Failed to record payment');
+    }
+  };
+
+  const getStatusBadge = (status) => {
+    const statusConfig = {
+      draft: { color: 'bg-slate-100 text-slate-700', icon: FileText },
+      sent: { color: 'bg-blue-100 text-blue-700', icon: Send },
+      paid: { color: 'bg-green-100 text-green-700', icon: CheckCircle },
+      partially_paid: { color: 'bg-amber-100 text-amber-700', icon: Clock },
+      overdue: { color: 'bg-red-100 text-red-700', icon: AlertCircle },
+      cancelled: { color: 'bg-slate-100 text-slate-500', icon: XCircle },
+    };
+    const config = statusConfig[status] || statusConfig.draft;
+    const Icon = config.icon;
+    
+    return (
+      <Badge className={`${config.color} gap-1`}>
+        <Icon className="w-3 h-3" />
+        {status.replace('_', ' ').toUpperCase()}
+      </Badge>
+    );
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900" style={{ fontFamily: 'Manrope' }}>
+            Billing & Revenue
+          </h1>
+          <p className="text-slate-500">Manage invoices, payments, and insurance claims</p>
+        </div>
+        <Button onClick={() => setShowCreateInvoice(true)} className="bg-sky-600 hover:bg-sky-700 gap-2">
+          <Plus className="w-4 h-4" />
+          New Invoice
+        </Button>
+      </div>
+
+      {/* Stats Cards */}
+      {stats && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-500">Total Billed</p>
+                  <p className="text-2xl font-bold text-slate-900">
+                    ${stats.total_billed?.toLocaleString() || '0'}
+                  </p>
+                </div>
+                <div className="w-10 h-10 rounded-lg bg-sky-100 flex items-center justify-center">
+                  <DollarSign className="w-5 h-5 text-sky-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-500">Collected</p>
+                  <p className="text-2xl font-bold text-green-600">
+                    ${stats.total_collected?.toLocaleString() || '0'}
+                  </p>
+                </div>
+                <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+                  <CheckCircle className="w-5 h-5 text-green-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-500">Outstanding</p>
+                  <p className="text-2xl font-bold text-amber-600">
+                    ${stats.total_outstanding?.toLocaleString() || '0'}
+                  </p>
+                </div>
+                <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
+                  <Clock className="w-5 h-5 text-amber-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-500">Collection Rate</p>
+                  <p className="text-2xl font-bold text-slate-900">
+                    {stats.collection_rate?.toFixed(1) || '0'}%
+                  </p>
+                </div>
+                <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
+                  <TrendingUp className="w-5 h-5 text-purple-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="invoices" className="gap-2">
+            <Receipt className="w-4 h-4" />
+            Invoices ({invoices.length})
+          </TabsTrigger>
+          <TabsTrigger value="claims" className="gap-2">
+            <Building2 className="w-4 h-4" />
+            Insurance Claims ({claims.length})
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="invoices" className="mt-4">
+          <Card>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-slate-50 border-b">
+                    <tr>
+                      <th className="text-left p-4 font-medium text-slate-600">Invoice #</th>
+                      <th className="text-left p-4 font-medium text-slate-600">Patient</th>
+                      <th className="text-left p-4 font-medium text-slate-600">Date</th>
+                      <th className="text-right p-4 font-medium text-slate-600">Total</th>
+                      <th className="text-right p-4 font-medium text-slate-600">Balance</th>
+                      <th className="text-center p-4 font-medium text-slate-600">Status</th>
+                      <th className="text-right p-4 font-medium text-slate-600">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {invoices.map((invoice) => (
+                      <tr key={invoice.id} className="hover:bg-slate-50">
+                        <td className="p-4 font-mono text-sm">{invoice.invoice_number}</td>
+                        <td className="p-4">{invoice.patient_name}</td>
+                        <td className="p-4 text-slate-500">{invoice.created_at?.slice(0, 10)}</td>
+                        <td className="p-4 text-right font-medium">${invoice.total?.toFixed(2)}</td>
+                        <td className="p-4 text-right font-medium text-amber-600">
+                          ${invoice.balance_due?.toFixed(2)}
+                        </td>
+                        <td className="p-4 text-center">{getStatusBadge(invoice.status)}</td>
+                        <td className="p-4 text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setViewInvoice(invoice)}
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            {invoice.status === 'draft' && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleSendInvoice(invoice.id)}
+                              >
+                                <Send className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {invoices.length === 0 && (
+                      <tr>
+                        <td colSpan={7} className="p-8 text-center text-slate-500">
+                          No invoices yet. Create your first invoice.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="claims" className="mt-4">
+          <Card>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-slate-50 border-b">
+                    <tr>
+                      <th className="text-left p-4 font-medium text-slate-600">Claim #</th>
+                      <th className="text-left p-4 font-medium text-slate-600">Insurance</th>
+                      <th className="text-left p-4 font-medium text-slate-600">Patient</th>
+                      <th className="text-right p-4 font-medium text-slate-600">Amount</th>
+                      <th className="text-center p-4 font-medium text-slate-600">Status</th>
+                      <th className="text-left p-4 font-medium text-slate-600">Submitted</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {claims.map((claim) => (
+                      <tr key={claim.id} className="hover:bg-slate-50">
+                        <td className="p-4 font-mono text-sm">{claim.claim_number}</td>
+                        <td className="p-4">{claim.insurance_provider}</td>
+                        <td className="p-4">{claim.patient_id}</td>
+                        <td className="p-4 text-right font-medium">${claim.total_charges?.toFixed(2)}</td>
+                        <td className="p-4 text-center">{getStatusBadge(claim.status)}</td>
+                        <td className="p-4 text-slate-500">{claim.submitted_at?.slice(0, 10) || '-'}</td>
+                      </tr>
+                    ))}
+                    {claims.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="p-8 text-center text-slate-500">
+                          No insurance claims yet.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Create Invoice Dialog */}
+      <Dialog open={showCreateInvoice} onOpenChange={setShowCreateInvoice}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create New Invoice</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Patient Selection */}
+            <div className="space-y-2">
+              <Label>Patient</Label>
+              <Select value={selectedPatient} onValueChange={setSelectedPatient}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select patient" />
+                </SelectTrigger>
+                <SelectContent>
+                  {patients.map((patient) => (
+                    <SelectItem key={patient.id} value={patient.id}>
+                      {patient.first_name} {patient.last_name} ({patient.mrn})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Line Items */}
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <Label>Line Items</Label>
+                <Button type="button" variant="outline" size="sm" onClick={handleAddLineItem}>
+                  <Plus className="w-4 h-4 mr-1" /> Add Item
+                </Button>
+              </div>
+              
+              {lineItems.map((item, index) => (
+                <div key={index} className="grid grid-cols-12 gap-2 items-end">
+                  <div className="col-span-3">
+                    <Label className="text-xs">Service Code</Label>
+                    <Select
+                      value={item.service_code}
+                      onValueChange={(v) => handleLineItemChange(index, 'service_code', v)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Code" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {serviceCodes.map((code) => (
+                          <SelectItem key={code.code} value={code.code}>
+                            {code.code} - {code.description.slice(0, 30)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="col-span-4">
+                    <Label className="text-xs">Description</Label>
+                    <Input
+                      value={item.description}
+                      onChange={(e) => handleLineItemChange(index, 'description', e.target.value)}
+                      placeholder="Description"
+                    />
+                  </div>
+                  <div className="col-span-1">
+                    <Label className="text-xs">Qty</Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={item.quantity}
+                      onChange={(e) => handleLineItemChange(index, 'quantity', parseInt(e.target.value))}
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <Label className="text-xs">Price</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={item.unit_price}
+                      onChange={(e) => handleLineItemChange(index, 'unit_price', parseFloat(e.target.value))}
+                    />
+                  </div>
+                  <div className="col-span-1">
+                    <Label className="text-xs">Discount</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={item.discount}
+                      onChange={(e) => handleLineItemChange(index, 'discount', parseFloat(e.target.value))}
+                    />
+                  </div>
+                  <div className="col-span-1">
+                    {lineItems.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRemoveLineItem(index)}
+                        className="text-red-500"
+                      >
+                        <XCircle className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+              
+              <div className="flex justify-end border-t pt-4">
+                <div className="text-right">
+                  <p className="text-sm text-slate-500">Total</p>
+                  <p className="text-2xl font-bold">${calculateTotal().toFixed(2)}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Notes */}
+            <div className="space-y-2">
+              <Label>Notes (Optional)</Label>
+              <Input
+                value={invoiceNotes}
+                onChange={(e) => setInvoiceNotes(e.target.value)}
+                placeholder="Additional notes for the invoice"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowCreateInvoice(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleCreateInvoice} className="bg-sky-600 hover:bg-sky-700">
+                Create Invoice
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Invoice Dialog */}
+      <Dialog open={!!viewInvoice} onOpenChange={() => setViewInvoice(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Invoice {viewInvoice?.invoice_number}</DialogTitle>
+          </DialogHeader>
+          
+          {viewInvoice && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-slate-500">Patient</p>
+                  <p className="font-medium">{viewInvoice.patient_name}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-slate-500">Status</p>
+                  {getStatusBadge(viewInvoice.status)}
+                </div>
+                <div>
+                  <p className="text-sm text-slate-500">Date</p>
+                  <p className="font-medium">{viewInvoice.created_at?.slice(0, 10)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-slate-500">Due Date</p>
+                  <p className="font-medium">{viewInvoice.due_date?.slice(0, 10)}</p>
+                </div>
+              </div>
+
+              <div className="border rounded-lg overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead className="bg-slate-50">
+                    <tr>
+                      <th className="text-left p-3">Description</th>
+                      <th className="text-right p-3">Qty</th>
+                      <th className="text-right p-3">Price</th>
+                      <th className="text-right p-3">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {viewInvoice.line_items?.map((item, i) => (
+                      <tr key={i}>
+                        <td className="p-3">{item.description}</td>
+                        <td className="p-3 text-right">{item.quantity}</td>
+                        <td className="p-3 text-right">${item.unit_price?.toFixed(2)}</td>
+                        <td className="p-3 text-right">${(item.quantity * item.unit_price).toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot className="bg-slate-50 font-medium">
+                    <tr>
+                      <td colSpan={3} className="p-3 text-right">Total:</td>
+                      <td className="p-3 text-right">${viewInvoice.total?.toFixed(2)}</td>
+                    </tr>
+                    <tr>
+                      <td colSpan={3} className="p-3 text-right">Paid:</td>
+                      <td className="p-3 text-right text-green-600">${viewInvoice.amount_paid?.toFixed(2)}</td>
+                    </tr>
+                    <tr className="text-lg">
+                      <td colSpan={3} className="p-3 text-right">Balance Due:</td>
+                      <td className="p-3 text-right text-amber-600">${viewInvoice.balance_due?.toFixed(2)}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+
+              {viewInvoice.balance_due > 0 && (
+                <div className="space-y-4 border-t pt-4">
+                  <h4 className="font-medium">Record Payment</h4>
+                  
+                  {paystackConfig?.enabled && (
+                    <div className="flex gap-2 items-end">
+                      <div className="flex-1">
+                        <Label>Email for Paystack Payment</Label>
+                        <Input
+                          type="email"
+                          placeholder="patient@email.com"
+                          value={paymentEmail}
+                          onChange={(e) => setPaymentEmail(e.target.value)}
+                        />
+                      </div>
+                      <Button onClick={handleInitiatePayment} className="bg-green-600 hover:bg-green-700">
+                        <CreditCard className="w-4 h-4 mr-2" />
+                        Pay with Paystack
+                      </Button>
+                    </div>
+                  )}
+                  
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => handleRecordPayment(viewInvoice, 'cash')}
+                    >
+                      Record Cash Payment
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => handleRecordPayment(viewInvoice, 'card')}
+                    >
+                      Record Card Payment
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
