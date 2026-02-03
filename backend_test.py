@@ -436,6 +436,331 @@ class YaccoEMRTester:
             self.log_test("AI Note Generation", False, f"Status: {response.status_code}")
             return False
 
+    # ============ LAB RESULTS MODULE TESTS ============
+    
+    def test_lab_panels(self):
+        """Test getting available lab panels"""
+        response, error = self.make_request('GET', 'lab/panels')
+        if error:
+            self.log_test("Lab Panels", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            panels = data.get('panels', [])
+            has_panels = len(panels) > 0
+            panel_codes = [p.get('code') for p in panels]
+            expected_panels = ['CBC', 'CMP', 'LIPID']
+            has_expected = all(code in panel_codes for code in expected_panels)
+            success = has_panels and has_expected
+            self.log_test("Lab Panels", success, f"Found {len(panels)} panels: {panel_codes}")
+            return success
+        else:
+            self.log_test("Lab Panels", False, f"Status: {response.status_code}")
+            return False
+
+    def test_lab_order_creation(self):
+        """Test creating lab order"""
+        if not self.test_patient_id or not self.user_id:
+            self.log_test("Lab Order Creation", False, "Missing patient or user ID")
+            return False
+        
+        lab_order = {
+            "patient_id": self.test_patient_id,
+            "patient_name": "John Doe",
+            "ordering_provider_id": self.user_id,
+            "ordering_provider_name": "Test Doctor",
+            "panel_code": "CBC",
+            "panel_name": "Complete Blood Count",
+            "priority": "routine"
+        }
+        
+        response, error = self.make_request('POST', 'lab/orders', lab_order)
+        if error:
+            self.log_test("Lab Order Creation", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            order = data.get('order', {})
+            self.lab_order_id = order.get('id')
+            has_order_id = bool(self.lab_order_id)
+            has_accession = bool(order.get('accession_number'))
+            success = has_order_id and has_accession
+            self.log_test("Lab Order Creation", success, f"Order ID: {self.lab_order_id}")
+            return success
+        else:
+            self.log_test("Lab Order Creation", False, f"Status: {response.status_code}")
+            return False
+
+    def test_get_patient_lab_orders(self):
+        """Test getting patient's lab orders"""
+        if not self.test_patient_id:
+            self.log_test("Get Patient Lab Orders", False, "No test patient available")
+            return False
+        
+        response, error = self.make_request('GET', f'lab/orders/{self.test_patient_id}')
+        if error:
+            self.log_test("Get Patient Lab Orders", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            orders = data.get('orders', [])
+            has_orders = len(orders) > 0
+            self.log_test("Get Patient Lab Orders", has_orders, f"Found {len(orders)} orders")
+            return has_orders
+        else:
+            self.log_test("Get Patient Lab Orders", False, f"Status: {response.status_code}")
+            return False
+
+    def test_simulate_lab_results(self):
+        """Test simulating lab results"""
+        if not hasattr(self, 'lab_order_id') or not self.lab_order_id:
+            self.log_test("Simulate Lab Results", False, "No lab order available")
+            return False
+        
+        response, error = self.make_request('POST', f'lab/results/simulate/{self.lab_order_id}?scenario=mixed')
+        if error:
+            self.log_test("Simulate Lab Results", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            result = data.get('result', {})
+            results = result.get('results', [])
+            has_results = len(results) > 0
+            has_values = all(r.get('value') is not None for r in results)
+            success = has_results and has_values
+            self.log_test("Simulate Lab Results", success, f"Generated {len(results)} test results")
+            return success
+        else:
+            self.log_test("Simulate Lab Results", False, f"Status: {response.status_code}")
+            return False
+
+    def test_get_patient_lab_results(self):
+        """Test getting patient's lab results"""
+        if not self.test_patient_id:
+            self.log_test("Get Patient Lab Results", False, "No test patient available")
+            return False
+        
+        response, error = self.make_request('GET', f'lab/results/{self.test_patient_id}')
+        if error:
+            self.log_test("Get Patient Lab Results", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            results = data.get('results', [])
+            has_results = len(results) > 0
+            if has_results:
+                # Check structure of first result
+                first_result = results[0]
+                has_structure = all(key in first_result for key in ['patient_id', 'panel_code', 'results'])
+                success = has_structure
+                self.log_test("Get Patient Lab Results", success, f"Found {len(results)} lab results")
+            else:
+                self.log_test("Get Patient Lab Results", True, "No results found (expected after simulation)")
+                success = True
+            return success
+        else:
+            self.log_test("Get Patient Lab Results", False, f"Status: {response.status_code}")
+            return False
+
+    def test_hl7_oru_parsing(self):
+        """Test HL7 ORU message parsing"""
+        hl7_message = {
+            "raw_message": "MSH|^~\\&|LAB_SYS|LAB|EMR|HOSP|20240115120000||ORU^R01|MSG001|P|2.5.1\nPID|1||test-patient-1^^^HOSP^MR||DOE^JOHN^A||19800101|M\nOBR|1|ORD001|ACC001|CBC^Complete Blood Count|||20240115100000\nOBX|1|NM|WBC^White Blood Cell Count||7.5|K/uL|4.5-11.0|N|||F\nOBX|2|NM|RBC^Red Blood Cell Count||5.2|M/uL|4.5-5.5|N|||F\nOBX|3|NM|HGB^Hemoglobin||14.5|g/dL|12.0-17.5|N|||F"
+        }
+        
+        response, error = self.make_request('POST', 'lab/hl7/oru', hl7_message)
+        if error:
+            self.log_test("HL7 ORU Parsing", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_result_id = bool(data.get('result_id'))
+            tests_received = data.get('tests_received', 0)
+            has_ack = bool(data.get('ack'))
+            success = has_result_id and tests_received > 0 and has_ack
+            self.log_test("HL7 ORU Parsing", success, f"Parsed {tests_received} tests, ACK: {bool(has_ack)}")
+            return success
+        else:
+            self.log_test("HL7 ORU Parsing", False, f"Status: {response.status_code}")
+            return False
+
+    # ============ TELEHEALTH MODULE TESTS ============
+    
+    def test_telehealth_config(self):
+        """Test telehealth configuration"""
+        response, error = self.make_request('GET', 'telehealth/config')
+        if error:
+            self.log_test("Telehealth Config", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            required_fields = ['webrtc_enabled', 'dyte_enabled', 'features', 'ice_servers']
+            has_all_fields = all(field in data for field in required_fields)
+            webrtc_enabled = data.get('webrtc_enabled', False)
+            has_ice_servers = len(data.get('ice_servers', [])) > 0
+            success = has_all_fields and webrtc_enabled and has_ice_servers
+            self.log_test("Telehealth Config", success, f"WebRTC: {webrtc_enabled}, ICE servers: {len(data.get('ice_servers', []))}")
+            return success
+        else:
+            self.log_test("Telehealth Config", False, f"Status: {response.status_code}")
+            return False
+
+    def test_telehealth_session_creation(self):
+        """Test creating telehealth session"""
+        if not self.test_patient_id or not self.user_id:
+            self.log_test("Telehealth Session Creation", False, "Missing patient or user ID")
+            return False
+        
+        # Schedule for future date
+        future_time = (datetime.now() + timedelta(hours=1)).isoformat()
+        
+        session_data = {
+            "patient_id": self.test_patient_id,
+            "patient_name": "John Doe",
+            "provider_id": self.user_id,
+            "provider_name": "Test Doctor",
+            "scheduled_time": future_time,
+            "session_type": "video",
+            "reason": "Follow-up consultation",
+            "duration_minutes": 30
+        }
+        
+        response, error = self.make_request('POST', 'telehealth/sessions', session_data)
+        if error:
+            self.log_test("Telehealth Session Creation", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            session = data.get('session', {})
+            self.telehealth_session_id = session.get('id')
+            has_session_id = bool(self.telehealth_session_id)
+            has_room_id = bool(session.get('room_id'))
+            has_join_url = bool(data.get('join_url'))
+            success = has_session_id and has_room_id and has_join_url
+            self.log_test("Telehealth Session Creation", success, f"Session ID: {self.telehealth_session_id}")
+            return success
+        else:
+            self.log_test("Telehealth Session Creation", False, f"Status: {response.status_code}")
+            return False
+
+    def test_get_telehealth_session(self):
+        """Test getting telehealth session details"""
+        if not hasattr(self, 'telehealth_session_id') or not self.telehealth_session_id:
+            self.log_test("Get Telehealth Session", False, "No telehealth session available")
+            return False
+        
+        response, error = self.make_request('GET', f'telehealth/sessions/{self.telehealth_session_id}')
+        if error:
+            self.log_test("Get Telehealth Session", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            session = data.get('session', {})
+            has_session = bool(session.get('id'))
+            has_room_id = bool(data.get('room_id'))
+            participants = data.get('participants', [])
+            success = has_session and has_room_id
+            self.log_test("Get Telehealth Session", success, f"Session found, {len(participants)} participants")
+            return success
+        else:
+            self.log_test("Get Telehealth Session", False, f"Status: {response.status_code}")
+            return False
+
+    def test_join_telehealth_session(self):
+        """Test joining telehealth session"""
+        if not hasattr(self, 'telehealth_session_id') or not self.telehealth_session_id or not self.user_id:
+            self.log_test("Join Telehealth Session", False, "Missing session or user ID")
+            return False
+        
+        join_data = {
+            "user_id": self.user_id,
+            "user_name": "Test Doctor",
+            "role": "provider"
+        }
+        
+        response, error = self.make_request('POST', f'telehealth/sessions/{self.telehealth_session_id}/join', join_data)
+        if error:
+            self.log_test("Join Telehealth Session", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_room_id = bool(data.get('room_id'))
+            has_participant_id = bool(data.get('participant_id'))
+            has_ice_servers = len(data.get('ice_servers', [])) > 0
+            success = has_room_id and has_participant_id and has_ice_servers
+            self.log_test("Join Telehealth Session", success, f"Joined successfully, ICE servers: {len(data.get('ice_servers', []))}")
+            return success
+        else:
+            self.log_test("Join Telehealth Session", False, f"Status: {response.status_code}")
+            return False
+
+    def test_start_telehealth_session(self):
+        """Test starting telehealth session"""
+        if not hasattr(self, 'telehealth_session_id') or not self.telehealth_session_id:
+            self.log_test("Start Telehealth Session", False, "No telehealth session available")
+            return False
+        
+        response, error = self.make_request('POST', f'telehealth/sessions/{self.telehealth_session_id}/start')
+        if error:
+            self.log_test("Start Telehealth Session", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            status = data.get('status')
+            success = status == 'in_progress'
+            self.log_test("Start Telehealth Session", success, f"Status: {status}")
+            return success
+        else:
+            self.log_test("Start Telehealth Session", False, f"Status: {response.status_code}")
+            return False
+
+    def test_get_upcoming_telehealth_sessions(self):
+        """Test getting upcoming telehealth sessions"""
+        response, error = self.make_request('GET', 'telehealth/upcoming')
+        if error:
+            self.log_test("Get Upcoming Telehealth Sessions", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            sessions = data.get('sessions', [])
+            # Success if we get a response (may be empty)
+            self.log_test("Get Upcoming Telehealth Sessions", True, f"Found {len(sessions)} upcoming sessions")
+            return True
+        else:
+            self.log_test("Get Upcoming Telehealth Sessions", False, f"Status: {response.status_code}")
+            return False
+
+    def test_dyte_integration_status(self):
+        """Test Dyte integration status"""
+        response, error = self.make_request('GET', 'telehealth/dyte/status')
+        if error:
+            self.log_test("Dyte Integration Status", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_status = 'dyte_enabled' in data
+            has_features = 'features_available' in data
+            success = has_status and has_features
+            dyte_enabled = data.get('dyte_enabled', False)
+            self.log_test("Dyte Integration Status", success, f"Dyte enabled: {dyte_enabled}")
+            return success
+        else:
+            self.log_test("Dyte Integration Status", False, f"Status: {response.status_code}")
+            return False
+
     # ============ FHIR R4 API TESTS ============
     
     def test_fhir_capability_statement(self):
