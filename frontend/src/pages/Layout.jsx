@@ -17,7 +17,7 @@ import {
   Activity, LayoutDashboard, Users, FileText, Calendar,
   ClipboardList, Settings, LogOut, ChevronLeft, ChevronRight,
   Pill, AlertTriangle, Stethoscope, BarChart3, Heart, UserCog, Shield, Video,
-  Building2, Globe
+  Building2, Globe, CreditCard
 } from 'lucide-react';
 
 const navItems = [
@@ -35,6 +35,7 @@ const navItems = [
   { to: '/appointments', icon: Calendar, label: 'Appointments', roles: ['physician', 'nurse', 'scheduler', 'admin', 'hospital_admin'] },
   { to: '/orders', icon: ClipboardList, label: 'Orders', roles: ['physician', 'nurse', 'admin', 'hospital_admin'] },
   { to: '/telehealth', icon: Video, label: 'Telehealth', roles: ['physician', 'nurse', 'admin', 'hospital_admin'] },
+  { to: '/billing', icon: CreditCard, label: 'Billing', roles: ['physician', 'admin', 'hospital_admin'] },
   { to: '/analytics', icon: BarChart3, label: 'Analytics', roles: ['physician', 'admin', 'hospital_admin', 'super_admin'] },
 ];
 
