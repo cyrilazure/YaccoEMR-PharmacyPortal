@@ -2610,6 +2610,483 @@ class YaccoEMRTester:
             self.log_test("Audit Get Resource Types", False, f"Status: {response.status_code}")
             return False
 
+    # ============ ENHANCED JWT AUTHENTICATION MODULE TESTS ============
+    
+    def test_enhanced_login_valid_credentials(self):
+        """Test enhanced login with valid credentials"""
+        # First register a hospital_admin user for testing
+        admin_user = {
+            "email": "hospitaladmin@testauth.com",
+            "password": "SecurePassword123!",
+            "first_name": "Hospital",
+            "last_name": "Admin",
+            "role": "hospital_admin",
+            "department": "Administration"
+        }
+        
+        # Register user first
+        response, error = self.make_request('POST', 'auth/register', admin_user)
+        if error or response.status_code not in [200, 201, 400]:
+            self.log_test("Enhanced Login - User Registration", False, f"Failed to register user: {error or response.status_code}")
+            return False
+        
+        # Test enhanced login
+        login_data = {
+            "email": "hospitaladmin@testauth.com",
+            "password": "SecurePassword123!",
+            "remember_me": True,
+            "device_id": "test-device-123"
+        }
+        
+        response, error = self.make_request('POST', 'auth/login/enhanced', login_data)
+        if error:
+            self.log_test("Enhanced Login - Valid Credentials", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_access_token = bool(data.get('access_token'))
+            has_refresh_token = bool(data.get('refresh_token'))  # Should have refresh token with remember_me=true
+            has_session_id = bool(data.get('session_id'))
+            has_user_info = bool(data.get('user', {}).get('id'))
+            expires_in = data.get('expires_in', 0)
+            
+            success = has_access_token and has_refresh_token and has_session_id and has_user_info and expires_in > 0
+            self.log_test("Enhanced Login - Valid Credentials", success, 
+                         f"Access token: {bool(has_access_token)}, Refresh token: {bool(has_refresh_token)}, Session: {bool(has_session_id)}")
+            
+            # Store tokens for further tests
+            if success:
+                self.enhanced_auth_token = data.get('access_token')
+                self.enhanced_refresh_token = data.get('refresh_token')
+                self.enhanced_session_id = data.get('session_id')
+                self.enhanced_user_id = data.get('user', {}).get('id')
+            
+            return success
+        else:
+            self.log_test("Enhanced Login - Valid Credentials", False, f"Status: {response.status_code}")
+            return False
+
+    def test_enhanced_login_invalid_password(self):
+        """Test enhanced login with invalid password (should increment failed attempts)"""
+        login_data = {
+            "email": "hospitaladmin@testauth.com",
+            "password": "WrongPassword123!",
+            "device_id": "test-device-123"
+        }
+        
+        response, error = self.make_request('POST', 'auth/login/enhanced', login_data)
+        if error:
+            self.log_test("Enhanced Login - Invalid Password", False, error)
+            return False
+        
+        # Should get 401 for invalid credentials
+        success = response.status_code == 401
+        self.log_test("Enhanced Login - Invalid Password", success, f"Status: {response.status_code}")
+        return success
+
+    def test_enhanced_login_account_lockout(self):
+        """Test account lockout after multiple failed attempts"""
+        login_data = {
+            "email": "hospitaladmin@testauth.com",
+            "password": "WrongPassword123!",
+            "device_id": "test-device-123"
+        }
+        
+        # Try multiple failed logins to trigger lockout
+        lockout_triggered = False
+        for attempt in range(6):  # Should lock after 5 attempts
+            response, error = self.make_request('POST', 'auth/login/enhanced', login_data)
+            if error:
+                continue
+            
+            if response.status_code == 423:  # Account locked
+                lockout_triggered = True
+                break
+        
+        self.log_test("Enhanced Login - Account Lockout", lockout_triggered, 
+                     f"Account lockout triggered after failed attempts")
+        return lockout_triggered
+
+    def test_token_refresh(self):
+        """Test token refresh functionality"""
+        if not hasattr(self, 'enhanced_refresh_token') or not self.enhanced_refresh_token:
+            self.log_test("Token Refresh", False, "No refresh token available")
+            return False
+        
+        refresh_data = {
+            "refresh_token": self.enhanced_refresh_token
+        }
+        
+        response, error = self.make_request('POST', 'auth/refresh', refresh_data)
+        if error:
+            self.log_test("Token Refresh", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_new_access_token = bool(data.get('access_token'))
+            has_expires_in = data.get('expires_in', 0) > 0
+            token_type = data.get('token_type') == 'Bearer'
+            
+            success = has_new_access_token and has_expires_in and token_type
+            self.log_test("Token Refresh", success, f"New access token received: {bool(has_new_access_token)}")
+            
+            # Update token for further tests
+            if success:
+                self.enhanced_auth_token = data.get('access_token')
+            
+            return success
+        else:
+            self.log_test("Token Refresh", False, f"Status: {response.status_code}")
+            return False
+
+    def test_logout_session(self):
+        """Test logout functionality"""
+        if not hasattr(self, 'enhanced_auth_token') or not self.enhanced_auth_token:
+            self.log_test("Logout Session", False, "No auth token available")
+            return False
+        
+        # Temporarily use enhanced auth token
+        original_token = self.token
+        self.token = self.enhanced_auth_token
+        
+        response, error = self.make_request('POST', 'auth/logout')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Logout Session", False, error)
+            return False
+        
+        success = response.status_code == 200
+        if success:
+            data = response.json()
+            message = data.get('message', '')
+            success = 'logged out' in message.lower()
+        
+        self.log_test("Logout Session", success, f"Status: {response.status_code}")
+        return success
+
+    def test_logout_all_sessions(self):
+        """Test logout from all sessions"""
+        # First login again to create a new session
+        login_data = {
+            "email": "hospitaladmin@testauth.com",
+            "password": "SecurePassword123!",
+            "device_id": "test-device-456"
+        }
+        
+        response, error = self.make_request('POST', 'auth/login/enhanced', login_data)
+        if error or response.status_code != 200:
+            self.log_test("Logout All Sessions", False, "Failed to create new session")
+            return False
+        
+        new_token = response.json().get('access_token')
+        if not new_token:
+            self.log_test("Logout All Sessions", False, "No access token received")
+            return False
+        
+        # Use new token for logout all
+        original_token = self.token
+        self.token = new_token
+        
+        response, error = self.make_request('POST', 'auth/logout/all')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Logout All Sessions", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            message = data.get('message', '')
+            success = 'logged out' in message.lower() and 'sessions' in message.lower()
+            self.log_test("Logout All Sessions", success, f"Message: {message}")
+            return success
+        else:
+            self.log_test("Logout All Sessions", False, f"Status: {response.status_code}")
+            return False
+
+    def test_session_management_list(self):
+        """Test listing active sessions"""
+        # First create a new session
+        login_data = {
+            "email": "hospitaladmin@testauth.com",
+            "password": "SecurePassword123!",
+            "device_id": "test-device-789"
+        }
+        
+        response, error = self.make_request('POST', 'auth/login/enhanced', login_data)
+        if error or response.status_code != 200:
+            self.log_test("Session Management - List", False, "Failed to create session")
+            return False
+        
+        session_token = response.json().get('access_token')
+        
+        # Use session token to list sessions
+        original_token = self.token
+        self.token = session_token
+        
+        response, error = self.make_request('GET', 'auth/sessions')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Session Management - List", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            is_list = isinstance(data, list)
+            has_sessions = len(data) > 0 if is_list else False
+            
+            if has_sessions:
+                # Check session structure
+                first_session = data[0]
+                has_required_fields = all(field in first_session for field in 
+                                        ['session_id', 'user_id', 'created_at', 'last_activity'])
+            else:
+                has_required_fields = True  # Empty list is valid
+            
+            success = is_list and has_required_fields
+            self.log_test("Session Management - List", success, f"Found {len(data) if is_list else 0} sessions")
+            return success
+        else:
+            self.log_test("Session Management - List", False, f"Status: {response.status_code}")
+            return False
+
+    def test_session_revocation(self):
+        """Test revoking a specific session"""
+        # First create a session and get its ID
+        login_data = {
+            "email": "hospitaladmin@testauth.com",
+            "password": "SecurePassword123!",
+            "device_id": "test-device-revoke"
+        }
+        
+        response, error = self.make_request('POST', 'auth/login/enhanced', login_data)
+        if error or response.status_code != 200:
+            self.log_test("Session Revocation", False, "Failed to create session")
+            return False
+        
+        session_token = response.json().get('access_token')
+        session_id = response.json().get('session_id')
+        
+        if not session_id:
+            self.log_test("Session Revocation", False, "No session ID received")
+            return False
+        
+        # Use session token to revoke itself
+        original_token = self.token
+        self.token = session_token
+        
+        response, error = self.make_request('DELETE', f'auth/sessions/{session_id}')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Session Revocation", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            message = data.get('message', '')
+            success = 'revoked' in message.lower()
+            self.log_test("Session Revocation", success, f"Message: {message}")
+            return success
+        else:
+            self.log_test("Session Revocation", False, f"Status: {response.status_code}")
+            return False
+
+    def test_token_validation(self):
+        """Test token validation endpoint"""
+        # Create a fresh session for validation
+        login_data = {
+            "email": "hospitaladmin@testauth.com",
+            "password": "SecurePassword123!",
+            "device_id": "test-device-validate"
+        }
+        
+        response, error = self.make_request('POST', 'auth/login/enhanced', login_data)
+        if error or response.status_code != 200:
+            self.log_test("Token Validation", False, "Failed to create session")
+            return False
+        
+        validation_token = response.json().get('access_token')
+        
+        # Use token in Authorization header for validation
+        original_token = self.token
+        self.token = validation_token
+        
+        response, error = self.make_request('POST', 'auth/validate')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Token Validation", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            is_valid = data.get('valid', False)
+            has_user_id = bool(data.get('user_id'))
+            has_role = bool(data.get('role'))
+            has_permissions = isinstance(data.get('permissions', []), list)
+            has_expires_at = bool(data.get('expires_at'))
+            
+            success = is_valid and has_user_id and has_role and has_permissions and has_expires_at
+            self.log_test("Token Validation", success, 
+                         f"Valid: {is_valid}, Role: {data.get('role')}, Permissions: {len(data.get('permissions', []))}")
+            return success
+        else:
+            self.log_test("Token Validation", False, f"Status: {response.status_code}")
+            return False
+
+    def test_password_change(self):
+        """Test password change functionality"""
+        # Create a fresh session for password change
+        login_data = {
+            "email": "hospitaladmin@testauth.com",
+            "password": "SecurePassword123!",
+            "device_id": "test-device-pwchange"
+        }
+        
+        response, error = self.make_request('POST', 'auth/login/enhanced', login_data)
+        if error or response.status_code != 200:
+            self.log_test("Password Change", False, "Failed to create session")
+            return False
+        
+        change_token = response.json().get('access_token')
+        
+        # Change password
+        password_data = {
+            "current_password": "SecurePassword123!",
+            "new_password": "NewSecurePassword456!"
+        }
+        
+        original_token = self.token
+        self.token = change_token
+        
+        response, error = self.make_request('POST', 'auth/password/change', password_data)
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Password Change", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            message = data.get('message', '')
+            success = 'password changed' in message.lower()
+            self.log_test("Password Change", success, f"Message: {message}")
+            
+            # Verify old sessions are invalidated by trying to use old token
+            if success:
+                # The token we used should now be invalid (except current session)
+                # Let's test login with new password
+                new_login_data = {
+                    "email": "hospitaladmin@testauth.com",
+                    "password": "NewSecurePassword456!"
+                }
+                
+                login_response, login_error = self.make_request('POST', 'auth/login/enhanced', new_login_data)
+                if login_response and login_response.status_code == 200:
+                    self.log_test("Password Change - New Password Login", True, "Can login with new password")
+                else:
+                    self.log_test("Password Change - New Password Login", False, "Cannot login with new password")
+            
+            return success
+        else:
+            self.log_test("Password Change", False, f"Status: {response.status_code}")
+            return False
+
+    def test_permission_checking(self):
+        """Test permission checking endpoint"""
+        # Create a session for permission checking
+        login_data = {
+            "email": "hospitaladmin@testauth.com",
+            "password": "NewSecurePassword456!",  # Use new password from previous test
+            "device_id": "test-device-permissions"
+        }
+        
+        response, error = self.make_request('POST', 'auth/login/enhanced', login_data)
+        if error or response.status_code != 200:
+            self.log_test("Permission Checking", False, "Failed to create session")
+            return False
+        
+        perm_token = response.json().get('access_token')
+        
+        # Test checking a permission
+        original_token = self.token
+        self.token = perm_token
+        
+        response, error = self.make_request('GET', 'auth/permissions/check/patient:view')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Permission Checking", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_permission_field = 'permission' in data
+            has_granted_field = 'granted' in data
+            has_reason_field = 'reason' in data
+            permission_name = data.get('permission') == 'patient:view'
+            
+            success = has_permission_field and has_granted_field and has_reason_field and permission_name
+            granted = data.get('granted', False)
+            reason = data.get('reason', '')
+            
+            self.log_test("Permission Checking", success, 
+                         f"Permission: {data.get('permission')}, Granted: {granted}, Reason: {reason}")
+            return success
+        else:
+            self.log_test("Permission Checking", False, f"Status: {response.status_code}")
+            return False
+
+    def test_permission_groups(self):
+        """Test getting permission groups"""
+        response, error = self.make_request('GET', 'auth/groups')
+        if error:
+            self.log_test("Permission Groups", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            is_list = isinstance(data, list)
+            has_groups = len(data) > 0 if is_list else False
+            
+            if has_groups:
+                # Check group structure
+                first_group = data[0]
+                has_required_fields = all(field in first_group for field in 
+                                        ['name', 'display_name', 'permissions'])
+                has_permissions_list = isinstance(first_group.get('permissions', []), list)
+            else:
+                has_required_fields = has_permissions_list = False
+            
+            success = is_list and has_groups and has_required_fields and has_permissions_list
+            group_names = [g.get('name', '') for g in data] if is_list else []
+            
+            self.log_test("Permission Groups", success, 
+                         f"Found {len(data) if is_list else 0} groups: {group_names[:3]}...")
+            return success
+        else:
+            self.log_test("Permission Groups", False, f"Status: {response.status_code}")
+            return False
+
     # ============ RECORDS SHARING / HIE MODULE TESTS ============
     
     def test_records_sharing_complete_workflow(self):
