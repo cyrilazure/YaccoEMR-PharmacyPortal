@@ -34,7 +34,7 @@ import { calculateAge, formatDate, formatDateTime, getStatusColor } from '@/lib/
 import { 
   ArrowLeft, User, Heart, AlertTriangle, Pill, FileText, ClipboardList,
   Plus, Activity, Thermometer, Droplets, Wind, Scale, Ruler,
-  Sparkles, Check, Loader2, Calendar
+  Sparkles, Check, Loader2, Calendar, FlaskConical, TrendingUp, TrendingDown
 } from 'lucide-react';
 
 export default function PatientChart() {
