@@ -436,6 +436,182 @@ class YaccoEMRTester:
             self.log_test("AI Note Generation", False, f"Status: {response.status_code}")
             return False
 
+    # ============ FHIR R4 API TESTS ============
+    
+    def test_fhir_capability_statement(self):
+        """Test FHIR metadata endpoint"""
+        response, error = self.make_request('GET', 'fhir/metadata')
+        if error:
+            self.log_test("FHIR Capability Statement", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            required_fields = ['resourceType', 'status', 'fhirVersion', 'rest']
+            has_all_fields = all(field in data for field in required_fields)
+            is_capability = data.get('resourceType') == 'CapabilityStatement'
+            success = has_all_fields and is_capability
+            self.log_test("FHIR Capability Statement", success, f"ResourceType: {data.get('resourceType')}")
+            return success
+        else:
+            self.log_test("FHIR Capability Statement", False, f"Status: {response.status_code}")
+            return False
+
+    def test_fhir_patient_bundle(self):
+        """Test FHIR Patient search endpoint"""
+        response, error = self.make_request('GET', 'fhir/Patient')
+        if error:
+            self.log_test("FHIR Patient Bundle", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            is_bundle = data.get('resourceType') == 'Bundle'
+            has_entries = 'entry' in data and 'total' in data
+            success = is_bundle and has_entries
+            entry_count = len(data.get('entry', []))
+            self.log_test("FHIR Patient Bundle", success, f"Bundle with {entry_count} patients")
+            return success
+        else:
+            self.log_test("FHIR Patient Bundle", False, f"Status: {response.status_code}")
+            return False
+
+    def test_fhir_observation_bundle(self):
+        """Test FHIR Observation search endpoint (vitals)"""
+        response, error = self.make_request('GET', 'fhir/Observation')
+        if error:
+            self.log_test("FHIR Observation Bundle", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            is_bundle = data.get('resourceType') == 'Bundle'
+            has_entries = 'entry' in data and 'total' in data
+            success = is_bundle and has_entries
+            entry_count = len(data.get('entry', []))
+            self.log_test("FHIR Observation Bundle", success, f"Bundle with {entry_count} observations")
+            return success
+        else:
+            self.log_test("FHIR Observation Bundle", False, f"Status: {response.status_code}")
+            return False
+
+    def test_fhir_condition_bundle(self):
+        """Test FHIR Condition search endpoint (problems)"""
+        response, error = self.make_request('GET', 'fhir/Condition')
+        if error:
+            self.log_test("FHIR Condition Bundle", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            is_bundle = data.get('resourceType') == 'Bundle'
+            has_entries = 'entry' in data and 'total' in data
+            success = is_bundle and has_entries
+            entry_count = len(data.get('entry', []))
+            self.log_test("FHIR Condition Bundle", success, f"Bundle with {entry_count} conditions")
+            return success
+        else:
+            self.log_test("FHIR Condition Bundle", False, f"Status: {response.status_code}")
+            return False
+
+    def test_fhir_medication_request_bundle(self):
+        """Test FHIR MedicationRequest search endpoint"""
+        response, error = self.make_request('GET', 'fhir/MedicationRequest')
+        if error:
+            self.log_test("FHIR MedicationRequest Bundle", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            is_bundle = data.get('resourceType') == 'Bundle'
+            has_entries = 'entry' in data and 'total' in data
+            success = is_bundle and has_entries
+            entry_count = len(data.get('entry', []))
+            self.log_test("FHIR MedicationRequest Bundle", success, f"Bundle with {entry_count} medications")
+            return success
+        else:
+            self.log_test("FHIR MedicationRequest Bundle", False, f"Status: {response.status_code}")
+            return False
+
+    def test_fhir_allergy_intolerance_bundle(self):
+        """Test FHIR AllergyIntolerance search endpoint"""
+        response, error = self.make_request('GET', 'fhir/AllergyIntolerance')
+        if error:
+            self.log_test("FHIR AllergyIntolerance Bundle", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            is_bundle = data.get('resourceType') == 'Bundle'
+            has_entries = 'entry' in data and 'total' in data
+            success = is_bundle and has_entries
+            entry_count = len(data.get('entry', []))
+            self.log_test("FHIR AllergyIntolerance Bundle", success, f"Bundle with {entry_count} allergies")
+            return success
+        else:
+            self.log_test("FHIR AllergyIntolerance Bundle", False, f"Status: {response.status_code}")
+            return False
+
+    def test_fhir_service_request_bundle(self):
+        """Test FHIR ServiceRequest search endpoint (orders)"""
+        response, error = self.make_request('GET', 'fhir/ServiceRequest')
+        if error:
+            self.log_test("FHIR ServiceRequest Bundle", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            is_bundle = data.get('resourceType') == 'Bundle'
+            has_entries = 'entry' in data and 'total' in data
+            success = is_bundle and has_entries
+            entry_count = len(data.get('entry', []))
+            self.log_test("FHIR ServiceRequest Bundle", success, f"Bundle with {entry_count} service requests")
+            return success
+        else:
+            self.log_test("FHIR ServiceRequest Bundle", False, f"Status: {response.status_code}")
+            return False
+
+    def test_fhir_appointment_bundle(self):
+        """Test FHIR Appointment search endpoint"""
+        response, error = self.make_request('GET', 'fhir/Appointment')
+        if error:
+            self.log_test("FHIR Appointment Bundle", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            is_bundle = data.get('resourceType') == 'Bundle'
+            has_entries = 'entry' in data and 'total' in data
+            success = is_bundle and has_entries
+            entry_count = len(data.get('entry', []))
+            self.log_test("FHIR Appointment Bundle", success, f"Bundle with {entry_count} appointments")
+            return success
+        else:
+            self.log_test("FHIR Appointment Bundle", False, f"Status: {response.status_code}")
+            return False
+
+    def test_fhir_patient_by_id(self):
+        """Test FHIR Patient by ID endpoint"""
+        if not self.test_patient_id:
+            self.log_test("FHIR Patient by ID", False, "No test patient available")
+            return False
+        
+        response, error = self.make_request('GET', f'fhir/Patient/{self.test_patient_id}')
+        if error:
+            self.log_test("FHIR Patient by ID", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            is_patient = data.get('resourceType') == 'Patient'
+            has_id = data.get('id') == self.test_patient_id
+            success = is_patient and has_id
+            self.log_test("FHIR Patient by ID", success, f"Patient resource: {data.get('resourceType')}")
+            return success
+        else:
+            self.log_test("FHIR Patient by ID", False, f"Status: {response.status_code}")
+            return False
+
     def run_all_tests(self):
         """Run comprehensive backend API tests"""
         print("🏥 Starting Yacco EMR Backend API Tests")
