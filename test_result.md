@@ -1033,6 +1033,18 @@ backend:
         agent: "main"
         comment: "Complete entity definitions with relationships and compliance fields"
 
+  - task: "Enhanced JWT Authentication Module"
+    implemented: true
+    working: "NA"
+    file: "backend/auth_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "JWT auth with RBAC, groups, org isolation, MFA, session management"
+
 frontend:
   - task: "Security Settings Page"
     implemented: true
