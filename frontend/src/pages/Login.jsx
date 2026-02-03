@@ -10,6 +10,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Activity, Shield, Users, Calendar } from 'lucide-react';
 
+const getRoleRedirect = (role) => {
+  switch (role) {
+    case 'physician': return '/dashboard';
+    case 'nurse': return '/nurse-station';
+    case 'scheduler': return '/scheduling';
+    case 'admin': return '/admin';
+    default: return '/dashboard';
+  }
+};
+
 export default function LoginPage() {
   const { user, login, register } = useAuth();
   const navigate = useNavigate();
@@ -22,16 +32,16 @@ export default function LoginPage() {
   });
 
   if (user) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to={getRoleRedirect(user.role)} replace />;
   }
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await login(loginForm.email, loginForm.password);
+      const userData = await login(loginForm.email, loginForm.password);
       toast.success('Welcome back!');
-      navigate('/');
+      navigate(getRoleRedirect(userData.role));
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Login failed');
     } finally {
@@ -43,9 +53,9 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      await register(registerForm);
+      const userData = await register(registerForm);
       toast.success('Account created successfully!');
-      navigate('/');
+      navigate(getRoleRedirect(userData.role));
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Registration failed');
     } finally {
