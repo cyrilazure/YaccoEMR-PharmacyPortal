@@ -68,7 +68,7 @@ class YaccoEMRTester:
     def test_user_registration(self):
         """Test user registration with physician role"""
         test_user = {
-            "email": "test@hospital.com",
+            "email": "testdoc@test.com",
             "password": "test123",
             "first_name": "Test",
             "last_name": "Doctor",
@@ -98,7 +98,7 @@ class YaccoEMRTester:
     def test_user_login(self):
         """Test user login"""
         login_data = {
-            "email": "test@hospital.com",
+            "email": "testdoc@test.com",
             "password": "test123"
         }
         
@@ -111,6 +111,11 @@ class YaccoEMRTester:
             data = response.json()
             self.token = data.get('token')
             self.user_id = data.get('user', {}).get('id')
+            self.log_test("User Login", True, f"Token received")
+            return True
+        else:
+            self.log_test("User Login", False, f"Status: {response.status_code}")
+            return False
             self.log_test("User Login", True, f"Token received")
             return True
         else:
