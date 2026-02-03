@@ -95,10 +95,34 @@ export default function PatientChart() {
   });
   const [aiGenerating, setAiGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [simulatingLab, setSimulatingLab] = useState(null);
 
   useEffect(() => {
     fetchAllData();
+    fetchLabPanels();
   }, [id]);
+
+  const fetchLabPanels = async () => {
+    try {
+      const res = await labAPI.getPanels();
+      setLabPanels(res.data.panels || []);
+    } catch (err) {
+      console.error('Failed to fetch lab panels', err);
+    }
+  };
+
+  const fetchLabData = async () => {
+    try {
+      const [ordersRes, resultsRes] = await Promise.all([
+        labAPI.getPatientOrders(id),
+        labAPI.getPatientResults(id)
+      ]);
+      setLabOrders(ordersRes.data.orders || []);
+      setLabResults(resultsRes.data.results || []);
+    } catch (err) {
+      console.error('Failed to fetch lab data', err);
+    }
+  };
 
   const fetchAllData = async () => {
     try {
@@ -120,6 +144,9 @@ export default function PatientChart() {
       setAllergies(allergiesRes.data);
       setNotes(notesRes.data);
       setOrders(ordersRes.data);
+      
+      // Fetch lab data separately
+      fetchLabData();
     } catch (err) {
       toast.error('Failed to load patient data');
       navigate('/patients');
