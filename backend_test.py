@@ -2308,6 +2308,10 @@ class YaccoEMRTester:
         self.test_cds_drug_classes()
         self.test_cds_common_allergies()
         
+        print("\n🔄 Testing Records Sharing / HIE Module")
+        print("-" * 30)
+        self.test_records_sharing_complete_workflow()
+        
         # ============ LAB RESULTS MODULE TESTS ============
         print("\n🧪 Testing Lab Results Module")
         print("-" * 30)
