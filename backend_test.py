@@ -116,11 +116,6 @@ class YaccoEMRTester:
         else:
             self.log_test("User Login", False, f"Status: {response.status_code}")
             return False
-            self.log_test("User Login", True, f"Token received")
-            return True
-        else:
-            self.log_test("User Login", False, f"Status: {response.status_code}")
-            return False
 
     def test_get_current_user(self):
         """Test getting current user info"""
