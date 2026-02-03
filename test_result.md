@@ -911,27 +911,33 @@ backend:
 
   - task: "Department Management Module"
     implemented: true
-    working: "NA"
+    working: true
     file: "backend/department_module.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Full CRUD for departments with hierarchical structure, 35+ department types"
+      - working: true
+        agent: "testing"
+        comment: "✅ Department Management Module - ALL CORE FEATURES WORKING: Department types (35 types), hospital admin creation, department creation (Emergency Department), department listing, hierarchy structure, statistics, specific department retrieval, staff listing, and staff assignment all functional. Fixed staff assignment endpoint to use query parameters."
 
   - task: "Consent Forms Module"
     implemented: true
-    working: "NA"
+    working: true
     file: "backend/consent_module.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "11 consent types, digital signatures, templates, verification"
+      - working: true
+        agent: "testing"
+        comment: "✅ Consent Forms Module - ALL CORE FEATURES WORKING: Consent types (11 types), consent templates (treatment, HIPAA, records release, telehealth), consent form creation, listing, patient-specific consents, form retrieval, digital signing, verification, patient consent checking, and revocation all functional. Complete consent workflow tested successfully."
 
   - task: "Database Models Documentation"
     implemented: true
