@@ -75,10 +75,13 @@ class AuditLogEntry(BaseModel):
     resource_id: Optional[str] = None
     patient_id: Optional[str] = None
     patient_name: Optional[str] = None
+    organization_id: Optional[str] = None
     ip_address: Optional[str] = None
     user_agent: Optional[str] = None
     details: Optional[str] = None
     success: bool = True
+    severity: AuditSeverity = AuditSeverity.INFO
+    metadata: Optional[Dict[str, Any]] = None
 
 class AuditLogResponse(BaseModel):
     id: str
@@ -91,9 +94,22 @@ class AuditLogResponse(BaseModel):
     resource_id: Optional[str]
     patient_id: Optional[str]
     patient_name: Optional[str]
+    organization_id: Optional[str]
     ip_address: Optional[str]
     details: Optional[str]
     success: bool
+    severity: Optional[str] = "info"
+
+class AuditStatsResponse(BaseModel):
+    total_logs: int
+    today_logs: int
+    failed_logins: int
+    permission_denied_count: int
+    critical_events: int
+    action_breakdown: Dict[str, int]
+    resource_breakdown: Dict[str, int]
+    user_activity: List[Dict[str, Any]]
+    hourly_activity: List[Dict[str, Any]]
 
 def create_audit_endpoints(db, get_current_user):
     """Create audit log endpoints with database access"""
