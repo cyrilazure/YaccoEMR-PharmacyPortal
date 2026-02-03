@@ -391,7 +391,7 @@ def create_telehealth_endpoints(db, get_current_user):
             }
         
         # Get patient info
-        patient = await db["patients"].find_one({"id": appointment.get("patient_id")})
+        patient = await db["patients"].find_one({"id": appointment.get("patient_id")}, {"_id": 0})
         patient_name = f"{patient.get('first_name', '')} {patient.get('last_name', '')}".strip() if patient else "Unknown Patient"
         
         # Create session
