@@ -930,6 +930,16 @@ from records_sharing_module import router as records_sharing_router, setup_route
 records_sharing_api_router = setup_records_sharing_routes(db, get_current_user)
 app.include_router(records_sharing_api_router)
 
+# Include RBAC (Role-Based Access Control) routes
+from rbac_module import rbac_router, create_rbac_endpoints
+rbac_api_router, check_permission, has_permission, require_any_permission = create_rbac_endpoints(db, get_current_user)
+app.include_router(rbac_router)
+
+# Include Two-Factor Authentication routes
+from twofa_module import twofa_router, create_2fa_endpoints
+twofa_api_router, verify_2fa_for_login, is_2fa_required = create_2fa_endpoints(db, get_current_user, verify_password, create_token)
+app.include_router(twofa_router)
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
