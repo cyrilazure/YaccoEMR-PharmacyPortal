@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
+import { useNavigate, Navigate, Link } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,10 +8,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Activity, Shield, Users, Calendar } from 'lucide-react';
+import { Activity, Shield, Users, Calendar, Building2 } from 'lucide-react';
 
 const getRoleRedirect = (role) => {
   switch (role) {
+    case 'super_admin': return '/platform-admin';
+    case 'hospital_admin': return '/hospital-settings';
     case 'physician': return '/dashboard';
     case 'nurse': return '/nurse-station';
     case 'scheduler': return '/scheduling';
