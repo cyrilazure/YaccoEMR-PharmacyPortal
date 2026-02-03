@@ -48,6 +48,9 @@ export default function PatientChart() {
   const [allergies, setAllergies] = useState([]);
   const [notes, setNotes] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [labOrders, setLabOrders] = useState([]);
+  const [labResults, setLabResults] = useState([]);
+  const [labPanels, setLabPanels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   
@@ -59,6 +62,7 @@ export default function PatientChart() {
   const [noteDialogOpen, setNoteDialogOpen] = useState(false);
   const [orderDialogOpen, setOrderDialogOpen] = useState(false);
   const [aiDialogOpen, setAiDialogOpen] = useState(false);
+  const [labOrderDialogOpen, setLabOrderDialogOpen] = useState(false);
   
   // Form states
   const [newVitals, setNewVitals] = useState({
