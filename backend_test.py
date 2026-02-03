@@ -2974,6 +2974,11 @@ class YaccoEMRTester:
         print("\n🔐 Testing Security Enhancement Modules")
         print("-" * 50)
         
+        # First create a nurse user to test different permissions
+        print("\n👩‍⚕️ Setting up Nurse User for Permission Testing")
+        print("-" * 30)
+        self.test_nurse_user_registration()
+        
         print("\n🛡️ Testing RBAC (Role-Based Access Control)")
         print("-" * 30)
         self.test_rbac_get_my_permissions()
@@ -2983,6 +2988,7 @@ class YaccoEMRTester:
         self.test_rbac_get_role_details()
         self.test_rbac_get_all_permissions()
         self.test_rbac_get_permission_matrix()
+        self.test_nurse_permissions_verification()
         
         print("\n🔑 Testing Two-Factor Authentication (2FA)")
         print("-" * 30)
