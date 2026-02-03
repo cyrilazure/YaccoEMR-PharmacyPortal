@@ -173,9 +173,9 @@ export default function Layout() {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="cursor-pointer">
-                  <Settings className="w-4 h-4 mr-2" />
-                  Settings
+                <DropdownMenuItem onClick={() => navigate('/security')} className="cursor-pointer">
+                  <ShieldCheck className="w-4 h-4 mr-2" />
+                  Security Settings
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600" data-testid="logout-btn">
