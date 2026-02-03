@@ -468,7 +468,17 @@ async def change_password(
 
 @api_router.get("/users", response_model=List[UserResponse])
 async def get_users(current_user: dict = Depends(get_current_user)):
-    users = await db.users.find({}, {"_id": 0, "password": 0}).to_list(1000)
+    query = {}
+    org_id = current_user.get("organization_id")
+    if org_id and current_user.get("role") not in ["super_admin", "hospital_admin"]:
+        # Regular staff can only see users in their org
+        query["organization_id"] = org_id
+    elif org_id and current_user.get("role") == "hospital_admin":
+        # Hospital admin sees their org users
+        query["organization_id"] = org_id
+    # Super admin sees all
+    
+    users = await db.users.find(query, {"_id": 0, "password": 0}).to_list(1000)
     return [UserResponse(**u) for u in users]
 
 @api_router.get("/users/{user_id}", response_model=UserResponse)
