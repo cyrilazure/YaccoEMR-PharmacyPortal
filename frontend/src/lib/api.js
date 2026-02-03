@@ -332,4 +332,41 @@ export const recordsSharingAPI = {
   getStats: () => api.get('/records-sharing/stats'),
 };
 
+// RBAC (Role-Based Access Control) APIs
+export const rbacAPI = {
+  getMyPermissions: () => api.get('/rbac/permissions/my'),
+  checkPermission: (permission) => api.get(`/rbac/permissions/check/${permission}`),
+  checkBulkPermissions: (permissions) => api.post('/rbac/permissions/check-bulk', permissions),
+  getAllRoles: () => api.get('/rbac/roles'),
+  getRoleDetails: (role) => api.get(`/rbac/roles/${role}`),
+  getAllPermissions: () => api.get('/rbac/permissions/all'),
+  getPermissionMatrix: () => api.get('/rbac/matrix'),
+};
+
+// Two-Factor Authentication APIs
+export const twoFactorAPI = {
+  getStatus: () => api.get('/2fa/status'),
+  setup: () => api.post('/2fa/setup'),
+  verify: (code) => api.post('/2fa/verify', { code }),
+  disable: (code) => api.post('/2fa/disable', { code }),
+  validate: (code) => api.post('/2fa/validate', { code }),
+  regenerateBackupCodes: (code) => api.post('/2fa/backup-codes/regenerate', { code }),
+  useBackupCode: (backupCode) => api.post('/2fa/backup-codes/use', { backup_code: backupCode }),
+  getBackupCodesCount: () => api.get('/2fa/backup-codes/count'),
+};
+
+// Enhanced Audit APIs
+export const auditAPI = {
+  getLogs: (params) => api.get('/audit/logs', { params }),
+  getLogsCount: (params) => api.get('/audit/logs/count', { params }),
+  getPatientLogs: (patientId, limit) => api.get(`/audit/logs/patient/${patientId}`, { params: { limit } }),
+  getUserLogs: (userId, limit) => api.get(`/audit/logs/user/${userId}`, { params: { limit } }),
+  getStats: (days) => api.get('/audit/stats', { params: { days } }),
+  getSecurityStats: (days) => api.get('/audit/stats/security', { params: { days } }),
+  exportLogs: (params) => api.get('/audit/export', { params }),
+  getAlerts: (hours) => api.get('/audit/alerts', { params: { hours } }),
+  getActions: () => api.get('/audit/actions'),
+  getResourceTypes: () => api.get('/audit/resource-types'),
+};
+
 export default api;
