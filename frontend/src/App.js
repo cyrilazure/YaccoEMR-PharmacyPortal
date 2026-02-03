@@ -55,6 +55,8 @@ function App() {
         <Routes>
           {/* Customer-Facing Portal (Hospitals & Staff) */}
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/register-hospital" element={<HospitalRegistration />} />
           
           {/* Hidden Super Admin Portal - Only owner knows this URL */}
