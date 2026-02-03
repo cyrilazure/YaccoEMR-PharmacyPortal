@@ -2970,6 +2970,32 @@ class YaccoEMRTester:
         print("-" * 30)
         self.test_records_sharing_complete_workflow()
         
+        # ============ DEPARTMENT AND CONSENT MODULE TESTS ============
+        print("\n🏢 Testing Department Management Module")
+        print("-" * 30)
+        self.test_department_types()
+        self.test_create_hospital_admin_for_departments()
+        self.test_create_department()
+        self.test_get_departments()
+        self.test_get_department_hierarchy()
+        self.test_get_department_stats()
+        self.test_get_specific_department()
+        self.test_get_department_staff()
+        self.test_assign_staff_to_department()
+        
+        print("\n📋 Testing Consent Forms Module")
+        print("-" * 30)
+        self.test_consent_types()
+        self.test_consent_templates()
+        self.test_create_consent_form()
+        self.test_get_consents()
+        self.test_get_patient_consents()
+        self.test_get_specific_consent()
+        self.test_sign_consent_form()
+        self.test_verify_consent()
+        self.test_check_patient_consent()
+        self.test_revoke_consent()
+        
         # ============ SECURITY ENHANCEMENT MODULE TESTS ============
         print("\n🔐 Testing Security Enhancement Modules")
         print("-" * 50)
