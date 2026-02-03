@@ -233,7 +233,7 @@ def create_telehealth_endpoints(db, get_current_user):
     @telehealth_router.get("/sessions/{session_id}", response_model=dict)
     async def get_telehealth_session(session_id: str, user: dict = Depends(get_current_user)):
         """Get a specific telehealth session"""
-        session = await db["telehealth_sessions"].find_one({"id": session_id})
+        session = await db["telehealth_sessions"].find_one({"id": session_id}, {"_id": 0})
         
         if not session:
             raise HTTPException(status_code=404, detail="Telehealth session not found")
@@ -250,7 +250,7 @@ def create_telehealth_endpoints(db, get_current_user):
     @telehealth_router.post("/sessions/{session_id}/join", response_model=dict)
     async def join_telehealth_session(session_id: str, request: JoinSessionRequest, user: dict = Depends(get_current_user)):
         """Join a telehealth session"""
-        session = await db["telehealth_sessions"].find_one({"id": session_id})
+        session = await db["telehealth_sessions"].find_one({"id": session_id}, {"_id": 0})
         
         if not session:
             raise HTTPException(status_code=404, detail="Telehealth session not found")
@@ -313,7 +313,7 @@ def create_telehealth_endpoints(db, get_current_user):
     @telehealth_router.post("/sessions/{session_id}/end", response_model=dict)
     async def end_telehealth_session(session_id: str, notes: Optional[str] = None, user: dict = Depends(get_current_user)):
         """End the telehealth session"""
-        session = await db["telehealth_sessions"].find_one({"id": session_id})
+        session = await db["telehealth_sessions"].find_one({"id": session_id}, {"_id": 0})
         
         if not session:
             raise HTTPException(status_code=404, detail="Session not found")
