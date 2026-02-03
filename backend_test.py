@@ -1952,6 +1952,91 @@ class YaccoEMRTester:
             self.log_test("CDS Common Allergies", False, f"Status: {response.status_code}")
             return False
 
+    def test_nurse_user_registration(self):
+        """Test registering a nurse user to test different permissions"""
+        nurse_user = {
+            "email": "testnurse@test.com",
+            "password": "nurse123",
+            "first_name": "Test",
+            "last_name": "Nurse",
+            "role": "nurse",
+            "department": "Emergency",
+            "specialty": "Critical Care"
+        }
+        
+        response, error = self.make_request('POST', 'auth/register', nurse_user)
+        if error:
+            self.log_test("Nurse User Registration", False, error)
+            return False
+        
+        if response.status_code in [200, 201]:
+            data = response.json()
+            self.nurse_token = data.get('token')
+            self.nurse_user_id = data.get('user', {}).get('id')
+            self.log_test("Nurse User Registration", True, "Nurse user created")
+            return True
+        elif response.status_code == 400:
+            # User already exists, try login
+            return self.test_nurse_user_login()
+        else:
+            self.log_test("Nurse User Registration", False, f"Status: {response.status_code}")
+            return False
+
+    def test_nurse_user_login(self):
+        """Test nurse user login"""
+        login_data = {
+            "email": "testnurse@test.com",
+            "password": "nurse123"
+        }
+        
+        response, error = self.make_request('POST', 'auth/login', login_data)
+        if error:
+            self.log_test("Nurse User Login", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            self.nurse_token = data.get('token')
+            self.nurse_user_id = data.get('user', {}).get('id')
+            self.log_test("Nurse User Login", True, "Nurse authenticated")
+            return True
+        else:
+            self.log_test("Nurse User Login", False, f"Status: {response.status_code}")
+            return False
+
+    def test_nurse_permissions_verification(self):
+        """Test that nurse has different permissions than physician"""
+        if not hasattr(self, 'nurse_token') or not self.nurse_token:
+            self.log_test("Nurse Permissions Verification", False, "No nurse token available")
+            return False
+        
+        # Store original token
+        original_token = self.token
+        
+        # Switch to nurse token
+        self.token = self.nurse_token
+        
+        # Test that nurse cannot prescribe medications (should be denied)
+        response, error = self.make_request('GET', 'rbac/permissions/check/medication:prescribe')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Nurse Permissions Verification", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            # Nurse should NOT have prescribe permission
+            allowed = data.get('allowed', True)  # Default to True to test the negative case
+            success = not allowed  # Success if NOT allowed
+            self.log_test("Nurse Permissions Verification", success, f"Nurse prescribe permission correctly denied: {not allowed}")
+            return success
+        else:
+            self.log_test("Nurse Permissions Verification", False, f"Status: {response.status_code}")
+            return False
+
     # ============ RBAC MODULE TESTS ============
     
     def test_rbac_get_my_permissions(self):
