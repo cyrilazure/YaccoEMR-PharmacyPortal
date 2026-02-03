@@ -304,4 +304,32 @@ export const cdsAPI = {
   getCommonAllergies: () => api.get('/cds/common-allergies'),
 };
 
+// Records Sharing / Health Information Exchange APIs
+export const recordsSharingAPI = {
+  // Physician search
+  searchPhysicians: (params) => api.get('/records-sharing/physicians/search', { params }),
+  getPhysicianProfile: (physicianId) => api.get(`/records-sharing/physicians/${physicianId}`),
+  
+  // Records requests
+  createRequest: (data) => api.post('/records-sharing/requests', data),
+  uploadConsentForm: (requestId, formData) => api.post(`/records-sharing/requests/${requestId}/consent-form`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  getIncomingRequests: (status) => api.get('/records-sharing/requests/incoming', { params: { status } }),
+  getOutgoingRequests: (status) => api.get('/records-sharing/requests/outgoing', { params: { status } }),
+  getRequestDetails: (requestId) => api.get(`/records-sharing/requests/${requestId}`),
+  respondToRequest: (requestId, data) => api.post(`/records-sharing/requests/${requestId}/respond`, data),
+  cancelRequest: (requestId) => api.post(`/records-sharing/requests/${requestId}/cancel`),
+  
+  // Shared records access
+  getSharedRecords: (patientId) => api.get(`/records-sharing/shared-records/${patientId}`),
+  getMyAccessGrants: () => api.get('/records-sharing/my-access-grants'),
+  
+  // Notifications
+  getNotifications: (unreadOnly) => api.get('/records-sharing/notifications', { params: { unread_only: unreadOnly } }),
+  markNotificationRead: (notificationId) => api.put(`/records-sharing/notifications/${notificationId}/read`),
+  markAllNotificationsRead: () => api.put('/records-sharing/notifications/read-all'),
+  
+  // Statistics
+  getStats: () => api.get('/records-sharing/stats'),
+};
+
 export default api;
