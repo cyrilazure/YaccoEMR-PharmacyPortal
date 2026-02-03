@@ -239,7 +239,7 @@ def create_telehealth_endpoints(db, get_current_user):
             raise HTTPException(status_code=404, detail="Telehealth session not found")
         
         # Get participants
-        participants = await db["telehealth_participants"].find({"session_id": session_id}).to_list(10)
+        participants = await db["telehealth_participants"].find({"session_id": session_id}, {"_id": 0}).to_list(10)
         
         return {
             "session": session,
