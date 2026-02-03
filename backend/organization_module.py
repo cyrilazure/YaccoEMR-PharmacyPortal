@@ -386,7 +386,7 @@ def create_organization_endpoints(db, get_current_user, hash_password):
             admin_user = {
                 "id": str(uuid.uuid4()),
                 "email": org_data.admin_email,
-                "password_hash": hash_password(admin_password),
+                "password": hash_password(admin_password),
                 "first_name": org_data.admin_first_name,
                 "last_name": org_data.admin_last_name,
                 "role": "hospital_admin",
