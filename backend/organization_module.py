@@ -525,7 +525,7 @@ def create_organization_endpoints(db, get_current_user, hash_password):
         
         staff = await db["users"].find(
             query,
-            {"_id": 0, "password_hash": 0}
+            {"_id": 0, "password": 0}
         ).sort("created_at", -1).to_list(200)
         
         return {"staff": staff, "count": len(staff)}
