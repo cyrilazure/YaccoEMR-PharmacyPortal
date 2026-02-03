@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from pydantic import BaseModel
 import uuid
 
-fhir_router = APIRouter(prefix="/fhir", tags=["FHIR R4"])
+fhir_router = APIRouter(prefix="/api/fhir", tags=["FHIR R4"])
 
 # ============ FHIR Resource Models ============
 
