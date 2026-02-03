@@ -45,7 +45,7 @@ export default function LoginPage() {
     try {
       await register(registerForm);
       toast.success('Account created successfully!');
-      navigate('/dashboard');
+      navigate('/');
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Registration failed');
     } finally {
