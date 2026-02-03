@@ -511,7 +511,7 @@ def create_lab_endpoints(db, get_current_user):
         
         # Try to match with existing order or create new result
         # First, try to find patient
-        patient = await db["patients"].find_one({"mrn": parsed.patient_id})
+        patient = await db["patients"].find_one({"mrn": parsed.patient_id}, {"_id": 0})
         if not patient:
             # Try by ID
             patient = await db["patients"].find_one({"id": parsed.patient_id})
