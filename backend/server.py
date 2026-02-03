@@ -375,7 +375,12 @@ async def get_user(user_id: str, current_user: dict = Depends(get_current_user))
 
 @api_router.post("/patients", response_model=PatientResponse)
 async def create_patient(patient_data: PatientCreate, current_user: dict = Depends(get_current_user)):
-    patient = Patient(**patient_data.model_dump())
+    # Convert PatientCreate to dict and exclude None mrn
+    patient_dict = patient_data.model_dump()
+    if patient_dict.get('mrn') is None:
+        patient_dict.pop('mrn', None)
+    
+    patient = Patient(**patient_dict)
     patient_dict = patient.model_dump()
     patient_dict["created_at"] = patient_dict["created_at"].isoformat()
     patient_dict["updated_at"] = patient_dict["updated_at"].isoformat()
