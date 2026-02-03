@@ -842,6 +842,11 @@ from telehealth_module import telehealth_router, create_telehealth_endpoints
 telehealth_api_router = create_telehealth_endpoints(db, get_current_user)
 app.include_router(telehealth_router)
 
+# Include Organization/Multi-tenant routes
+from organization_module import organization_router, create_organization_endpoints
+organization_api_router = create_organization_endpoints(db, get_current_user, hash_password)
+app.include_router(organization_router)
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
