@@ -616,6 +616,7 @@ async def create_allergy(allergy_data: AllergyCreate, current_user: dict = Depen
     allergy.created_by = current_user["id"]
     allergy_dict = allergy.model_dump()
     allergy_dict["created_at"] = allergy_dict["created_at"].isoformat()
+    allergy_dict["organization_id"] = current_user.get("organization_id")
     await db.allergies.insert_one(allergy_dict)
     return {**allergy_dict, "_id": None}
 
@@ -631,6 +632,7 @@ async def create_note(note_data: ClinicalNoteCreate, current_user: dict = Depend
     note = ClinicalNote(**note_data.model_dump())
     note.author_id = current_user["id"]
     note.author_name = f"{current_user['first_name']} {current_user['last_name']}"
+    note.organization_id = current_user.get("organization_id")
     note_dict = note.model_dump()
     note_dict["created_at"] = note_dict["created_at"].isoformat()
     note_dict["updated_at"] = note_dict["updated_at"].isoformat()
@@ -662,6 +664,7 @@ async def create_order(order_data: OrderCreate, current_user: dict = Depends(get
     order = Order(**order_data.model_dump())
     order.ordered_by = current_user["id"]
     order.ordered_by_name = f"{current_user['first_name']} {current_user['last_name']}"
+    order.organization_id = current_user.get("organization_id")
     order_dict = order.model_dump()
     order_dict["created_at"] = order_dict["created_at"].isoformat()
     order_dict["completed_at"] = None
@@ -675,6 +678,9 @@ async def get_orders(
     current_user: dict = Depends(get_current_user)
 ):
     query = {}
+    org_id = current_user.get("organization_id")
+    if org_id and current_user.get("role") != "super_admin":
+        query["organization_id"] = org_id
     if patient_id:
         query["patient_id"] = patient_id
     if status:
