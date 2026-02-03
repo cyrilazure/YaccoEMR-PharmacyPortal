@@ -59,6 +59,8 @@ function App() {
             <Route path="appointments" element={<Appointments />} />
             <Route path="orders" element={<Orders />} />
             <Route path="analytics" element={<Analytics />} />
+            <Route path="telehealth" element={<TelehealthPage />} />
+            <Route path="telehealth/:sessionId" element={<TelehealthPage />} />
           </Route>
           <Route path="*" element={<RoleBasedRedirect />} />
         </Routes>
