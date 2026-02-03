@@ -939,6 +939,489 @@ class YaccoEMRTester:
             self.log_test("FHIR Patient by ID", False, f"Status: {response.status_code}")
             return False
 
+    # ============ ORGANIZATION MODULE TESTS ============
+    
+    def test_organization_self_registration(self):
+        """Test self-service hospital registration"""
+        org_data = {
+            "name": "Test General Hospital",
+            "organization_type": "hospital",
+            "address_line1": "123 Medical Drive",
+            "city": "Test City",
+            "state": "CA",
+            "zip_code": "90210",
+            "country": "USA",
+            "phone": "555-123-4567",
+            "email": "admin@testgeneral.com",
+            "license_number": "LIC-12345",
+            "admin_first_name": "John",
+            "admin_last_name": "Admin",
+            "admin_email": "john@testgeneral.com",
+            "admin_phone": "555-111-2222"
+        }
+        
+        response, error = self.make_request('POST', 'organizations/register', org_data)
+        if error:
+            self.log_test("Organization Self Registration", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_org_id = bool(data.get('organization_id'))
+            status_pending = data.get('status') == 'pending'
+            success = has_org_id and status_pending
+            if success:
+                self.test_org_id = data.get('organization_id')
+            self.log_test("Organization Self Registration", success, f"Status: {data.get('status')}")
+            return success
+        else:
+            self.log_test("Organization Self Registration", False, f"Status: {response.status_code}")
+            return False
+
+    def test_super_admin_registration(self):
+        """Test creating super admin user"""
+        super_admin_data = {
+            "email": "superadmin@yacco.com",
+            "password": "SuperAdmin123!",
+            "first_name": "Super",
+            "last_name": "Admin",
+            "role": "super_admin"
+        }
+        
+        response, error = self.make_request('POST', 'auth/register', super_admin_data)
+        if error:
+            self.log_test("Super Admin Registration", False, error)
+            return False
+        
+        if response.status_code in [200, 201]:
+            data = response.json()
+            self.super_admin_token = data.get('token')
+            self.super_admin_id = data.get('user', {}).get('id')
+            success = bool(self.super_admin_token)
+            self.log_test("Super Admin Registration", success, "Super admin created")
+            return success
+        elif response.status_code == 400:
+            # User already exists, try login
+            return self.test_super_admin_login()
+        else:
+            self.log_test("Super Admin Registration", False, f"Status: {response.status_code}")
+            return False
+
+    def test_super_admin_login(self):
+        """Test super admin login"""
+        login_data = {
+            "email": "superadmin@yacco.com",
+            "password": "SuperAdmin123!"
+        }
+        
+        response, error = self.make_request('POST', 'auth/login', login_data)
+        if error:
+            self.log_test("Super Admin Login", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            self.super_admin_token = data.get('token')
+            self.super_admin_id = data.get('user', {}).get('id')
+            success = bool(self.super_admin_token)
+            self.log_test("Super Admin Login", success, "Super admin authenticated")
+            return success
+        else:
+            self.log_test("Super Admin Login", False, f"Status: {response.status_code}")
+            return False
+
+    def test_super_admin_list_organizations(self):
+        """Test super admin listing organizations"""
+        if not hasattr(self, 'super_admin_token') or not self.super_admin_token:
+            self.log_test("Super Admin List Organizations", False, "No super admin token")
+            return False
+        
+        # Temporarily switch to super admin token
+        original_token = self.token
+        self.token = self.super_admin_token
+        
+        response, error = self.make_request('GET', 'organizations/')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Super Admin List Organizations", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_orgs = 'organizations' in data
+            has_counts = 'pending_count' in data and 'active_count' in data
+            success = has_orgs and has_counts
+            org_count = len(data.get('organizations', []))
+            self.log_test("Super Admin List Organizations", success, f"Found {org_count} organizations")
+            return success
+        else:
+            self.log_test("Super Admin List Organizations", False, f"Status: {response.status_code}")
+            return False
+
+    def test_super_admin_get_pending_organizations(self):
+        """Test super admin getting pending organizations"""
+        if not hasattr(self, 'super_admin_token') or not self.super_admin_token:
+            self.log_test("Super Admin Get Pending Organizations", False, "No super admin token")
+            return False
+        
+        # Temporarily switch to super admin token
+        original_token = self.token
+        self.token = self.super_admin_token
+        
+        response, error = self.make_request('GET', 'organizations/pending')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Super Admin Get Pending Organizations", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_orgs = 'organizations' in data
+            has_count = 'count' in data
+            success = has_orgs and has_count
+            pending_count = data.get('count', 0)
+            self.log_test("Super Admin Get Pending Organizations", success, f"Found {pending_count} pending organizations")
+            return success
+        else:
+            self.log_test("Super Admin Get Pending Organizations", False, f"Status: {response.status_code}")
+            return False
+
+    def test_super_admin_approve_organization(self):
+        """Test super admin approving organization"""
+        if not hasattr(self, 'super_admin_token') or not self.super_admin_token:
+            self.log_test("Super Admin Approve Organization", False, "No super admin token")
+            return False
+        
+        if not hasattr(self, 'test_org_id') or not self.test_org_id:
+            self.log_test("Super Admin Approve Organization", False, "No test organization available")
+            return False
+        
+        # Temporarily switch to super admin token
+        original_token = self.token
+        self.token = self.super_admin_token
+        
+        approval_data = {
+            "subscription_plan": "standard",
+            "max_users": 50,
+            "max_patients": 10000,
+            "notes": "Test approval"
+        }
+        
+        response, error = self.make_request('POST', f'organizations/{self.test_org_id}/approve', approval_data)
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Super Admin Approve Organization", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_admin_email = bool(data.get('admin_email'))
+            has_temp_password = bool(data.get('temp_password'))
+            success = has_admin_email and has_temp_password
+            if success:
+                self.hospital_admin_email = data.get('admin_email')
+                self.hospital_admin_temp_password = data.get('temp_password')
+            self.log_test("Super Admin Approve Organization", success, f"Admin email: {data.get('admin_email')}")
+            return success
+        else:
+            self.log_test("Super Admin Approve Organization", False, f"Status: {response.status_code}")
+            return False
+
+    def test_super_admin_create_organization_directly(self):
+        """Test super admin creating organization directly"""
+        if not hasattr(self, 'super_admin_token') or not self.super_admin_token:
+            self.log_test("Super Admin Create Organization Directly", False, "No super admin token")
+            return False
+        
+        # Temporarily switch to super admin token
+        original_token = self.token
+        self.token = self.super_admin_token
+        
+        org_data = {
+            "name": "Direct Created Hospital",
+            "organization_type": "hospital",
+            "address_line1": "456 Healthcare Blvd",
+            "city": "Medical City",
+            "state": "TX",
+            "zip_code": "75001",
+            "country": "USA",
+            "phone": "555-987-6543",
+            "email": "admin@directhospital.com",
+            "license_number": "LIC-67890",
+            "admin_first_name": "Direct",
+            "admin_last_name": "Admin",
+            "admin_email": "direct@directhospital.com",
+            "admin_phone": "555-999-8888"
+        }
+        
+        response, error = self.make_request('POST', 'organizations/create-by-admin?auto_approve=true', org_data)
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Super Admin Create Organization Directly", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            auto_approved = data.get('auto_approved', False)
+            has_admin_creds = bool(data.get('admin_email')) and bool(data.get('temp_password'))
+            success = auto_approved and has_admin_creds
+            self.log_test("Super Admin Create Organization Directly", success, f"Auto-approved: {auto_approved}")
+            return success
+        else:
+            self.log_test("Super Admin Create Organization Directly", False, f"Status: {response.status_code}")
+            return False
+
+    def test_super_admin_platform_stats(self):
+        """Test super admin platform statistics"""
+        if not hasattr(self, 'super_admin_token') or not self.super_admin_token:
+            self.log_test("Super Admin Platform Stats", False, "No super admin token")
+            return False
+        
+        # Temporarily switch to super admin token
+        original_token = self.token
+        self.token = self.super_admin_token
+        
+        response, error = self.make_request('GET', 'organizations/stats/platform')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Super Admin Platform Stats", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            required_fields = ['total_organizations', 'active_organizations', 'pending_organizations', 'total_users', 'total_patients']
+            has_all_fields = all(field in data for field in required_fields)
+            self.log_test("Super Admin Platform Stats", has_all_fields, f"Stats: {data}")
+            return has_all_fields
+        else:
+            self.log_test("Super Admin Platform Stats", False, f"Status: {response.status_code}")
+            return False
+
+    def test_hospital_admin_login(self):
+        """Test hospital admin login with temp password"""
+        if not hasattr(self, 'hospital_admin_email') or not hasattr(self, 'hospital_admin_temp_password'):
+            self.log_test("Hospital Admin Login", False, "No hospital admin credentials available")
+            return False
+        
+        login_data = {
+            "email": self.hospital_admin_email,
+            "password": self.hospital_admin_temp_password
+        }
+        
+        response, error = self.make_request('POST', 'auth/login', login_data)
+        if error:
+            self.log_test("Hospital Admin Login", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            self.hospital_admin_token = data.get('token')
+            self.hospital_admin_id = data.get('user', {}).get('id')
+            success = bool(self.hospital_admin_token)
+            self.log_test("Hospital Admin Login", success, "Hospital admin authenticated")
+            return success
+        else:
+            self.log_test("Hospital Admin Login", False, f"Status: {response.status_code}")
+            return False
+
+    def test_hospital_admin_get_my_organization(self):
+        """Test hospital admin getting their organization"""
+        if not hasattr(self, 'hospital_admin_token') or not self.hospital_admin_token:
+            self.log_test("Hospital Admin Get My Organization", False, "No hospital admin token")
+            return False
+        
+        # Temporarily switch to hospital admin token
+        original_token = self.token
+        self.token = self.hospital_admin_token
+        
+        response, error = self.make_request('GET', 'organizations/my-organization')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Hospital Admin Get My Organization", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_org = 'organization' in data
+            org = data.get('organization', {})
+            has_org_details = bool(org.get('name')) and bool(org.get('id'))
+            success = has_org and has_org_details
+            self.log_test("Hospital Admin Get My Organization", success, f"Org: {org.get('name')}")
+            return success
+        else:
+            self.log_test("Hospital Admin Get My Organization", False, f"Status: {response.status_code}")
+            return False
+
+    def test_hospital_admin_create_staff(self):
+        """Test hospital admin creating staff account"""
+        if not hasattr(self, 'hospital_admin_token') or not self.hospital_admin_token:
+            self.log_test("Hospital Admin Create Staff", False, "No hospital admin token")
+            return False
+        
+        # Temporarily switch to hospital admin token
+        original_token = self.token
+        self.token = self.hospital_admin_token
+        
+        staff_data = {
+            "email": "doctor@testgeneral.com",
+            "first_name": "Jane",
+            "last_name": "Doctor",
+            "role": "physician",
+            "department": "Internal Medicine"
+        }
+        
+        response, error = self.make_request('POST', 'organizations/staff/create', staff_data)
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Hospital Admin Create Staff", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_user_id = bool(data.get('user_id'))
+            has_temp_password = bool(data.get('temp_password'))
+            success = has_user_id and has_temp_password
+            if success:
+                self.test_staff_email = data.get('email')
+                self.test_staff_temp_password = data.get('temp_password')
+            self.log_test("Hospital Admin Create Staff", success, f"Staff ID: {data.get('user_id')}")
+            return success
+        else:
+            self.log_test("Hospital Admin Create Staff", False, f"Status: {response.status_code}")
+            return False
+
+    def test_hospital_admin_list_staff(self):
+        """Test hospital admin listing staff"""
+        if not hasattr(self, 'hospital_admin_token') or not self.hospital_admin_token:
+            self.log_test("Hospital Admin List Staff", False, "No hospital admin token")
+            return False
+        
+        # Temporarily switch to hospital admin token
+        original_token = self.token
+        self.token = self.hospital_admin_token
+        
+        response, error = self.make_request('GET', 'organizations/staff')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Hospital Admin List Staff", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_staff = 'staff' in data
+            has_count = 'count' in data
+            success = has_staff and has_count
+            staff_count = data.get('count', 0)
+            self.log_test("Hospital Admin List Staff", success, f"Found {staff_count} staff members")
+            return success
+        else:
+            self.log_test("Hospital Admin List Staff", False, f"Status: {response.status_code}")
+            return False
+
+    def test_hospital_admin_invite_staff(self):
+        """Test hospital admin inviting staff"""
+        if not hasattr(self, 'hospital_admin_token') or not self.hospital_admin_token:
+            self.log_test("Hospital Admin Invite Staff", False, "No hospital admin token")
+            return False
+        
+        # Temporarily switch to hospital admin token
+        original_token = self.token
+        self.token = self.hospital_admin_token
+        
+        staff_data = {
+            "email": "nurse@testgeneral.com",
+            "first_name": "Mary",
+            "last_name": "Nurse",
+            "role": "nurse",
+            "department": "Emergency"
+        }
+        
+        response, error = self.make_request('POST', 'organizations/staff/invite', staff_data)
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Hospital Admin Invite Staff", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_invitation_id = bool(data.get('invitation_id'))
+            has_invitation_token = bool(data.get('invitation_token'))
+            has_link = bool(data.get('invitation_link'))
+            success = has_invitation_id and has_invitation_token and has_link
+            self.log_test("Hospital Admin Invite Staff", success, f"Invitation ID: {data.get('invitation_id')}")
+            return success
+        else:
+            self.log_test("Hospital Admin Invite Staff", False, f"Status: {response.status_code}")
+            return False
+
+    def test_data_isolation_verification(self):
+        """Test data isolation between organizations"""
+        # This test verifies that users from different organizations cannot see each other's data
+        
+        # First, create a patient with hospital admin
+        if not hasattr(self, 'hospital_admin_token') or not self.hospital_admin_token:
+            self.log_test("Data Isolation Verification", False, "No hospital admin token")
+            return False
+        
+        # Switch to hospital admin token and create patient
+        original_token = self.token
+        self.token = self.hospital_admin_token
+        
+        patient_data = {
+            "first_name": "Hospital",
+            "last_name": "Patient",
+            "date_of_birth": "1990-01-01",
+            "gender": "male",
+            "email": "hospital.patient@test.com"
+        }
+        
+        response, error = self.make_request('POST', 'patients', patient_data)
+        if error or response.status_code != 200:
+            self.token = original_token
+            self.log_test("Data Isolation Verification", False, "Failed to create hospital patient")
+            return False
+        
+        hospital_patient_id = response.json().get('id')
+        
+        # Switch back to regular user (different org) and try to access hospital patient
+        self.token = original_token
+        
+        response, error = self.make_request('GET', f'patients/{hospital_patient_id}')
+        
+        # Should get 404 or 403 since patient belongs to different org
+        isolation_working = response.status_code in [403, 404]
+        
+        self.log_test("Data Isolation Verification", isolation_working, 
+                     f"Cross-org access blocked: {response.status_code}")
+        return isolation_working
+
     def run_all_tests(self):
         """Run comprehensive backend API tests"""
         print("🏥 Starting Yacco EMR Backend API Tests")
