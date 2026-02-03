@@ -414,6 +414,9 @@ def create_telehealth_endpoints(db, get_current_user):
         
         await db["telehealth_sessions"].insert_one(session_dict)
         
+        # Remove MongoDB _id field if it exists
+        session_dict.pop('_id', None)
+        
         # Update appointment type
         await db["appointments"].update_one(
             {"id": appointment_id},
