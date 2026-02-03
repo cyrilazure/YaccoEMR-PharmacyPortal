@@ -178,6 +178,7 @@ class ProblemCreate(BaseModel):
 class Problem(ProblemCreate):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    organization_id: Optional[str] = None
     created_by: str = ""
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -197,6 +198,7 @@ class MedicationCreate(BaseModel):
 class Medication(MedicationCreate):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    organization_id: Optional[str] = None
     created_by: str = ""
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -211,6 +213,7 @@ class AllergyCreate(BaseModel):
 class Allergy(AllergyCreate):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    organization_id: Optional[str] = None
     created_by: str = ""
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -228,6 +231,7 @@ class ClinicalNoteCreate(BaseModel):
 class ClinicalNote(ClinicalNoteCreate):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    organization_id: Optional[str] = None
     author_id: str = ""
     author_name: str = ""
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -246,6 +250,7 @@ class OrderCreate(BaseModel):
 class Order(OrderCreate):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    organization_id: Optional[str] = None
     status: OrderStatus = OrderStatus.PENDING
     ordered_by: str = ""
     ordered_by_name: str = ""
