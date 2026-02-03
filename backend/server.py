@@ -483,6 +483,8 @@ async def create_patient(patient_data: PatientCreate, current_user: dict = Depen
     patient_dict = patient.model_dump()
     patient_dict["created_at"] = patient_dict["created_at"].isoformat()
     patient_dict["updated_at"] = patient_dict["updated_at"].isoformat()
+    # Add organization_id from current user
+    patient_dict["organization_id"] = current_user.get("organization_id")
     await db.patients.insert_one(patient_dict)
     return PatientResponse(**patient_dict)
 
@@ -491,28 +493,48 @@ async def get_patients(
     search: Optional[str] = None,
     current_user: dict = Depends(get_current_user)
 ):
+    # Filter by organization_id (unless super_admin)
     query = {}
+    org_id = current_user.get("organization_id")
+    if org_id and current_user.get("role") != "super_admin":
+        query["organization_id"] = org_id
+    
     if search:
-        query = {
+        search_query = {
             "$or": [
                 {"first_name": {"$regex": search, "$options": "i"}},
                 {"last_name": {"$regex": search, "$options": "i"}},
                 {"mrn": {"$regex": search, "$options": "i"}}
             ]
         }
+        if query:
+            query = {"$and": [query, search_query]}
+        else:
+            query = search_query
+    
     patients = await db.patients.find(query, {"_id": 0}).to_list(1000)
     return [PatientResponse(**p) for p in patients]
 
 @api_router.get("/patients/{patient_id}", response_model=PatientResponse)
 async def get_patient(patient_id: str, current_user: dict = Depends(get_current_user)):
-    patient = await db.patients.find_one({"id": patient_id}, {"_id": 0})
+    query = {"id": patient_id}
+    org_id = current_user.get("organization_id")
+    if org_id and current_user.get("role") != "super_admin":
+        query["organization_id"] = org_id
+    
+    patient = await db.patients.find_one(query, {"_id": 0})
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
     return PatientResponse(**patient)
 
 @api_router.put("/patients/{patient_id}", response_model=PatientResponse)
 async def update_patient(patient_id: str, patient_data: PatientCreate, current_user: dict = Depends(get_current_user)):
-    patient = await db.patients.find_one({"id": patient_id})
+    query = {"id": patient_id}
+    org_id = current_user.get("organization_id")
+    if org_id and current_user.get("role") != "super_admin":
+        query["organization_id"] = org_id
+    
+    patient = await db.patients.find_one(query)
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
     
