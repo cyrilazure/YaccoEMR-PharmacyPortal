@@ -651,6 +651,19 @@ class YaccoEMRTester:
         # AI functionality
         self.test_ai_note_generation()
         
+        # FHIR R4 API Tests
+        print("\n🔗 Testing FHIR R4 Interoperability APIs")
+        print("-" * 30)
+        self.test_fhir_capability_statement()
+        self.test_fhir_patient_bundle()
+        self.test_fhir_observation_bundle()
+        self.test_fhir_condition_bundle()
+        self.test_fhir_medication_request_bundle()
+        self.test_fhir_allergy_intolerance_bundle()
+        self.test_fhir_service_request_bundle()
+        self.test_fhir_appointment_bundle()
+        self.test_fhir_patient_by_id()
+        
         # Print summary
         print("\n" + "=" * 50)
         print(f"📊 Test Summary: {self.tests_passed}/{self.tests_run} tests passed")
