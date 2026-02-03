@@ -50,10 +50,12 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* Public Routes - Separate Portals */}
+          {/* Customer-Facing Portal (Hospitals & Staff) */}
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/platform" element={<SuperAdminLogin />} />
           <Route path="/register-hospital" element={<HospitalRegistration />} />
+          
+          {/* Hidden Super Admin Portal - Only owner knows this URL */}
+          <Route path="/yacco-owner-admin" element={<SuperAdminLogin />} />
           
           {/* Protected Routes */}
           <Route path="/" element={<Layout />}>
