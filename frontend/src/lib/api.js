@@ -113,4 +113,42 @@ export const aiAPI = {
   generateNote: (data) => api.post('/ai/generate-note', data),
 };
 
+// Lab APIs
+export const labAPI = {
+  // Orders
+  createOrder: (data) => api.post('/lab/orders', data),
+  getPatientOrders: (patientId) => api.get(`/lab/orders/${patientId}`),
+  getAllOrders: (params) => api.get('/lab/orders', { params }),
+  updateOrderStatus: (orderId, status) => api.put(`/lab/orders/${orderId}/status`, null, { params: { status } }),
+  // Results
+  simulateResults: (orderId, scenario = 'normal') => api.post(`/lab/results/simulate/${orderId}`, null, { params: { scenario } }),
+  getPatientResults: (patientId, panelCode) => api.get(`/lab/results/${patientId}`, { params: { panel_code: panelCode } }),
+  getResultByOrder: (orderId) => api.get(`/lab/results/order/${orderId}`),
+  // Panels & Definitions
+  getPanels: () => api.get('/lab/panels'),
+  getTestDefinitions: (category) => api.get('/lab/test-definitions', { params: { category } }),
+  // HL7 ORU
+  receiveHL7ORU: (message) => api.post('/lab/hl7/oru', message),
+};
+
+// Telehealth APIs
+export const telehealthAPI = {
+  // Configuration
+  getConfig: () => api.get('/telehealth/config'),
+  // Sessions
+  createSession: (data) => api.post('/telehealth/sessions', data),
+  getSessions: (params) => api.get('/telehealth/sessions', { params }),
+  getSession: (sessionId) => api.get(`/telehealth/sessions/${sessionId}`),
+  joinSession: (sessionId, data) => api.post(`/telehealth/sessions/${sessionId}/join`, data),
+  startSession: (sessionId) => api.post(`/telehealth/sessions/${sessionId}/start`),
+  endSession: (sessionId, notes) => api.post(`/telehealth/sessions/${sessionId}/end`, null, { params: { notes } }),
+  updateStatus: (sessionId, status) => api.put(`/telehealth/sessions/${sessionId}/status`, null, { params: { status } }),
+  getParticipants: (sessionId) => api.get(`/telehealth/sessions/${sessionId}/participants`),
+  createFromAppointment: (appointmentId) => api.post(`/telehealth/sessions/from-appointment/${appointmentId}`),
+  getUpcoming: () => api.get('/telehealth/upcoming'),
+  // Dyte (when enabled)
+  createDyteMeeting: (sessionId) => api.post('/telehealth/dyte/create-meeting', null, { params: { session_id: sessionId } }),
+  getDyteStatus: () => api.get('/telehealth/dyte/status'),
+};
+
 export default api;
