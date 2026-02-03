@@ -27,6 +27,11 @@ class YaccoEMRTester:
         self.hospital_admin_temp_password = None
         self.test_staff_email = None
         self.test_staff_temp_password = None
+        # Enhanced JWT Authentication variables
+        self.enhanced_auth_token = None
+        self.enhanced_refresh_token = None
+        self.enhanced_session_id = None
+        self.enhanced_user_id = None
 
     def log_test(self, name, success, details=""):
         """Log test result"""
