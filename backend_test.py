@@ -953,8 +953,11 @@ class YaccoEMRTester:
     
     def test_organization_self_registration(self):
         """Test self-service hospital registration"""
+        import time
+        timestamp = str(int(time.time()))
+        
         org_data = {
-            "name": "Test General Hospital",
+            "name": f"Test General Hospital {timestamp}",
             "organization_type": "hospital",
             "address_line1": "123 Medical Drive",
             "city": "Test City",
@@ -962,11 +965,11 @@ class YaccoEMRTester:
             "zip_code": "90210",
             "country": "USA",
             "phone": "555-123-4567",
-            "email": "admin@testgeneral.com",
-            "license_number": "LIC-12345",
+            "email": f"admin{timestamp}@testgeneral.com",
+            "license_number": f"LIC-{timestamp}",
             "admin_first_name": "John",
             "admin_last_name": "Admin",
-            "admin_email": "john@testgeneral.com",
+            "admin_email": f"john{timestamp}@testgeneral.com",
             "admin_phone": "555-111-2222"
         }
         
