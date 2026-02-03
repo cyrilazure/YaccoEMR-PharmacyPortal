@@ -1444,6 +1444,499 @@ class YaccoEMRTester:
                      f"Cross-org access blocked: {response.status_code}")
         return isolation_working
 
+    # ============ PHARMACY MODULE TESTS ============
+    
+    def test_pharmacy_drug_database(self):
+        """Test getting drug database"""
+        response, error = self.make_request('GET', 'pharmacy/drugs')
+        if error:
+            self.log_test("Pharmacy Drug Database", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_drugs = 'drugs' in data and len(data['drugs']) > 0
+            has_total = 'total' in data
+            success = has_drugs and has_total
+            self.log_test("Pharmacy Drug Database", success, f"Found {data.get('total', 0)} drugs")
+            return success
+        else:
+            self.log_test("Pharmacy Drug Database", False, f"Status: {response.status_code}")
+            return False
+
+    def test_pharmacy_frequencies(self):
+        """Test getting dosage frequencies"""
+        response, error = self.make_request('GET', 'pharmacy/frequencies')
+        if error:
+            self.log_test("Pharmacy Frequencies", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_frequencies = 'frequencies' in data and len(data['frequencies']) > 0
+            success = has_frequencies
+            self.log_test("Pharmacy Frequencies", success, f"Found {len(data.get('frequencies', []))} frequencies")
+            return success
+        else:
+            self.log_test("Pharmacy Frequencies", False, f"Status: {response.status_code}")
+            return False
+
+    def test_pharmacy_registration(self):
+        """Test pharmacy registration"""
+        import time
+        timestamp = str(int(time.time()))
+        
+        pharmacy_data = {
+            "name": f"Test Pharmacy {timestamp}",
+            "license_number": f"PH-{timestamp}",
+            "email": f"pharmacy{timestamp}@test.com",
+            "password": "pharmacy123",
+            "phone": "555-PHARMACY",
+            "address": "123 Pharmacy St",
+            "city": "Pharmacy City",
+            "state": "CA",
+            "zip_code": "90210",
+            "operating_hours": "9:00 AM - 9:00 PM",
+            "accepts_insurance": True,
+            "delivery_available": False
+        }
+        
+        response, error = self.make_request('POST', 'pharmacy/register', pharmacy_data)
+        if error:
+            self.log_test("Pharmacy Registration", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_pharmacy_id = bool(data.get('pharmacy_id'))
+            status_pending = data.get('status') == 'pending'
+            success = has_pharmacy_id and status_pending
+            self.log_test("Pharmacy Registration", success, f"Status: {data.get('status')}")
+            return success
+        else:
+            self.log_test("Pharmacy Registration", False, f"Status: {response.status_code}")
+            return False
+
+    def test_pharmacy_get_all(self):
+        """Test getting all approved pharmacies"""
+        response, error = self.make_request('GET', 'pharmacy/all')
+        if error:
+            self.log_test("Get All Pharmacies", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_pharmacies = 'pharmacies' in data
+            has_count = 'count' in data
+            success = has_pharmacies and has_count
+            self.log_test("Get All Pharmacies", success, f"Found {data.get('count', 0)} pharmacies")
+            return success
+        else:
+            self.log_test("Get All Pharmacies", False, f"Status: {response.status_code}")
+            return False
+
+    def test_pharmacy_search_by_medication(self):
+        """Test searching pharmacies by medication"""
+        response, error = self.make_request('GET', 'pharmacy/search/by-medication', params={'medication_name': 'Lisinopril'})
+        if error:
+            self.log_test("Pharmacy Search by Medication", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_pharmacies = 'pharmacies' in data
+            has_count = 'count' in data
+            success = has_pharmacies and has_count
+            self.log_test("Pharmacy Search by Medication", success, f"Found {data.get('count', 0)} pharmacies with Lisinopril")
+            return success
+        else:
+            self.log_test("Pharmacy Search by Medication", False, f"Status: {response.status_code}")
+            return False
+
+    def test_pharmacy_create_prescription(self):
+        """Test creating prescription (requires auth)"""
+        if not self.test_patient_id:
+            self.log_test("Pharmacy Create Prescription", False, "No test patient available")
+            return False
+        
+        prescription_data = {
+            "patient_id": self.test_patient_id,
+            "patient_name": "John Doe",
+            "medication_name": "Lisinopril",
+            "generic_name": "Lisinopril",
+            "dosage": "10mg",
+            "frequency": "once daily",
+            "quantity": 30,
+            "refills": 2,
+            "instructions": "Take with food",
+            "diagnosis": "Hypertension",
+            "pharmacy_id": "test-pharmacy-id"
+        }
+        
+        response, error = self.make_request('POST', 'pharmacy/prescriptions', prescription_data)
+        if error:
+            self.log_test("Pharmacy Create Prescription", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_prescription_number = bool(data.get('prescription_number'))
+            has_prescription_id = bool(data.get('prescription_id'))
+            success = has_prescription_number and has_prescription_id
+            self.log_test("Pharmacy Create Prescription", success, f"Prescription: {data.get('prescription_number')}")
+            return success
+        else:
+            self.log_test("Pharmacy Create Prescription", False, f"Status: {response.status_code}")
+            return False
+
+    # ============ BILLING MODULE TESTS ============
+    
+    def test_billing_service_codes(self):
+        """Test getting CPT service codes"""
+        response, error = self.make_request('GET', 'billing/service-codes')
+        if error:
+            self.log_test("Billing Service Codes", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_codes = 'service_codes' in data and len(data['service_codes']) > 0
+            success = has_codes
+            self.log_test("Billing Service Codes", success, f"Found {len(data.get('service_codes', []))} service codes")
+            return success
+        else:
+            self.log_test("Billing Service Codes", False, f"Status: {response.status_code}")
+            return False
+
+    def test_billing_create_invoice(self):
+        """Test creating invoice (requires auth)"""
+        if not self.test_patient_id:
+            self.log_test("Billing Create Invoice", False, "No test patient available")
+            return False
+        
+        invoice_data = {
+            "patient_id": self.test_patient_id,
+            "patient_name": "John Doe",
+            "line_items": [
+                {
+                    "description": "Office visit, established, moderate",
+                    "service_code": "99213",
+                    "quantity": 1,
+                    "unit_price": 100.00,
+                    "discount": 0
+                },
+                {
+                    "description": "Complete blood count (CBC)",
+                    "service_code": "85025",
+                    "quantity": 1,
+                    "unit_price": 35.00,
+                    "discount": 0
+                }
+            ],
+            "notes": "Regular follow-up visit with lab work"
+        }
+        
+        response, error = self.make_request('POST', 'billing/invoices', invoice_data)
+        if error:
+            self.log_test("Billing Create Invoice", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_invoice_id = bool(data.get('invoice_id'))
+            has_invoice_number = bool(data.get('invoice_number'))
+            has_total = 'total' in data
+            success = has_invoice_id and has_invoice_number and has_total
+            self.log_test("Billing Create Invoice", success, f"Invoice: {data.get('invoice_number')}, Total: ${data.get('total', 0)}")
+            return success
+        else:
+            self.log_test("Billing Create Invoice", False, f"Status: {response.status_code}")
+            return False
+
+    def test_billing_get_invoices(self):
+        """Test getting invoices (requires auth)"""
+        response, error = self.make_request('GET', 'billing/invoices')
+        if error:
+            self.log_test("Billing Get Invoices", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_invoices = 'invoices' in data
+            has_count = 'count' in data
+            success = has_invoices and has_count
+            self.log_test("Billing Get Invoices", success, f"Found {data.get('count', 0)} invoices")
+            return success
+        else:
+            self.log_test("Billing Get Invoices", False, f"Status: {response.status_code}")
+            return False
+
+    def test_billing_paystack_config(self):
+        """Test getting Paystack config"""
+        response, error = self.make_request('GET', 'billing/paystack/config')
+        if error:
+            self.log_test("Billing Paystack Config", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_public_key = 'public_key' in data
+            has_enabled = 'enabled' in data
+            success = has_public_key and has_enabled
+            self.log_test("Billing Paystack Config", success, f"Enabled: {data.get('enabled', False)}")
+            return success
+        else:
+            self.log_test("Billing Paystack Config", False, f"Status: {response.status_code}")
+            return False
+
+    def test_billing_stats(self):
+        """Test getting billing stats (requires auth)"""
+        response, error = self.make_request('GET', 'billing/stats')
+        if error:
+            self.log_test("Billing Stats", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            required_fields = ['total_billed', 'total_collected', 'total_outstanding', 'collection_rate']
+            has_all_fields = all(field in data for field in required_fields)
+            success = has_all_fields
+            self.log_test("Billing Stats", success, f"Total billed: ${data.get('total_billed', 0)}")
+            return success
+        else:
+            self.log_test("Billing Stats", False, f"Status: {response.status_code}")
+            return False
+
+    # ============ REPORTS MODULE TESTS ============
+    
+    def test_reports_types_list(self):
+        """Test getting report types"""
+        response, error = self.make_request('GET', 'reports/types/list')
+        if error:
+            self.log_test("Reports Types List", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_types = 'report_types' in data and len(data['report_types']) > 0
+            success = has_types
+            self.log_test("Reports Types List", success, f"Found {len(data.get('report_types', []))} report types")
+            return success
+        else:
+            self.log_test("Reports Types List", False, f"Status: {response.status_code}")
+            return False
+
+    def test_reports_generate(self):
+        """Test generating report (requires auth)"""
+        if not self.test_patient_id:
+            self.log_test("Reports Generate", False, "No test patient available")
+            return False
+        
+        report_data = {
+            "patient_id": self.test_patient_id,
+            "report_type": "visit_summary",
+            "title": "Test Visit Summary Report",
+            "include_vitals": True,
+            "include_problems": True,
+            "include_medications": True,
+            "include_allergies": True,
+            "include_notes": True,
+            "include_orders": True,
+            "include_labs": True,
+            "additional_notes": "This is a test report generated during API testing."
+        }
+        
+        response, error = self.make_request('POST', 'reports/generate', report_data)
+        if error:
+            self.log_test("Reports Generate", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_report_id = bool(data.get('report_id'))
+            has_title = bool(data.get('title'))
+            has_content = bool(data.get('content'))
+            success = has_report_id and has_title and has_content
+            self.log_test("Reports Generate", success, f"Report ID: {data.get('report_id')}")
+            return success
+        else:
+            self.log_test("Reports Generate", False, f"Status: {response.status_code}")
+            return False
+
+    def test_reports_get_patient_reports(self):
+        """Test getting patient reports (requires auth)"""
+        if not self.test_patient_id:
+            self.log_test("Reports Get Patient Reports", False, "No test patient available")
+            return False
+        
+        response, error = self.make_request('GET', f'reports/patient/{self.test_patient_id}')
+        if error:
+            self.log_test("Reports Get Patient Reports", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_reports = 'reports' in data
+            has_count = 'count' in data
+            success = has_reports and has_count
+            self.log_test("Reports Get Patient Reports", success, f"Found {data.get('count', 0)} reports")
+            return success
+        else:
+            self.log_test("Reports Get Patient Reports", False, f"Status: {response.status_code}")
+            return False
+
+    # ============ IMAGING MODULE TESTS ============
+    
+    def test_imaging_modalities(self):
+        """Test getting imaging modalities"""
+        response, error = self.make_request('GET', 'imaging/modalities')
+        if error:
+            self.log_test("Imaging Modalities", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_modalities = 'modalities' in data and len(data['modalities']) > 0
+            success = has_modalities
+            self.log_test("Imaging Modalities", success, f"Found {len(data.get('modalities', []))} modalities")
+            return success
+        else:
+            self.log_test("Imaging Modalities", False, f"Status: {response.status_code}")
+            return False
+
+    def test_imaging_create_study(self):
+        """Test creating imaging study (requires auth)"""
+        if not self.test_patient_id:
+            self.log_test("Imaging Create Study", False, "No test patient available")
+            return False
+        
+        study_data = {
+            "patient_id": self.test_patient_id,
+            "patient_name": "John Doe",
+            "modality": "CR",
+            "study_description": "Chest X-Ray PA and Lateral",
+            "body_part": "Chest",
+            "clinical_history": "Cough and shortness of breath"
+        }
+        
+        response, error = self.make_request('POST', 'imaging/studies', study_data)
+        if error:
+            self.log_test("Imaging Create Study", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_study_id = bool(data.get('study_id'))
+            has_study_uid = bool(data.get('study_instance_uid'))
+            success = has_study_id and has_study_uid
+            self.log_test("Imaging Create Study", success, f"Study ID: {data.get('study_id')}")
+            return success
+        else:
+            self.log_test("Imaging Create Study", False, f"Status: {response.status_code}")
+            return False
+
+    def test_imaging_get_studies(self):
+        """Test getting imaging studies (requires auth)"""
+        response, error = self.make_request('GET', 'imaging/studies')
+        if error:
+            self.log_test("Imaging Get Studies", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_studies = 'studies' in data
+            has_count = 'count' in data
+            success = has_studies and has_count
+            self.log_test("Imaging Get Studies", success, f"Found {data.get('count', 0)} studies")
+            return success
+        else:
+            self.log_test("Imaging Get Studies", False, f"Status: {response.status_code}")
+            return False
+
+    # ============ CLINICAL DECISION SUPPORT TESTS ============
+    
+    def test_cds_check_interactions(self):
+        """Test checking drug interactions"""
+        interaction_data = {
+            "medications": ["warfarin", "lisinopril"],
+            "new_medication": "ibuprofen"
+        }
+        
+        response, error = self.make_request('POST', 'cds/check-interactions', interaction_data)
+        if error:
+            self.log_test("CDS Check Interactions", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_alerts = 'has_alerts' in data
+            has_alert_count = 'alert_count' in data
+            has_alerts_array = 'alerts' in data
+            success = has_alerts and has_alert_count and has_alerts_array
+            self.log_test("CDS Check Interactions", success, f"Found {data.get('alert_count', 0)} alerts")
+            return success
+        else:
+            self.log_test("CDS Check Interactions", False, f"Status: {response.status_code}")
+            return False
+
+    def test_cds_check_allergy(self):
+        """Test checking allergy interactions"""
+        allergy_data = {
+            "patient_allergies": ["penicillin", "sulfa"],
+            "medication": "amoxicillin"
+        }
+        
+        response, error = self.make_request('POST', 'cds/check-allergy', allergy_data)
+        if error:
+            self.log_test("CDS Check Allergy", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_alerts = 'has_alerts' in data
+            has_safe_to_prescribe = 'safe_to_prescribe' in data
+            has_alerts_array = 'alerts' in data
+            success = has_alerts and has_safe_to_prescribe and has_alerts_array
+            self.log_test("CDS Check Allergy", success, f"Safe to prescribe: {data.get('safe_to_prescribe', False)}")
+            return success
+        else:
+            self.log_test("CDS Check Allergy", False, f"Status: {response.status_code}")
+            return False
+
+    def test_cds_drug_classes(self):
+        """Test getting drug classes"""
+        response, error = self.make_request('GET', 'cds/drug-classes')
+        if error:
+            self.log_test("CDS Drug Classes", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_classes = 'drug_classes' in data and len(data['drug_classes']) > 0
+            success = has_classes
+            self.log_test("CDS Drug Classes", success, f"Found {len(data.get('drug_classes', []))} drug classes")
+            return success
+        else:
+            self.log_test("CDS Drug Classes", False, f"Status: {response.status_code}")
+            return False
+
+    def test_cds_common_allergies(self):
+        """Test getting common allergies"""
+        response, error = self.make_request('GET', 'cds/common-allergies')
+        if error:
+            self.log_test("CDS Common Allergies", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_allergies = 'allergies' in data and len(data['allergies']) > 0
+            success = has_allergies
+            self.log_test("CDS Common Allergies", success, f"Found {len(data.get('allergies', []))} common allergies")
+            return success
+        else:
+            self.log_test("CDS Common Allergies", False, f"Status: {response.status_code}")
+            return False
+
     def run_all_tests(self):
         """Run comprehensive backend API tests"""
         print("🏥 Starting Yacco EMR Backend API Tests")
@@ -1482,6 +1975,43 @@ class YaccoEMRTester:
         
         # AI functionality
         self.test_ai_note_generation()
+        
+        # ============ NEW MODULE TESTS ============
+        print("\n💊 Testing Pharmacy Module")
+        print("-" * 30)
+        self.test_pharmacy_drug_database()
+        self.test_pharmacy_frequencies()
+        self.test_pharmacy_registration()
+        self.test_pharmacy_get_all()
+        self.test_pharmacy_search_by_medication()
+        self.test_pharmacy_create_prescription()
+        
+        print("\n💰 Testing Billing Module")
+        print("-" * 30)
+        self.test_billing_service_codes()
+        self.test_billing_create_invoice()
+        self.test_billing_get_invoices()
+        self.test_billing_paystack_config()
+        self.test_billing_stats()
+        
+        print("\n📋 Testing Reports Module")
+        print("-" * 30)
+        self.test_reports_types_list()
+        self.test_reports_generate()
+        self.test_reports_get_patient_reports()
+        
+        print("\n🏥 Testing Imaging Module")
+        print("-" * 30)
+        self.test_imaging_modalities()
+        self.test_imaging_create_study()
+        self.test_imaging_get_studies()
+        
+        print("\n⚠️ Testing Clinical Decision Support")
+        print("-" * 30)
+        self.test_cds_check_interactions()
+        self.test_cds_check_allergy()
+        self.test_cds_drug_classes()
+        self.test_cds_common_allergies()
         
         # ============ LAB RESULTS MODULE TESTS ============
         print("\n🧪 Testing Lab Results Module")
