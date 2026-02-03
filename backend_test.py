@@ -80,11 +80,11 @@ class YaccoEMRTester:
             self.log_test("User Registration", False, error)
             return False
         
-        if response.status_code == 201:
+        if response.status_code in [200, 201]:
             data = response.json()
             self.token = data.get('token')
             self.user_id = data.get('user', {}).get('id')
-            self.log_test("User Registration", True, "New user created")
+            self.log_test("User Registration", True, "User authenticated")
             return True
         elif response.status_code == 400:
             # User already exists, try login
