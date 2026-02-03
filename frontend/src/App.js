@@ -50,8 +50,12 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
+          {/* Public Routes - Separate Portals */}
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/platform" element={<SuperAdminLogin />} />
           <Route path="/register-hospital" element={<HospitalRegistration />} />
+          
+          {/* Protected Routes */}
           <Route path="/" element={<Layout />}>
             <Route index element={<RoleBasedRedirect />} />
             {/* Super Admin Dashboard */}
