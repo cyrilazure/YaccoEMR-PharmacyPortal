@@ -23,6 +23,7 @@ import SuperAdminLogin from "@/pages/SuperAdminLogin";
 import HospitalSettings from "@/pages/HospitalSettings";
 import HospitalRegistration from "@/pages/HospitalRegistration";
 import BillingPage from "@/pages/BillingPage";
+import RecordsSharing from "@/pages/RecordsSharing";
 
 // Role-based redirect component
 function RoleBasedRedirect() {
