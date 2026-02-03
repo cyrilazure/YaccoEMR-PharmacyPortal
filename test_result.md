@@ -824,6 +824,51 @@ agent_communication:
       - Notifications
       
       Please test the new Department and Consent APIs.
+  - agent: "main"
+    message: |
+      Implemented Enhanced JWT Authentication System (auth_module.py):
+      
+      **JWT Token Features:**
+      - Complete JWT claims structure (iss, sub, aud, exp, nbf, iat, jti)
+      - Custom claims: role, org_id, dept_id, permissions, groups
+      - Security metadata: ip_hash, device_id, session_id
+      - Token types: ACCESS, REFRESH, API_KEY, PASSWORD_RESET
+      
+      **Security Features:**
+      - 30-minute access tokens (healthcare standard)
+      - 7-day refresh tokens (optional with remember_me)
+      - Account lockout after 5 failed attempts
+      - Password validation (12+ chars, special, numbers, uppercase)
+      - Password history (can't reuse last 12 passwords)
+      - Session management (max 5 sessions per user)
+      
+      **Group-Based Permissions:**
+      - 8 permission groups (clinical_full, clinical_read, admin_full, etc.)
+      - Groups expand to individual permissions
+      - Combined with direct user permissions
+      
+      **Organization Isolation:**
+      - Token includes org_id for multi-tenancy
+      - Organization status checked at login
+      - Super admin bypasses org checks
+      
+      **MFA-Ready Architecture:**
+      - TOTP verification integrated with login
+      - Required for specific roles (super_admin, hospital_admin)
+      - Backup code support
+      
+      **Endpoints:**
+      - POST /api/auth/login/enhanced - Full login with all features
+      - POST /api/auth/refresh - Token refresh
+      - POST /api/auth/logout, /logout/all - Session termination
+      - GET /api/auth/sessions - View active sessions
+      - DELETE /api/auth/sessions/{id} - Revoke session
+      - POST /api/auth/password/change - Change password
+      - POST /api/auth/validate - Validate token
+      - GET /api/auth/permissions/check/{perm} - Check permission
+      - GET /api/auth/groups - List permission groups
+      
+      Please test the enhanced authentication system.
   - agent: "testing"
     message: |
       ✅ DEPARTMENT AND CONSENT MODULES TESTING COMPLETE - ALL CORE FEATURES WORKING (18/20 tests passed - 90% success rate)
