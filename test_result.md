@@ -520,75 +520,93 @@ agent_communication:
 backend:
   - task: "Password Reset APIs"
     implemented: true
-    working: "NA"
+    working: true
     file: "backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Added password reset endpoints - request, confirm, change password"
+      - working: true
+        agent: "testing"
+        comment: "✅ Password reset APIs working correctly - request, confirm, and change password endpoints functional"
   
   - task: "Pharmacy Module APIs"
     implemented: true
-    working: "NA"
+    working: true
     file: "backend/pharmacy_module.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Complete pharmacy portal with registration, inventory, prescriptions"
+      - working: true
+        agent: "testing"
+        comment: "✅ Pharmacy Module APIs working correctly - drug database (30+ medications), dosage frequencies, pharmacy registration, search by medication, and prescription creation all functional"
   
   - task: "Billing Module APIs"
     implemented: true
-    working: "NA"
+    working: true
     file: "backend/billing_module.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Invoice management, Paystack integration, insurance claims"
+      - working: true
+        agent: "testing"
+        comment: "✅ Billing Module APIs working correctly - CPT service codes, invoice CRUD, Paystack payment integration, and billing statistics all functional"
   
   - task: "Reports Module APIs"
     implemented: true
-    working: "NA"
+    working: true
     file: "backend/reports_module.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Report generation including AI-assisted with Emergent LLM"
+      - working: true
+        agent: "testing"
+        comment: "✅ Reports Module APIs working correctly - report types list, structured report generation, and patient report retrieval all functional"
   
   - task: "Imaging/DICOM Module APIs"
     implemented: true
-    working: "NA"
+    working: true
     file: "backend/imaging_module.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "DICOM study management and file upload"
+      - working: true
+        agent: "testing"
+        comment: "✅ Imaging Module APIs working correctly - imaging modalities list, study creation, and study retrieval all functional"
   
   - task: "Clinical Decision Support APIs"
     implemented: true
-    working: "NA"
+    working: true
     file: "backend/cds_module.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Drug interaction and allergy checking endpoints"
+      - working: true
+        agent: "testing"
+        comment: "✅ Clinical Decision Support APIs working correctly - drug interaction checking, allergy cross-reactivity alerts, drug classes, and common allergies all functional"
 
 frontend:
   - task: "Forgot Password Page"
