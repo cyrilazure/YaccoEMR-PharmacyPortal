@@ -17,7 +17,7 @@ import {
   Activity, LayoutDashboard, Users, FileText, Calendar,
   ClipboardList, Settings, LogOut, ChevronLeft, ChevronRight,
   Pill, AlertTriangle, Stethoscope, BarChart3, Heart, UserCog, Shield, Video,
-  Building2, Globe, CreditCard, Share2
+  Building2, Globe, CreditCard, Share2, ShieldCheck, FileSearch
 } from 'lucide-react';
 
 const navItems = [
@@ -38,6 +38,8 @@ const navItems = [
   { to: '/records-sharing', icon: Share2, label: 'Records Sharing', roles: ['physician', 'hospital_admin'] },
   { to: '/billing', icon: CreditCard, label: 'Billing', roles: ['physician', 'admin', 'hospital_admin'] },
   { to: '/analytics', icon: BarChart3, label: 'Analytics', roles: ['physician', 'admin', 'hospital_admin', 'super_admin'] },
+  // Security & Audit - Admin roles
+  { to: '/audit-logs', icon: FileSearch, label: 'Audit Logs', roles: ['admin', 'hospital_admin', 'super_admin'] },
 ];
 
 export default function Layout() {
