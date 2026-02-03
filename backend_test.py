@@ -1559,6 +1559,20 @@ class YaccoEMRTester:
             self.log_test("Pharmacy Create Prescription", False, "No test patient available")
             return False
         
+        # First get available pharmacies to use a real pharmacy ID
+        pharmacy_response, error = self.make_request('GET', 'pharmacy/all')
+        if error or pharmacy_response.status_code != 200:
+            self.log_test("Pharmacy Create Prescription", False, "No pharmacies available for testing")
+            return False
+        
+        pharmacies_data = pharmacy_response.json()
+        if not pharmacies_data.get('pharmacies'):
+            self.log_test("Pharmacy Create Prescription", False, "No approved pharmacies found")
+            return False
+        
+        # Use the first available pharmacy
+        pharmacy_id = pharmacies_data['pharmacies'][0]['id']
+        
         prescription_data = {
             "patient_id": self.test_patient_id,
             "patient_name": "John Doe",
@@ -1570,7 +1584,7 @@ class YaccoEMRTester:
             "refills": 2,
             "instructions": "Take with food",
             "diagnosis": "Hypertension",
-            "pharmacy_id": "test-pharmacy-id"
+            "pharmacy_id": pharmacy_id
         }
         
         response, error = self.make_request('POST', 'pharmacy/prescriptions', prescription_data)
