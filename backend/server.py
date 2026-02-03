@@ -351,6 +351,12 @@ async def login(credentials: UserLogin):
     if not user or not verify_password(credentials.password, user["password"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
+    # Check if user's organization is active (unless super_admin)
+    if user.get("organization_id") and user.get("role") != "super_admin":
+        org = await db.organizations.find_one({"id": user["organization_id"]})
+        if org and org.get("status") != "active":
+            raise HTTPException(status_code=403, detail="Your organization is not active. Please contact support.")
+    
     token = create_token(user["id"], user["role"])
     return LoginResponse(
         token=token,
@@ -362,6 +368,7 @@ async def login(credentials: UserLogin):
             role=user["role"],
             department=user.get("department"),
             specialty=user.get("specialty"),
+            organization_id=user.get("organization_id"),
             created_at=user["created_at"],
             is_active=user["is_active"]
         )
