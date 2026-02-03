@@ -33,11 +33,24 @@ api.interceptors.response.use(
   }
 );
 
-// Auth APIs
+// Authentication APIs
 export const authAPI = {
-  login: (email, password) => api.post('/auth/login', { email, password }),
   register: (userData) => api.post('/auth/register', userData),
+  login: (email, password, totpCode = null) => api.post('/auth/login', { email, password, totp_code: totpCode }),
+  loginEnhanced: (credentials) => api.post('/auth/login/enhanced', credentials),
   getMe: () => api.get('/auth/me'),
+  refreshToken: (refreshToken) => api.post('/auth/refresh', { refresh_token: refreshToken }),
+  logout: () => api.post('/auth/logout'),
+  logoutAll: () => api.post('/auth/logout/all'),
+  validateToken: () => api.post('/auth/validate'),
+  changePassword: (currentPassword, newPassword) => api.post('/auth/password/change', { 
+    current_password: currentPassword, 
+    new_password: newPassword 
+  }),
+  getSessions: () => api.get('/auth/sessions'),
+  revokeSession: (sessionId) => api.delete(`/auth/sessions/${sessionId}`),
+  checkPermission: (permission) => api.get(`/auth/permissions/check/${permission}`),
+  getPermissionGroups: () => api.get('/auth/groups'),
 };
 
 // Patient APIs
