@@ -2890,6 +2890,489 @@ class YaccoEMRTester:
         
         return True
 
+    # ============ DEPARTMENT MODULE TESTS ============
+    
+    def test_department_types(self):
+        """Test getting department types"""
+        response, error = self.make_request('GET', 'departments/types')
+        if error:
+            self.log_test("Department Types", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_types = isinstance(data, list) and len(data) > 0
+            expected_types = ['emergency', 'icu', 'surgery', 'cardiology']
+            has_expected = any(dt.get('value') in expected_types for dt in data)
+            success = has_types and has_expected
+            self.log_test("Department Types", success, f"Found {len(data)} department types")
+            return success
+        else:
+            self.log_test("Department Types", False, f"Status: {response.status_code}")
+            return False
+
+    def test_create_hospital_admin_for_departments(self):
+        """Test creating hospital admin user for department creation"""
+        admin_data = {
+            "email": "hospitaladmin@test.com",
+            "password": "admin123",
+            "first_name": "Hospital",
+            "last_name": "Admin",
+            "role": "hospital_admin"
+        }
+        
+        response, error = self.make_request('POST', 'auth/register', admin_data)
+        if error:
+            self.log_test("Create Hospital Admin for Departments", False, error)
+            return False
+        
+        if response.status_code in [200, 201]:
+            data = response.json()
+            self.hospital_admin_token = data.get('token')
+            self.hospital_admin_id = data.get('user', {}).get('id')
+            success = bool(self.hospital_admin_token)
+            self.log_test("Create Hospital Admin for Departments", success, "Hospital admin created")
+            return success
+        elif response.status_code == 400:
+            # User already exists, try login
+            return self.test_login_hospital_admin_for_departments()
+        else:
+            self.log_test("Create Hospital Admin for Departments", False, f"Status: {response.status_code}")
+            return False
+
+    def test_login_hospital_admin_for_departments(self):
+        """Test hospital admin login"""
+        login_data = {
+            "email": "hospitaladmin@test.com",
+            "password": "admin123"
+        }
+        
+        response, error = self.make_request('POST', 'auth/login', login_data)
+        if error:
+            self.log_test("Login Hospital Admin for Departments", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            self.hospital_admin_token = data.get('token')
+            self.hospital_admin_id = data.get('user', {}).get('id')
+            success = bool(self.hospital_admin_token)
+            self.log_test("Login Hospital Admin for Departments", success, "Hospital admin authenticated")
+            return success
+        else:
+            self.log_test("Login Hospital Admin for Departments", False, f"Status: {response.status_code}")
+            return False
+
+    def test_create_department(self):
+        """Test creating a department"""
+        if not hasattr(self, 'hospital_admin_token') or not self.hospital_admin_token:
+            self.log_test("Create Department", False, "No hospital admin token")
+            return False
+        
+        # Switch to hospital admin token
+        original_token = self.token
+        self.token = self.hospital_admin_token
+        
+        department_data = {
+            "name": "Emergency Department",
+            "code": "ED",
+            "department_type": "emergency",
+            "description": "24/7 Emergency medical services",
+            "phone": "555-911-0000",
+            "location": "Ground Floor, Wing A",
+            "bed_count": 20,
+            "is_24_7": True,
+            "operating_hours": {
+                "monday": "24/7",
+                "tuesday": "24/7",
+                "wednesday": "24/7",
+                "thursday": "24/7",
+                "friday": "24/7",
+                "saturday": "24/7",
+                "sunday": "24/7"
+            }
+        }
+        
+        response, error = self.make_request('POST', 'departments', department_data)
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Create Department", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            self.test_department_id = data.get('id')
+            has_dept_id = bool(self.test_department_id)
+            has_name = data.get('name') == department_data['name']
+            success = has_dept_id and has_name
+            self.log_test("Create Department", success, f"Department ID: {self.test_department_id}")
+            return success
+        else:
+            self.log_test("Create Department", False, f"Status: {response.status_code}")
+            return False
+
+    def test_get_departments(self):
+        """Test getting all departments"""
+        response, error = self.make_request('GET', 'departments')
+        if error:
+            self.log_test("Get Departments", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_departments = isinstance(data, list)
+            success = has_departments
+            dept_count = len(data) if has_departments else 0
+            self.log_test("Get Departments", success, f"Found {dept_count} departments")
+            return success
+        else:
+            self.log_test("Get Departments", False, f"Status: {response.status_code}")
+            return False
+
+    def test_get_department_hierarchy(self):
+        """Test getting department hierarchy"""
+        response, error = self.make_request('GET', 'departments/hierarchy')
+        if error:
+            self.log_test("Department Hierarchy", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_hierarchy = isinstance(data, list)
+            success = has_hierarchy
+            self.log_test("Department Hierarchy", success, f"Hierarchy structure returned")
+            return success
+        else:
+            self.log_test("Department Hierarchy", False, f"Status: {response.status_code}")
+            return False
+
+    def test_get_department_stats(self):
+        """Test getting department statistics"""
+        response, error = self.make_request('GET', 'departments/stats')
+        if error:
+            self.log_test("Department Stats", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            required_fields = ['total_departments', 'active_departments', 'total_staff', 'departments_by_type']
+            has_all_fields = all(field in data for field in required_fields)
+            success = has_all_fields
+            self.log_test("Department Stats", success, f"Stats: {data}")
+            return success
+        else:
+            self.log_test("Department Stats", False, f"Status: {response.status_code}")
+            return False
+
+    def test_get_specific_department(self):
+        """Test getting a specific department"""
+        if not hasattr(self, 'test_department_id') or not self.test_department_id:
+            self.log_test("Get Specific Department", False, "No test department available")
+            return False
+        
+        response, error = self.make_request('GET', f'departments/{self.test_department_id}')
+        if error:
+            self.log_test("Get Specific Department", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_id = data.get('id') == self.test_department_id
+            has_name = bool(data.get('name'))
+            success = has_id and has_name
+            self.log_test("Get Specific Department", success, f"Department: {data.get('name')}")
+            return success
+        else:
+            self.log_test("Get Specific Department", False, f"Status: {response.status_code}")
+            return False
+
+    def test_get_department_staff(self):
+        """Test getting staff in a department"""
+        if not hasattr(self, 'test_department_id') or not self.test_department_id:
+            self.log_test("Get Department Staff", False, "No test department available")
+            return False
+        
+        response, error = self.make_request('GET', f'departments/{self.test_department_id}/staff')
+        if error:
+            self.log_test("Get Department Staff", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_staff = isinstance(data, list)
+            success = has_staff
+            staff_count = len(data) if has_staff else 0
+            self.log_test("Get Department Staff", success, f"Found {staff_count} staff members")
+            return success
+        else:
+            self.log_test("Get Department Staff", False, f"Status: {response.status_code}")
+            return False
+
+    def test_assign_staff_to_department(self):
+        """Test assigning staff to a department"""
+        if not hasattr(self, 'test_department_id') or not self.test_department_id:
+            self.log_test("Assign Staff to Department", False, "No test department available")
+            return False
+        
+        if not self.user_id:
+            self.log_test("Assign Staff to Department", False, "No user ID available")
+            return False
+        
+        # Switch to hospital admin token
+        original_token = self.token
+        self.token = self.hospital_admin_token
+        
+        response, error = self.make_request('POST', f'departments/{self.test_department_id}/assign-staff?user_id={self.user_id}')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Assign Staff to Department", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_message = bool(data.get('message'))
+            success = has_message
+            self.log_test("Assign Staff to Department", success, data.get('message', ''))
+            return success
+        else:
+            self.log_test("Assign Staff to Department", False, f"Status: {response.status_code}")
+            return False
+
+    # ============ CONSENT MODULE TESTS ============
+    
+    def test_consent_types(self):
+        """Test getting consent types"""
+        response, error = self.make_request('GET', 'consents/types')
+        if error:
+            self.log_test("Consent Types", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_types = isinstance(data, list) and len(data) > 0
+            expected_types = ['treatment', 'hipaa', 'records_release', 'telehealth']
+            has_expected = any(ct.get('value') in expected_types for ct in data)
+            success = has_types and has_expected
+            self.log_test("Consent Types", success, f"Found {len(data)} consent types")
+            return success
+        else:
+            self.log_test("Consent Types", False, f"Status: {response.status_code}")
+            return False
+
+    def test_consent_templates(self):
+        """Test getting consent templates"""
+        response, error = self.make_request('GET', 'consents/templates')
+        if error:
+            self.log_test("Consent Templates", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_templates = isinstance(data, list) and len(data) > 0
+            has_treatment = any(t.get('consent_type') == 'treatment' for t in data)
+            has_hipaa = any(t.get('consent_type') == 'hipaa' for t in data)
+            success = has_templates and has_treatment and has_hipaa
+            self.log_test("Consent Templates", success, f"Found {len(data)} templates")
+            return success
+        else:
+            self.log_test("Consent Templates", False, f"Status: {response.status_code}")
+            return False
+
+    def test_create_consent_form(self):
+        """Test creating a consent form"""
+        if not self.test_patient_id:
+            self.log_test("Create Consent Form", False, "No test patient available")
+            return False
+        
+        consent_data = {
+            "patient_id": self.test_patient_id,
+            "consent_type": "treatment",
+            "title": "Consent for Treatment",
+            "description": "General consent to receive medical treatment",
+            "consent_text": "I consent to receive medical treatment at this facility..."
+        }
+        
+        response, error = self.make_request('POST', 'consents', consent_data)
+        if error:
+            self.log_test("Create Consent Form", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            self.test_consent_id = data.get('id')
+            has_consent_id = bool(self.test_consent_id)
+            has_status = data.get('status') == 'pending'
+            success = has_consent_id and has_status
+            self.log_test("Create Consent Form", success, f"Consent ID: {self.test_consent_id}")
+            return success
+        else:
+            self.log_test("Create Consent Form", False, f"Status: {response.status_code}")
+            return False
+
+    def test_get_consents(self):
+        """Test getting consent forms"""
+        response, error = self.make_request('GET', 'consents')
+        if error:
+            self.log_test("Get Consents", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_consents = isinstance(data, list)
+            success = has_consents
+            consent_count = len(data) if has_consents else 0
+            self.log_test("Get Consents", success, f"Found {consent_count} consent forms")
+            return success
+        else:
+            self.log_test("Get Consents", False, f"Status: {response.status_code}")
+            return False
+
+    def test_get_patient_consents(self):
+        """Test getting consents for a specific patient"""
+        if not self.test_patient_id:
+            self.log_test("Get Patient Consents", False, "No test patient available")
+            return False
+        
+        response, error = self.make_request('GET', f'consents/patient/{self.test_patient_id}')
+        if error:
+            self.log_test("Get Patient Consents", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_consents = isinstance(data, list)
+            success = has_consents
+            consent_count = len(data) if has_consents else 0
+            self.log_test("Get Patient Consents", success, f"Found {consent_count} consents for patient")
+            return success
+        else:
+            self.log_test("Get Patient Consents", False, f"Status: {response.status_code}")
+            return False
+
+    def test_get_specific_consent(self):
+        """Test getting a specific consent form"""
+        if not hasattr(self, 'test_consent_id') or not self.test_consent_id:
+            self.log_test("Get Specific Consent", False, "No test consent available")
+            return False
+        
+        response, error = self.make_request('GET', f'consents/{self.test_consent_id}')
+        if error:
+            self.log_test("Get Specific Consent", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_id = data.get('id') == self.test_consent_id
+            has_title = bool(data.get('title'))
+            success = has_id and has_title
+            self.log_test("Get Specific Consent", success, f"Consent: {data.get('title')}")
+            return success
+        else:
+            self.log_test("Get Specific Consent", False, f"Status: {response.status_code}")
+            return False
+
+    def test_sign_consent_form(self):
+        """Test signing a consent form"""
+        if not hasattr(self, 'test_consent_id') or not self.test_consent_id:
+            self.log_test("Sign Consent Form", False, "No test consent available")
+            return False
+        
+        sign_data = {
+            "patient_signature": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+        }
+        
+        response, error = self.make_request('POST', f'consents/{self.test_consent_id}/sign', sign_data)
+        if error:
+            self.log_test("Sign Consent Form", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_message = bool(data.get('message'))
+            status_active = data.get('status') == 'active'
+            success = has_message and status_active
+            self.log_test("Sign Consent Form", success, data.get('message', ''))
+            return success
+        else:
+            self.log_test("Sign Consent Form", False, f"Status: {response.status_code}")
+            return False
+
+    def test_verify_consent(self):
+        """Test verifying a consent form"""
+        if not hasattr(self, 'test_consent_id') or not self.test_consent_id:
+            self.log_test("Verify Consent", False, "No test consent available")
+            return False
+        
+        response, error = self.make_request('GET', f'consents/{self.test_consent_id}/verify')
+        if error:
+            self.log_test("Verify Consent", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            is_valid = data.get('valid', False)
+            has_consent_type = bool(data.get('consent_type'))
+            success = is_valid and has_consent_type
+            self.log_test("Verify Consent", success, f"Valid: {is_valid}")
+            return success
+        else:
+            self.log_test("Verify Consent", False, f"Status: {response.status_code}")
+            return False
+
+    def test_check_patient_consent(self):
+        """Test checking if patient has active consent"""
+        if not self.test_patient_id:
+            self.log_test("Check Patient Consent", False, "No test patient available")
+            return False
+        
+        response, error = self.make_request('GET', f'consents/check/{self.test_patient_id}/treatment')
+        if error:
+            self.log_test("Check Patient Consent", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_consent_field = 'has_consent' in data
+            success = has_consent_field
+            has_consent = data.get('has_consent', False)
+            self.log_test("Check Patient Consent", success, f"Has consent: {has_consent}")
+            return success
+        else:
+            self.log_test("Check Patient Consent", False, f"Status: {response.status_code}")
+            return False
+
+    def test_revoke_consent(self):
+        """Test revoking a consent form"""
+        if not hasattr(self, 'test_consent_id') or not self.test_consent_id:
+            self.log_test("Revoke Consent", False, "No test consent available")
+            return False
+        
+        revoke_data = {
+            "reason": "Patient requested revocation for testing purposes"
+        }
+        
+        response, error = self.make_request('POST', f'consents/{self.test_consent_id}/revoke', revoke_data)
+        if error:
+            self.log_test("Revoke Consent", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_message = bool(data.get('message'))
+            status_revoked = data.get('status') == 'revoked'
+            success = has_message and status_revoked
+            self.log_test("Revoke Consent", success, data.get('message', ''))
+            return success
+        else:
+            self.log_test("Revoke Consent", False, f"Status: {response.status_code}")
+            return False
+
     def run_all_tests(self):
         """Run comprehensive backend API tests"""
         print("🏥 Starting Yacco EMR Backend API Tests")
