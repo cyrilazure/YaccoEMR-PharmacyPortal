@@ -907,7 +907,43 @@ backend:
         comment: "Enhanced with security analytics, export, alerts, and comprehensive filtering"
       - working: true
         agent: "testing"
-        comment: "✅ Enhanced Audit Module - ALL CORE FEATURES WORKING: Audit logs access (correctly denied for non-admin), logs count, patient-specific logs, security statistics, CSV/JSON export functionality, security alerts, audit actions list (39 actions), and resource types list (20 types). 10/11 audit tests passed - proper access control implemented."
+        comment: "✅ 10/11 tests passed - CSV/JSON export, 39 actions, 20 resource types, security alerts working"
+
+  - task: "Department Management Module"
+    implemented: true
+    working: "NA"
+    file: "backend/department_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Full CRUD for departments with hierarchical structure, 35+ department types"
+
+  - task: "Consent Forms Module"
+    implemented: true
+    working: "NA"
+    file: "backend/consent_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "11 consent types, digital signatures, templates, verification"
+
+  - task: "Database Models Documentation"
+    implemented: true
+    working: true
+    file: "backend/database_models.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Complete entity definitions with relationships and compliance fields"
 
 frontend:
   - task: "Security Settings Page"
