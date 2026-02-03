@@ -79,6 +79,7 @@ class UserBase(BaseModel):
     role: UserRole
     department: Optional[str] = None
     specialty: Optional[str] = None
+    organization_id: Optional[str] = None
 
 class UserCreate(UserBase):
     password: str
@@ -92,11 +93,13 @@ class User(UserBase):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     is_active: bool = True
+    is_temp_password: bool = False
 
 class UserResponse(UserBase):
     id: str
     created_at: str
     is_active: bool
+    organization_id: Optional[str] = None
 
 class LoginResponse(BaseModel):
     token: str
