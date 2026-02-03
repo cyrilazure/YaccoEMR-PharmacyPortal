@@ -183,4 +183,125 @@ export const organizationAPI = {
   updateStaffRole: (userId, newRole) => api.put(`/organizations/staff/${userId}/role`, null, { params: { new_role: newRole } }),
 };
 
+// Password Reset APIs
+export const passwordAPI = {
+  requestReset: (email) => api.post('/auth/password-reset/request', null, { params: { email } }),
+  confirmReset: (token, newPassword) => api.post('/auth/password-reset/confirm', null, { params: { token, new_password: newPassword } }),
+  changePassword: (currentPassword, newPassword) => api.post('/auth/change-password', null, { params: { current_password: currentPassword, new_password: newPassword } }),
+};
+
+// Pharmacy APIs
+export const pharmacyAPI = {
+  // Drug database
+  getDrugs: (params) => api.get('/pharmacy/drugs', { params }),
+  getDrugCategories: () => api.get('/pharmacy/drugs/categories'),
+  getFrequencies: () => api.get('/pharmacy/frequencies'),
+  
+  // Pharmacy registration & auth
+  register: (data) => api.post('/pharmacy/register', data),
+  login: (data) => api.post('/pharmacy/login', data),
+  
+  // Pharmacy management (Super Admin)
+  getPendingPharmacies: () => api.get('/pharmacy/pending'),
+  approvePharmacy: (pharmacyId) => api.post(`/pharmacy/${pharmacyId}/approve`),
+  
+  // Public pharmacy search
+  getAllPharmacies: (params) => api.get('/pharmacy/all', { params }),
+  searchByMedication: (params) => api.get('/pharmacy/search/by-medication', { params }),
+  
+  // Inventory management
+  addToInventory: (pharmacyId, data) => api.post('/pharmacy/inventory', data, { params: { pharmacy_id: pharmacyId } }),
+  getInventory: (pharmacyId, search) => api.get(`/pharmacy/inventory/${pharmacyId}`, { params: { search } }),
+  updateInventoryItem: (inventoryId, quantity, unitPrice) => api.put(`/pharmacy/inventory/${inventoryId}`, null, { params: { quantity, unit_price: unitPrice } }),
+  deleteInventoryItem: (inventoryId) => api.delete(`/pharmacy/inventory/${inventoryId}`),
+  
+  // Prescriptions
+  createPrescription: (data) => api.post('/pharmacy/prescriptions', data),
+  getPatientPrescriptions: (patientId) => api.get(`/pharmacy/prescriptions/patient/${patientId}`),
+  getPharmacyPrescriptions: (pharmacyId, status) => api.get(`/pharmacy/prescriptions/pharmacy/${pharmacyId}`, { params: { status } }),
+  updatePrescriptionStatus: (prescriptionId, status) => api.put(`/pharmacy/prescriptions/${prescriptionId}/status`, null, { params: { status } }),
+};
+
+// Billing APIs
+export const billingAPI = {
+  // Service codes
+  getServiceCodes: (category) => api.get('/billing/service-codes', { params: { category } }),
+  
+  // Invoices
+  createInvoice: (data) => api.post('/billing/invoices', data),
+  getInvoices: (params) => api.get('/billing/invoices', { params }),
+  getInvoice: (invoiceId) => api.get(`/billing/invoices/${invoiceId}`),
+  sendInvoice: (invoiceId) => api.put(`/billing/invoices/${invoiceId}/send`),
+  cancelInvoice: (invoiceId) => api.delete(`/billing/invoices/${invoiceId}`),
+  
+  // Payments
+  recordPayment: (data) => api.post('/billing/payments', data),
+  getInvoicePayments: (invoiceId) => api.get(`/billing/payments/invoice/${invoiceId}`),
+  
+  // Paystack
+  initializePaystack: (invoiceId, email) => api.post('/billing/paystack/initialize', null, { params: { invoice_id: invoiceId, email } }),
+  verifyPaystack: (reference) => api.get(`/billing/paystack/verify/${reference}`),
+  getPaystackConfig: () => api.get('/billing/paystack/config'),
+  
+  // Insurance Claims
+  createClaim: (data) => api.post('/billing/claims', data),
+  getClaims: (params) => api.get('/billing/claims', { params }),
+  getClaim: (claimId) => api.get(`/billing/claims/${claimId}`),
+  submitClaim: (claimId) => api.post(`/billing/claims/${claimId}/submit`),
+  
+  // Stats
+  getStats: () => api.get('/billing/stats'),
+};
+
+// Reports APIs
+export const reportsAPI = {
+  // Report types
+  getReportTypes: () => api.get('/reports/types/list'),
+  
+  // Generate reports
+  generate: (data) => api.post('/reports/generate', data),
+  generateAI: (data) => api.post('/reports/generate/ai', data),
+  
+  // CRUD
+  getPatientReports: (patientId) => api.get(`/reports/patient/${patientId}`),
+  getReport: (reportId) => api.get(`/reports/${reportId}`),
+  updateReport: (reportId, content, title) => api.put(`/reports/${reportId}`, null, { params: { content, title } }),
+  deleteReport: (reportId) => api.delete(`/reports/${reportId}`),
+  
+  // Export
+  exportPDF: (reportId) => api.get(`/reports/${reportId}/pdf`),
+};
+
+// Imaging APIs
+export const imagingAPI = {
+  // Studies
+  createStudy: (data) => api.post('/imaging/studies', data),
+  getStudies: (params) => api.get('/imaging/studies', { params }),
+  getStudy: (studyId) => api.get(`/imaging/studies/${studyId}`),
+  getPatientStudies: (patientId) => api.get(`/imaging/studies/patient/${patientId}`),
+  
+  // Images
+  uploadImage: (studyId, formData) => api.post(`/imaging/studies/${studyId}/upload`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  getStudyImages: (studyId) => api.get(`/imaging/studies/${studyId}/images`),
+  getImageData: (imageId) => api.get(`/imaging/images/${imageId}/data`),
+  
+  // Interpretation
+  addInterpretation: (studyId, data) => api.post(`/imaging/studies/${studyId}/interpret`, data),
+  
+  // Demo
+  createSampleStudies: (patientId, patientName) => api.post('/imaging/demo/create-samples', null, { params: { patient_id: patientId, patient_name: patientName } }),
+  
+  // Modalities
+  getModalities: () => api.get('/imaging/modalities'),
+};
+
+// Clinical Decision Support APIs
+export const cdsAPI = {
+  checkInteractions: (medications, newMedication) => api.post('/cds/check-interactions', { medications, new_medication: newMedication }),
+  checkAllergy: (patientAllergies, medication) => api.post('/cds/check-allergy', { patient_allergies: patientAllergies, medication }),
+  comprehensiveCheck: (patientId, newMedication) => api.post('/cds/comprehensive-check', null, { params: { patient_id: patientId, new_medication: newMedication } }),
+  getDrugClasses: () => api.get('/cds/drug-classes'),
+  getCommonAllergies: () => api.get('/cds/common-allergies'),
+};
+
 export default api;
