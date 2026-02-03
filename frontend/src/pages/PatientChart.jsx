@@ -516,11 +516,12 @@ export default function PatientChart() {
 
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-6 w-full max-w-3xl">
+        <TabsList className="grid grid-cols-7 w-full max-w-4xl">
           <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
           <TabsTrigger value="vitals" data-testid="tab-vitals">Vitals</TabsTrigger>
           <TabsTrigger value="problems" data-testid="tab-problems">Problems</TabsTrigger>
           <TabsTrigger value="medications" data-testid="tab-medications">Meds</TabsTrigger>
+          <TabsTrigger value="labs" data-testid="tab-labs">Labs</TabsTrigger>
           <TabsTrigger value="notes" data-testid="tab-notes">Notes</TabsTrigger>
           <TabsTrigger value="orders" data-testid="tab-orders">Orders</TabsTrigger>
         </TabsList>
