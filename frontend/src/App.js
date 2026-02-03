@@ -17,6 +17,7 @@ import SchedulerDashboard from "@/pages/SchedulerDashboard";
 import AdminDashboard from "@/pages/AdminDashboard";
 import TelehealthPage from "@/pages/TelehealthPage";
 import SuperAdminDashboard from "@/pages/SuperAdminDashboard";
+import SuperAdminLogin from "@/pages/SuperAdminLogin";
 import HospitalSettings from "@/pages/HospitalSettings";
 import HospitalRegistration from "@/pages/HospitalRegistration";
 
