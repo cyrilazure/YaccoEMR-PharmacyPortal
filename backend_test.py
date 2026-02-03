@@ -1495,6 +1495,23 @@ class YaccoEMRTester:
         self.test_fhir_appointment_bundle()
         self.test_fhir_patient_by_id()
         
+        # ============ ORGANIZATION MODULE TESTS ============
+        print("\n🏥 Testing Multi-Tenant Organization Module")
+        print("-" * 30)
+        self.test_organization_self_registration()
+        self.test_super_admin_registration()
+        self.test_super_admin_list_organizations()
+        self.test_super_admin_get_pending_organizations()
+        self.test_super_admin_approve_organization()
+        self.test_super_admin_create_organization_directly()
+        self.test_super_admin_platform_stats()
+        self.test_hospital_admin_login()
+        self.test_hospital_admin_get_my_organization()
+        self.test_hospital_admin_create_staff()
+        self.test_hospital_admin_list_staff()
+        self.test_hospital_admin_invite_staff()
+        self.test_data_isolation_verification()
+        
         # Print summary
         print("\n" + "=" * 50)
         print(f"📊 Test Summary: {self.tests_passed}/{self.tests_run} tests passed")
