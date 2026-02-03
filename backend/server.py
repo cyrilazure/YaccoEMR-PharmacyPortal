@@ -713,6 +713,26 @@ from fhir_routes import fhir_router, create_fhir_endpoints
 fhir_api_router = create_fhir_endpoints(db)
 app.include_router(fhir_router)
 
+# Include HIPAA Audit routes
+from audit_module import audit_router, create_audit_endpoints
+audit_api_router, log_audit_event = create_audit_endpoints(db, get_current_user)
+app.include_router(audit_router)
+
+# Include MyChart Patient Portal routes
+from mychart_module import mychart_router, create_mychart_endpoints
+mychart_api_router, get_portal_user = create_mychart_endpoints(db, JWT_SECRET, JWT_ALGORITHM)
+app.include_router(mychart_router)
+
+# Include HL7 v2 ADT routes
+from hl7_module import hl7_router, create_hl7_endpoints
+hl7_api_router = create_hl7_endpoints(db, get_current_user)
+app.include_router(hl7_router)
+
+# Include Clinical Features routes
+from clinical_module import clinical_router, create_clinical_endpoints
+clinical_api_router = create_clinical_endpoints(db, get_current_user)
+app.include_router(clinical_router)
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
