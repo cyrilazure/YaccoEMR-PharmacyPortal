@@ -553,6 +553,7 @@ async def create_vitals(vitals_data: VitalsCreate, current_user: dict = Depends(
     vitals.recorded_by = current_user["id"]
     vitals_dict = vitals.model_dump()
     vitals_dict["recorded_at"] = vitals_dict["recorded_at"].isoformat()
+    vitals_dict["organization_id"] = current_user.get("organization_id")
     await db.vitals.insert_one(vitals_dict)
     return {**vitals_dict, "_id": None}
 
@@ -567,6 +568,7 @@ async def get_patient_vitals(patient_id: str, current_user: dict = Depends(get_c
 async def create_problem(problem_data: ProblemCreate, current_user: dict = Depends(get_current_user)):
     problem = Problem(**problem_data.model_dump())
     problem.created_by = current_user["id"]
+    problem.organization_id = current_user.get("organization_id")
     problem_dict = problem.model_dump()
     problem_dict["created_at"] = problem_dict["created_at"].isoformat()
     await db.problems.insert_one(problem_dict)
@@ -589,6 +591,7 @@ async def update_problem(problem_id: str, problem_data: ProblemCreate, current_u
 async def create_medication(med_data: MedicationCreate, current_user: dict = Depends(get_current_user)):
     medication = Medication(**med_data.model_dump())
     medication.created_by = current_user["id"]
+    medication.organization_id = current_user.get("organization_id")
     med_dict = medication.model_dump()
     med_dict["created_at"] = med_dict["created_at"].isoformat()
     await db.medications.insert_one(med_dict)
