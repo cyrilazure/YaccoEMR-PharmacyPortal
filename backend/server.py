@@ -708,6 +708,11 @@ async def health_check():
 # Include router and middleware
 app.include_router(api_router)
 
+# Include FHIR routes
+from fhir_routes import fhir_router, create_fhir_endpoints
+fhir_api_router = create_fhir_endpoints(db)
+app.include_router(fhir_router)
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
