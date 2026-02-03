@@ -382,7 +382,7 @@ def create_telehealth_endpoints(db, get_current_user):
             raise HTTPException(status_code=404, detail="Appointment not found")
         
         # Check if session already exists
-        existing = await db["telehealth_sessions"].find_one({"appointment_id": appointment_id})
+        existing = await db["telehealth_sessions"].find_one({"appointment_id": appointment_id}, {"_id": 0})
         if existing:
             return {
                 "message": "Session already exists",
