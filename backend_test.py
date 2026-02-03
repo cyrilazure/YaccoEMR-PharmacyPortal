@@ -3125,9 +3125,8 @@ class YaccoEMRTester:
         original_token = self.token
         self.token = self.hospital_admin_token
         
-        # Use POST with JSON body instead of query parameter
-        assign_data = {"user_id": self.user_id}
-        response, error = self.make_request('POST', f'departments/{self.test_department_id}/assign-staff', assign_data)
+        # Use POST with user_id as query parameter
+        response, error = self.make_request('POST', f'departments/{self.test_department_id}/assign-staff', params={'user_id': self.user_id})
         
         # Restore original token
         self.token = original_token
