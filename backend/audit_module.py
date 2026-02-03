@@ -1,14 +1,19 @@
 """
 HIPAA Audit Logging Module for Yacco EMR
 Tracks all access to PHI (Protected Health Information)
+Enhanced with comprehensive reporting and analytics
 """
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, Query, Request, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
-from typing import List, Optional
-from datetime import datetime, timezone
+from typing import List, Optional, Dict, Any
+from datetime import datetime, timezone, timedelta
 from enum import Enum
 import uuid
+import csv
+import io
+import json
 
 audit_router = APIRouter(prefix="/api/audit", tags=["HIPAA Audit"])
 
@@ -22,6 +27,15 @@ class AuditAction(str, Enum):
     LOGIN = "login"
     LOGOUT = "logout"
     FAILED_LOGIN = "failed_login"
+    PERMISSION_DENIED = "permission_denied"
+    TWO_FACTOR_SETUP = "2fa_setup"
+    TWO_FACTOR_VERIFY = "2fa_verify"
+    TWO_FACTOR_DISABLE = "2fa_disable"
+    PASSWORD_CHANGE = "password_change"
+    PASSWORD_RESET = "password_reset"
+    SHARE_REQUEST = "share_request"
+    SHARE_APPROVE = "share_approve"
+    SHARE_REJECT = "share_reject"
 
 class AuditResourceType(str, Enum):
     PATIENT = "patient"
@@ -34,6 +48,21 @@ class AuditResourceType(str, Enum):
     APPOINTMENT = "appointment"
     USER = "user"
     REPORT = "report"
+    LAB_ORDER = "lab_order"
+    LAB_RESULT = "lab_result"
+    IMAGING_STUDY = "imaging_study"
+    PRESCRIPTION = "prescription"
+    TELEHEALTH_SESSION = "telehealth_session"
+    BILLING = "billing"
+    ORGANIZATION = "organization"
+    AUTHENTICATION = "authentication"
+    RECORDS_SHARING = "records_sharing"
+
+class AuditSeverity(str, Enum):
+    INFO = "info"
+    WARNING = "warning"
+    ALERT = "alert"
+    CRITICAL = "critical"
 
 class AuditLogEntry(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
