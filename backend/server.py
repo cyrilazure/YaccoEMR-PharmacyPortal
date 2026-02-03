@@ -925,6 +925,11 @@ from cds_module import router as cds_router, setup_routes as setup_cds_routes
 cds_api_router = setup_cds_routes(db, get_current_user)
 app.include_router(cds_api_router)
 
+# Include Records Sharing/HIE routes
+from records_sharing_module import router as records_sharing_router, setup_routes as setup_records_sharing_routes
+records_sharing_api_router = setup_records_sharing_routes(db, get_current_user)
+app.include_router(records_sharing_api_router)
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
