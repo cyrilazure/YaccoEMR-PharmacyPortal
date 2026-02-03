@@ -15,6 +15,7 @@ import Analytics from "@/pages/Analytics";
 import NurseDashboard from "@/pages/NurseDashboard";
 import SchedulerDashboard from "@/pages/SchedulerDashboard";
 import AdminDashboard from "@/pages/AdminDashboard";
+import TelehealthPage from "@/pages/TelehealthPage";
 
 // Role-based redirect component
 function RoleBasedRedirect() {
