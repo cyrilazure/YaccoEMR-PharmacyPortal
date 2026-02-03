@@ -467,7 +467,7 @@ def create_lab_endpoints(db, get_current_user):
         if panel_code:
             query["panel_code"] = panel_code.upper()
         
-        results = await db["lab_results"].find(query).sort("resulted_at", -1).to_list(100)
+        results = await db["lab_results"].find(query, {"_id": 0}).sort("resulted_at", -1).to_list(100)
         return {"results": results}
     
     @lab_router.get("/results/order/{order_id}", response_model=dict)
