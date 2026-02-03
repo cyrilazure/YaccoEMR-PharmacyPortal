@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { 
   patientAPI, vitalsAPI, problemsAPI, medicationsAPI, 
-  allergiesAPI, notesAPI, ordersAPI, aiAPI 
+  allergiesAPI, notesAPI, ordersAPI, aiAPI, labAPI 
 } from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
