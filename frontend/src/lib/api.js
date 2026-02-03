@@ -151,4 +151,36 @@ export const telehealthAPI = {
   getDyteStatus: () => api.get('/telehealth/dyte/status'),
 };
 
+// Organization/Multi-tenant APIs
+export const organizationAPI = {
+  // Self-service registration (public)
+  register: (data) => api.post('/organizations/register', data),
+  
+  // Super Admin endpoints
+  listAll: (params) => api.get('/organizations', { params }),
+  getPending: () => api.get('/organizations/pending'),
+  approve: (orgId, data) => api.post(`/organizations/${orgId}/approve`, data),
+  reject: (orgId, data) => api.post(`/organizations/${orgId}/reject`, data),
+  suspend: (orgId, reason) => api.post(`/organizations/${orgId}/suspend`, null, { params: { reason } }),
+  reactivate: (orgId) => api.post(`/organizations/${orgId}/reactivate`),
+  createByAdmin: (data, autoApprove = true) => api.post('/organizations/create-by-admin', data, { params: { auto_approve: autoApprove } }),
+  getPlatformStats: () => api.get('/organizations/stats/platform'),
+  
+  // Hospital Admin endpoints
+  getMyOrganization: () => api.get('/organizations/my-organization'),
+  updateMyOrganization: (data) => api.put('/organizations/my-organization', data),
+  getOrganization: (orgId) => api.get(`/organizations/${orgId}`),
+  
+  // Staff management
+  listStaff: (params) => api.get('/organizations/staff', { params }),
+  createStaff: (data) => api.post('/organizations/staff/create', data),
+  inviteStaff: (data) => api.post('/organizations/staff/invite', data),
+  acceptInvitation: (data) => api.post('/organizations/staff/accept-invitation', data),
+  listInvitations: (params) => api.get('/organizations/staff/invitations', { params }),
+  cancelInvitation: (invitationId) => api.delete(`/organizations/staff/invitations/${invitationId}`),
+  deactivateStaff: (userId) => api.put(`/organizations/staff/${userId}/deactivate`),
+  activateStaff: (userId) => api.put(`/organizations/staff/${userId}/activate`),
+  updateStaffRole: (userId, newRole) => api.put(`/organizations/staff/${userId}/role`, null, { params: { new_role: newRole } }),
+};
+
 export default api;
