@@ -104,6 +104,143 @@
 
 user_problem_statement: |
   Add two new features to Yacco EMR:
+  1. Telehealth Video Integration - WebRTC peer-to-peer solution with Dyte integration ready
+  2. Real Lab Result Feeds - Simulated demo mode + HL7 v2 ORU message parsing
+
+backend:
+  - task: "Lab Module - Order Lab Tests"
+    implemented: true
+    working: "NA"
+    file: "backend/lab_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented lab order creation, panel definitions, status updates"
+
+  - task: "Lab Module - Simulate Lab Results"
+    implemented: true
+    working: "NA"
+    file: "backend/lab_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented simulated result generation with realistic values and flags"
+
+  - task: "Lab Module - HL7 v2 ORU Message Parsing"
+    implemented: true
+    working: "NA"
+    file: "backend/lab_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented HL7 v2 ORU^R01 message parsing for external lab results"
+
+  - task: "Telehealth Module - Session Management"
+    implemented: true
+    working: "NA"
+    file: "backend/telehealth_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented telehealth session creation, joining, starting, ending"
+
+  - task: "Telehealth Module - WebSocket Signaling"
+    implemented: true
+    working: "NA"
+    file: "backend/telehealth_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented WebRTC signaling via WebSocket for peer-to-peer video"
+
+frontend:
+  - task: "Labs Tab in Patient Chart"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/pages/PatientChart.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Added Labs tab with order dialog and results display"
+
+  - task: "Telehealth Page"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/pages/TelehealthPage.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Created telehealth center with video call UI, session scheduling"
+
+  - task: "API Integration for Labs and Telehealth"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/lib/api.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Added labAPI and telehealthAPI with all endpoints"
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 1
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "Lab Module - Order Lab Tests"
+    - "Lab Module - Simulate Lab Results"
+    - "Lab Module - HL7 v2 ORU Message Parsing"
+    - "Telehealth Module - Session Management"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: |
+      Implemented two major features:
+      1. Lab Results Module (lab_module.py):
+         - Lab order creation with 9 panel types (CBC, CMP, Lipid, Thyroid, etc.)
+         - Simulated result generation with realistic values and abnormal flags
+         - HL7 v2 ORU^R01 message parsing for external lab feeds
+         - Full CRUD APIs for orders and results
+      
+      2. Telehealth Module (telehealth_module.py):
+         - Session scheduling and management
+         - WebRTC signaling via WebSocket
+         - Dyte integration ready (when API key provided)
+         - In-call chat functionality
+      
+      Please test the backend APIs for both modules.
+
+user_problem_statement: |
+  Add two new features to Yacco EMR:
   1. Telehealth Video Integration - WebRTC peer-to-peer video calls (no external API needed) + Dyte integration ready
   2. Real Lab Result Feeds - Simulated demo mode + HL7 v2 ORU message parsing
 
