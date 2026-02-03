@@ -24,6 +24,8 @@ import HospitalSettings from "@/pages/HospitalSettings";
 import HospitalRegistration from "@/pages/HospitalRegistration";
 import BillingPage from "@/pages/BillingPage";
 import RecordsSharing from "@/pages/RecordsSharing";
+import SecuritySettings from "@/pages/SecuritySettings";
+import AuditLogs from "@/pages/AuditLogs";
 
 // Role-based redirect component
 function RoleBasedRedirect() {
@@ -88,6 +90,9 @@ function App() {
             <Route path="telehealth/:sessionId" element={<TelehealthPage />} />
             <Route path="billing" element={<BillingPage />} />
             <Route path="records-sharing" element={<RecordsSharing />} />
+            {/* Security & Audit */}
+            <Route path="security" element={<SecuritySettings />} />
+            <Route path="audit-logs" element={<AuditLogs />} />
           </Route>
           <Route path="*" element={<RoleBasedRedirect />} />
         </Routes>
