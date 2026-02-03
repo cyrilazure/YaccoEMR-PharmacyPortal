@@ -818,6 +818,16 @@ from clinical_module import clinical_router, create_clinical_endpoints
 clinical_api_router = create_clinical_endpoints(db, get_current_user)
 app.include_router(clinical_router)
 
+# Include Lab Results routes
+from lab_module import lab_router, create_lab_endpoints
+lab_api_router = create_lab_endpoints(db, get_current_user)
+app.include_router(lab_router)
+
+# Include Telehealth Video routes
+from telehealth_module import telehealth_router, create_telehealth_endpoints
+telehealth_api_router = create_telehealth_endpoints(db, get_current_user)
+app.include_router(telehealth_router)
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
