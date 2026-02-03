@@ -369,7 +369,7 @@ def create_lab_endpoints(db, get_current_user):
         if priority:
             query["priority"] = priority
         
-        orders = await db["lab_orders"].find(query).sort("ordered_at", -1).to_list(limit)
+        orders = await db["lab_orders"].find(query, {"_id": 0}).sort("ordered_at", -1).to_list(limit)
         return {"orders": orders}
     
     @lab_router.put("/orders/{order_id}/status", response_model=dict)
