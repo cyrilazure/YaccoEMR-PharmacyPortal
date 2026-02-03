@@ -452,6 +452,9 @@ def create_lab_endpoints(db, get_current_user):
         
         await db["lab_results"].insert_one(result_dict)
         
+        # Remove MongoDB _id field if it exists
+        result_dict.pop('_id', None)
+        
         # Update order status
         await db["lab_orders"].update_one(
             {"id": order_id},
