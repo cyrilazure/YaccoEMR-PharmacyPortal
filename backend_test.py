@@ -14,6 +14,8 @@ class YaccoEMRTester:
         self.tests_run = 0
         self.tests_passed = 0
         self.test_patient_id = None
+        self.lab_order_id = None
+        self.telehealth_session_id = None
         self.test_results = []
 
     def log_test(self, name, success, details=""):
