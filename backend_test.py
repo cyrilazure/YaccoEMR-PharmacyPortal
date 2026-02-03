@@ -1952,6 +1952,286 @@ class YaccoEMRTester:
             self.log_test("CDS Common Allergies", False, f"Status: {response.status_code}")
             return False
 
+    # ============ RECORDS SHARING / HIE MODULE TESTS ============
+    
+    def test_records_sharing_complete_workflow(self):
+        """Test complete Records Sharing / Health Information Exchange workflow"""
+        import time
+        timestamp = str(int(time.time()))
+        
+        # Store original token
+        original_token = self.token
+        
+        # Step 1: Register two hospitals
+        hospital1_data = {
+            "name": f"General Hospital {timestamp}",
+            "organization_type": "hospital",
+            "address_line1": "123 Medical Drive",
+            "city": "Medical City",
+            "state": "CA",
+            "zip_code": "90210",
+            "country": "USA",
+            "phone": "555-123-4567",
+            "email": f"admin1{timestamp}@hospital1.com",
+            "license_number": f"LIC1-{timestamp}",
+            "admin_first_name": "Admin",
+            "admin_last_name": "One",
+            "admin_email": f"admin1{timestamp}@hospital1.com",
+            "admin_phone": "555-111-1111"
+        }
+        
+        hospital2_data = {
+            "name": f"Regional Medical Center {timestamp}",
+            "organization_type": "hospital", 
+            "address_line1": "456 Healthcare Blvd",
+            "city": "Health City",
+            "state": "TX",
+            "zip_code": "75001",
+            "country": "USA",
+            "phone": "555-987-6543",
+            "email": f"admin2{timestamp}@hospital2.com",
+            "license_number": f"LIC2-{timestamp}",
+            "admin_first_name": "Admin",
+            "admin_last_name": "Two",
+            "admin_email": f"admin2{timestamp}@hospital2.com",
+            "admin_phone": "555-222-2222"
+        }
+        
+        # Register hospitals
+        response1, error1 = self.make_request('POST', 'organizations/register', hospital1_data)
+        response2, error2 = self.make_request('POST', 'organizations/register', hospital2_data)
+        
+        if error1 or error2 or response1.status_code != 200 or response2.status_code != 200:
+            self.log_test("Records Sharing - Hospital Registration", False, "Failed to register hospitals")
+            return False
+        
+        hospital1_id = response1.json().get('organization_id')
+        hospital2_id = response2.json().get('organization_id')
+        
+        # Step 2: Create two physicians (one at each hospital)
+        physician1_data = {
+            "email": "doctor1@hospital1.com",
+            "password": "test123",
+            "first_name": "Dr. Sarah",
+            "last_name": "Johnson",
+            "role": "physician",
+            "department": "Cardiology",
+            "specialty": "Interventional Cardiology",
+            "organization_id": hospital1_id
+        }
+        
+        physician2_data = {
+            "email": "doctor2@hospital2.com", 
+            "password": "test123",
+            "first_name": "Dr. Michael",
+            "last_name": "Chen",
+            "role": "physician",
+            "department": "Internal Medicine",
+            "specialty": "Internal Medicine",
+            "organization_id": hospital2_id
+        }
+        
+        # Register physicians
+        response, error = self.make_request('POST', 'auth/register', physician1_data)
+        if error or response.status_code not in [200, 201]:
+            self.log_test("Records Sharing - Physician 1 Registration", False, f"Status: {response.status_code if response else 'No response'}")
+            return False
+        
+        physician1_token = response.json().get('token')
+        physician1_id = response.json().get('user', {}).get('id')
+        
+        response, error = self.make_request('POST', 'auth/register', physician2_data)
+        if error or response.status_code not in [200, 201]:
+            self.log_test("Records Sharing - Physician 2 Registration", False, f"Status: {response.status_code if response else 'No response'}")
+            return False
+        
+        physician2_token = response.json().get('token')
+        physician2_id = response.json().get('user', {}).get('id')
+        
+        self.log_test("Records Sharing - Physician Registration", True, "Both physicians registered successfully")
+        
+        # Step 3: Login as first physician and create a patient
+        self.token = physician1_token
+        
+        patient_data = {
+            "first_name": "Emma",
+            "last_name": "Wilson",
+            "date_of_birth": "1985-03-15",
+            "gender": "female",
+            "email": "emma.wilson@email.com",
+            "phone": "555-0199",
+            "address": "789 Patient St, City, State 12345",
+            "emergency_contact_name": "John Wilson",
+            "emergency_contact_phone": "555-0200",
+            "insurance_provider": "HealthCare Plus",
+            "insurance_id": "HC987654321"
+        }
+        
+        response, error = self.make_request('POST', 'patients', patient_data)
+        if error or response.status_code != 200:
+            self.log_test("Records Sharing - Patient Creation", False, f"Status: {response.status_code if response else 'No response'}")
+            return False
+        
+        patient_id = response.json().get('id')
+        self.log_test("Records Sharing - Patient Creation", True, f"Patient ID: {patient_id}")
+        
+        # Step 4: Test Records Sharing APIs as physician1
+        
+        # 4a: Search for other physicians
+        response, error = self.make_request('GET', 'records-sharing/physicians/search', params={'query': 'doctor2'})
+        if error or response.status_code != 200:
+            self.log_test("Records Sharing - Physician Search", False, f"Status: {response.status_code if response else 'No response'}")
+            return False
+        
+        search_data = response.json()
+        physicians_found = search_data.get('physicians', [])
+        found_physician2 = any(p.get('id') == physician2_id for p in physicians_found)
+        
+        if not found_physician2:
+            self.log_test("Records Sharing - Physician Search", False, "Target physician not found in search")
+            return False
+        
+        self.log_test("Records Sharing - Physician Search", True, f"Found {len(physicians_found)} physicians")
+        
+        # 4b: Create a records request to physician2
+        request_data = {
+            "target_physician_id": physician2_id,
+            "patient_id": patient_id,
+            "patient_name": "Emma Wilson",
+            "reason": "Patient transferred for specialized cardiac procedure. Need complete medical history for continuity of care.",
+            "urgency": "urgent",
+            "requested_records": ["all"],
+            "consent_signed": True,
+            "consent_date": "2024-01-15"
+        }
+        
+        response, error = self.make_request('POST', 'records-sharing/requests', request_data)
+        if error or response.status_code != 200:
+            self.log_test("Records Sharing - Create Request", False, f"Status: {response.status_code if response else 'No response'}")
+            return False
+        
+        request_response = response.json()
+        request_id = request_response.get('request_id')
+        request_number = request_response.get('request_number')
+        
+        self.log_test("Records Sharing - Create Request", True, f"Request ID: {request_id}, Number: {request_number}")
+        
+        # 4c: Get outgoing requests
+        response, error = self.make_request('GET', 'records-sharing/requests/outgoing')
+        if error or response.status_code != 200:
+            self.log_test("Records Sharing - Get Outgoing Requests", False, f"Status: {response.status_code if response else 'No response'}")
+            return False
+        
+        outgoing_data = response.json()
+        outgoing_requests = outgoing_data.get('requests', [])
+        has_our_request = any(r.get('id') == request_id for r in outgoing_requests)
+        
+        self.log_test("Records Sharing - Get Outgoing Requests", has_our_request, f"Found {len(outgoing_requests)} outgoing requests")
+        
+        # 4d: Get sharing statistics
+        response, error = self.make_request('GET', 'records-sharing/stats')
+        if error or response.status_code != 200:
+            self.log_test("Records Sharing - Get Statistics", False, f"Status: {response.status_code if response else 'No response'}")
+            return False
+        
+        stats_data = response.json()
+        required_stats = ['incoming_requests', 'outgoing_requests', 'active_access_grants', 'unread_notifications']
+        has_all_stats = all(field in stats_data for field in required_stats)
+        
+        self.log_test("Records Sharing - Get Statistics", has_all_stats, f"Stats: {stats_data}")
+        
+        # Step 5: Login as second physician and test
+        self.token = physician2_token
+        
+        # 5a: Get incoming requests
+        response, error = self.make_request('GET', 'records-sharing/requests/incoming')
+        if error or response.status_code != 200:
+            self.log_test("Records Sharing - Get Incoming Requests", False, f"Status: {response.status_code if response else 'No response'}")
+            return False
+        
+        incoming_data = response.json()
+        incoming_requests = incoming_data.get('requests', [])
+        has_our_request = any(r.get('id') == request_id for r in incoming_requests)
+        
+        self.log_test("Records Sharing - Get Incoming Requests", has_our_request, f"Found {len(incoming_requests)} incoming requests")
+        
+        # 5b: Get notifications
+        response, error = self.make_request('GET', 'records-sharing/notifications')
+        if error or response.status_code != 200:
+            self.log_test("Records Sharing - Get Notifications", False, f"Status: {response.status_code if response else 'No response'}")
+            return False
+        
+        notifications_data = response.json()
+        notifications = notifications_data.get('notifications', [])
+        unread_count = notifications_data.get('unread_count', 0)
+        has_request_notification = any(n.get('related_request_id') == request_id for n in notifications)
+        
+        self.log_test("Records Sharing - Get Notifications", has_request_notification, f"Found {len(notifications)} notifications, {unread_count} unread")
+        
+        # 5c: Approve the request
+        approval_data = {
+            "approved": True,
+            "notes": "Approved for continuity of care",
+            "access_duration_days": 30
+        }
+        
+        response, error = self.make_request('POST', f'records-sharing/requests/{request_id}/respond', approval_data)
+        if error or response.status_code != 200:
+            self.log_test("Records Sharing - Approve Request", False, f"Status: {response.status_code if response else 'No response'}")
+            return False
+        
+        approval_response = response.json()
+        is_approved = approval_response.get('status') == 'approved'
+        has_expiry = bool(approval_response.get('access_expires_at'))
+        
+        self.log_test("Records Sharing - Approve Request", is_approved and has_expiry, f"Status: {approval_response.get('status')}")
+        
+        # Step 6: Back as first physician
+        self.token = physician1_token
+        
+        # 6a: Get approval notification
+        response, error = self.make_request('GET', 'records-sharing/notifications')
+        if error or response.status_code != 200:
+            self.log_test("Records Sharing - Get Approval Notification", False, f"Status: {response.status_code if response else 'No response'}")
+            return False
+        
+        notifications_data = response.json()
+        notifications = notifications_data.get('notifications', [])
+        has_approval_notification = any(n.get('type') == 'request_approved' and n.get('related_request_id') == request_id for n in notifications)
+        
+        self.log_test("Records Sharing - Get Approval Notification", has_approval_notification, f"Found approval notification")
+        
+        # 6b: Get access grants
+        response, error = self.make_request('GET', 'records-sharing/my-access-grants')
+        if error or response.status_code != 200:
+            self.log_test("Records Sharing - Get Access Grants", False, f"Status: {response.status_code if response else 'No response'}")
+            return False
+        
+        grants_data = response.json()
+        access_grants = grants_data.get('access_grants', [])
+        has_patient_grant = any(g.get('patient_id') == patient_id for g in access_grants)
+        
+        self.log_test("Records Sharing - Get Access Grants", has_patient_grant, f"Found {len(access_grants)} access grants")
+        
+        # 6c: View shared records
+        response, error = self.make_request('GET', f'records-sharing/shared-records/{patient_id}')
+        if error or response.status_code != 200:
+            self.log_test("Records Sharing - View Shared Records", False, f"Status: {response.status_code if response else 'No response'}")
+            return False
+        
+        shared_records = response.json()
+        has_patient_data = 'patient' in shared_records
+        has_access_info = 'access_info' in shared_records
+        patient_name_matches = shared_records.get('patient', {}).get('first_name') == 'Emma'
+        
+        success = has_patient_data and has_access_info and patient_name_matches
+        self.log_test("Records Sharing - View Shared Records", success, f"Patient: {shared_records.get('patient', {}).get('first_name', 'Unknown')}")
+        
+        # Restore original token
+        self.token = original_token
+        
+        return True
+
     def run_all_tests(self):
         """Run comprehensive backend API tests"""
         print("🏥 Starting Yacco EMR Backend API Tests")
