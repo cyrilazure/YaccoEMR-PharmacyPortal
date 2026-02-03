@@ -987,6 +987,16 @@ from twofa_module import twofa_router, create_2fa_endpoints
 twofa_api_router, verify_2fa_for_login, is_2fa_required = create_2fa_endpoints(db, get_current_user, verify_password, create_token)
 app.include_router(twofa_router)
 
+# Include Department Management routes
+from department_module import department_router, create_department_endpoints
+department_api_router = create_department_endpoints(db, get_current_user)
+app.include_router(department_router)
+
+# Include Consent Forms routes
+from consent_module import consent_router, create_consent_endpoints
+consent_api_router = create_consent_endpoints(db, get_current_user)
+app.include_router(consent_router)
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
