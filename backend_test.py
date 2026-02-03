@@ -17,6 +17,16 @@ class YaccoEMRTester:
         self.lab_order_id = None
         self.telehealth_session_id = None
         self.test_results = []
+        # Organization module variables
+        self.test_org_id = None
+        self.super_admin_token = None
+        self.super_admin_id = None
+        self.hospital_admin_token = None
+        self.hospital_admin_id = None
+        self.hospital_admin_email = None
+        self.hospital_admin_temp_password = None
+        self.test_staff_email = None
+        self.test_staff_temp_password = None
 
     def log_test(self, name, success, details=""):
         """Log test result"""
