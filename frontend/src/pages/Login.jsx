@@ -247,6 +247,60 @@ export default function LoginPage() {
           </p>
         </div>
       </div>
+
+      {/* 2FA Dialog */}
+      <Dialog open={requires2FA} onOpenChange={(open) => !open && handleCancel2FA()}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <div className="flex items-center justify-center mb-4">
+              <div className="w-16 h-16 rounded-full bg-sky-100 flex items-center justify-center">
+                <Smartphone className="w-8 h-8 text-sky-600" />
+              </div>
+            </div>
+            <DialogTitle className="text-center">Two-Factor Authentication</DialogTitle>
+            <DialogDescription className="text-center">
+              Enter the 6-digit code from your authenticator app, or use a backup code
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handle2FASubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="totp-code">Verification Code</Label>
+              <Input
+                id="totp-code"
+                type="text"
+                placeholder="000000"
+                value={totpCode}
+                onChange={(e) => setTotpCode(e.target.value.replace(/[^0-9-A-Za-z]/g, '').slice(0, 10))}
+                className="text-center text-2xl tracking-widest font-mono"
+                autoComplete="one-time-code"
+                autoFocus
+              />
+              <p className="text-xs text-slate-500 text-center">
+                Enter 6-digit code or backup code (XXXX-XXXX)
+              </p>
+            </div>
+            
+            <div className="flex gap-2">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={handleCancel2FA}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                className="flex-1 bg-slate-900 hover:bg-slate-800"
+                disabled={loading || totpCode.length < 6}
+              >
+                {loading ? 'Verifying...' : 'Verify'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
