@@ -227,7 +227,7 @@ def create_telehealth_endpoints(db, get_current_user):
             # Filter by date
             query["scheduled_time"] = {"$regex": f"^{date}"}
         
-        sessions = await db["telehealth_sessions"].find(query).sort("scheduled_time", -1).to_list(100)
+        sessions = await db["telehealth_sessions"].find(query, {"_id": 0}).sort("scheduled_time", -1).to_list(100)
         return {"sessions": sessions}
     
     @telehealth_router.get("/sessions/{session_id}", response_model=dict)
