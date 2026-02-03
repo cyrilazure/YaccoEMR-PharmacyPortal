@@ -900,6 +900,31 @@ from organization_module import organization_router, create_organization_endpoin
 organization_api_router = create_organization_endpoints(db, get_current_user, hash_password)
 app.include_router(organization_router)
 
+# Include Pharmacy Portal routes
+from pharmacy_module import router as pharmacy_router, setup_routes as setup_pharmacy_routes
+pharmacy_api_router = setup_pharmacy_routes(db, get_current_user)
+app.include_router(pharmacy_api_router)
+
+# Include Billing routes
+from billing_module import router as billing_router, setup_routes as setup_billing_routes
+billing_api_router = setup_billing_routes(db, get_current_user)
+app.include_router(billing_api_router)
+
+# Include Reports routes
+from reports_module import router as reports_router, setup_routes as setup_reports_routes
+reports_api_router = setup_reports_routes(db, get_current_user)
+app.include_router(reports_api_router)
+
+# Include Imaging/DICOM routes
+from imaging_module import router as imaging_router, setup_routes as setup_imaging_routes
+imaging_api_router = setup_imaging_routes(db, get_current_user)
+app.include_router(imaging_api_router)
+
+# Include Clinical Decision Support routes
+from cds_module import router as cds_router, setup_routes as setup_cds_routes
+cds_api_router = setup_cds_routes(db, get_current_user)
+app.include_router(cds_api_router)
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
