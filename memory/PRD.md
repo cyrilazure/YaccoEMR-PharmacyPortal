@@ -2,18 +2,18 @@
 
 ## Project Overview
 **Name:** Yacco EMR - Electronic Medical Records System  
-**Version:** 1.0.0 MVP  
+**Version:** 1.1.0  
 **Created:** February 3, 2026  
 **Last Updated:** February 3, 2026
 
 ## Problem Statement
-Build a comprehensive Electronic Medical Records (EMR) system similar to Epic EMR with core clinical modules, multi-role support, scheduling, and AI-assisted documentation.
+Build a comprehensive Electronic Medical Records (EMR) system similar to Epic EMR with core clinical modules, multi-role support, scheduling, AI-assisted documentation, and healthcare interoperability (FHIR).
 
 ## User Personas
 1. **Physicians** - Primary clinical users who document patient encounters, place orders, review results
-2. **Nurses** - Execute orders, administer medications, document care, monitor patients
+2. **Nurses** - Execute orders, administer medications, document care, monitor patients (MAR workflow)
 3. **Schedulers** - Manage appointments, patient registration, capacity
-4. **Administrators** - Oversee system, manage users, view analytics
+4. **Administrators** - Oversee system, manage users, view analytics, monitor system health
 
 ## Core Requirements (Static)
 - JWT-based authentication with role-based access
@@ -23,17 +23,20 @@ Build a comprehensive Electronic Medical Records (EMR) system similar to Epic EM
 - Appointment scheduling
 - AI-assisted documentation using GPT-5.2
 - Analytics dashboard
+- Role-specific dashboards for each user type
+- FHIR R4 API for interoperability
 
 ## Tech Stack
-- **Frontend:** React 19, Tailwind CSS, shadcn/ui components
+- **Frontend:** React 19, Tailwind CSS, shadcn/ui components, Recharts
 - **Backend:** FastAPI (Python)
 - **Database:** MongoDB
 - **AI:** OpenAI GPT-5.2 via Emergent LLM Key
 - **Auth:** JWT-based authentication
+- **Interoperability:** FHIR R4 API
 
-## What's Been Implemented (MVP)
+## What's Been Implemented
 
-### Backend (server.py)
+### Backend (server.py + fhir_routes.py)
 - [x] JWT authentication (register, login, /auth/me)
 - [x] User management with roles (physician, nurse, scheduler, admin)
 - [x] Patient CRUD operations with search
@@ -46,14 +49,25 @@ Build a comprehensive Electronic Medical Records (EMR) system similar to Epic EM
 - [x] Appointments scheduling with status updates
 - [x] Dashboard statistics endpoint
 - [x] AI-assisted note generation endpoint
+- [x] **FHIR R4 API Endpoints:**
+  - /api/fhir/metadata (CapabilityStatement)
+  - /api/fhir/Patient
+  - /api/fhir/Observation (Vitals)
+  - /api/fhir/Condition (Problems)
+  - /api/fhir/MedicationRequest
+  - /api/fhir/AllergyIntolerance
+  - /api/fhir/ServiceRequest (Orders)
+  - /api/fhir/Appointment
 
 ### Frontend Pages
 - [x] Login page with registration (Login.jsx)
-- [x] Main layout with sidebar navigation (Layout.jsx)
-- [x] Dashboard with stats and recent data (Dashboard.jsx)
+- [x] Main layout with role-based sidebar navigation (Layout.jsx)
+- [x] **Physician Dashboard** (Dashboard.jsx) - Stats, appointments, orders, patients
+- [x] **Nurse Station** (NurseDashboard.jsx) - MAR, vitals due, medication orders
+- [x] **Scheduling Center** (SchedulerDashboard.jsx) - Calendar, patient registration
+- [x] **Admin Center** (AdminDashboard.jsx) - User management, system health, FHIR info
 - [x] Patients list with search and registration (Patients.jsx)
 - [x] Patient chart with tabs (PatientChart.jsx)
-  - Overview, Vitals, Problems, Meds, Notes, Orders
 - [x] Appointments scheduling (Appointments.jsx)
 - [x] Orders management with filtering (Orders.jsx)
 - [x] Analytics with charts (Analytics.jsx)
@@ -62,12 +76,14 @@ Build a comprehensive Electronic Medical Records (EMR) system similar to Epic EM
 - Clean medical/healthcare light theme
 - Manrope + Inter fonts
 - Sky blue accent color
+- Role-specific color coding
 - Responsive sidebar navigation
 
 ## Testing Results
 - Backend: 100% pass rate
 - Frontend: 95% pass rate
-- All core workflows functional
+- FHIR Endpoints: 100% pass rate
+- Role-based Dashboards: 95% pass rate
 
 ## Prioritized Backlog
 
@@ -81,29 +97,49 @@ Build a comprehensive Electronic Medical Records (EMR) system similar to Epic EM
 - [ ] Imaging viewer (DICOM)
 - [ ] MyChart patient portal
 - [ ] Telehealth video visits
+- [ ] HL7 v2 message support
 
 ### P2 (Medium Priority)
 - [ ] Billing/Revenue Cycle integration
 - [ ] Care coordination tools
 - [ ] Population health features
-- [ ] Audit logging for HIPAA
-- [ ] Role permission management
+- [ ] HIPAA audit logging
+- [ ] Advanced role permissions
 
 ### P3 (Future)
 - [ ] Mobile apps (Haiku/Canto equivalents)
-- [ ] Interoperability (FHIR, HL7)
-- [ ] Clinical decision support
+- [ ] Clinical decision support alerts
 - [ ] Drug interaction checking
 - [ ] Report builder
+- [ ] Batch FHIR operations
 
 ## Next Tasks
 1. Implement password reset flow
 2. Add token refresh for long sessions
 3. Build MyChart patient portal
-4. Integrate real lab result feeds
+4. Add HL7 v2 message support
 5. Add HIPAA audit logging
 
-## API Endpoints
+## FHIR API Endpoints
+```
+GET  /api/fhir/metadata              - FHIR CapabilityStatement
+GET  /api/fhir/Patient               - Search patients (FHIR Bundle)
+GET  /api/fhir/Patient/{id}          - Get patient by ID
+GET  /api/fhir/Observation           - Search vitals
+GET  /api/fhir/Observation/{id}      - Get vitals by ID
+GET  /api/fhir/Condition             - Search problems/diagnoses
+GET  /api/fhir/Condition/{id}        - Get condition by ID
+GET  /api/fhir/MedicationRequest     - Search medications
+GET  /api/fhir/MedicationRequest/{id} - Get medication by ID
+GET  /api/fhir/AllergyIntolerance    - Search allergies
+GET  /api/fhir/AllergyIntolerance/{id} - Get allergy by ID
+GET  /api/fhir/ServiceRequest        - Search orders
+GET  /api/fhir/ServiceRequest/{id}   - Get order by ID
+GET  /api/fhir/Appointment           - Search appointments
+GET  /api/fhir/Appointment/{id}      - Get appointment by ID
+```
+
+## Internal API Endpoints
 ```
 POST /api/auth/register - Register new user
 POST /api/auth/login - Login user
