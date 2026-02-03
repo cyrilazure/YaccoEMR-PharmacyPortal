@@ -23,18 +23,15 @@ export default function SuperAdminLogin() {
     return <Navigate to="/platform-admin" replace />;
   }
 
-  // If logged in as other role, show access denied
+  // If logged in as other role, show access denied (no links to other portals)
   if (user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md text-center">
+        <Card className="w-full max-w-md text-center border-slate-700 bg-slate-800/50">
           <CardContent className="pt-8">
             <Shield className="w-16 h-16 mx-auto mb-4 text-red-500" />
-            <h2 className="text-xl font-bold mb-2">Access Denied</h2>
-            <p className="text-slate-500 mb-4">This portal is restricted to Platform Administrators only.</p>
-            <Button variant="outline" onClick={() => navigate('/login')}>
-              Go to Staff Login
-            </Button>
+            <h2 className="text-xl font-bold mb-2 text-white">Access Denied</h2>
+            <p className="text-slate-400">This portal is restricted to Platform Owners only.</p>
           </CardContent>
         </Card>
       </div>
@@ -50,11 +47,11 @@ export default function SuperAdminLogin() {
       
       // Check if user is super_admin
       if (result.user.role !== 'super_admin') {
-        toast.error('Access denied. This portal is for Platform Administrators only.');
+        toast.error('Access denied. Invalid credentials for this portal.');
         return;
       }
       
-      toast.success('Welcome back, Platform Administrator');
+      toast.success('Welcome back, Platform Owner');
       navigate('/platform-admin');
     } catch (err) {
       toast.error('Invalid credentials');
@@ -79,7 +76,7 @@ export default function SuperAdminLogin() {
           <h1 className="text-3xl font-bold text-white mb-2" style={{ fontFamily: 'Manrope' }}>
             Yacco EMR
           </h1>
-          <p className="text-slate-400">Platform Administration Portal</p>
+          <p className="text-slate-400">Platform Owner Portal</p>
         </div>
 
         {/* Login Card */}
@@ -88,9 +85,9 @@ export default function SuperAdminLogin() {
             <div className="mx-auto w-12 h-12 rounded-full bg-indigo-500/10 flex items-center justify-center mb-3">
               <Shield className="w-6 h-6 text-indigo-400" />
             </div>
-            <CardTitle className="text-white">Administrator Login</CardTitle>
+            <CardTitle className="text-white">Owner Access</CardTitle>
             <CardDescription className="text-slate-400">
-              Secure access for platform administrators only
+              Secure login for platform administration
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -99,7 +96,7 @@ export default function SuperAdminLogin() {
                 <Label className="text-slate-300">Email Address</Label>
                 <Input
                   type="email"
-                  placeholder="admin@yaccoemr.com"
+                  placeholder="Enter your email"
                   value={credentials.email}
                   onChange={(e) => setCredentials({ ...credentials, email: e.target.value })}
                   required
@@ -156,18 +153,15 @@ export default function SuperAdminLogin() {
             {/* Security Notice */}
             <div className="mt-6 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
               <p className="text-xs text-amber-400 text-center">
-                🔒 This is a restricted area. All access attempts are logged and monitored.
+                🔒 Restricted access. All login attempts are logged and monitored.
               </p>
             </div>
           </CardContent>
         </Card>
 
-        {/* Footer */}
-        <p className="text-center text-slate-500 text-sm mt-6">
-          Not a platform administrator?{' '}
-          <a href="/login" className="text-indigo-400 hover:text-indigo-300 hover:underline">
-            Staff Login
-          </a>
+        {/* Footer - No links to other portals */}
+        <p className="text-center text-slate-600 text-xs mt-8">
+          © {new Date().getFullYear()} Yacco Healthcare Systems
         </p>
       </div>
     </div>
