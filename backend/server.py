@@ -340,6 +340,7 @@ async def register(user_data: UserCreate):
             role=user.role,
             department=user.department,
             specialty=user.specialty,
+            organization_id=user.organization_id,
             created_at=user_dict["created_at"],
             is_active=user.is_active
         )
