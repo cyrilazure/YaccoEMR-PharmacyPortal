@@ -162,6 +162,7 @@ class VitalsCreate(BaseModel):
 class Vitals(VitalsCreate):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    organization_id: Optional[str] = None
     recorded_by: str = ""
     recorded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
