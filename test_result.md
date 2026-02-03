@@ -472,4 +472,169 @@ test_plan:
 
 agent_communication:
   - agent: "main"
-    message: "Implemented Lab Results module and Telehealth module. Backend APIs ready for testing. Please test lab order creation, result simulation, HL7 ORU parsing, and telehealth session management."
+    message: |
+      Implemented major new features for Yacco EMR:
+      
+      1. **Password Reset** (Phase 1):
+         - Backend already had endpoints, added frontend pages
+         - ForgotPassword.jsx - request password reset
+         - ResetPassword.jsx - enter new password with token
+         - Added "Forgot password?" link on Login page
+      
+      2. **Pharmacy Portal & E-Prescribing** (pharmacy_module.py):
+         - Pharmacy registration with approval workflow
+         - Inventory management (add/update/delete medications)
+         - Drug database with 30+ common medications
+         - E-Prescribe workflow with pharmacy selection
+         - Find pharmacies by medication availability
+         - Prescription tracking with statuses
+      
+      3. **Billing Module** (billing_module.py):
+         - Invoice CRUD with line items
+         - CPT service codes database
+         - Paystack payment integration
+         - Record cash/card payments
+         - Mock 837 insurance claims generation
+         - Billing statistics dashboard
+      
+      4. **Reports Module** (reports_module.py):
+         - Generate structured visit reports
+         - AI-assisted report generation with GPT-5.2
+         - Export to PDF (HTML format for client-side conversion)
+         - Multiple report types (visit summary, discharge, referral, etc.)
+      
+      5. **Imaging/DICOM Module** (imaging_module.py):
+         - Imaging study management
+         - DICOM file upload support
+         - Sample studies for demo
+         - Radiologist interpretation
+      
+      6. **Clinical Decision Support** (cds_module.py):
+         - Drug interaction checking
+         - Allergy cross-reactivity alerts
+         - Comprehensive patient check before prescribing
+         - Age-based alerts (Beers Criteria for elderly)
+      
+      Please test the new backend APIs.
+
+backend:
+  - task: "Password Reset APIs"
+    implemented: true
+    working: "NA"
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Added password reset endpoints - request, confirm, change password"
+  
+  - task: "Pharmacy Module APIs"
+    implemented: true
+    working: "NA"
+    file: "backend/pharmacy_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Complete pharmacy portal with registration, inventory, prescriptions"
+  
+  - task: "Billing Module APIs"
+    implemented: true
+    working: "NA"
+    file: "backend/billing_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Invoice management, Paystack integration, insurance claims"
+  
+  - task: "Reports Module APIs"
+    implemented: true
+    working: "NA"
+    file: "backend/reports_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Report generation including AI-assisted with Emergent LLM"
+  
+  - task: "Imaging/DICOM Module APIs"
+    implemented: true
+    working: "NA"
+    file: "backend/imaging_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "DICOM study management and file upload"
+  
+  - task: "Clinical Decision Support APIs"
+    implemented: true
+    working: "NA"
+    file: "backend/cds_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Drug interaction and allergy checking endpoints"
+
+frontend:
+  - task: "Forgot Password Page"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/pages/ForgotPassword.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Created forgot password page with email input"
+  
+  - task: "Reset Password Page"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/pages/ResetPassword.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Created reset password page with token and new password"
+  
+  - task: "Billing Page"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/pages/BillingPage.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Created billing page with invoices, payments, claims"
+
+test_plan:
+  current_focus:
+    - "Password Reset APIs"
+    - "Pharmacy Module APIs"
+    - "Billing Module APIs"
+    - "Reports Module APIs"
+    - "Imaging/DICOM Module APIs"
+    - "Clinical Decision Support APIs"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
