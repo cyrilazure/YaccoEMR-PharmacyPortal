@@ -1371,8 +1371,11 @@ class YaccoEMRTester:
         original_token = self.token
         self.token = self.hospital_admin_token
         
+        import time
+        timestamp = str(int(time.time()))
+        
         staff_data = {
-            "email": "nurse@testgeneral.com",
+            "email": f"nurse{timestamp}@testgeneral.com",
             "first_name": "Mary",
             "last_name": "Nurse",
             "role": "nurse",
