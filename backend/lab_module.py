@@ -473,7 +473,7 @@ def create_lab_endpoints(db, get_current_user):
     @lab_router.get("/results/order/{order_id}", response_model=dict)
     async def get_lab_result_by_order(order_id: str, user: dict = Depends(get_current_user)):
         """Get lab result for a specific order"""
-        result = await db["lab_results"].find_one({"order_id": order_id})
+        result = await db["lab_results"].find_one({"order_id": order_id}, {"_id": 0})
         if not result:
             raise HTTPException(status_code=404, detail="Lab result not found")
         return {"result": result}
