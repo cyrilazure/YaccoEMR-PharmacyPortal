@@ -101,3 +101,114 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: |
+  Add two new features to Yacco EMR:
+  1. Telehealth Video Integration - WebRTC peer-to-peer video calls (no external API needed) + Dyte integration ready
+  2. Real Lab Result Feeds - Simulated demo mode + HL7 v2 ORU message parsing
+
+backend:
+  - task: "Lab Results Module - Lab Order CRUD"
+    implemented: true
+    working: "NA"
+    file: "lab_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Created lab_module.py with lab order endpoints: POST /api/lab/orders, GET /api/lab/orders/{patient_id}, PUT /api/lab/orders/{order_id}/status"
+
+  - task: "Lab Results Module - Simulated Results Generation"
+    implemented: true
+    working: "NA"
+    file: "lab_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented POST /api/lab/results/simulate/{order_id} to generate realistic lab results for CBC, CMP, Lipid Panel, Thyroid, etc."
+
+  - task: "Lab Results Module - HL7 v2 ORU Message Parsing"
+    implemented: true
+    working: "NA"
+    file: "lab_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented POST /api/lab/hl7/oru to parse HL7 v2 ORU^R01 lab result messages and store results"
+
+  - task: "Telehealth Module - Session Management"
+    implemented: true
+    working: "NA"
+    file: "telehealth_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Created telehealth session CRUD: POST /api/telehealth/sessions, GET /api/telehealth/sessions/{id}, join/start/end endpoints"
+
+  - task: "Telehealth Module - WebRTC Signaling WebSocket"
+    implemented: true
+    working: "NA"
+    file: "telehealth_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented WebSocket endpoint /api/telehealth/ws/{room_id}/{user_id} for WebRTC signaling (offer/answer/ICE candidates)"
+
+frontend:
+  - task: "Labs Tab in Patient Chart"
+    implemented: true
+    working: "NA"
+    file: "PatientChart.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Added Labs tab to PatientChart with lab order creation, result viewing, and simulate results button"
+
+  - task: "Telehealth Page"
+    implemented: true
+    working: "NA"
+    file: "TelehealthPage.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Created TelehealthPage.jsx with WebRTC video calls, session scheduling, waiting room, in-call controls"
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 1
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "Lab Results Module - Lab Order CRUD"
+    - "Lab Results Module - Simulated Results Generation"
+    - "Lab Results Module - HL7 v2 ORU Message Parsing"
+    - "Telehealth Module - Session Management"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: "Implemented Lab Results module and Telehealth module. Backend APIs ready for testing. Please test lab order creation, result simulation, HL7 ORU parsing, and telehealth session management."
