@@ -110,63 +110,78 @@ user_problem_statement: |
 backend:
   - task: "Lab Module - Order Lab Tests"
     implemented: true
-    working: "NA"
+    working: true
     file: "backend/lab_module.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Implemented lab order creation, panel definitions, status updates"
+      - working: true
+        agent: "testing"
+        comment: "✅ Lab order creation working correctly. Fixed MongoDB ObjectId serialization issue. All lab endpoints tested successfully: GET /api/lab/panels, POST /api/lab/orders, GET /api/lab/orders/{patient_id}"
 
   - task: "Lab Module - Simulate Lab Results"
     implemented: true
-    working: "NA"
+    working: true
     file: "backend/lab_module.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Implemented simulated result generation with realistic values and flags"
+      - working: true
+        agent: "testing"
+        comment: "✅ Lab result simulation working correctly. POST /api/lab/results/simulate/{order_id} generates realistic lab values with proper flags (normal, high, low, critical). Mixed scenario testing successful."
 
   - task: "Lab Module - HL7 v2 ORU Message Parsing"
     implemented: true
-    working: "NA"
+    working: true
     file: "backend/lab_module.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Implemented HL7 v2 ORU^R01 message parsing for external lab results"
+      - working: true
+        agent: "testing"
+        comment: "✅ HL7 ORU message parsing working correctly. POST /api/lab/hl7/oru successfully parses HL7 v2 ORU^R01 messages, extracts patient info, test results, and generates proper ACK responses."
 
   - task: "Telehealth Module - Session Management"
     implemented: true
-    working: "NA"
+    working: true
     file: "backend/telehealth_module.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Implemented telehealth session creation, joining, starting, ending"
+      - working: true
+        agent: "testing"
+        comment: "✅ Telehealth session management working correctly. All endpoints tested: POST /api/telehealth/sessions, GET /api/telehealth/sessions/{id}, POST /api/telehealth/sessions/{id}/join, POST /api/telehealth/sessions/{id}/start, GET /api/telehealth/upcoming"
 
   - task: "Telehealth Module - WebSocket Signaling"
     implemented: true
-    working: "NA"
+    working: true
     file: "backend/telehealth_module.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Implemented WebRTC signaling via WebSocket for peer-to-peer video"
+      - working: true
+        agent: "testing"
+        comment: "✅ WebRTC signaling infrastructure working correctly. WebSocket endpoint /api/telehealth/ws/{room_id}/{user_id} ready for WebRTC offer/answer/ICE candidate exchange. Dyte integration status endpoint functional."
 
 frontend:
   - task: "Labs Tab in Patient Chart"
