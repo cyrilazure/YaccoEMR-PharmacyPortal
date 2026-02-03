@@ -16,6 +16,9 @@ import NurseDashboard from "@/pages/NurseDashboard";
 import SchedulerDashboard from "@/pages/SchedulerDashboard";
 import AdminDashboard from "@/pages/AdminDashboard";
 import TelehealthPage from "@/pages/TelehealthPage";
+import SuperAdminDashboard from "@/pages/SuperAdminDashboard";
+import HospitalSettings from "@/pages/HospitalSettings";
+import HospitalRegistration from "@/pages/HospitalRegistration";
 
 // Role-based redirect component
 function RoleBasedRedirect() {
@@ -24,6 +27,10 @@ function RoleBasedRedirect() {
   if (!user) return <Navigate to="/login" replace />;
   
   switch (user.role) {
+    case 'super_admin':
+      return <Navigate to="/platform-admin" replace />;
+    case 'hospital_admin':
+      return <Navigate to="/hospital-settings" replace />;
     case 'physician':
       return <Navigate to="/dashboard" replace />;
     case 'nurse':
@@ -43,8 +50,13 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/register-hospital" element={<HospitalRegistration />} />
           <Route path="/" element={<Layout />}>
             <Route index element={<RoleBasedRedirect />} />
+            {/* Super Admin Dashboard */}
+            <Route path="platform-admin" element={<SuperAdminDashboard />} />
+            {/* Hospital Admin Settings */}
+            <Route path="hospital-settings" element={<HospitalSettings />} />
             {/* Physician Dashboard */}
             <Route path="dashboard" element={<Dashboard />} />
             {/* Nurse Dashboard */}
