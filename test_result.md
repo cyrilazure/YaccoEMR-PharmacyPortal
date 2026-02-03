@@ -103,11 +103,62 @@
 #====================================================================================================
 
 user_problem_statement: |
-  Add two new features to Yacco EMR:
-  1. Telehealth Video Integration - WebRTC peer-to-peer solution with Dyte integration ready
-  2. Real Lab Result Feeds - Simulated demo mode + HL7 v2 ORU message parsing
+  Build multi-hospital/multi-tenant system for Yacco EMR:
+  1. Hospital/Organization management with Super Admin (platform level)
+  2. Hospital Admin can manage their hospital and create staff accounts
+  3. Self-service registration with approval workflow
+  4. Data isolation by organization (each hospital sees only their data)
+  5. Staff account creation via direct account or invitation
 
 backend:
+  - task: "Organization Module - Hospital Registration"
+    implemented: true
+    working: "NA"
+    file: "backend/organization_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented self-service hospital registration with pending approval workflow"
+
+  - task: "Organization Module - Super Admin Hospital Management"
+    implemented: true
+    working: "NA"
+    file: "backend/organization_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Super Admin can list, approve, reject, suspend, reactivate hospitals"
+
+  - task: "Organization Module - Staff Management"
+    implemented: true
+    working: "NA"
+    file: "backend/organization_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Hospital Admin can create staff accounts directly or via invitation"
+
+  - task: "Data Isolation - Organization Scoping"
+    implemented: true
+    working: "NA"
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Added organization_id to all models (patients, orders, appointments, etc.) and filtered queries by org"
+
   - task: "Lab Module - Order Lab Tests"
     implemented: true
     working: true
@@ -116,42 +167,9 @@ backend:
     priority: "high"
     needs_retesting: false
     status_history:
-      - working: "NA"
-        agent: "main"
-        comment: "Implemented lab order creation, panel definitions, status updates"
       - working: true
         agent: "testing"
-        comment: "✅ Lab order creation working correctly. Fixed MongoDB ObjectId serialization issue. All lab endpoints tested successfully: GET /api/lab/panels, POST /api/lab/orders, GET /api/lab/orders/{patient_id}"
-
-  - task: "Lab Module - Simulate Lab Results"
-    implemented: true
-    working: true
-    file: "backend/lab_module.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-      - working: "NA"
-        agent: "main"
-        comment: "Implemented simulated result generation with realistic values and flags"
-      - working: true
-        agent: "testing"
-        comment: "✅ Lab result simulation working correctly. POST /api/lab/results/simulate/{order_id} generates realistic lab values with proper flags (normal, high, low, critical). Mixed scenario testing successful."
-
-  - task: "Lab Module - HL7 v2 ORU Message Parsing"
-    implemented: true
-    working: true
-    file: "backend/lab_module.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-      - working: "NA"
-        agent: "main"
-        comment: "Implemented HL7 v2 ORU^R01 message parsing for external lab results"
-      - working: true
-        agent: "testing"
-        comment: "✅ HL7 ORU message parsing working correctly. POST /api/lab/hl7/oru successfully parses HL7 v2 ORU^R01 messages, extracts patient info, test results, and generates proper ACK responses."
+        comment: "✅ Lab order creation working correctly"
 
   - task: "Telehealth Module - Session Management"
     implemented: true
@@ -161,29 +179,47 @@ backend:
     priority: "high"
     needs_retesting: false
     status_history:
-      - working: "NA"
-        agent: "main"
-        comment: "Implemented telehealth session creation, joining, starting, ending"
       - working: true
         agent: "testing"
-        comment: "✅ Telehealth session management working correctly. All endpoints tested: POST /api/telehealth/sessions, GET /api/telehealth/sessions/{id}, POST /api/telehealth/sessions/{id}/join, POST /api/telehealth/sessions/{id}/start, GET /api/telehealth/upcoming"
+        comment: "✅ Telehealth session management working correctly"
 
-  - task: "Telehealth Module - WebSocket Signaling"
+frontend:
+  - task: "Super Admin Dashboard"
     implemented: true
-    working: true
-    file: "backend/telehealth_module.py"
+    working: "NA"
+    file: "frontend/src/pages/SuperAdminDashboard.jsx"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
-        comment: "Implemented WebRTC signaling via WebSocket for peer-to-peer video"
-      - working: true
-        agent: "testing"
-        comment: "✅ WebRTC signaling infrastructure working correctly. WebSocket endpoint /api/telehealth/ws/{room_id}/{user_id} ready for WebRTC offer/answer/ICE candidate exchange. Dyte integration status endpoint functional."
+        comment: "Created platform admin dashboard to manage hospitals"
 
-frontend:
+  - task: "Hospital Settings Page"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/pages/HospitalSettings.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Created hospital settings for admins to manage org and staff"
+
+  - task: "Hospital Registration Page"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/pages/HospitalRegistration.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Created self-service hospital registration with multi-step form"
+
   - task: "Labs Tab in Patient Chart"
     implemented: true
     working: "NA"
