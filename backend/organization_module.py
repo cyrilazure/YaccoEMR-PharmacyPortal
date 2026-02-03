@@ -562,7 +562,7 @@ def create_organization_endpoints(db, get_current_user, hash_password):
         new_user = {
             "id": str(uuid.uuid4()),
             "email": staff_data.email,
-            "password_hash": hash_password(temp_password),
+            "password": hash_password(temp_password),
             "first_name": staff_data.first_name,
             "last_name": staff_data.last_name,
             "role": staff_data.role,
