@@ -369,7 +369,7 @@ def create_telehealth_endpoints(db, get_current_user):
     @telehealth_router.get("/sessions/{session_id}/participants", response_model=dict)
     async def get_session_participants(session_id: str, user: dict = Depends(get_current_user)):
         """Get participants in a telehealth session"""
-        participants = await db["telehealth_participants"].find({"session_id": session_id}).to_list(10)
+        participants = await db["telehealth_participants"].find({"session_id": session_id}, {"_id": 0}).to_list(10)
         return {"participants": participants}
     
     @telehealth_router.post("/sessions/from-appointment/{appointment_id}", response_model=dict)
