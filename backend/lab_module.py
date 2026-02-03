@@ -544,6 +544,9 @@ def create_lab_endpoints(db, get_current_user):
         
         await db["lab_results"].insert_one(lab_result)
         
+        # Remove MongoDB _id field if it exists
+        lab_result.pop('_id', None)
+        
         # Generate ACK
         ack = generate_hl7_ack(parsed.message_id, "AA")  # Application Accept
         
