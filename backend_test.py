@@ -3957,6 +3957,22 @@ class YaccoEMRTester:
         self.test_check_patient_consent()
         self.test_revoke_consent()
         
+        # ============ ENHANCED JWT AUTHENTICATION MODULE TESTS ============
+        print("\n🔐 Testing Enhanced JWT Authentication Module")
+        print("-" * 50)
+        self.test_enhanced_login_valid_credentials()
+        self.test_enhanced_login_invalid_password()
+        self.test_enhanced_login_account_lockout()
+        self.test_token_refresh()
+        self.test_logout_session()
+        self.test_logout_all_sessions()
+        self.test_session_management_list()
+        self.test_session_revocation()
+        self.test_token_validation()
+        self.test_password_change()
+        self.test_permission_checking()
+        self.test_permission_groups()
+        
         # ============ SECURITY ENHANCEMENT MODULE TESTS ============
         print("\n🔐 Testing Security Enhancement Modules")
         print("-" * 50)
