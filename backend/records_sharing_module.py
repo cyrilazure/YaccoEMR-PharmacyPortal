@@ -552,7 +552,7 @@ def setup_routes(db, get_current_user):
             ).to_list(100)
         
         if "all" in records_types or "notes" in records_types:
-            records["notes"] = await db.notes.find(
+            records["notes"] = await db.clinical_notes.find(
                 {"patient_id": patient_id, "organization_id": access_grant["granting_organization_id"]},
                 {"_id": 0}
             ).sort("created_at", -1).to_list(50)
