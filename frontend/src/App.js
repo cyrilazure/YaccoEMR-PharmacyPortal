@@ -87,6 +87,7 @@ function App() {
             <Route path="telehealth" element={<TelehealthPage />} />
             <Route path="telehealth/:sessionId" element={<TelehealthPage />} />
             <Route path="billing" element={<BillingPage />} />
+            <Route path="records-sharing" element={<RecordsSharing />} />
           </Route>
           <Route path="*" element={<RoleBasedRedirect />} />
         </Routes>
