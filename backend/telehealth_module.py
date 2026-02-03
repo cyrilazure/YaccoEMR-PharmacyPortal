@@ -200,6 +200,9 @@ def create_telehealth_endpoints(db, get_current_user):
         
         await db["telehealth_sessions"].insert_one(session_dict)
         
+        # Remove MongoDB _id field if it exists
+        session_dict.pop('_id', None)
+        
         return {
             "message": "Telehealth session created",
             "session": session_dict,
