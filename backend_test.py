@@ -6,7 +6,7 @@ import json
 from datetime import datetime, timedelta
 
 class YaccoEMRTester:
-    def __init__(self, base_url="https://careconnect-emr.preview.emergentagent.com"):
+    def __init__(self, base_url="https://patient-care-25.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_base = f"{base_url}/api"
         self.token = None
