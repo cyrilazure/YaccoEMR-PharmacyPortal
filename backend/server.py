@@ -997,6 +997,11 @@ from consent_module import consent_router, create_consent_endpoints
 consent_api_router = create_consent_endpoints(db, get_current_user)
 app.include_router(consent_router)
 
+# Include Enhanced Authentication routes
+from auth_module import auth_router, create_auth_endpoints
+auth_api_router, create_enhanced_token, decode_enhanced_token, create_auth_session = create_auth_endpoints(db, get_current_user)
+app.include_router(auth_router)
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
