@@ -978,6 +978,27 @@ class YaccoEMRTester:
         # AI functionality
         self.test_ai_note_generation()
         
+        # ============ LAB RESULTS MODULE TESTS ============
+        print("\n🧪 Testing Lab Results Module")
+        print("-" * 30)
+        self.test_lab_panels()
+        self.test_lab_order_creation()
+        self.test_get_patient_lab_orders()
+        self.test_simulate_lab_results()
+        self.test_get_patient_lab_results()
+        self.test_hl7_oru_parsing()
+        
+        # ============ TELEHEALTH MODULE TESTS ============
+        print("\n📹 Testing Telehealth Video Module")
+        print("-" * 30)
+        self.test_telehealth_config()
+        self.test_telehealth_session_creation()
+        self.test_get_telehealth_session()
+        self.test_join_telehealth_session()
+        self.test_start_telehealth_session()
+        self.test_get_upcoming_telehealth_sessions()
+        self.test_dyte_integration_status()
+        
         # FHIR R4 API Tests
         print("\n🔗 Testing FHIR R4 Interoperability APIs")
         print("-" * 30)
