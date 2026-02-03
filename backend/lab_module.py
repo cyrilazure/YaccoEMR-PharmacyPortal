@@ -400,7 +400,7 @@ def create_lab_endpoints(db, get_current_user):
     ):
         """Generate simulated lab results for an order (Demo Mode)"""
         # Get the lab order
-        order = await db["lab_orders"].find_one({"id": order_id})
+        order = await db["lab_orders"].find_one({"id": order_id}, {"_id": 0})
         if not order:
             raise HTTPException(status_code=404, detail="Lab order not found")
         
