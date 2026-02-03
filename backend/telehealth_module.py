@@ -376,7 +376,7 @@ def create_telehealth_endpoints(db, get_current_user):
     async def create_session_from_appointment(appointment_id: str, user: dict = Depends(get_current_user)):
         """Create telehealth session from an existing appointment"""
         # Get appointment
-        appointment = await db["appointments"].find_one({"id": appointment_id})
+        appointment = await db["appointments"].find_one({"id": appointment_id}, {"_id": 0})
         
         if not appointment:
             raise HTTPException(status_code=404, detail="Appointment not found")
