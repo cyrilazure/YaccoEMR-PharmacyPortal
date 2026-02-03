@@ -727,13 +727,7 @@ frontend:
         comment: "Created billing page with invoices, payments, claims"
 
 test_plan:
-  current_focus:
-    - "Password Reset APIs"
-    - "Pharmacy Module APIs"
-    - "Billing Module APIs"
-    - "Reports Module APIs"
-    - "Imaging/DICOM Module APIs"
-    - "Clinical Decision Support APIs"
+  current_focus: []
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
