@@ -346,8 +346,14 @@ async def register(user_data: UserCreate):
         )
     )
 
+# Login model with optional 2FA code
+class UserLoginWith2FA(BaseModel):
+    email: EmailStr
+    password: str
+    totp_code: Optional[str] = None
+
 @api_router.post("/auth/login", response_model=LoginResponse)
-async def login(credentials: UserLogin):
+async def login(credentials: UserLoginWith2FA):
     user = await db.users.find_one({"email": credentials.email}, {"_id": 0})
     if not user or not verify_password(credentials.password, user["password"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
@@ -357,6 +363,47 @@ async def login(credentials: UserLogin):
         org = await db.organizations.find_one({"id": user["organization_id"]})
         if org and org.get("status") != "active":
             raise HTTPException(status_code=403, detail="Your organization is not active. Please contact support.")
+    
+    # Check if 2FA is enabled for this user
+    user_2fa = await db.user_2fa.find_one({"user_id": user["id"]})
+    if user_2fa and user_2fa.get("enabled"):
+        if not credentials.totp_code:
+            # 2FA is required but no code provided
+            raise HTTPException(
+                status_code=403, 
+                detail="2FA_REQUIRED",
+                headers={"X-2FA-Required": "true"}
+            )
+        
+        # Verify 2FA code using the helper function from twofa_module
+        from twofa_module import verify_totp
+        
+        # Try TOTP code first
+        is_valid = verify_totp(user_2fa["secret"], credentials.totp_code)
+        
+        # If not valid, try backup codes
+        if not is_valid:
+            backup_codes = user_2fa.get("backup_codes", [])
+            code_normalized = credentials.totp_code.upper().replace("-", "").replace(" ", "")
+            for bc in backup_codes:
+                if bc["code"].replace("-", "") == code_normalized and not bc.get("used", False):
+                    bc["used"] = True
+                    bc["used_at"] = datetime.now(timezone.utc).isoformat()
+                    await db.user_2fa.update_one(
+                        {"user_id": user["id"]},
+                        {"$set": {"backup_codes": backup_codes}}
+                    )
+                    is_valid = True
+                    break
+        
+        if not is_valid:
+            raise HTTPException(status_code=401, detail="Invalid 2FA code")
+        
+        # Update last used timestamp
+        await db.user_2fa.update_one(
+            {"user_id": user["id"]},
+            {"$set": {"last_used": datetime.now(timezone.utc).isoformat()}}
+        )
     
     token = create_token(user["id"], user["role"])
     return LoginResponse(
