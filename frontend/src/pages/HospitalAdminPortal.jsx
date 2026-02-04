@@ -125,15 +125,17 @@ export default function HospitalAdminPortal() {
     
     try {
       setLoading(true);
-      const [dashboardRes, usersRes, deptsRes] = await Promise.all([
+      const [dashboardRes, usersRes, deptsRes, patientsRes] = await Promise.all([
         hospitalAdminAPI.getDashboard(effectiveHospitalId),
         hospitalAdminAPI.listUsers(effectiveHospitalId, {}),
-        hospitalAdminAPI.listDepartments(effectiveHospitalId)
+        hospitalAdminAPI.listDepartments(effectiveHospitalId),
+        patientAPI.getAll({ organization_id: effectiveHospitalId })
       ]);
       
       setDashboard(dashboardRes.data);
       setUsers(usersRes.data.users || []);
       setDepartments(deptsRes.data.departments || []);
+      setPatients(patientsRes.data || []);
       
       // Load locations
       try {
