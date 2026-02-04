@@ -1035,11 +1035,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ============ STARTUP - SEED SUPER ADMIN ============
+# ============ STARTUP - SEED SUPER ADMIN & REGIONS ============
 @app.on_event("startup")
 async def seed_super_admin():
-    """Create default super admin user if not exists"""
+    """Create default super admin user and Ghana regions if not exists"""
     try:
+        # Seed Super Admin
         super_admin_email = "ygtnetworks@gmail.com"
         existing = await db.users.find_one({"email": super_admin_email})
         
@@ -1063,8 +1064,23 @@ async def seed_super_admin():
             logger.info(f"✅ Super Admin created: {super_admin_email}")
         else:
             logger.info(f"✅ Super Admin already exists: {super_admin_email}")
+        
+        # Seed Ghana Regions
+        from region_module import GHANA_REGIONS
+        for region in GHANA_REGIONS:
+            existing_region = await db.regions.find_one({"id": region["id"]})
+            if not existing_region:
+                region_doc = {
+                    **region,
+                    "is_active": True,
+                    "hospital_count": 0,
+                    "created_at": datetime.now(timezone.utc).isoformat()
+                }
+                await db.regions.insert_one(region_doc)
+        logger.info(f"✅ Ghana regions seeded: {len(GHANA_REGIONS)} regions")
+        
     except Exception as e:
-        logger.error(f"❌ Error seeding super admin: {e}")
+        logger.error(f"❌ Error in startup seeding: {e}")
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
