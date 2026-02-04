@@ -572,10 +572,18 @@ export default function HospitalSuperAdminIT() {
             {/* Departments */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FolderTree className="w-5 h-5 text-blue-600" />
-                  Departments
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <FolderTree className="w-5 h-5 text-blue-600" />
+                    Departments
+                  </CardTitle>
+                  {departments.length === 0 && (
+                    <Button size="sm" onClick={handleSeedDepartments} variant="outline">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Default Departments
+                    </Button>
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
@@ -589,7 +597,13 @@ export default function HospitalSuperAdminIT() {
                     </div>
                   ))}
                   {departments.length === 0 && (
-                    <p className="text-center text-gray-500 py-8">No departments</p>
+                    <div className="text-center py-8">
+                      <p className="text-gray-500 mb-3">No departments configured</p>
+                      <Button onClick={handleSeedDepartments} className="bg-blue-600 hover:bg-blue-700">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Setup Default Departments
+                      </Button>
+                    </div>
                   )}
                 </div>
               </CardContent>
