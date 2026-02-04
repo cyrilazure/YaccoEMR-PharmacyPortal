@@ -53,14 +53,6 @@ export const authAPI = {
   getPermissionGroups: () => api.get('/auth/groups'),
 };
 
-// Password APIs (for backwards compatibility)
-export const passwordAPI = {
-  changePassword: (currentPassword, newPassword) => api.post('/auth/password/change', { 
-    current_password: currentPassword, 
-    new_password: newPassword 
-  }),
-};
-
 // Patient APIs
 export const patientAPI = {
   getAll: (search) => api.get('/patients', { params: { search } }),
