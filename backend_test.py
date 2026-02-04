@@ -1601,40 +1601,9 @@ class YaccoEMRTester:
     
     def test_hospital_it_admin_region_login(self):
         """Test Hospital IT Admin login via POST /api/regions/auth/login"""
-        # First, we need to find the hospital and location IDs for the IT Admin
-        # Let's get the hospital details first
-        
-        # Get hospitals in Greater Accra
-        response, error = self.make_request('GET', 'regions/greater-accra/hospitals')
-        if error or response.status_code != 200:
-            self.log_test("Hospital IT Admin Region Login", False, "Could not get hospitals")
-            return False
-        
-        data = response.json()
-        hospitals = data.get('hospitals', [])
-        
-        if not hospitals:
-            self.log_test("Hospital IT Admin Region Login", False, "No hospitals found in Greater Accra")
-            return False
-        
-        # Use the first hospital
-        hospital = hospitals[0]
-        hospital_id = hospital.get('id')
-        
-        # Get hospital locations
-        response, error = self.make_request('GET', f'regions/hospitals/{hospital_id}')
-        if error or response.status_code != 200:
-            self.log_test("Hospital IT Admin Region Login", False, "Could not get hospital locations")
-            return False
-        
-        hospital_data = response.json()
-        locations = hospital_data.get('locations', [])
-        
-        if not locations:
-            self.log_test("Hospital IT Admin Region Login", False, "No locations found for hospital")
-            return False
-        
-        location_id = locations[0].get('id')
+        # Use the specific hospital and location IDs from the review request
+        hospital_id = "e717ed11-7955-4884-8d6b-a529f918c34f"
+        location_id = "b61d7896-b4ef-436b-868e-94a60b55c64c"
         
         # Now attempt login with IT Admin credentials
         login_data = {
