@@ -412,7 +412,7 @@ def create_nurse_portal_endpoints(db, get_current_user):
             notes=shift_data.notes
         )
         
-        shift_dict = shift_record.model_dump()
+        shift_dict = shift_record.model_dump(mode='json')  # Convert enums to values
         await db.nurse_shifts.insert_one(shift_dict)
         if "_id" in shift_dict: del shift_dict["_id"]
         
