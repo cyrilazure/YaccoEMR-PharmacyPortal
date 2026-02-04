@@ -7404,6 +7404,61 @@ class YaccoEMRTester:
         self.test_clock_out_shift()  # Uses nurse token
         self.test_get_handoff_notes()  # Uses nurse token
 
+    def run_emr_portal_tests(self):
+        """Run EMR Portal specific tests as requested"""
+        print("🏥 Starting EMR Portal Backend API Tests...")
+        print(f"🌐 Base URL: {self.base_url}")
+        print("=" * 80)
+        
+        # 1. Authentication
+        print("\n🔐 Testing Authentication...")
+        if not self.test_emr_portal_authentication():
+            print("❌ EMR Portal authentication failed - stopping tests")
+            return False
+        
+        # 2. Platform Owner (Super Admin) APIs
+        print("\n👑 Testing Platform Owner (Super Admin) APIs...")
+        self.test_platform_owner_overview()
+        self.test_platform_owner_hospital_admins()
+        self.test_platform_owner_create_hospital()
+        
+        # 3. Hospital IT Admin APIs
+        print("\n🔧 Testing Hospital IT Admin APIs...")
+        self.test_hospital_it_admin_dashboard()
+        self.test_hospital_it_admin_staff_list()
+        self.test_hospital_it_admin_create_staff()
+        
+        # 4. Hospital Admin APIs
+        print("\n🏥 Testing Hospital Admin APIs...")
+        self.test_hospital_admin_dashboard()
+        self.test_hospital_admin_departments()
+        self.test_hospital_admin_no_staff_creation()
+        
+        # 5. Department APIs
+        print("\n🏢 Testing Department APIs...")
+        self.test_departments_list()
+        self.test_department_types()
+        
+        # 6. Role-Based Access Control
+        print("\n🛡️ Testing Role-Based Access Control...")
+        self.test_role_based_access_control()
+        
+        # Print summary
+        print("\n" + "=" * 80)
+        print(f"📊 EMR Portal Test Summary: {self.tests_passed}/{self.tests_run} tests passed")
+        print(f"✅ Success Rate: {(self.tests_passed/self.tests_run)*100:.1f}%")
+        
+        if self.tests_passed == self.tests_run:
+            print("🎉 All EMR Portal tests passed!")
+        else:
+            print("⚠️  Some EMR Portal tests failed - check logs above")
+            failed_tests = [r for r in self.test_results if not r['success']]
+            print("\n❌ Failed Tests:")
+            for test in failed_tests:
+                print(f"   - {test['test']}: {test['details']}")
+        
+        return self.tests_passed == self.tests_run
+
     def run_all_tests(self):
         """Run comprehensive backend API tests"""
         print("🏥 Starting Yacco EMR Backend API Tests")
