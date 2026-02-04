@@ -1116,13 +1116,13 @@ backend:
         comment: "11 consent types, digital signatures, templates, verification"
       - working: true
         agent: "testing"
-        comment: "✅ Consent Forms Module - ALL CORE FEATURES WORKING: Consent types (11 types), consent templates (treatment, HIPAA, records release, telehealth), consent form creation, listing, patient-specific consents, form retrieval, digital signing, verification, patient consent checking, and revocation all functional. Complete consent workflow tested successfully."
+        comment: "✅ All core features working - templates, signing, verification, revocation lifecycle"
       - working: "NA"
         agent: "main"
         comment: "Enhanced with usage tracking, document storage, integrity verification, expiration management, compliance reporting"
       - working: true
         agent: "testing"
-        comment: "✅ Enhanced Patient Consent Management System - COMPREHENSIVE TESTING COMPLETE (13/17 tests passed - 76.5% success rate): Core consent lifecycle working including consent types/templates, consent creation (treatment & records release), digital signing with base64 signatures, document upload with SHA-256 integrity verification, consent usage tracking with audit trails, usage history retrieval, consent revocation with reason tracking, and compliance statistics. Fixed MongoDB ObjectId serialization and datetime comparison issues. All critical consent management workflows operational for HIPAA compliance."
+        comment: "✅ 76.5% tests passed - Core consent lifecycle working. Signing, document upload, SHA-256 integrity, usage tracking, revocation all verified"
 
   - task: "Database Models Documentation"
     implemented: true
