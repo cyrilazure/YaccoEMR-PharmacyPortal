@@ -7696,7 +7696,52 @@ class YaccoEMRTester:
         self.test_clock_out_shift()  # Uses nurse token
         self.test_get_handoff_notes()  # Uses nurse token
 
-    def run_emr_portal_tests(self):
+    def run_platform_owner_rbac_tests(self):
+        """Run Platform Owner RBAC and Hospital Management API tests as requested"""
+        print("🔒 Starting Platform Owner RBAC and Hospital Management API Tests")
+        print("=" * 70)
+        
+        # Test 1: Super Admin Authentication
+        print("\n1️⃣ Testing Super Admin Authentication")
+        print("-" * 40)
+        if not self.test_emr_portal_authentication():
+            print("❌ Super Admin authentication failed - stopping tests")
+            return False
+        
+        # Test 2: Hospital Management APIs (Super Admin only)
+        print("\n2️⃣ Testing Hospital Management APIs (Super Admin only)")
+        print("-" * 50)
+        self.test_hospital_management_apis()
+        
+        # Test 3: RBAC Enforcement - Super Admin restrictions
+        print("\n3️⃣ Testing RBAC Enforcement - Super Admin CANNOT access")
+        print("-" * 55)
+        self.test_super_admin_rbac_enforcement()
+        
+        # Test 4: Hospital IT Admin APIs
+        print("\n4️⃣ Testing Hospital IT Admin APIs")
+        print("-" * 35)
+        self.test_hospital_it_admin_apis()
+        
+        # Test 5: Hospital Admin APIs
+        print("\n5️⃣ Testing Hospital Admin APIs")
+        print("-" * 30)
+        self.test_hospital_admin_apis()
+        
+        # Summary
+        print("\n" + "=" * 70)
+        print(f"📊 Platform Owner RBAC Test Summary: {self.tests_passed}/{self.tests_run} tests passed")
+        print("=" * 70)
+        
+        failed_tests = [t for t in self.test_results if not t['success']]
+        if not failed_tests:
+            print("🎉 All Platform Owner RBAC tests passed!")
+        else:
+            print("⚠️  Some Platform Owner RBAC tests failed:")
+            for test in failed_tests:
+                print(f"   - {test['test']}: {test['details']}")
+        
+        return len(failed_tests) == 0
         """Run EMR Portal specific tests as requested"""
         print("🏥 Starting EMR Portal Backend API Tests...")
         print(f"🌐 Base URL: {self.base_url}")
