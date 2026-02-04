@@ -120,7 +120,7 @@ class PatientAssignment(BaseModel):
     patient_mrn: str
     nurse_id: str
     nurse_name: str
-    organization_id: str
+    organization_id: Optional[str] = None
     shift_type: Optional[ShiftType] = None
     department_id: Optional[str] = None
     room_bed: Optional[str] = None
@@ -150,7 +150,7 @@ class NurseTask(BaseModel):
     patient_mrn: str
     room_bed: Optional[str] = None
     nurse_id: str
-    organization_id: str
+    organization_id: Optional[str] = None
     task_type: TaskType
     description: str
     priority: TaskPriority
@@ -184,7 +184,7 @@ class MAREntry(BaseModel):
     notes: Optional[str] = None
     held_reason: Optional[str] = None
     refused_reason: Optional[str] = None
-    organization_id: str
+    organization_id: Optional[str] = None
     created_at: str
 
 
