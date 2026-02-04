@@ -157,6 +157,10 @@ function App() {
             {/* Admin Dashboard */}
             <Route path="admin" element={<AdminDashboard />} />
             
+            {/* Department / Unit Portal (without hospitalId) */}
+            <Route path="department" element={<DepartmentUnitPortal />} />
+            <Route path="department/:deptId" element={<DepartmentUnitPortal />} />
+            
             {/* Shared Pages */}
             <Route path="patients" element={<Patients />} />
             <Route path="patients/:id" element={<PatientChart />} />
