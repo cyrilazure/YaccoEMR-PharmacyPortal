@@ -320,10 +320,7 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus:
-    - "Admin Portal - Hospital Admin Features"
-    - "Admin Portal - Super Admin Features"
-    - "Admin Portal - Security Policies"
+  current_focus: []
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
