@@ -21,12 +21,18 @@ import {
 } from 'lucide-react';
 
 const navItems = [
-  // Super Admin
-  { to: '/platform-admin', icon: Globe, label: 'Platform Admin', roles: ['super_admin'] },
-  // Hospital IT Admin - Staff Management Only
+  // Platform Level - Super Admin Only
+  { to: '/platform/super-admin', icon: Globe, label: 'Platform Admin', roles: ['super_admin'] },
+  
+  // Hospital IT Admin - Staff Account Management Only
   { to: '/it-admin', icon: UserCog, label: 'IT Admin', roles: ['hospital_it_admin'] },
-  // Hospital Admin
+  
+  // Hospital Admin - View/Manage Hospital Settings (No Staff Creation)
   { to: '/admin-dashboard', icon: Building2, label: 'Hospital Admin', roles: ['hospital_admin'] },
+  
+  // Facility Admin - Local Facility Management
+  { to: '/facility-admin', icon: Layers, label: 'Facility Admin', roles: ['facility_admin'] },
+  
   // Role-specific dashboards
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', roles: ['physician'] },
   { to: '/nurse-station', icon: Heart, label: 'Nurse Station', roles: ['nurse'] },
@@ -34,15 +40,15 @@ const navItems = [
   { to: '/billing', icon: CreditCard, label: 'Billing Portal', roles: ['biller'] },
   { to: '/department', icon: Layers, label: 'Department Portal', roles: ['records_officer', 'department_staff'] },
   { to: '/admin', icon: Shield, label: 'Admin Center', roles: ['admin'] },
+  
   // Shared pages
-  { to: '/patients', icon: Users, label: 'Patients', roles: ['physician', 'nurse', 'scheduler', 'admin', 'hospital_admin', 'super_admin', 'records_officer'] },
+  { to: '/patients', icon: Users, label: 'Patients', roles: ['physician', 'nurse', 'scheduler', 'admin', 'hospital_admin', 'records_officer'] },
   { to: '/appointments', icon: Calendar, label: 'Appointments', roles: ['physician', 'nurse', 'scheduler', 'admin', 'hospital_admin'] },
   { to: '/orders', icon: ClipboardList, label: 'Orders', roles: ['physician', 'nurse', 'admin', 'hospital_admin'] },
   { to: '/telehealth', icon: Video, label: 'Telehealth', roles: ['physician', 'nurse', 'admin', 'hospital_admin'] },
   { to: '/records-sharing', icon: Share2, label: 'Records Sharing', roles: ['physician', 'hospital_admin'] },
-  { to: '/billing', icon: CreditCard, label: 'Billing', roles: ['physician', 'admin', 'hospital_admin'] },
-  { to: '/analytics', icon: BarChart3, label: 'Analytics', roles: ['physician', 'admin', 'hospital_admin', 'super_admin'] },
-  // Security & Audit - Admin roles
+  
+  // Security & Audit - Admin roles only
   { to: '/audit-logs', icon: FileSearch, label: 'Audit Logs', roles: ['admin', 'hospital_admin', 'super_admin'] },
 ];
 
