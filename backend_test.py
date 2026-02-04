@@ -3856,6 +3856,358 @@ class YaccoEMRTester:
             self.log_test("Revoke Consent", False, f"Status: {response.status_code}")
             return False
 
+    # ============ ENHANCED PATIENT CONSENT MANAGEMENT SYSTEM TESTS ============
+    
+    def test_consent_types(self):
+        """Test getting available consent types"""
+        response, error = self.make_request('GET', 'consents/types')
+        if error:
+            self.log_test("Consent Types", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_types = len(data) > 0
+            expected_types = ['treatment', 'hipaa', 'records_release', 'telehealth']
+            type_values = [t.get('value') for t in data]
+            has_expected = all(t in type_values for t in expected_types)
+            success = has_types and has_expected
+            self.log_test("Consent Types", success, f"Found {len(data)} consent types")
+            return success
+        else:
+            self.log_test("Consent Types", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_consent_templates(self):
+        """Test getting consent templates"""
+        response, error = self.make_request('GET', 'consents/templates')
+        if error:
+            self.log_test("Consent Templates", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_templates = len(data) > 0
+            # Check for required template fields
+            if data:
+                first_template = data[0]
+                has_required_fields = all(field in first_template for field in ['consent_type', 'title', 'consent_text'])
+                success = has_templates and has_required_fields
+            else:
+                success = False
+            self.log_test("Consent Templates", success, f"Found {len(data)} templates")
+            return success
+        else:
+            self.log_test("Consent Templates", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_create_consent_form(self):
+        """Test creating a consent form"""
+        if not self.test_patient_id:
+            self.log_test("Create Consent Form", False, "No test patient available")
+            return False
+        
+        # Create treatment consent with expiration
+        from datetime import datetime, timedelta
+        expiration_date = (datetime.now() + timedelta(days=365)).strftime("%Y-%m-%d")
+        
+        consent_data = {
+            "patient_id": self.test_patient_id,
+            "consent_type": "treatment",
+            "title": "General Treatment Consent",
+            "description": "Consent for medical treatment and procedures",
+            "consent_text": "I consent to receive medical treatment at this facility...",
+            "expiration_date": expiration_date,
+            "purpose": "General medical treatment"
+        }
+        
+        response, error = self.make_request('POST', 'consents', consent_data)
+        if error:
+            self.log_test("Create Consent Form", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            self.treatment_consent_id = data.get('id')
+            has_consent_id = bool(self.treatment_consent_id)
+            status_pending = data.get('status') == 'pending'
+            success = has_consent_id and status_pending
+            self.log_test("Create Consent Form", success, f"Consent ID: {self.treatment_consent_id}")
+            return success
+        else:
+            self.log_test("Create Consent Form", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_create_records_release_consent(self):
+        """Test creating records release consent with scope"""
+        if not self.test_patient_id:
+            self.log_test("Create Records Release Consent", False, "No test patient available")
+            return False
+        
+        from datetime import datetime, timedelta
+        start_date = (datetime.now() - timedelta(days=365)).strftime("%Y-%m-%d")
+        end_date = datetime.now().strftime("%Y-%m-%d")
+        expiration_date = (datetime.now() + timedelta(days=180)).strftime("%Y-%m-%d")
+        
+        consent_data = {
+            "patient_id": self.test_patient_id,
+            "consent_type": "records_release",
+            "title": "Medical Records Release Authorization",
+            "description": "Authorization to release medical records to another provider",
+            "consent_text": "I authorize the release of my medical records...",
+            "scope_start_date": start_date,
+            "scope_end_date": end_date,
+            "record_types_included": ["clinical_notes", "lab_results", "vitals", "medications"],
+            "recipient_organization_name": "Specialist Medical Center",
+            "purpose": "Continuity of care",
+            "expiration_date": expiration_date
+        }
+        
+        response, error = self.make_request('POST', 'consents', consent_data)
+        if error:
+            self.log_test("Create Records Release Consent", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            self.records_consent_id = data.get('id')
+            has_consent_id = bool(self.records_consent_id)
+            has_scope = bool(data.get('scope_start_date')) and bool(data.get('record_types_included'))
+            success = has_consent_id and has_scope
+            self.log_test("Create Records Release Consent", success, f"Consent ID: {self.records_consent_id}")
+            return success
+        else:
+            self.log_test("Create Records Release Consent", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_sign_consent(self):
+        """Test signing a consent form with digital signature"""
+        if not hasattr(self, 'treatment_consent_id') or not self.treatment_consent_id:
+            self.log_test("Sign Consent", False, "No treatment consent available")
+            return False
+        
+        # Create a base64 encoded signature (mock signature data)
+        signature_data = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+        
+        sign_data = {
+            "patient_signature": signature_data
+        }
+        
+        response, error = self.make_request('POST', f'consents/{self.treatment_consent_id}/sign', sign_data)
+        if error:
+            self.log_test("Sign Consent", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            status_active = data.get('status') == 'active'
+            success = status_active
+            self.log_test("Sign Consent", success, f"Status: {data.get('status')}")
+            return success
+        else:
+            self.log_test("Sign Consent", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_upload_consent_document(self):
+        """Test uploading a consent document"""
+        if not hasattr(self, 'records_consent_id') or not self.records_consent_id:
+            self.log_test("Upload Consent Document", False, "No records consent available")
+            return False
+        
+        # Create mock PDF content
+        pdf_content = b"%PDF-1.4\n1 0 obj\n<<\n/Type /Catalog\n/Pages 2 0 R\n>>\nendobj\n2 0 obj\n<<\n/Type /Pages\n/Kids [3 0 R]\n/Count 1\n>>\nendobj\n3 0 obj\n<<\n/Type /Page\n/Parent 2 0 R\n/MediaBox [0 0 612 792]\n>>\nendobj\nxref\n0 4\n0000000000 65535 f \n0000000010 00000 n \n0000000079 00000 n \n0000000173 00000 n \ntrailer\n<<\n/Size 4\n/Root 1 0 R\n>>\nstartxref\n253\n%%EOF"
+        
+        # For this test, we'll use the regular request method with files
+        import requests
+        url = f"{self.api_base}/consents/{self.records_consent_id}/upload-document"
+        headers = {'Authorization': f'Bearer {self.token}'}
+        
+        files = {'file': ('consent.pdf', pdf_content, 'application/pdf')}
+        
+        try:
+            response = requests.post(url, headers=headers, files=files)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_hash = bool(data.get('document_hash'))
+                has_filename = bool(data.get('filename'))
+                success = has_hash and has_filename
+                self.log_test("Upload Consent Document", success, f"Hash: {data.get('document_hash')[:16]}...")
+                return success
+            else:
+                self.log_test("Upload Consent Document", False, f"Status: {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Upload Consent Document", False, str(e))
+            return False
+    
+    def test_verify_document_integrity(self):
+        """Test verifying document integrity"""
+        if not hasattr(self, 'records_consent_id') or not self.records_consent_id:
+            self.log_test("Verify Document Integrity", False, "No records consent available")
+            return False
+        
+        response, error = self.make_request('GET', f'consents/{self.records_consent_id}/verify-integrity')
+        if error:
+            self.log_test("Verify Document Integrity", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            is_verified = data.get('verified', False)
+            has_hashes = bool(data.get('stored_hash')) and bool(data.get('current_hash'))
+            success = is_verified and has_hashes
+            self.log_test("Verify Document Integrity", success, f"Verified: {is_verified}")
+            return success
+        else:
+            self.log_test("Verify Document Integrity", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_record_consent_usage(self):
+        """Test recording consent usage"""
+        if not hasattr(self, 'treatment_consent_id') or not self.treatment_consent_id:
+            self.log_test("Record Consent Usage", False, "No treatment consent available")
+            return False
+        
+        response, error = self.make_request('POST', f'consents/{self.treatment_consent_id}/use?usage_type=phi_disclosure&details=Shared patient information with specialist for consultation')
+        if error:
+            self.log_test("Record Consent Usage", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_usage_id = bool(data.get('usage_id'))
+            success = has_usage_id
+            self.log_test("Record Consent Usage", success, f"Usage ID: {data.get('usage_id')}")
+            return success
+        else:
+            self.log_test("Record Consent Usage", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_get_consent_usage_history(self):
+        """Test getting consent usage history"""
+        if not hasattr(self, 'treatment_consent_id') or not self.treatment_consent_id:
+            self.log_test("Get Consent Usage History", False, "No treatment consent available")
+            return False
+        
+        response, error = self.make_request('GET', f'consents/{self.treatment_consent_id}/usage-history')
+        if error:
+            self.log_test("Get Consent Usage History", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_history = 'usage_history' in data
+            has_access_count = 'total_accesses' in data
+            usage_count = len(data.get('usage_history', []))
+            success = has_history and has_access_count and usage_count > 0
+            self.log_test("Get Consent Usage History", success, f"Found {usage_count} usage records")
+            return success
+        else:
+            self.log_test("Get Consent Usage History", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_revoke_consent(self):
+        """Test revoking a consent"""
+        if not hasattr(self, 'treatment_consent_id') or not self.treatment_consent_id:
+            self.log_test("Revoke Consent", False, "No treatment consent available")
+            return False
+        
+        revoke_data = {
+            "reason": "Patient requested revocation of consent"
+        }
+        
+        response, error = self.make_request('POST', f'consents/{self.treatment_consent_id}/revoke', revoke_data)
+        if error:
+            self.log_test("Revoke Consent", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            status_revoked = data.get('status') == 'revoked'
+            success = status_revoked
+            self.log_test("Revoke Consent", success, f"Status: {data.get('status')}")
+            return success
+        else:
+            self.log_test("Revoke Consent", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_expiring_consents(self):
+        """Test getting consents expiring soon"""
+        response, error = self.make_request('GET', 'consents/expiring-soon?days=30')
+        if error:
+            self.log_test("Expiring Consents", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_count = 'count' in data
+            has_consents = 'consents' in data
+            success = has_count and has_consents
+            consent_count = data.get('count', 0)
+            self.log_test("Expiring Consents", success, f"Found {consent_count} expiring consents")
+            return success
+        else:
+            self.log_test("Expiring Consents", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_check_consent_expirations(self):
+        """Test manual expiration check"""
+        response, error = self.make_request('POST', 'consents/check-expirations')
+        if error:
+            self.log_test("Check Consent Expirations", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_expired_count = 'expired_count' in data
+            success = has_expired_count
+            expired_count = data.get('expired_count', 0)
+            self.log_test("Check Consent Expirations", success, f"Expired {expired_count} consents")
+            return success
+        else:
+            self.log_test("Check Consent Expirations", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_consent_statistics(self):
+        """Test getting consent statistics"""
+        response, error = self.make_request('GET', 'consents/stats/overview')
+        if error:
+            self.log_test("Consent Statistics", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            required_fields = ['by_status', 'by_type', 'total_active', 'total_pending']
+            has_all_fields = all(field in data for field in required_fields)
+            success = has_all_fields
+            total_active = data.get('total_active', 0)
+            self.log_test("Consent Statistics", success, f"Active consents: {total_active}")
+            return success
+        else:
+            self.log_test("Consent Statistics", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_compliance_report(self):
+        """Test generating compliance report"""
+        response, error = self.make_request('GET', 'consents/compliance-report')
+        if error:
+            self.log_test("Compliance Report", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            required_fields = ['report_period', 'summary', 'compliance_notes']
+            has_all_fields = all(field in data for field in required_fields)
+            has_summary_data = 'consents_created' in data.get('summary', {})
+            success = has_all_fields and has_summary_data
+            consents_created = data.get('summary', {}).get('consents_created', 0)
+            self.log_test("Compliance Report", success, f"Consents created: {consents_created}")
+            return success
+        else:
+            self.log_test("Compliance Report", False, f"Status: {response.status_code}")
+            return False
+
     def run_all_tests(self):
         """Run comprehensive backend API tests"""
         print("🏥 Starting Yacco EMR Backend API Tests")
