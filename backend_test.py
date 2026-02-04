@@ -8121,6 +8121,11 @@ class YaccoEMRTester:
         if not self.test_health_check():
             return False
         
+        # ============ REGION-BASED LOGIN TESTS (SPECIFIC REQUEST) ============
+        print("\n🇬🇭 Testing Region-Based Login for All Staff Types (Ghana EMR)")
+        print("-" * 70)
+        self.run_region_based_tests()
+        
         # ============ REGION-BASED HOSPITAL DISCOVERY TESTS (GHANA) ============
         print("\n🇬🇭 Testing Region-Based Hospital Discovery and Authentication (Ghana EMR)")
         print("-" * 70)
