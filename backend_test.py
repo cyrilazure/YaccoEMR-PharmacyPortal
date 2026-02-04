@@ -6735,6 +6735,25 @@ class YaccoEMRTester:
         self.test_fhir_appointment_bundle()
         self.test_fhir_patient_by_id()
         
+        # ============ HOSPITAL SIGNUP & ADMIN MODULE TESTS ============
+        print("\n🏥 Testing Hospital Signup & Admin Module")
+        print("-" * 50)
+        self.test_hospital_signup_flow()
+        self.test_email_verification()
+        self.test_registration_status_check()
+        self.test_super_admin_list_pending_registrations()
+        self.test_super_admin_approve_registration()
+        self.test_hospital_admin_login()
+        self.test_hospital_admin_dashboard()
+        self.test_hospital_admin_list_users()
+        self.test_hospital_admin_create_user()
+        self.test_hospital_admin_list_departments()
+        self.test_hospital_admin_create_department()
+        self.test_hospital_main_dashboard()
+        self.test_hospital_locations_list()
+        self.test_hospital_physician_portal()
+        self.test_password_reset_functionality()
+        
         # ============ ORGANIZATION MODULE TESTS ============
         print("\n🏥 Testing Multi-Tenant Organization Module")
         print("-" * 30)
