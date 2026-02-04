@@ -6216,6 +6216,110 @@ class YaccoEMRTester:
             self.log_test("Check Audit Logs", success, f"Audit logs properly restricted: {response.status_code}")
             return success
 
+    # ============ SUPER ADMIN LOGIN TESTS ============
+    
+    def test_super_admin_login_functionality(self):
+        """Test Super Admin login functionality with specific credentials"""
+        print("\n🔐 TESTING SUPER ADMIN LOGIN FUNCTIONALITY")
+        
+        # Test Case 1: Super Admin Login Test
+        login_data = {
+            "email": "ygtnetworks@gmail.com",
+            "password": "test123"
+        }
+        
+        response, error = self.make_request('POST', 'auth/login', login_data)
+        if error:
+            self.log_test("Super Admin Login Test", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            token = data.get('token')
+            user = data.get('user', {})
+            
+            # Verify successful login with token returned
+            has_token = bool(token)
+            
+            # Verify user role is "super_admin"
+            is_super_admin = user.get('role') == 'super_admin'
+            
+            # Verify user has organization_id: null (super admin is platform-level)
+            has_null_org_id = user.get('organization_id') is None
+            
+            # Verify email matches
+            correct_email = user.get('email') == 'ygtnetworks@gmail.com'
+            
+            login_success = has_token and is_super_admin and has_null_org_id and correct_email
+            
+            if login_success:
+                # Store token for subsequent tests
+                self.super_admin_token = token
+                self.super_admin_id = user.get('id')
+                
+            self.log_test("Super Admin Login Test", login_success, 
+                         f"Token: {bool(token)}, Role: {user.get('role')}, OrgID: {user.get('organization_id')}, Email: {user.get('email')}")
+            
+            if not login_success:
+                return False
+                
+        else:
+            self.log_test("Super Admin Login Test", False, f"Status: {response.status_code}")
+            return False
+        
+        # Test Case 2: Super Admin Access Test - System Stats
+        original_token = self.token
+        self.token = self.super_admin_token
+        
+        response, error = self.make_request('GET', 'admin/system/stats')
+        if error:
+            self.log_test("Super Admin System Stats Access", False, error)
+            self.token = original_token
+            return False
+        
+        stats_success = response.status_code == 200
+        if stats_success:
+            data = response.json()
+            self.log_test("Super Admin System Stats Access", True, f"Stats retrieved: {list(data.keys())}")
+        else:
+            self.log_test("Super Admin System Stats Access", False, f"Status: {response.status_code}")
+        
+        # Test Case 3: Super Admin Access Test - System Health
+        response, error = self.make_request('GET', 'admin/system/health')
+        if error:
+            self.log_test("Super Admin System Health Access", False, error)
+            self.token = original_token
+            return False
+        
+        health_success = response.status_code == 200
+        if health_success:
+            data = response.json()
+            self.log_test("Super Admin System Health Access", True, f"Health check: {data.get('status', 'unknown')}")
+        else:
+            self.log_test("Super Admin System Health Access", False, f"Status: {response.status_code}")
+        
+        # Test Case 4: Super Admin Organization Management Test
+        response, error = self.make_request('GET', 'organizations/pending')
+        if error:
+            self.log_test("Super Admin Organizations Pending Access", False, error)
+            self.token = original_token
+            return False
+        
+        pending_success = response.status_code == 200
+        if pending_success:
+            data = response.json()
+            pending_count = data.get('count', 0) if isinstance(data, dict) else len(data) if isinstance(data, list) else 0
+            self.log_test("Super Admin Organizations Pending Access", True, f"Pending organizations: {pending_count}")
+        else:
+            self.log_test("Super Admin Organizations Pending Access", False, f"Status: {response.status_code}")
+        
+        # Restore original token
+        self.token = original_token
+        
+        # Overall success
+        overall_success = login_success and stats_success and health_success and pending_success
+        return overall_success
+
 def main():
     tester = YaccoEMRTester()
     success = tester.run_all_tests()
