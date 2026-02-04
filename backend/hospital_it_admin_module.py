@@ -806,6 +806,179 @@ def create_hospital_it_admin_endpoints(db, get_current_user, hash_password):
             "pages": (total + limit - 1) // limit
         }
     
+    # ============ Delete User Account ============
+    
+    @hospital_it_admin_router.delete("/{hospital_id}/super-admin/staff/{staff_id}")
+    async def delete_staff_account(
+        hospital_id: str,
+        staff_id: str,
+        user: dict = Depends(get_current_user)
+    ):
+        """Permanently delete staff account (IT Admin only)"""
+        verify_it_admin(user, hospital_id)
+        
+        # Prevent self-deletion
+        if staff_id == user["id"]:
+            raise HTTPException(status_code=400, detail="Cannot delete your own account")
+        
+        staff = await db["users"].find_one({
+            "id": staff_id, "organization_id": hospital_id
+        })
+        if not staff:
+            raise HTTPException(status_code=404, detail="Staff not found")
+        
+        # Archive the user data before deletion
+        archived_user = {
+            **staff,
+            "deleted_at": datetime.now(timezone.utc).isoformat(),
+            "deleted_by": user["id"],
+            "deletion_reason": "IT Admin action"
+        }
+        await db["deleted_users"].insert_one(archived_user)
+        
+        # Delete the user
+        await db["users"].delete_one({"id": staff_id})
+        
+        # Log IT action
+        await log_it_action(
+            user, hospital_id, "delete_account", "user", staff_id,
+            {"email": staff["email"], "role": staff.get("role")}
+        )
+        
+        return {"message": f"Account {staff['email']} permanently deleted"}
+    
+    # ============ Department Management ============
+    
+    @hospital_it_admin_router.get("/{hospital_id}/super-admin/departments")
+    async def list_departments(
+        hospital_id: str,
+        user: dict = Depends(get_current_user)
+    ):
+        """List all departments for the hospital"""
+        verify_it_admin(user, hospital_id)
+        
+        departments = await db["departments"].find(
+            {"organization_id": hospital_id},
+            {"_id": 0}
+        ).sort("name", 1).to_list(100)
+        
+        # Add staff count for each department
+        for dept in departments:
+            dept["staff_count"] = await db["users"].count_documents({
+                "organization_id": hospital_id,
+                "department_id": dept["id"],
+                "is_active": True
+            })
+        
+        return {
+            "departments": departments,
+            "total": len(departments)
+        }
+    
+    @hospital_it_admin_router.post("/{hospital_id}/super-admin/departments/seed")
+    async def seed_default_departments(
+        hospital_id: str,
+        user: dict = Depends(get_current_user)
+    ):
+        """Seed default hospital departments if none exist"""
+        verify_it_admin(user, hospital_id)
+        
+        # Check if departments already exist
+        existing_count = await db["departments"].count_documents({"organization_id": hospital_id})
+        if existing_count > 0:
+            return {"message": "Departments already exist", "count": existing_count}
+        
+        # Default hospital departments
+        DEFAULT_DEPARTMENTS = [
+            {"code": "ER", "name": "Emergency Department", "description": "24/7 Emergency care"},
+            {"code": "OPD", "name": "Outpatient Department", "description": "Outpatient consultations"},
+            {"code": "IPD", "name": "Inpatient Department", "description": "Admitted patient care"},
+            {"code": "SUR", "name": "Surgery", "description": "Surgical procedures"},
+            {"code": "ICU", "name": "Intensive Care Unit", "description": "Critical care"},
+            {"code": "PED", "name": "Pediatrics", "description": "Children's health"},
+            {"code": "OBG", "name": "Obstetrics & Gynecology", "description": "Women's health"},
+            {"code": "ORTH", "name": "Orthopedics", "description": "Bone and joint care"},
+            {"code": "CARD", "name": "Cardiology", "description": "Heart and cardiovascular"},
+            {"code": "NEURO", "name": "Neurology", "description": "Brain and nervous system"},
+            {"code": "RAD", "name": "Radiology", "description": "Medical imaging"},
+            {"code": "LAB", "name": "Laboratory", "description": "Diagnostic testing"},
+            {"code": "PHARM", "name": "Pharmacy", "description": "Medication dispensing"},
+            {"code": "ADMIN", "name": "Administration", "description": "Hospital administration"},
+            {"code": "HR", "name": "Human Resources", "description": "Staff management"},
+            {"code": "FIN", "name": "Finance & Billing", "description": "Financial services"},
+            {"code": "IT", "name": "Information Technology", "description": "IT support"},
+            {"code": "PSYCH", "name": "Psychiatry", "description": "Mental health services"},
+            {"code": "DERM", "name": "Dermatology", "description": "Skin care"},
+            {"code": "ENT", "name": "ENT", "description": "Ear, nose, and throat"},
+            {"code": "OPHTH", "name": "Ophthalmology", "description": "Eye care"},
+            {"code": "DENT", "name": "Dental", "description": "Dental services"},
+            {"code": "PHYSIO", "name": "Physiotherapy", "description": "Physical rehabilitation"},
+            {"code": "NUTR", "name": "Nutrition & Dietetics", "description": "Dietary services"},
+        ]
+        
+        created = []
+        for dept in DEFAULT_DEPARTMENTS:
+            dept_doc = {
+                "id": str(uuid.uuid4()),
+                "organization_id": hospital_id,
+                "code": dept["code"],
+                "name": dept["name"],
+                "description": dept["description"],
+                "is_active": True,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "created_by": user["id"]
+            }
+            await db["departments"].insert_one(dept_doc)
+            created.append(dept["name"])
+        
+        await log_it_action(
+            user, hospital_id, "seed_departments", "departments", "bulk",
+            {"count": len(created)}
+        )
+        
+        return {
+            "message": f"Created {len(created)} default departments",
+            "departments": created
+        }
+    
+    @hospital_it_admin_router.post("/{hospital_id}/super-admin/departments")
+    async def create_department(
+        hospital_id: str,
+        code: str,
+        name: str,
+        description: Optional[str] = None,
+        user: dict = Depends(get_current_user)
+    ):
+        """Create a new department"""
+        verify_it_admin(user, hospital_id)
+        
+        # Check if code already exists
+        existing = await db["departments"].find_one({
+            "organization_id": hospital_id,
+            "code": code.upper()
+        })
+        if existing:
+            raise HTTPException(status_code=400, detail="Department code already exists")
+        
+        dept_doc = {
+            "id": str(uuid.uuid4()),
+            "organization_id": hospital_id,
+            "code": code.upper(),
+            "name": name,
+            "description": description,
+            "is_active": True,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "created_by": user["id"]
+        }
+        await db["departments"].insert_one(dept_doc)
+        
+        await log_it_action(
+            user, hospital_id, "create_department", "department", dept_doc["id"],
+            {"code": code, "name": name}
+        )
+        
+        return {"message": "Department created", "department": {"id": dept_doc["id"], "code": code, "name": name}}
+    
     return hospital_it_admin_router
 
 
