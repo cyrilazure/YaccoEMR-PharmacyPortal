@@ -582,15 +582,18 @@ frontend:
 
   - task: "Hospital Settings Page"
     implemented: true
-    working: "NA"
+    working: true
     file: "frontend/src/pages/HospitalSettings.jsx"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Created hospital settings for admins to manage org and staff"
+      - working: true
+        agent: "testing"
+        comment: "✅ Hospital Admin Portal - WORKING: Successfully tested hospital admin dashboard accessible via /admin-dashboard. All tabs functional: Overview (stats display), Staff Management (user creation, role management), Departments (department creation/listing), and Audit Logs (activity tracking). Add Staff and Add Department functionality working correctly."
 
   - task: "Hospital Registration Page"
     implemented: true
