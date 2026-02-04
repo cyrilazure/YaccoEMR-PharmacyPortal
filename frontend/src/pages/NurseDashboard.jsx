@@ -244,8 +244,29 @@ export default function NurseDashboard() {
   const [marAction, setMarAction] = useState({ 
     status: 'given', notes: '', held_reason: '' 
   });
+  
+  // Patient search state
+  const [patientSearch, setPatientSearch] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   const isNurse = user?.role === 'nurse';
+
+  // Patient search handler
+  const handlePatientSearch = async () => {
+    if (!patientSearch.trim()) return;
+    
+    setSearching(true);
+    try {
+      const res = await patientAPI.getAll({ search: patientSearch });
+      setSearchResults(res.data || []);
+    } catch (err) {
+      toast.error('Search failed');
+    } finally {
+      setSearching(false);
+    }
+  };
 
   const fetchData = useCallback(async () => {
     try {
