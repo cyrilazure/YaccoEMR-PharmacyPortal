@@ -4238,6 +4238,24 @@ class YaccoEMRTester:
         self.test_allergy_creation()
         self.test_clinical_note_creation()
         
+        # ============ ENHANCED PATIENT CONSENT MANAGEMENT SYSTEM TESTS ============
+        print("\n📋 Testing Enhanced Patient Consent Management System")
+        print("-" * 50)
+        self.test_consent_types()
+        self.test_consent_templates()
+        self.test_create_consent_form()
+        self.test_create_records_release_consent()
+        self.test_sign_consent()
+        self.test_upload_consent_document()
+        self.test_verify_document_integrity()
+        self.test_record_consent_usage()
+        self.test_get_consent_usage_history()
+        self.test_revoke_consent()
+        self.test_expiring_consents()
+        self.test_check_consent_expirations()
+        self.test_consent_statistics()
+        self.test_compliance_report()
+        
         # Orders and appointments
         self.test_order_creation()
         self.test_appointment_creation()
