@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { regionAPI, adminAPI } from '@/lib/api';
+import { hasPermission, PERMISSIONS } from '@/lib/permissions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,7 +31,8 @@ import {
   RefreshCw, Globe, Settings, Shield, Activity,
   ChevronRight, ExternalLink, Eye, Copy, Check,
   AlertCircle, CheckCircle, Clock, Loader2,
-  Hospital, UserCog, BarChart3
+  Hospital, UserCog, BarChart3, Trash2, AlertTriangle,
+  Ban, Power, XCircle
 } from 'lucide-react';
 
 // Ghana Regions for dropdown
