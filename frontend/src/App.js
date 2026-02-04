@@ -22,6 +22,7 @@ import AdminDashboard from "@/pages/AdminDashboard";
 import TelehealthPage from "@/pages/TelehealthPage";
 import SuperAdminDashboard from "@/pages/SuperAdminDashboard";
 import SuperAdminLogin from "@/pages/SuperAdminLogin";
+import POLogin from "@/pages/POLogin";
 import HospitalSettings from "@/pages/HospitalSettings";
 import HospitalRegistration from "@/pages/HospitalRegistration";
 import BillingPage from "@/pages/BillingPage";
