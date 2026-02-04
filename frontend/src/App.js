@@ -64,6 +64,10 @@ function App() {
           {/* Ghana Region-Based Login - Main Entry Point */}
           <Route path="/login" element={<RegionHospitalLogin />} />
           
+          {/* Platform Owner (Super Admin) Login */}
+          <Route path="/po-login" element={<POLogin />} />
+          <Route path="/admin-login" element={<POLogin />} />
+          
           {/* Legacy/Direct Login (for backward compatibility) */}
           <Route path="/direct-login" element={<LoginPage />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
