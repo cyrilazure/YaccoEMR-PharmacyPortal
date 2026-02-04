@@ -7821,9 +7821,638 @@ class YaccoEMRTester:
         overall_success = login_success and stats_success and health_success and pending_success
         return overall_success
 
+    # ============ EMR PORTAL COMPREHENSIVE TESTS ============
+    
+    def test_emr_portal_platform_owner_apis(self):
+        """Test Platform Owner (Super Admin) APIs"""
+        print("\n🏢 Testing Platform Owner (Super Admin) APIs...")
+        
+        # Login as super admin first
+        if not self.test_super_admin_login():
+            return False
+        
+        # Store original token
+        original_token = self.token
+        self.token = self.super_admin_token
+        
+        success_count = 0
+        total_tests = 4
+        
+        # 1. POST /api/regions/hospitals - Create new hospital
+        hospital_data = {
+            "name": "Test Regional Hospital",
+            "region_id": "greater-accra",
+            "address": "123 Test Street, Accra",
+            "city": "Accra",
+            "phone": "+233-30-1234567",
+            "email": "admin@testregional.gov.gh",
+            "website": "https://testregional.gov.gh",
+            "license_number": "TRH-2024-001",
+            "ghana_health_service_id": "GHS-TRH-001",
+            "admin_first_name": "Test",
+            "admin_last_name": "Administrator",
+            "admin_email": "testadmin@testregional.gov.gh",
+            "admin_phone": "+233-24-9876543"
+        }
+        
+        response, error = self.make_request('POST', 'regions/admin/hospitals', hospital_data)
+        if error:
+            self.log_test("Platform Owner - Create Hospital", False, error)
+        elif response.status_code == 200:
+            data = response.json()
+            if data.get('hospital', {}).get('id'):
+                self.test_hospital_id = data['hospital']['id']
+                self.log_test("Platform Owner - Create Hospital", True, f"Hospital created: {data['hospital']['name']}")
+                success_count += 1
+            else:
+                self.log_test("Platform Owner - Create Hospital", False, "No hospital ID returned")
+        else:
+            self.log_test("Platform Owner - Create Hospital", False, f"Status: {response.status_code}")
+        
+        # 2. GET /api/regions/platform-overview - Get platform stats
+        response, error = self.make_request('GET', 'regions/admin/overview')
+        if error:
+            self.log_test("Platform Owner - Platform Overview", False, error)
+        elif response.status_code == 200:
+            data = response.json()
+            if 'regions' in data and 'totals' in data:
+                self.log_test("Platform Owner - Platform Overview", True, f"Found {len(data['regions'])} regions")
+                success_count += 1
+            else:
+                self.log_test("Platform Owner - Platform Overview", False, "Missing required fields")
+        else:
+            self.log_test("Platform Owner - Platform Overview", False, f"Status: {response.status_code}")
+        
+        # 3. GET /api/regions/hospital-admins - List all hospitals with admins
+        response, error = self.make_request('GET', 'regions/admin/hospital-admins')
+        if error:
+            self.log_test("Platform Owner - List Hospital Admins", False, error)
+        elif response.status_code == 200:
+            data = response.json()
+            if 'hospitals' in data:
+                self.log_test("Platform Owner - List Hospital Admins", True, f"Found {len(data['hospitals'])} hospitals")
+                success_count += 1
+            else:
+                self.log_test("Platform Owner - List Hospital Admins", False, "No hospitals field")
+        else:
+            self.log_test("Platform Owner - List Hospital Admins", False, f"Status: {response.status_code}")
+        
+        # 4. POST /api/regions/hospitals/{id}/login-as - Login as hospital admin
+        if hasattr(self, 'test_hospital_id') and self.test_hospital_id:
+            response, error = self.make_request('POST', f'regions/admin/login-as-hospital/{self.test_hospital_id}')
+            if error:
+                self.log_test("Platform Owner - Login As Hospital", False, error)
+            elif response.status_code == 200:
+                data = response.json()
+                if data.get('token') and data.get('impersonation'):
+                    self.log_test("Platform Owner - Login As Hospital", True, "Impersonation token received")
+                    success_count += 1
+                else:
+                    self.log_test("Platform Owner - Login As Hospital", False, "Invalid response structure")
+            else:
+                self.log_test("Platform Owner - Login As Hospital", False, f"Status: {response.status_code}")
+        else:
+            self.log_test("Platform Owner - Login As Hospital", False, "No test hospital available")
+        
+        # Restore original token
+        self.token = original_token
+        
+        return success_count == total_tests
+    
+    def test_emr_portal_hospital_admin_apis(self):
+        """Test Hospital Admin APIs"""
+        print("\n🏥 Testing Hospital Admin APIs...")
+        
+        # Use test hospital ID from previous test or create one
+        if not hasattr(self, 'test_hospital_id') or not self.test_hospital_id:
+            self.log_test("Hospital Admin APIs", False, "No test hospital available")
+            return False
+        
+        success_count = 0
+        total_tests = 5
+        
+        # 1. GET /api/hospitals/{id}/admin/dashboard - Hospital admin dashboard
+        response, error = self.make_request('GET', f'hospital/{self.test_hospital_id}/admin/dashboard')
+        if error:
+            self.log_test("Hospital Admin - Dashboard", False, error)
+        elif response.status_code == 200:
+            data = response.json()
+            if 'hospital' in data and 'stats' in data:
+                self.log_test("Hospital Admin - Dashboard", True, f"Hospital: {data['hospital'].get('name', 'Unknown')}")
+                success_count += 1
+            else:
+                self.log_test("Hospital Admin - Dashboard", False, "Missing required fields")
+        else:
+            self.log_test("Hospital Admin - Dashboard", False, f"Status: {response.status_code}")
+        
+        # 2. GET /api/hospitals/{id}/admin/departments - List departments
+        response, error = self.make_request('GET', f'hospital/{self.test_hospital_id}/admin/departments')
+        if error:
+            self.log_test("Hospital Admin - List Departments", False, error)
+        elif response.status_code == 200:
+            data = response.json()
+            if 'departments' in data:
+                self.log_test("Hospital Admin - List Departments", True, f"Found {len(data['departments'])} departments")
+                success_count += 1
+            else:
+                self.log_test("Hospital Admin - List Departments", False, "No departments field")
+        else:
+            self.log_test("Hospital Admin - List Departments", False, f"Status: {response.status_code}")
+        
+        # 3. POST /api/hospitals/{id}/admin/departments - Create department
+        dept_data = {
+            "name": "Test Emergency Department",
+            "code": "TEST-ED",
+            "department_type": "emergency",
+            "description": "Test emergency department for API testing",
+            "phone": "+233-30-1111111",
+            "email": "ed@testregional.gov.gh",
+            "is_24_7": True
+        }
+        
+        response, error = self.make_request('POST', f'hospital/{self.test_hospital_id}/admin/departments', dept_data)
+        if error:
+            self.log_test("Hospital Admin - Create Department", False, error)
+        elif response.status_code == 200:
+            data = response.json()
+            if data.get('department', {}).get('id'):
+                self.test_department_id = data['department']['id']
+                self.log_test("Hospital Admin - Create Department", True, f"Department created: {data['department']['name']}")
+                success_count += 1
+            else:
+                self.log_test("Hospital Admin - Create Department", False, "No department ID returned")
+        else:
+            self.log_test("Hospital Admin - Create Department", False, f"Status: {response.status_code}")
+        
+        # 4. GET /api/hospitals/{id}/admin/locations - List locations
+        response, error = self.make_request('GET', f'regions/hospitals/{self.test_hospital_id}/locations')
+        if error:
+            self.log_test("Hospital Admin - List Locations", False, error)
+        elif response.status_code == 200:
+            data = response.json()
+            if 'locations' in data:
+                self.log_test("Hospital Admin - List Locations", True, f"Found {len(data['locations'])} locations")
+                success_count += 1
+            else:
+                self.log_test("Hospital Admin - List Locations", False, "No locations field")
+        else:
+            self.log_test("Hospital Admin - List Locations", False, f"Status: {response.status_code}")
+        
+        # 5. GET /api/hospitals/{id}/admin/users - List users
+        response, error = self.make_request('GET', f'hospital/{self.test_hospital_id}/admin/users')
+        if error:
+            self.log_test("Hospital Admin - List Users", False, error)
+        elif response.status_code == 200:
+            data = response.json()
+            if 'users' in data:
+                self.log_test("Hospital Admin - List Users", True, f"Found {len(data['users'])} users")
+                success_count += 1
+            else:
+                self.log_test("Hospital Admin - List Users", False, "No users field")
+        else:
+            self.log_test("Hospital Admin - List Users", False, f"Status: {response.status_code}")
+        
+        return success_count == total_tests
+    
+    def test_emr_portal_hospital_it_admin_apis(self):
+        """Test Hospital IT Admin APIs"""
+        print("\n💻 Testing Hospital IT Admin APIs...")
+        
+        if not hasattr(self, 'test_hospital_id') or not self.test_hospital_id:
+            self.log_test("Hospital IT Admin APIs", False, "No test hospital available")
+            return False
+        
+        # Use super admin token for IT admin access
+        if not hasattr(self, 'super_admin_token') or not self.super_admin_token:
+            self.log_test("Hospital IT Admin APIs", False, "No super admin token available")
+            return False
+        
+        original_token = self.token
+        self.token = self.super_admin_token
+        
+        success_count = 0
+        total_tests = 6
+        
+        # 1. GET /api/hospital/{id}/super-admin/dashboard - IT Admin dashboard
+        response, error = self.make_request('GET', f'hospital/{self.test_hospital_id}/super-admin/dashboard')
+        if error:
+            self.log_test("IT Admin - Dashboard", False, error)
+        elif response.status_code == 200:
+            data = response.json()
+            if 'hospital' in data and 'staff_stats' in data:
+                self.log_test("IT Admin - Dashboard", True, f"Staff stats: {data['staff_stats']}")
+                success_count += 1
+            else:
+                self.log_test("IT Admin - Dashboard", False, "Missing required fields")
+        else:
+            self.log_test("IT Admin - Dashboard", False, f"Status: {response.status_code}")
+        
+        # 2. GET /api/hospital/{id}/super-admin/staff - List staff
+        response, error = self.make_request('GET', f'hospital/{self.test_hospital_id}/super-admin/staff')
+        if error:
+            self.log_test("IT Admin - List Staff", False, error)
+        elif response.status_code == 200:
+            data = response.json()
+            if 'staff' in data:
+                self.log_test("IT Admin - List Staff", True, f"Found {len(data['staff'])} staff members")
+                success_count += 1
+            else:
+                self.log_test("IT Admin - List Staff", False, "No staff field")
+        else:
+            self.log_test("IT Admin - List Staff", False, f"Status: {response.status_code}")
+        
+        # 3. POST /api/hospital/{id}/super-admin/staff - Create staff account
+        import time
+        timestamp = str(int(time.time()))
+        staff_data = {
+            "email": f"teststaff{timestamp}@testregional.gov.gh",
+            "first_name": "Test",
+            "last_name": "Staff",
+            "role": "physician",
+            "phone": "+233-24-1234567",
+            "employee_id": f"EMP{timestamp}"
+        }
+        
+        response, error = self.make_request('POST', f'hospital/{self.test_hospital_id}/super-admin/staff', staff_data)
+        if error:
+            self.log_test("IT Admin - Create Staff", False, error)
+        elif response.status_code == 200:
+            data = response.json()
+            if data.get('staff', {}).get('id'):
+                self.test_it_staff_id = data['staff']['id']
+                self.log_test("IT Admin - Create Staff", True, f"Staff created: {data['staff']['email']}")
+                success_count += 1
+            else:
+                self.log_test("IT Admin - Create Staff", False, "No staff ID returned")
+        else:
+            self.log_test("IT Admin - Create Staff", False, f"Status: {response.status_code}")
+        
+        # 4. POST /api/hospital/{id}/super-admin/staff/{staffId}/activate
+        if hasattr(self, 'test_it_staff_id') and self.test_it_staff_id:
+            response, error = self.make_request('POST', f'hospital/{self.test_hospital_id}/super-admin/staff/{self.test_it_staff_id}/activate')
+            if error:
+                self.log_test("IT Admin - Activate Staff", False, error)
+            elif response.status_code == 200:
+                self.log_test("IT Admin - Activate Staff", True, "Staff activated successfully")
+                success_count += 1
+            else:
+                self.log_test("IT Admin - Activate Staff", False, f"Status: {response.status_code}")
+        else:
+            self.log_test("IT Admin - Activate Staff", False, "No test staff ID available")
+        
+        # 5. POST /api/hospital/{id}/super-admin/staff/{staffId}/deactivate
+        if hasattr(self, 'test_it_staff_id') and self.test_it_staff_id:
+            response, error = self.make_request('POST', f'hospital/{self.test_hospital_id}/super-admin/staff/{self.test_it_staff_id}/deactivate')
+            if error:
+                self.log_test("IT Admin - Deactivate Staff", False, error)
+            elif response.status_code == 200:
+                self.log_test("IT Admin - Deactivate Staff", True, "Staff deactivated successfully")
+                success_count += 1
+            else:
+                self.log_test("IT Admin - Deactivate Staff", False, f"Status: {response.status_code}")
+        else:
+            self.log_test("IT Admin - Deactivate Staff", False, "No test staff ID available")
+        
+        # 6. POST /api/hospital/{id}/super-admin/staff/{staffId}/reset-password
+        if hasattr(self, 'test_it_staff_id') and self.test_it_staff_id:
+            response, error = self.make_request('POST', f'hospital/{self.test_hospital_id}/super-admin/staff/{self.test_it_staff_id}/reset-password')
+            if error:
+                self.log_test("IT Admin - Reset Password", False, error)
+            elif response.status_code == 200:
+                data = response.json()
+                if data.get('credentials', {}).get('temp_password'):
+                    self.log_test("IT Admin - Reset Password", True, "Password reset successfully")
+                    success_count += 1
+                else:
+                    self.log_test("IT Admin - Reset Password", False, "No temp password returned")
+            else:
+                self.log_test("IT Admin - Reset Password", False, f"Status: {response.status_code}")
+        else:
+            self.log_test("IT Admin - Reset Password", False, "No test staff ID available")
+        
+        # Restore original token
+        self.token = original_token
+        
+        return success_count == total_tests
+    
+    def test_emr_portal_department_apis(self):
+        """Test Department Portal APIs"""
+        print("\n🏢 Testing Department Portal APIs...")
+        
+        success_count = 0
+        total_tests = 4
+        
+        # 1. GET /api/departments - List departments
+        response, error = self.make_request('GET', 'departments')
+        if error:
+            self.log_test("Department Portal - List Departments", False, error)
+        elif response.status_code == 200:
+            data = response.json()
+            if isinstance(data, list):
+                self.log_test("Department Portal - List Departments", True, f"Found {len(data)} departments")
+                success_count += 1
+            else:
+                self.log_test("Department Portal - List Departments", False, "Response is not a list")
+        else:
+            self.log_test("Department Portal - List Departments", False, f"Status: {response.status_code}")
+        
+        # 2. GET /api/departments/types - Get department types
+        response, error = self.make_request('GET', 'departments/types')
+        if error:
+            self.log_test("Department Portal - Get Types", False, error)
+        elif response.status_code == 200:
+            data = response.json()
+            if isinstance(data, list) and len(data) > 0:
+                self.log_test("Department Portal - Get Types", True, f"Found {len(data)} department types")
+                success_count += 1
+            else:
+                self.log_test("Department Portal - Get Types", False, "No department types returned")
+        else:
+            self.log_test("Department Portal - Get Types", False, f"Status: {response.status_code}")
+        
+        # 3. GET /api/departments/{id} - Get department details
+        if hasattr(self, 'test_department_id') and self.test_department_id:
+            response, error = self.make_request('GET', f'departments/{self.test_department_id}')
+            if error:
+                self.log_test("Department Portal - Get Details", False, error)
+            elif response.status_code == 200:
+                data = response.json()
+                if data.get('id') == self.test_department_id:
+                    self.log_test("Department Portal - Get Details", True, f"Department: {data.get('name', 'Unknown')}")
+                    success_count += 1
+                else:
+                    self.log_test("Department Portal - Get Details", False, "Invalid department data")
+            else:
+                self.log_test("Department Portal - Get Details", False, f"Status: {response.status_code}")
+        else:
+            self.log_test("Department Portal - Get Details", False, "No test department ID available")
+        
+        # 4. GET /api/departments/{id}/patients - Get department patients (mock test)
+        if hasattr(self, 'test_department_id') and self.test_department_id:
+            response, error = self.make_request('GET', f'departments/{self.test_department_id}/staff')
+            if error:
+                self.log_test("Department Portal - Get Staff", False, error)
+            elif response.status_code == 200:
+                data = response.json()
+                if isinstance(data, list):
+                    self.log_test("Department Portal - Get Staff", True, f"Found {len(data)} staff members")
+                    success_count += 1
+                else:
+                    self.log_test("Department Portal - Get Staff", False, "Response is not a list")
+            else:
+                self.log_test("Department Portal - Get Staff", False, f"Status: {response.status_code}")
+        else:
+            self.log_test("Department Portal - Get Staff", False, "No test department ID available")
+        
+        return success_count == total_tests
+    
+    def test_emr_portal_scheduler_apis(self):
+        """Test Scheduler APIs"""
+        print("\n📅 Testing Scheduler APIs...")
+        
+        success_count = 0
+        total_tests = 3
+        
+        # 1. GET /api/appointments - List appointments
+        response, error = self.make_request('GET', 'appointments')
+        if error:
+            self.log_test("Scheduler - List Appointments", False, error)
+        elif response.status_code == 200:
+            data = response.json()
+            if isinstance(data, list):
+                self.log_test("Scheduler - List Appointments", True, f"Found {len(data)} appointments")
+                success_count += 1
+            else:
+                self.log_test("Scheduler - List Appointments", False, "Response is not a list")
+        else:
+            self.log_test("Scheduler - List Appointments", False, f"Status: {response.status_code}")
+        
+        # 2. POST /api/appointments - Create appointment
+        if self.test_patient_id and self.user_id:
+            tomorrow = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
+            appointment_data = {
+                "patient_id": self.test_patient_id,
+                "provider_id": self.user_id,
+                "appointment_type": "consultation",
+                "date": tomorrow,
+                "start_time": "14:00",
+                "end_time": "14:30",
+                "reason": "EMR Portal API Test",
+                "notes": "Test appointment for API validation"
+            }
+            
+            response, error = self.make_request('POST', 'appointments', appointment_data)
+            if error:
+                self.log_test("Scheduler - Create Appointment", False, error)
+            elif response.status_code == 200:
+                data = response.json()
+                if data.get('id'):
+                    self.test_appointment_id = data['id']
+                    self.log_test("Scheduler - Create Appointment", True, f"Appointment created for {tomorrow}")
+                    success_count += 1
+                else:
+                    self.log_test("Scheduler - Create Appointment", False, "No appointment ID returned")
+            else:
+                self.log_test("Scheduler - Create Appointment", False, f"Status: {response.status_code}")
+        else:
+            self.log_test("Scheduler - Create Appointment", False, "Missing patient or user ID")
+        
+        # 3. GET /api/users - List providers
+        response, error = self.make_request('GET', 'users')
+        if error:
+            self.log_test("Scheduler - List Providers", False, error)
+        elif response.status_code == 200:
+            data = response.json()
+            if isinstance(data, list):
+                self.log_test("Scheduler - List Providers", True, f"Found {len(data)} providers")
+                success_count += 1
+            else:
+                self.log_test("Scheduler - List Providers", False, "Response is not a list")
+        else:
+            self.log_test("Scheduler - List Providers", False, f"Status: {response.status_code}")
+        
+        return success_count == total_tests
+    
+    def test_emr_portal_billing_apis(self):
+        """Test Billing APIs"""
+        print("\n💰 Testing Billing APIs...")
+        
+        success_count = 0
+        total_tests = 4
+        
+        # 1. GET /api/billing/invoices - List invoices
+        response, error = self.make_request('GET', 'billing/invoices')
+        if error:
+            self.log_test("Billing - List Invoices", False, error)
+        elif response.status_code == 200:
+            data = response.json()
+            if 'invoices' in data:
+                self.log_test("Billing - List Invoices", True, f"Found {len(data['invoices'])} invoices")
+                success_count += 1
+            else:
+                self.log_test("Billing - List Invoices", False, "No invoices field")
+        else:
+            self.log_test("Billing - List Invoices", False, f"Status: {response.status_code}")
+        
+        # 2. POST /api/billing/invoices - Create invoice
+        if self.test_patient_id:
+            invoice_data = {
+                "patient_id": self.test_patient_id,
+                "patient_name": "John Doe",
+                "line_items": [
+                    {
+                        "description": "Office Visit - Consultation",
+                        "service_code": "99213",
+                        "quantity": 1,
+                        "unit_price": 100.00,
+                        "discount": 0
+                    },
+                    {
+                        "description": "Lab Test - CBC",
+                        "service_code": "85025",
+                        "quantity": 1,
+                        "unit_price": 35.00,
+                        "discount": 0
+                    }
+                ],
+                "notes": "EMR Portal API Test Invoice"
+            }
+            
+            response, error = self.make_request('POST', 'billing/invoices', invoice_data)
+            if error:
+                self.log_test("Billing - Create Invoice", False, error)
+            elif response.status_code == 200:
+                data = response.json()
+                if data.get('invoice_id'):
+                    self.test_invoice_id = data['invoice_id']
+                    self.log_test("Billing - Create Invoice", True, f"Invoice created: {data['invoice_number']}")
+                    success_count += 1
+                else:
+                    self.log_test("Billing - Create Invoice", False, "No invoice ID returned")
+            else:
+                self.log_test("Billing - Create Invoice", False, f"Status: {response.status_code}")
+        else:
+            self.log_test("Billing - Create Invoice", False, "No test patient ID available")
+        
+        # 3. GET /api/billing/service-codes - Get service codes
+        response, error = self.make_request('GET', 'billing/service-codes')
+        if error:
+            self.log_test("Billing - Get Service Codes", False, error)
+        elif response.status_code == 200:
+            data = response.json()
+            if 'service_codes' in data and len(data['service_codes']) > 0:
+                self.log_test("Billing - Get Service Codes", True, f"Found {len(data['service_codes'])} service codes")
+                success_count += 1
+            else:
+                self.log_test("Billing - Get Service Codes", False, "No service codes returned")
+        else:
+            self.log_test("Billing - Get Service Codes", False, f"Status: {response.status_code}")
+        
+        # 4. GET /api/billing/stats - Get billing stats
+        response, error = self.make_request('GET', 'billing/stats')
+        if error:
+            self.log_test("Billing - Get Stats", False, error)
+        elif response.status_code == 200:
+            data = response.json()
+            required_fields = ['total_billed', 'total_collected', 'total_outstanding', 'invoices']
+            if all(field in data for field in required_fields):
+                self.log_test("Billing - Get Stats", True, f"Total billed: ${data['total_billed']}")
+                success_count += 1
+            else:
+                self.log_test("Billing - Get Stats", False, "Missing required stats fields")
+        else:
+            self.log_test("Billing - Get Stats", False, f"Status: {response.status_code}")
+        
+        return success_count == total_tests
+    
+    def test_super_admin_login(self):
+        """Test super admin login with provided credentials"""
+        login_data = {
+            "email": "ygtnetworks@gmail.com",
+            "password": "test123"
+        }
+        
+        response, error = self.make_request('POST', 'auth/login', login_data)
+        if error:
+            self.log_test("Super Admin Login", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            self.super_admin_token = data.get('token')
+            user = data.get('user', {})
+            is_super_admin = user.get('role') == 'super_admin'
+            has_token = bool(self.super_admin_token)
+            success = is_super_admin and has_token
+            self.log_test("Super Admin Login", success, f"Role: {user.get('role')}")
+            return success
+        else:
+            self.log_test("Super Admin Login", False, f"Status: {response.status_code}")
+            return False
+    
+    def run_emr_portal_comprehensive_tests(self):
+        """Run comprehensive EMR Portal backend API tests"""
+        print("🏥 Starting EMR Portal Comprehensive Backend API Tests...")
+        print(f"🌐 Backend URL: {self.base_url}")
+        print("🔑 Super Admin Credentials: ygtnetworks@gmail.com / test123")
+        print("=" * 80)
+        
+        # Basic health check
+        if not self.test_health_check():
+            print("❌ Health check failed - stopping tests")
+            return False
+        
+        # Setup basic authentication
+        if not self.test_user_registration():
+            print("❌ User registration/login failed - stopping tests")
+            return False
+        
+        # Create test patient for various tests
+        if not self.test_patient_creation():
+            print("❌ Patient creation failed - some tests may not work")
+        
+        # Run EMR Portal specific tests
+        results = []
+        
+        # 1. Platform Owner (Super Admin) APIs
+        results.append(self.test_emr_portal_platform_owner_apis())
+        
+        # 2. Hospital Admin APIs
+        results.append(self.test_emr_portal_hospital_admin_apis())
+        
+        # 3. Hospital IT Admin APIs
+        results.append(self.test_emr_portal_hospital_it_admin_apis())
+        
+        # 4. Department Portal APIs
+        results.append(self.test_emr_portal_department_apis())
+        
+        # 5. Scheduler APIs
+        results.append(self.test_emr_portal_scheduler_apis())
+        
+        # 6. Billing APIs
+        results.append(self.test_emr_portal_billing_apis())
+        
+        # Print summary
+        print("\n" + "=" * 80)
+        print(f"📊 EMR Portal Test Summary: {self.tests_passed}/{self.tests_run} individual tests passed")
+        print(f"✅ Success Rate: {(self.tests_passed/self.tests_run)*100:.1f}%")
+        
+        successful_modules = sum(results)
+        total_modules = len(results)
+        print(f"🏥 Module Success: {successful_modules}/{total_modules} modules fully working")
+        
+        if successful_modules == total_modules:
+            print("🎉 All EMR Portal modules are working perfectly!")
+        else:
+            print("⚠️  Some EMR Portal modules have issues. Check the details above.")
+        
+        return successful_modules == total_modules
+
+
 def main():
     tester = YaccoEMRTester()
-    success = tester.run_all_tests()
+    # Run the comprehensive EMR Portal tests
+    success = tester.run_emr_portal_comprehensive_tests()
     return 0 if success else 1
 
 if __name__ == "__main__":
