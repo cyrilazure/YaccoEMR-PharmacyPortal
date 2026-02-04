@@ -1109,7 +1109,7 @@ backend:
     file: "backend/consent_module.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
@@ -1117,6 +1117,9 @@ backend:
       - working: true
         agent: "testing"
         comment: "✅ Consent Forms Module - ALL CORE FEATURES WORKING: Consent types (11 types), consent templates (treatment, HIPAA, records release, telehealth), consent form creation, listing, patient-specific consents, form retrieval, digital signing, verification, patient consent checking, and revocation all functional. Complete consent workflow tested successfully."
+      - working: "NA"
+        agent: "main"
+        comment: "Enhanced with usage tracking, document storage, integrity verification, expiration management, compliance reporting"
 
   - task: "Database Models Documentation"
     implemented: true
