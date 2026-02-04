@@ -288,6 +288,29 @@ export default function NurseDashboard() {
     }
   };
 
+  // Fetch shift reports
+  const fetchReports = async () => {
+    try {
+      const res = await nurseAPI.getMyReports();
+      setReports(res.data.reports || []);
+    } catch (err) {
+      console.error('Failed to fetch reports:', err);
+    }
+  };
+
+  // Fetch all assigned patient medications
+  const fetchAssignedMeds = async () => {
+    setMedsLoading(true);
+    try {
+      const res = await nurseAPI.getAllAssignedMedications();
+      setAssignedMeds(res.data);
+    } catch (err) {
+      console.error('Failed to fetch medications:', err);
+    } finally {
+      setMedsLoading(false);
+    }
+  };
+
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
@@ -304,6 +327,9 @@ export default function NurseDashboard() {
       setActiveShift(shiftRes.data.active_shift);
       setTasks(tasksRes.data);
       setMedicationsDue(medsRes.data);
+      
+      // Also fetch reports
+      fetchReports();
     } catch (err) {
       console.error('Dashboard fetch error:', err);
     } finally {
