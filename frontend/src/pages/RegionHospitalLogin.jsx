@@ -87,15 +87,15 @@ export default function RegionHospitalLogin() {
   const [show2FADialog, setShow2FADialog] = useState(false);
   const [pendingLogin, setPendingLogin] = useState(null);
 
-  // Redirect if already logged in
-  if (user) {
-    return <Navigate to={ROLE_REDIRECTS[user.role] || '/dashboard'} replace />;
-  }
-
   // Load regions on mount
   useEffect(() => {
     loadRegions();
   }, []);
+
+  // Redirect if already logged in
+  if (user) {
+    return <Navigate to={ROLE_REDIRECTS[user.role] || '/dashboard'} replace />;
+  }
 
   const loadRegions = async () => {
     try {
