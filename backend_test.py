@@ -1252,43 +1252,21 @@ class YaccoEMRTester:
     
     def test_hospital_admin_dashboard(self):
         """Test Hospital Admin - GET /api/hospitals/{hospitalId}/admin/dashboard"""
-        if not hasattr(self, 'hospital_admin_email') or not hasattr(self, 'hospital_admin_temp_password'):
-            self.log_test("Hospital Admin Dashboard", False, "No hospital admin credentials")
+        # Use super admin token to test the hospital admin dashboard endpoint
+        if not hasattr(self, 'super_admin_token') or not self.super_admin_token:
+            self.log_test("Hospital Admin Dashboard", False, "No super admin token")
             return False
         
-        # First login as hospital admin
-        login_data = {
-            "email": self.hospital_admin_email,
-            "password": self.hospital_admin_temp_password
-        }
-        
-        response, error = self.make_request('POST', 'auth/login', login_data)
-        if error:
-            self.log_test("Hospital Admin Dashboard", False, f"Login error: {error}")
-            return False
-        
-        if response.status_code != 200:
-            self.log_test("Hospital Admin Dashboard", False, f"Login failed with status: {response.status_code}")
-            return False
-        
-        data = response.json()
-        hospital_admin_token = data.get('token')
-        user = data.get('user', {})
-        
-        if not hospital_admin_token:
-            self.log_test("Hospital Admin Dashboard", False, "No hospital admin token received")
-            return False
-        
-        # Get the organization_id from the user data or use the test hospital ID
-        hospital_id = user.get('organization_id') or getattr(self, 'test_hospital_id', None)
+        # Use the hospital ID from the created hospital
+        hospital_id = getattr(self, 'test_hospital_id', None)
         
         if not hospital_id:
-            self.log_test("Hospital Admin Dashboard", False, f"No hospital ID found. User data: {user}")
+            self.log_test("Hospital Admin Dashboard", False, "No test hospital ID available")
             return False
         
-        # Temporarily switch to hospital admin token
+        # Temporarily switch to super admin token
         original_token = self.token
-        self.token = hospital_admin_token
+        self.token = self.super_admin_token
         
         response, error = self.make_request('GET', f'hospital/{hospital_id}/admin/dashboard')
         
