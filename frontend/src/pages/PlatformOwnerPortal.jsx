@@ -234,6 +234,49 @@ export default function PlatformOwnerPortal() {
     setCreateStaffOpen(true);
   };
 
+  // Hospital Deletion (Soft Delete with Safeguards)
+  const handleDeleteHospital = async () => {
+    if (!hospitalToDelete) return;
+    
+    // Verify confirmation text matches hospital name
+    if (deleteConfirmation !== hospitalToDelete.hospital.name) {
+      toast.error('Please type the hospital name exactly to confirm deletion');
+      return;
+    }
+    
+    setDeleting(true);
+    try {
+      await regionAPI.deleteHospital(hospitalToDelete.hospital.id);
+      toast.success(`Hospital "${hospitalToDelete.hospital.name}" has been deactivated`);
+      setDeleteHospitalOpen(false);
+      setHospitalToDelete(null);
+      setDeleteConfirmation('');
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to delete hospital');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  // Hospital Status Change (Activate/Suspend/Deactivate)
+  const handleChangeHospitalStatus = async (status) => {
+    if (!hospitalToChangeStatus) return;
+    
+    try {
+      setSaving(true);
+      await regionAPI.updateHospitalStatus(hospitalToChangeStatus.hospital.id, { status });
+      toast.success(`Hospital status changed to ${status}`);
+      setStatusChangeOpen(false);
+      setHospitalToChangeStatus(null);
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to change hospital status');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const copyToClipboard = async (text, id) => {
     await navigator.clipboard.writeText(text);
     setCopiedPassword(id);
