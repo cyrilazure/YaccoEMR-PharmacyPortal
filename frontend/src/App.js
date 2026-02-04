@@ -72,7 +72,10 @@ function App() {
         <Routes>
           {/* ========== PUBLIC ROUTES ========== */}
           
-          {/* Ghana Region-Based Login - Main Entry Point */}
+          {/* Landing Page - Main Entry Point */}
+          <Route path="/" element={<EMRLandingPage />} />
+          
+          {/* Ghana Region-Based Login */}
           <Route path="/login" element={<RegionHospitalLogin />} />
           
           {/* Platform Owner (Super Admin) Login */}
@@ -94,13 +97,12 @@ function App() {
           <Route path="/yacco-owner-admin" element={<SuperAdminLogin />} />
           
           {/* ========== PROTECTED ROUTES ========== */}
-          <Route path="/" element={<Layout />}>
-            <Route index element={<RoleBasedRedirect />} />
+          <Route element={<Layout />}>
+            <Route path="home" element={<RoleBasedRedirect />} />
             
             {/* Platform Owner (Super Admin) Portal */}
             <Route path="platform-admin" element={<PlatformOwnerPortal />} />
             <Route path="po-portal" element={<PlatformOwnerPortal />} />
-            <Route path="platform/admin" element={<PlatformOwnerPortal />} />
             
             {/* Legacy Super Admin Dashboard */}
             <Route path="super-admin" element={<SuperAdminDashboard />} />
@@ -112,6 +114,10 @@ function App() {
             
             {/* Hospital Admin Portal */}
             <Route path="hospital/:hospitalId/admin" element={<HospitalAdminPortal />} />
+            
+            {/* Hospital Super Admin IT Portal - Staff Management Only */}
+            <Route path="hospital/:hospitalId/super-admin" element={<HospitalSuperAdminIT />} />
+            <Route path="hospital/:hospitalId/it-admin" element={<HospitalSuperAdminIT />} />
             
             {/* Hospital Role-Specific Portals */}
             <Route path="hospital/:hospitalId/physician" element={<Dashboard />} />
@@ -131,6 +137,9 @@ function App() {
             {/* Hospital Admin Settings */}
             <Route path="hospital-settings" element={<HospitalSettings />} />
             <Route path="admin-dashboard" element={<HospitalAdminPortal />} />
+            
+            {/* IT Admin Dashboard (without hospitalId) */}
+            <Route path="it-admin" element={<HospitalSuperAdminIT />} />
             
             {/* Physician Dashboard */}
             <Route path="dashboard" element={<Dashboard />} />
@@ -159,7 +168,7 @@ function App() {
             <Route path="security" element={<SecuritySettings />} />
             <Route path="audit-logs" element={<AuditLogs />} />
           </Route>
-          <Route path="*" element={<RoleBasedRedirect />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
       <Toaster position="top-right" richColors />
