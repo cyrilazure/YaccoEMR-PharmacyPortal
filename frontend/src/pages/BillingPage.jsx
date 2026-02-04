@@ -36,6 +36,11 @@ export default function BillingPage() {
   // View invoice state
   const [viewInvoice, setViewInvoice] = useState(null);
   const [paymentEmail, setPaymentEmail] = useState('');
+  
+  // NHIS Insurance state
+  const [nhisSearch, setNhisSearch] = useState('');
+  const [nhisResults, setNhisResults] = useState([]);
+  const [nhisSearching, setNhisSearching] = useState(false);
 
   useEffect(() => {
     loadData();
