@@ -407,7 +407,14 @@ def create_consent_endpoints(db, get_current_user):
             "created_by": current_user.get("id"),
             "document_hash": document_hash,
             "access_count": 0,
-            "version": 1
+            "version": 1,
+            # Optional fields with default values
+            "patient_signed_at": None,
+            "witness_name": None,
+            "witness_signed_at": None,
+            "revoked_at": None,
+            "revocation_reason": None,
+            "document_url": None
         }
         
         await db.consent_forms.insert_one(consent)
