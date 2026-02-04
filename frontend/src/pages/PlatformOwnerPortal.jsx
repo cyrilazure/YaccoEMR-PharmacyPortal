@@ -346,6 +346,9 @@ export default function PlatformOwnerPortal() {
             <TabsTrigger value="hospitals" className="gap-2">
               <Hospital className="w-4 h-4" /> Hospitals
             </TabsTrigger>
+            <TabsTrigger value="staff" className="gap-2">
+              <UserCog className="w-4 h-4" /> Staff
+            </TabsTrigger>
             <TabsTrigger value="regions" className="gap-2">
               <Globe className="w-4 h-4" /> Regions
             </TabsTrigger>
