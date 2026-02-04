@@ -1015,6 +1015,11 @@ from nurse_portal_module import nurse_router, create_nurse_portal_endpoints
 nurse_api_router = create_nurse_portal_endpoints(db, get_current_user)
 app.include_router(nurse_router)
 
+# Include Nursing Supervisor Module
+from nursing_supervisor_module import nursing_supervisor_router, create_nursing_supervisor_endpoints
+nursing_supervisor_api_router = create_nursing_supervisor_endpoints(db, get_current_user)
+app.include_router(nursing_supervisor_router)
+
 # Include Admin Portal Module
 from admin_portal_module import admin_router, create_admin_portal_endpoints
 admin_api_router = create_admin_portal_endpoints(db, get_current_user)
