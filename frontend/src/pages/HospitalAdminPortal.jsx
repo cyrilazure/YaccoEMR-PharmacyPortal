@@ -395,9 +395,6 @@ export default function HospitalAdminPortal() {
           <TabsTrigger value="departments" className="gap-2">
             <FolderTree className="w-4 h-4" /> Departments
           </TabsTrigger>
-          <TabsTrigger value="audit" className="gap-2">
-            <FileText className="w-4 h-4" /> Audit Logs
-          </TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
