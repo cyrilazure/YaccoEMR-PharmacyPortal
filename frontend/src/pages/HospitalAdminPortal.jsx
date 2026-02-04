@@ -60,10 +60,12 @@ export default function HospitalAdminPortal() {
   const [departments, setDepartments] = useState([]);
   const [locations, setLocations] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
+  const [patients, setPatients] = useState([]);
   
   // Filters
   const [userSearch, setUserSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
+  const [patientSearch, setPatientSearch] = useState('');
   
   // Dialogs
   const [createUserOpen, setCreateUserOpen] = useState(false);
@@ -71,6 +73,9 @@ export default function HospitalAdminPortal() {
   const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [createdCredentials, setCreatedCredentials] = useState(null);
+  const [createMRNOpen, setCreateMRNOpen] = useState(false);
+  const [viewPatientOpen, setViewPatientOpen] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState(null);
   
   // Forms
   const [newUser, setNewUser] = useState({
