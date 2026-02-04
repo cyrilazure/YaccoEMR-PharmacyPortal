@@ -574,4 +574,34 @@ export const signupAPI = {
   }),
 };
 
+// Hospital IT Admin APIs (Super Admin IT)
+export const hospitalITAdminAPI = {
+  // Dashboard
+  getDashboard: (hospitalId) => api.get(`/hospital/${hospitalId}/super-admin/dashboard`),
+  
+  // Staff Management
+  listStaff: (hospitalId, params) => api.get(`/hospital/${hospitalId}/super-admin/staff`, { params }),
+  createStaff: (hospitalId, data) => api.post(`/hospital/${hospitalId}/super-admin/staff`, data),
+  bulkCreateStaff: (hospitalId, staffList) => api.post(`/hospital/${hospitalId}/super-admin/staff/bulk`, { staff_list: staffList }),
+  getStaff: (hospitalId, staffId) => api.get(`/hospital/${hospitalId}/super-admin/staff/${staffId}`),
+  updateStaff: (hospitalId, staffId, data) => api.put(`/hospital/${hospitalId}/super-admin/staff/${staffId}`, data),
+  
+  // Account Status
+  activateStaff: (hospitalId, staffId) => api.post(`/hospital/${hospitalId}/super-admin/staff/${staffId}/activate`),
+  deactivateStaff: (hospitalId, staffId, reason) => api.post(`/hospital/${hospitalId}/super-admin/staff/${staffId}/deactivate`, null, { params: { reason } }),
+  suspendStaff: (hospitalId, staffId, reason) => api.post(`/hospital/${hospitalId}/super-admin/staff/${staffId}/suspend`, null, { params: { reason } }),
+  
+  // Credentials
+  resetPassword: (hospitalId, staffId) => api.post(`/hospital/${hospitalId}/super-admin/staff/${staffId}/reset-password`),
+  unlockAccount: (hospitalId, staffId) => api.post(`/hospital/${hospitalId}/super-admin/staff/${staffId}/unlock`),
+  
+  // Assignments
+  changeRole: (hospitalId, staffId, newRole) => api.put(`/hospital/${hospitalId}/super-admin/staff/${staffId}/role`, null, { params: { new_role: newRole } }),
+  assignDepartment: (hospitalId, staffId, departmentId) => api.put(`/hospital/${hospitalId}/super-admin/staff/${staffId}/department`, null, { params: { department_id: departmentId } }),
+  assignLocation: (hospitalId, staffId, locationId) => api.put(`/hospital/${hospitalId}/super-admin/staff/${staffId}/location`, null, { params: { location_id: locationId } }),
+  
+  // Activity Log
+  getActivityLog: (hospitalId, params) => api.get(`/hospital/${hospitalId}/super-admin/activity-log`, { params }),
+};
+
 export default api;
