@@ -54,6 +54,9 @@ function RoleBasedRedirect() {
       return <Navigate to="/it-admin" replace />;
     case 'facility_admin':
       return <Navigate to="/facility-admin" replace />;
+    case 'nursing_supervisor':
+    case 'floor_supervisor':
+      return <Navigate to="/nursing-supervisor" replace />;
     case 'physician':
       return <Navigate to="/dashboard" replace />;
     case 'nurse':
