@@ -1,0 +1,738 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/lib/auth';
+import { regionAPI, adminAPI } from '@/lib/api';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { 
+  Dialog, DialogContent, DialogDescription, 
+  DialogHeader, DialogTitle, DialogFooter,
+  DialogTrigger
+} from '@/components/ui/dialog';
+import { 
+  Select, SelectContent, SelectItem, 
+  SelectTrigger, SelectValue 
+} from '@/components/ui/select';
+import { 
+  Table, TableBody, TableCell, 
+  TableHead, TableHeader, TableRow 
+} from '@/components/ui/table';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Separator } from '@/components/ui/separator';
+import { toast } from 'sonner';
+import { 
+  Building2, MapPin, Users, Plus, LogIn, Search, 
+  RefreshCw, Globe, Settings, Shield, Activity,
+  ChevronRight, ExternalLink, Eye, Copy, Check,
+  AlertCircle, CheckCircle, Clock, Loader2,
+  Hospital, UserCog, BarChart3
+} from 'lucide-react';
+
+// Ghana Regions for dropdown
+const GHANA_REGIONS = [
+  { id: "greater-accra", name: "Greater Accra Region" },
+  { id: "ashanti", name: "Ashanti Region" },
+  { id: "eastern", name: "Eastern Region" },
+  { id: "western", name: "Western Region" },
+  { id: "central", name: "Central Region" },
+  { id: "northern", name: "Northern Region" },
+  { id: "volta", name: "Volta Region" },
+  { id: "upper-east", name: "Upper East Region" },
+  { id: "upper-west", name: "Upper West Region" },
+  { id: "bono", name: "Bono Region" },
+  { id: "bono-east", name: "Bono East Region" },
+  { id: "ahafo", name: "Ahafo Region" },
+  { id: "western-north", name: "Western North Region" },
+  { id: "oti", name: "Oti Region" },
+  { id: "north-east", name: "North East Region" },
+  { id: "savannah", name: "Savannah Region" },
+];
+
+export default function PlatformOwnerPortal() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  
+  // Check if user is super admin
+  if (user?.role !== 'super_admin') {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Alert variant="destructive" className="max-w-md">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Access Denied</AlertTitle>
+          <AlertDescription>
+            You must be a Platform Owner (Super Admin) to access this page.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+  
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('overview');
+  
+  // Data
+  const [overview, setOverview] = useState(null);
+  const [hospitals, setHospitals] = useState([]);
+  const [regions, setRegions] = useState([]);
+  
+  // Filters
+  const [selectedRegion, setSelectedRegion] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  // Dialogs
+  const [createHospitalOpen, setCreateHospitalOpen] = useState(false);
+  const [loginAsOpen, setLoginAsOpen] = useState(false);
+  const [selectedHospital, setSelectedHospital] = useState(null);
+  const [copiedPassword, setCopiedPassword] = useState(null);
+  
+  // Forms
+  const [newHospital, setNewHospital] = useState({
+    name: '',
+    region_id: '',
+    address: '',
+    city: '',
+    phone: '',
+    email: '',
+    license_number: '',
+    ghana_health_service_id: '',
+    admin_first_name: '',
+    admin_last_name: '',
+    admin_email: '',
+    admin_phone: ''
+  });
+  const [createdHospital, setCreatedHospital] = useState(null);
+  const [saving, setSaving] = useState(false);
+
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const [overviewRes, regionsRes, hospitalsRes] = await Promise.all([
+        regionAPI.getPlatformOverview(),
+        regionAPI.getRegions(),
+        regionAPI.getHospitalAdmins(selectedRegion === 'all' ? null : selectedRegion)
+      ]);
+      
+      setOverview(overviewRes.data);
+      setRegions(regionsRes.data.regions || []);
+      setHospitals(hospitalsRes.data.hospitals || []);
+    } catch (err) {
+      console.error('Error fetching data:', err);
+      toast.error('Failed to load platform data');
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedRegion]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const handleCreateHospital = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const response = await regionAPI.createHospital(newHospital);
+      setCreatedHospital(response.data);
+      toast.success('Hospital created successfully!');
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to create hospital');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleLoginAsHospital = async (hospital) => {
+    try {
+      setSaving(true);
+      const response = await regionAPI.loginAsHospital(hospital.hospital.id);
+      
+      // Store the impersonation token
+      localStorage.setItem('yacco_token', response.data.token);
+      localStorage.setItem('yacco_user', JSON.stringify(response.data.user));
+      localStorage.setItem('yacco_hospital', JSON.stringify(response.data.hospital));
+      localStorage.setItem('yacco_impersonation', JSON.stringify(response.data.impersonation));
+      
+      toast.success(`Now logged in as ${response.data.hospital.name}`);
+      
+      // Redirect to admin dashboard
+      window.location.href = response.data.redirect_to;
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to login as hospital');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const copyToClipboard = async (text, id) => {
+    await navigator.clipboard.writeText(text);
+    setCopiedPassword(id);
+    setTimeout(() => setCopiedPassword(null), 2000);
+    toast.success('Copied to clipboard!');
+  };
+
+  const filteredHospitals = hospitals.filter(h => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      h.hospital.name.toLowerCase().includes(query) ||
+      h.hospital.city?.toLowerCase().includes(query) ||
+      h.admin?.email?.toLowerCase().includes(query)
+    );
+  });
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white">
+        <div className="container mx-auto px-6 py-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
+                  <Shield className="w-7 h-7" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold">Platform Owner Portal</h1>
+                  <p className="text-emerald-100">Ghana Healthcare Network Administration</p>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <Badge variant="secondary" className="bg-white/20 text-white border-0">
+                {user?.email}
+              </Badge>
+              <Button 
+                variant="outline" 
+                className="border-white/30 text-white hover:bg-white/20"
+                onClick={fetchData}
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Refresh
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="container mx-auto px-6 py-8">
+        {/* Overview Cards */}
+        {overview && (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-500">Total Hospitals</p>
+                    <p className="text-3xl font-bold text-emerald-600">{overview.totals?.hospitals || 0}</p>
+                  </div>
+                  <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center">
+                    <Hospital className="w-6 h-6 text-emerald-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-500">Total Users</p>
+                    <p className="text-3xl font-bold text-blue-600">{overview.totals?.users || 0}</p>
+                  </div>
+                  <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                    <Users className="w-6 h-6 text-blue-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-500">Total Locations</p>
+                    <p className="text-3xl font-bold text-purple-600">{overview.totals?.locations || 0}</p>
+                  </div>
+                  <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
+                    <MapPin className="w-6 h-6 text-purple-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-500">Active Regions</p>
+                    <p className="text-3xl font-bold text-orange-600">
+                      {overview.regions?.filter(r => r.hospital_count > 0).length || 0}/16
+                    </p>
+                  </div>
+                  <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center">
+                    <Globe className="w-6 h-6 text-orange-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Main Content */}
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="mb-6">
+            <TabsTrigger value="overview" className="gap-2">
+              <BarChart3 className="w-4 h-4" /> Overview
+            </TabsTrigger>
+            <TabsTrigger value="hospitals" className="gap-2">
+              <Hospital className="w-4 h-4" /> Hospitals
+            </TabsTrigger>
+            <TabsTrigger value="regions" className="gap-2">
+              <Globe className="w-4 h-4" /> Regions
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Overview Tab */}
+          <TabsContent value="overview">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Hospitals by Region */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <MapPin className="w-5 h-5 text-emerald-600" />
+                    Hospitals by Region
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[400px]">
+                    <div className="space-y-3">
+                      {overview?.regions?.filter(r => r.hospital_count > 0).map((region) => (
+                        <div key={region.id} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                          <div>
+                            <p className="font-medium">{region.name}</p>
+                            <p className="text-sm text-gray-500">Capital: {region.capital}</p>
+                          </div>
+                          <div className="text-right">
+                            <Badge variant="secondary">{region.hospital_count} hospitals</Badge>
+                            <p className="text-xs text-gray-400 mt-1">{region.user_count || 0} users</p>
+                          </div>
+                        </div>
+                      ))}
+                      {overview?.regions?.filter(r => r.hospital_count === 0).length > 0 && (
+                        <div className="pt-4 border-t">
+                          <p className="text-sm text-gray-500 mb-2">Regions without hospitals:</p>
+                          <div className="flex flex-wrap gap-2">
+                            {overview?.regions?.filter(r => r.hospital_count === 0).map((region) => (
+                              <Badge key={region.id} variant="outline" className="text-xs">
+                                {region.name}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+
+              {/* Role Distribution */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="w-5 h-5 text-blue-600" />
+                    Staff Distribution
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {overview?.role_distribution && Object.entries(overview.role_distribution).map(([role, count]) => (
+                      <div key={role} className="flex items-center gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-sm font-medium capitalize">{role.replace('_', ' ')}</span>
+                            <span className="text-sm text-gray-500">{count}</span>
+                          </div>
+                          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-emerald-500 rounded-full transition-all"
+                              style={{ width: `${(count / (overview.totals?.users || 1)) * 100}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Hospitals Tab */}
+          <TabsContent value="hospitals">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Hospital Management</CardTitle>
+                    <CardDescription>Create hospitals and manage access</CardDescription>
+                  </div>
+                  <Dialog open={createHospitalOpen} onOpenChange={setCreateHospitalOpen}>
+                    <DialogTrigger asChild>
+                      <Button className="bg-emerald-600 hover:bg-emerald-700">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Hospital
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>Create New Hospital</DialogTitle>
+                        <DialogDescription>
+                          Register a new hospital in the Ghana Healthcare Network
+                        </DialogDescription>
+                      </DialogHeader>
+                      
+                      {createdHospital ? (
+                        <div className="space-y-4">
+                          <Alert className="bg-emerald-50 border-emerald-200">
+                            <CheckCircle className="h-4 w-4 text-emerald-600" />
+                            <AlertTitle className="text-emerald-800">Hospital Created Successfully!</AlertTitle>
+                            <AlertDescription className="text-emerald-700">
+                              Save the admin credentials below - the password cannot be retrieved later.
+                            </AlertDescription>
+                          </Alert>
+                          
+                          <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                            <h4 className="font-semibold">Hospital Details</h4>
+                            <p><strong>Name:</strong> {createdHospital.hospital?.name}</p>
+                            <p><strong>ID:</strong> {createdHospital.hospital?.id}</p>
+                          </div>
+                          
+                          <div className="bg-blue-50 rounded-lg p-4 space-y-3">
+                            <h4 className="font-semibold text-blue-800">Admin Credentials</h4>
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p><strong>Email:</strong> {createdHospital.admin?.email}</p>
+                                <p><strong>Password:</strong> {createdHospital.admin?.temp_password}</p>
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => copyToClipboard(
+                                  `Email: ${createdHospital.admin?.email}\nPassword: ${createdHospital.admin?.temp_password}`,
+                                  'new'
+                                )}
+                              >
+                                {copiedPassword === 'new' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                              </Button>
+                            </div>
+                          </div>
+                          
+                          <DialogFooter>
+                            <Button onClick={() => {
+                              setCreatedHospital(null);
+                              setCreateHospitalOpen(false);
+                              setNewHospital({
+                                name: '', region_id: '', address: '', city: '', phone: '', email: '',
+                                license_number: '', ghana_health_service_id: '',
+                                admin_first_name: '', admin_last_name: '', admin_email: '', admin_phone: ''
+                              });
+                            }}>
+                              Done
+                            </Button>
+                          </DialogFooter>
+                        </div>
+                      ) : (
+                        <form onSubmit={handleCreateHospital} className="space-y-6">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="col-span-2">
+                              <Label>Hospital Name *</Label>
+                              <Input
+                                value={newHospital.name}
+                                onChange={(e) => setNewHospital({...newHospital, name: e.target.value})}
+                                placeholder="e.g., Accra Regional Hospital"
+                                required
+                              />
+                            </div>
+                            
+                            <div>
+                              <Label>Region *</Label>
+                              <Select
+                                value={newHospital.region_id}
+                                onValueChange={(v) => setNewHospital({...newHospital, region_id: v})}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select region" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {GHANA_REGIONS.map((r) => (
+                                    <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            
+                            <div>
+                              <Label>City *</Label>
+                              <Input
+                                value={newHospital.city}
+                                onChange={(e) => setNewHospital({...newHospital, city: e.target.value})}
+                                placeholder="e.g., Accra"
+                                required
+                              />
+                            </div>
+                            
+                            <div className="col-span-2">
+                              <Label>Address *</Label>
+                              <Input
+                                value={newHospital.address}
+                                onChange={(e) => setNewHospital({...newHospital, address: e.target.value})}
+                                placeholder="Street address"
+                                required
+                              />
+                            </div>
+                            
+                            <div>
+                              <Label>Phone *</Label>
+                              <Input
+                                value={newHospital.phone}
+                                onChange={(e) => setNewHospital({...newHospital, phone: e.target.value})}
+                                placeholder="+233-XXX-XXXXXX"
+                                required
+                              />
+                            </div>
+                            
+                            <div>
+                              <Label>Email *</Label>
+                              <Input
+                                type="email"
+                                value={newHospital.email}
+                                onChange={(e) => setNewHospital({...newHospital, email: e.target.value})}
+                                placeholder="info@hospital.gov.gh"
+                                required
+                              />
+                            </div>
+                            
+                            <div>
+                              <Label>License Number *</Label>
+                              <Input
+                                value={newHospital.license_number}
+                                onChange={(e) => setNewHospital({...newHospital, license_number: e.target.value})}
+                                placeholder="GHS-XXX-XXXX"
+                                required
+                              />
+                            </div>
+                            
+                            <div>
+                              <Label>GHS ID (Optional)</Label>
+                              <Input
+                                value={newHospital.ghana_health_service_id}
+                                onChange={(e) => setNewHospital({...newHospital, ghana_health_service_id: e.target.value})}
+                                placeholder="Ghana Health Service ID"
+                              />
+                            </div>
+                          </div>
+                          
+                          <Separator />
+                          
+                          <div>
+                            <h4 className="font-semibold mb-3">Hospital Admin Details</h4>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <Label>First Name *</Label>
+                                <Input
+                                  value={newHospital.admin_first_name}
+                                  onChange={(e) => setNewHospital({...newHospital, admin_first_name: e.target.value})}
+                                  required
+                                />
+                              </div>
+                              <div>
+                                <Label>Last Name *</Label>
+                                <Input
+                                  value={newHospital.admin_last_name}
+                                  onChange={(e) => setNewHospital({...newHospital, admin_last_name: e.target.value})}
+                                  required
+                                />
+                              </div>
+                              <div>
+                                <Label>Admin Email *</Label>
+                                <Input
+                                  type="email"
+                                  value={newHospital.admin_email}
+                                  onChange={(e) => setNewHospital({...newHospital, admin_email: e.target.value})}
+                                  placeholder="admin@hospital.gov.gh"
+                                  required
+                                />
+                              </div>
+                              <div>
+                                <Label>Admin Phone *</Label>
+                                <Input
+                                  value={newHospital.admin_phone}
+                                  onChange={(e) => setNewHospital({...newHospital, admin_phone: e.target.value})}
+                                  placeholder="+233-XXX-XXXXXX"
+                                  required
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <DialogFooter>
+                            <Button type="button" variant="outline" onClick={() => setCreateHospitalOpen(false)}>
+                              Cancel
+                            </Button>
+                            <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700" disabled={saving}>
+                              {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
+                              Create Hospital
+                            </Button>
+                          </DialogFooter>
+                        </form>
+                      )}
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </CardHeader>
+              
+              <CardContent>
+                {/* Filters */}
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="relative flex-1 max-w-sm">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Input
+                      placeholder="Search hospitals..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
+                  <Select value={selectedRegion} onValueChange={setSelectedRegion}>
+                    <SelectTrigger className="w-[200px]">
+                      <SelectValue placeholder="Filter by region" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Regions</SelectItem>
+                      {GHANA_REGIONS.map((r) => (
+                        <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Hospitals Table */}
+                {loading ? (
+                  <div className="flex justify-center py-12">
+                    <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+                  </div>
+                ) : (
+                  <div className="rounded-lg border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Hospital</TableHead>
+                          <TableHead>Region</TableHead>
+                          <TableHead>Admin</TableHead>
+                          <TableHead className="text-center">Locations</TableHead>
+                          <TableHead className="text-center">Users</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredHospitals.map((item) => (
+                          <TableRow key={item.hospital.id}>
+                            <TableCell>
+                              <div>
+                                <p className="font-medium">{item.hospital.name}</p>
+                                <p className="text-sm text-gray-500">{item.hospital.city}</p>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline">
+                                {GHANA_REGIONS.find(r => r.id === item.hospital.region_id)?.name?.replace(' Region', '') || item.hospital.region_id}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {item.admin ? (
+                                <div>
+                                  <p className="text-sm">{item.admin.name}</p>
+                                  <p className="text-xs text-gray-500">{item.admin.email}</p>
+                                </div>
+                              ) : (
+                                <span className="text-gray-400">No admin</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Badge variant="secondary">{item.hospital.location_count}</Badge>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Badge variant="secondary">{item.hospital.user_count}</Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleLoginAsHospital(item)}
+                                  disabled={saving}
+                                >
+                                  <LogIn className="w-4 h-4 mr-1" />
+                                  Login As
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        {filteredHospitals.length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={6} className="text-center py-12 text-gray-500">
+                              No hospitals found
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Regions Tab */}
+          <TabsContent value="regions">
+            <Card>
+              <CardHeader>
+                <CardTitle>Ghana Regions Overview</CardTitle>
+                <CardDescription>All 16 administrative regions of Ghana</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {regions.map((region) => (
+                    <Card key={region.id} className={region.hospital_count > 0 ? 'border-emerald-200 bg-emerald-50/50' : ''}>
+                      <CardContent className="pt-4">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h4 className="font-medium">{region.name}</h4>
+                            <p className="text-sm text-gray-500">Capital: {region.capital}</p>
+                            <p className="text-xs text-gray-400">Code: {region.code}</p>
+                          </div>
+                          {region.hospital_count > 0 ? (
+                            <Badge className="bg-emerald-600">{region.hospital_count}</Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-gray-400">0</Badge>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
+  );
+}
