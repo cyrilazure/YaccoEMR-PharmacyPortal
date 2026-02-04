@@ -7762,6 +7762,14 @@ class YaccoEMRTester:
         if not self.test_super_admin_login_functionality():
             print("❌ Super Admin login tests failed - continuing with other tests")
         
+        # ============ PLATFORM OWNER RBAC TESTS ============
+        print("\n🔒 Testing Platform Owner RBAC and Hospital Management APIs")
+        print("-" * 60)
+        self.test_super_admin_rbac_enforcement()
+        self.test_hospital_management_apis()
+        self.test_hospital_it_admin_apis()
+        self.test_hospital_admin_apis()
+        
         # Core authentication tests
         if not self.test_health_check():
             return False
