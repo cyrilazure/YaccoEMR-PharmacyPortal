@@ -4074,6 +4074,11 @@ class YaccoEMRTester:
         self.test_hospital_admin_invite_staff()
         self.test_data_isolation_verification()
         
+        # ============ ENHANCED INTER-HOSPITAL RECORDS SHARING TESTS ============
+        print("\n🔄 Testing Enhanced Inter-Hospital Medical Records Request Flow")
+        print("-" * 30)
+        self.test_records_sharing_workflow_complete()
+        
         # Print summary
         print("\n" + "=" * 50)
         print(f"📊 Test Summary: {self.tests_passed}/{self.tests_run} tests passed")
