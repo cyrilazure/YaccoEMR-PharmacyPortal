@@ -182,8 +182,9 @@ class AddLocationRequest(BaseModel):
 def create_region_endpoints(db, get_current_user, hash_password):
     """Create region API endpoints with database dependency"""
     
-    # JWT Configuration
-    JWT_SECRET = "yacco-emr-secret-key-2024"
+    # JWT Configuration - MUST match server.py
+    import os
+    JWT_SECRET = os.environ.get('JWT_SECRET', 'yacco-emr-secret-key-2024')
     JWT_ALGORITHM = "HS256"
     JWT_EXPIRATION_HOURS = 24
     
