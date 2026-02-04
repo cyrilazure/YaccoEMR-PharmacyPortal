@@ -1042,6 +1042,11 @@ from hospital_dashboard_module import hospital_dashboard_router, create_hospital
 hospital_dashboard_api_router = create_hospital_dashboard_endpoints(db, get_current_user)
 app.include_router(hospital_dashboard_router)
 
+# Include Hospital IT Admin Module (Super Admin IT)
+from hospital_it_admin_module import hospital_it_admin_router, create_hospital_it_admin_endpoints
+hospital_it_admin_api_router = create_hospital_it_admin_endpoints(db, get_current_user, hash_password)
+app.include_router(hospital_it_admin_router)
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
