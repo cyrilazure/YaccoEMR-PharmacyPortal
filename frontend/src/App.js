@@ -164,6 +164,9 @@ function App() {
             {/* Nurse Dashboard */}
             <Route path="nurse-station" element={<NurseDashboard />} />
             
+            {/* Nursing Supervisor Dashboard */}
+            <Route path="nursing-supervisor" element={<NursingSupervisorDashboard />} />
+            
             {/* Scheduler Dashboard */}
             <Route path="scheduling" element={<SchedulerDashboard />} />
             
