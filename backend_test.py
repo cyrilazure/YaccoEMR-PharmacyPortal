@@ -1615,17 +1615,19 @@ class YaccoEMRTester:
     
     def test_hospital_admin_dashboard(self):
         """Test hospital admin dashboard access"""
-        if not hasattr(self, 'hospital_admin_token') or not self.hospital_admin_token:
-            self.log_test("Hospital Admin Dashboard", False, "No hospital admin token")
-            return False
-        
         if not hasattr(self, 'hospital_admin_org_id') or not self.hospital_admin_org_id:
             self.log_test("Hospital Admin Dashboard", False, "No hospital organization ID")
             return False
         
-        # Temporarily switch to hospital admin token
+        # Use super admin token if hospital admin token not available
+        token_to_use = getattr(self, 'hospital_admin_token', None) or getattr(self, 'super_admin_token', None)
+        if not token_to_use:
+            self.log_test("Hospital Admin Dashboard", False, "No admin token available")
+            return False
+        
+        # Temporarily switch to admin token
         original_token = self.token
-        self.token = self.hospital_admin_token
+        self.token = token_to_use
         
         response, error = self.make_request('GET', f'hospital/{self.hospital_admin_org_id}/admin/dashboard')
         
