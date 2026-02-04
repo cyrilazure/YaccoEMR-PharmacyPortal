@@ -224,6 +224,34 @@ export default function HospitalSuperAdminIT() {
     }
   };
 
+  // Delete User
+  const handleDelete = async () => {
+    if (!selectedStaff) return;
+    setSaving(true);
+    try {
+      await hospitalITAdminAPI.deleteStaff(effectiveHospitalId, selectedStaff.id);
+      toast.success('Account permanently deleted');
+      setDeleteConfirmOpen(false);
+      setSelectedStaff(null);
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to delete account');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Seed Departments
+  const handleSeedDepartments = async () => {
+    try {
+      const response = await hospitalITAdminAPI.seedDepartments(effectiveHospitalId);
+      toast.success(response.data.message);
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to seed departments');
+    }
+  };
+
   // Assignments
   const handleAssignment = async () => {
     if (!selectedStaff || !assignmentData.value) return;
