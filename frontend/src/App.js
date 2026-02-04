@@ -30,6 +30,11 @@ import RecordsSharing from "@/pages/RecordsSharing";
 import SecuritySettings from "@/pages/SecuritySettings";
 import AuditLogs from "@/pages/AuditLogs";
 
+// New Pages
+import SignupPage from "@/pages/SignupPage";
+import HospitalAdminPortal from "@/pages/HospitalAdminPortal";
+import HospitalMainDashboard from "@/pages/HospitalMainDashboard";
+
 // Role-based redirect component
 function RoleBasedRedirect() {
   const { user } = useAuth();
