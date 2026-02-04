@@ -92,6 +92,16 @@ export default function PlatformOwnerPortal() {
   });
   const [createdStaff, setCreatedStaff] = useState(null);
   
+  // Hospital deletion dialog
+  const [deleteHospitalOpen, setDeleteHospitalOpen] = useState(false);
+  const [hospitalToDelete, setHospitalToDelete] = useState(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  
+  // Hospital status management
+  const [statusChangeOpen, setStatusChangeOpen] = useState(false);
+  const [hospitalToChangeStatus, setHospitalToChangeStatus] = useState(null);
+  
   // Forms
   const [newHospital, setNewHospital] = useState({
     name: '',
