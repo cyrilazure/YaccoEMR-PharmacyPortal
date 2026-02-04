@@ -423,4 +423,40 @@ export const nurseAPI = {
   checkPermission: (permission) => api.get(`/nurse/permissions/check/${permission}`),
 };
 
+// Admin Portal APIs
+export const adminAPI = {
+  // Dashboard
+  getDashboardStats: () => api.get('/admin/dashboard/stats'),
+  
+  // Permission Groups
+  getPermissionGroups: () => api.get('/admin/permission-groups'),
+  createPermissionGroup: (data) => api.post('/admin/permission-groups', data),
+  updatePermissionGroup: (groupId, data) => api.put(`/admin/permission-groups/${groupId}`, data),
+  deletePermissionGroup: (groupId) => api.delete(`/admin/permission-groups/${groupId}`),
+  getAvailablePermissions: () => api.get('/admin/available-permissions'),
+  
+  // User Management
+  getUsers: (params) => api.get('/admin/users', { params }),
+  updateUserRole: (userId, data) => api.put(`/admin/users/${userId}/role`, data),
+  bulkUserAction: (data) => api.post('/admin/users/bulk-action', data),
+  getUserActivity: (userId, days) => api.get(`/admin/users/${userId}/activity`, { params: { days } }),
+  
+  // Sharing Policies
+  getSharingPolicies: (params) => api.get('/admin/sharing-policies', { params }),
+  approveSharingPolicy: (policyId, data) => api.post(`/admin/sharing-policies/${policyId}/approve`, data),
+  denySharingPolicy: (policyId, reason) => api.post(`/admin/sharing-policies/${policyId}/deny`, null, { params: { reason } }),
+  requestSharingPolicy: (params) => api.post('/admin/sharing-policies/request', null, { params }),
+  
+  // Security Policies (Super Admin)
+  getSecurityPolicies: (policyType) => api.get('/admin/security-policies', { params: { policy_type: policyType } }),
+  createSecurityPolicy: (data) => api.post('/admin/security-policies', data),
+  toggleSecurityPolicy: (policyType, isActive) => api.put(`/admin/security-policies/${policyType}/toggle`, null, { params: { is_active: isActive } }),
+  
+  // System-Wide (Super Admin)
+  getSystemAuditLogs: (params) => api.get('/admin/system/audit-logs', { params }),
+  getSecurityAlerts: (hours) => api.get('/admin/system/security-alerts', { params: { hours } }),
+  getSystemHealth: () => api.get('/admin/system/health'),
+  getPlatformStats: () => api.get('/admin/system/stats'),
+};
+
 export default api;
