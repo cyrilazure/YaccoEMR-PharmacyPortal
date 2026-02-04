@@ -838,7 +838,8 @@ def create_region_endpoints(db, get_current_user, hash_password):
             }}
         )
         
-        del location["_id"] if "_id" in location else None
+        if "_id" in location:
+            del location["_id"]
         
         return {"message": "Location added", "location": location}
     
