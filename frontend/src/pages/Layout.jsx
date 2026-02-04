@@ -17,7 +17,7 @@ import {
   Activity, LayoutDashboard, Users, FileText, Calendar,
   ClipboardList, Settings, LogOut, ChevronLeft, ChevronRight,
   Pill, AlertTriangle, Stethoscope, BarChart3, Heart, UserCog, Shield, Video,
-  Building2, Globe, CreditCard, Share2, ShieldCheck, FileSearch
+  Building2, Globe, CreditCard, Share2, ShieldCheck, FileSearch, Layers
 } from 'lucide-react';
 
 const navItems = [
@@ -31,14 +31,16 @@ const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', roles: ['physician'] },
   { to: '/nurse-station', icon: Heart, label: 'Nurse Station', roles: ['nurse'] },
   { to: '/scheduling', icon: Calendar, label: 'Scheduling', roles: ['scheduler'] },
+  { to: '/billing', icon: CreditCard, label: 'Billing Portal', roles: ['biller'] },
+  { to: '/department', icon: Layers, label: 'Department Portal', roles: ['records_officer', 'department_staff'] },
   { to: '/admin', icon: Shield, label: 'Admin Center', roles: ['admin'] },
   // Shared pages
-  { to: '/patients', icon: Users, label: 'Patients', roles: ['physician', 'nurse', 'scheduler', 'admin', 'hospital_admin', 'super_admin'] },
+  { to: '/patients', icon: Users, label: 'Patients', roles: ['physician', 'nurse', 'scheduler', 'admin', 'hospital_admin', 'super_admin', 'records_officer'] },
   { to: '/appointments', icon: Calendar, label: 'Appointments', roles: ['physician', 'nurse', 'scheduler', 'admin', 'hospital_admin'] },
   { to: '/orders', icon: ClipboardList, label: 'Orders', roles: ['physician', 'nurse', 'admin', 'hospital_admin'] },
   { to: '/telehealth', icon: Video, label: 'Telehealth', roles: ['physician', 'nurse', 'admin', 'hospital_admin'] },
   { to: '/records-sharing', icon: Share2, label: 'Records Sharing', roles: ['physician', 'hospital_admin'] },
-  { to: '/billing', icon: CreditCard, label: 'Billing', roles: ['biller', 'physician', 'admin', 'hospital_admin'] },
+  { to: '/billing', icon: CreditCard, label: 'Billing', roles: ['physician', 'admin', 'hospital_admin'] },
   { to: '/analytics', icon: BarChart3, label: 'Analytics', roles: ['physician', 'admin', 'hospital_admin', 'super_admin'] },
   // Security & Audit - Admin roles
   { to: '/audit-logs', icon: FileSearch, label: 'Audit Logs', roles: ['admin', 'hospital_admin', 'super_admin'] },
