@@ -38,6 +38,7 @@ import HospitalMainDashboard from "@/pages/HospitalMainDashboard";
 import HospitalSuperAdminIT from "@/pages/HospitalSuperAdminIT";
 import DepartmentUnitPortal from "@/pages/DepartmentUnitPortal";
 import FacilityAdminPortal from "@/pages/FacilityAdminPortal";
+import NursingSupervisorDashboard from "@/pages/NursingSupervisorDashboard";
 
 // Role-based redirect component
 function RoleBasedRedirect() {
