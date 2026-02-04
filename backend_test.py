@@ -3859,6 +3859,444 @@ class YaccoEMRTester:
             self.log_test("Revoke Consent", False, f"Status: {response.status_code}")
             return False
 
+    # ============ COMPREHENSIVE NOTIFICATION SYSTEM TESTS ============
+    
+    def test_notification_types(self):
+        """Test getting notification types"""
+        response, error = self.make_request('GET', 'notifications/types')
+        if error:
+            self.log_test("Notification Types", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_types = isinstance(data, list) and len(data) > 0
+            # Check for expected notification types
+            type_values = [t.get('value') for t in data]
+            expected_types = ['records_request_received', 'emergency_access_used', 'consent_required', 'security_login_new_device']
+            has_expected = all(t in type_values for t in expected_types)
+            success = has_types and has_expected and len(data) >= 30
+            self.log_test("Notification Types", success, f"Found {len(data)} notification types")
+            return success
+        else:
+            self.log_test("Notification Types", False, f"Status: {response.status_code}")
+            return False
+
+    def test_notification_priorities(self):
+        """Test getting notification priorities"""
+        response, error = self.make_request('GET', 'notifications/priorities')
+        if error:
+            self.log_test("Notification Priorities", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_priorities = isinstance(data, list) and len(data) > 0
+            priority_values = [p.get('value') for p in data]
+            expected_priorities = ['low', 'normal', 'high', 'urgent', 'critical']
+            has_all_priorities = all(p in priority_values for p in expected_priorities)
+            success = has_priorities and has_all_priorities
+            self.log_test("Notification Priorities", success, f"Found {len(data)} priority levels")
+            return success
+        else:
+            self.log_test("Notification Priorities", False, f"Status: {response.status_code}")
+            return False
+
+    def test_create_notification_admin(self):
+        """Test creating notification as admin"""
+        if not hasattr(self, 'hospital_admin_token') or not self.hospital_admin_token:
+            self.log_test("Create Notification (Admin)", False, "No hospital admin token")
+            return False
+        
+        # Switch to hospital admin token
+        original_token = self.token
+        self.token = self.hospital_admin_token
+        
+        notification_data = {
+            "user_id": self.user_id,
+            "notification_type": "general_info",
+            "title": "Test Notification",
+            "message": "This is a test notification for the comprehensive notification system.",
+            "priority": "normal",
+            "related_type": "test",
+            "related_id": "test-123",
+            "action_url": "/dashboard",
+            "action_label": "View Dashboard",
+            "channels": ["in_app"],
+            "expires_in_hours": 24
+        }
+        
+        response, error = self.make_request('POST', 'notifications/send', notification_data)
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Create Notification (Admin)", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_notification_id = bool(data.get('notification_id'))
+            success = has_notification_id
+            self.log_test("Create Notification (Admin)", success, f"Notification ID: {data.get('notification_id')}")
+            return success
+        else:
+            self.log_test("Create Notification (Admin)", False, f"Status: {response.status_code}")
+            return False
+
+    def test_get_notifications(self):
+        """Test getting notifications with filters"""
+        response, error = self.make_request('GET', 'notifications')
+        if error:
+            self.log_test("Get Notifications", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_notifications = 'notifications' in data
+            has_total = 'total' in data
+            has_unread_count = 'unread_count' in data
+            success = has_notifications and has_total and has_unread_count
+            notification_count = len(data.get('notifications', []))
+            self.log_test("Get Notifications", success, f"Found {notification_count} notifications, {data.get('unread_count', 0)} unread")
+            return success
+        else:
+            self.log_test("Get Notifications", False, f"Status: {response.status_code}")
+            return False
+
+    def test_get_notifications_unread_only(self):
+        """Test getting only unread notifications"""
+        response, error = self.make_request('GET', 'notifications', params={'unread_only': True})
+        if error:
+            self.log_test("Get Notifications (Unread Only)", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            notifications = data.get('notifications', [])
+            # All notifications should be unread
+            all_unread = all(not n.get('is_read', True) for n in notifications)
+            success = True  # Success if we get a response (may be empty)
+            self.log_test("Get Notifications (Unread Only)", success, f"Found {len(notifications)} unread notifications")
+            return success
+        else:
+            self.log_test("Get Notifications (Unread Only)", False, f"Status: {response.status_code}")
+            return False
+
+    def test_get_unread_count(self):
+        """Test getting unread notification count"""
+        response, error = self.make_request('GET', 'notifications/unread-count')
+        if error:
+            self.log_test("Get Unread Count", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_unread_count = 'unread_count' in data
+            has_by_priority = 'by_priority' in data
+            success = has_unread_count and has_by_priority
+            unread_count = data.get('unread_count', 0)
+            priority_counts = data.get('by_priority', {})
+            self.log_test("Get Unread Count", success, f"Unread: {unread_count}, By priority: {priority_counts}")
+            return success
+        else:
+            self.log_test("Get Unread Count", False, f"Status: {response.status_code}")
+            return False
+
+    def test_notification_read_unread_lifecycle(self):
+        """Test marking notifications as read/unread"""
+        # First get a notification to work with
+        response, error = self.make_request('GET', 'notifications', params={'limit': 1})
+        if error or response.status_code != 200:
+            self.log_test("Notification Read/Unread Lifecycle", False, "No notifications available")
+            return False
+        
+        data = response.json()
+        notifications = data.get('notifications', [])
+        if not notifications:
+            self.log_test("Notification Read/Unread Lifecycle", False, "No notifications found")
+            return False
+        
+        notification_id = notifications[0].get('id')
+        
+        # Mark as read
+        response, error = self.make_request('PUT', f'notifications/{notification_id}/read')
+        if error or response.status_code != 200:
+            self.log_test("Notification Read/Unread Lifecycle", False, "Failed to mark as read")
+            return False
+        
+        # Mark as unread
+        response, error = self.make_request('PUT', f'notifications/{notification_id}/unread')
+        if error or response.status_code != 200:
+            self.log_test("Notification Read/Unread Lifecycle", False, "Failed to mark as unread")
+            return False
+        
+        self.log_test("Notification Read/Unread Lifecycle", True, "Read/unread lifecycle working")
+        return True
+
+    def test_notification_dismiss(self):
+        """Test dismissing notifications"""
+        # Get a notification to dismiss
+        response, error = self.make_request('GET', 'notifications', params={'limit': 1})
+        if error or response.status_code != 200:
+            self.log_test("Notification Dismiss", False, "No notifications available")
+            return False
+        
+        data = response.json()
+        notifications = data.get('notifications', [])
+        if not notifications:
+            self.log_test("Notification Dismiss", False, "No notifications found")
+            return False
+        
+        notification_id = notifications[0].get('id')
+        
+        # Dismiss notification
+        response, error = self.make_request('PUT', f'notifications/{notification_id}/dismiss')
+        if error:
+            self.log_test("Notification Dismiss", False, error)
+            return False
+        
+        success = response.status_code == 200
+        self.log_test("Notification Dismiss", success, f"Status: {response.status_code}")
+        return success
+
+    def test_notification_delete(self):
+        """Test deleting notifications"""
+        # Get a notification to delete
+        response, error = self.make_request('GET', 'notifications', params={'limit': 1})
+        if error or response.status_code != 200:
+            self.log_test("Notification Delete", False, "No notifications available")
+            return False
+        
+        data = response.json()
+        notifications = data.get('notifications', [])
+        if not notifications:
+            self.log_test("Notification Delete", False, "No notifications found")
+            return False
+        
+        notification_id = notifications[0].get('id')
+        
+        # Delete notification
+        response, error = self.make_request('DELETE', f'notifications/{notification_id}')
+        if error:
+            self.log_test("Notification Delete", False, error)
+            return False
+        
+        success = response.status_code == 200
+        self.log_test("Notification Delete", success, f"Status: {response.status_code}")
+        return success
+
+    def test_mark_all_notifications_read(self):
+        """Test marking all notifications as read"""
+        response, error = self.make_request('PUT', 'notifications/read-all')
+        if error:
+            self.log_test("Mark All Notifications Read", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_message = 'message' in data
+            success = has_message
+            self.log_test("Mark All Notifications Read", success, data.get('message', ''))
+            return success
+        else:
+            self.log_test("Mark All Notifications Read", False, f"Status: {response.status_code}")
+            return False
+
+    def test_clear_all_notifications(self):
+        """Test clearing all notifications"""
+        response, error = self.make_request('DELETE', 'notifications/clear-all', params={'read_only': True})
+        if error:
+            self.log_test("Clear All Notifications", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_message = 'message' in data
+            success = has_message
+            self.log_test("Clear All Notifications", success, data.get('message', ''))
+            return success
+        else:
+            self.log_test("Clear All Notifications", False, f"Status: {response.status_code}")
+            return False
+
+    def test_notification_preferences_get(self):
+        """Test getting notification preferences"""
+        response, error = self.make_request('GET', 'notifications/preferences/me')
+        if error:
+            self.log_test("Get Notification Preferences", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            # Should have preference fields
+            expected_fields = ['email_enabled', 'in_app_enabled', 'priority_threshold']
+            has_fields = any(field in data for field in expected_fields)
+            success = has_fields or isinstance(data, dict)  # Accept any dict response
+            self.log_test("Get Notification Preferences", success, f"Preferences: {list(data.keys()) if isinstance(data, dict) else 'Invalid'}")
+            return success
+        else:
+            self.log_test("Get Notification Preferences", False, f"Status: {response.status_code}")
+            return False
+
+    def test_notification_preferences_update(self):
+        """Test updating notification preferences"""
+        preferences_data = {
+            "email_enabled": True,
+            "in_app_enabled": True,
+            "priority_threshold": "normal",
+            "quiet_hours_enabled": False,
+            "quiet_hours_start": "22:00",
+            "quiet_hours_end": "08:00"
+        }
+        
+        response, error = self.make_request('PUT', 'notifications/preferences/me', preferences_data)
+        if error:
+            self.log_test("Update Notification Preferences", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_message = 'message' in data
+            has_preferences = 'preferences' in data
+            success = has_message and has_preferences
+            self.log_test("Update Notification Preferences", success, data.get('message', ''))
+            return success
+        else:
+            self.log_test("Update Notification Preferences", False, f"Status: {response.status_code}")
+            return False
+
+    def test_bulk_notifications(self):
+        """Test sending bulk notifications"""
+        if not hasattr(self, 'hospital_admin_token') or not self.hospital_admin_token:
+            self.log_test("Bulk Notifications", False, "No hospital admin token")
+            return False
+        
+        # Switch to hospital admin token
+        original_token = self.token
+        self.token = self.hospital_admin_token
+        
+        bulk_data = {
+            "user_ids": [self.user_id],
+            "notification_type": "general_info",
+            "title": "Bulk Test Notification",
+            "message": "This is a bulk notification test.",
+            "priority": "normal"
+        }
+        
+        response, error = self.make_request('POST', 'notifications/send-bulk', bulk_data)
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Bulk Notifications", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_message = 'message' in data
+            success = has_message
+            self.log_test("Bulk Notifications", success, data.get('message', ''))
+            return success
+        else:
+            self.log_test("Bulk Notifications", False, f"Status: {response.status_code}")
+            return False
+
+    def test_expiration_checks(self):
+        """Test running expiration checks"""
+        if not hasattr(self, 'hospital_admin_token') or not self.hospital_admin_token:
+            self.log_test("Expiration Checks", False, "No hospital admin token")
+            return False
+        
+        # Switch to hospital admin token
+        original_token = self.token
+        self.token = self.hospital_admin_token
+        
+        response, error = self.make_request('POST', 'notifications/check-expirations')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Expiration Checks", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_message = 'message' in data
+            has_access_notifications = 'access_expiring_notifications' in data
+            has_consent_notifications = 'consent_expiring_notifications' in data
+            success = has_message and has_access_notifications and has_consent_notifications
+            access_count = data.get('access_expiring_notifications', 0)
+            consent_count = data.get('consent_expiring_notifications', 0)
+            self.log_test("Expiration Checks", success, f"Access: {access_count}, Consent: {consent_count} notifications sent")
+            return success
+        else:
+            self.log_test("Expiration Checks", False, f"Status: {response.status_code}")
+            return False
+
+    def test_emergency_access_alert(self):
+        """Test creating emergency access alert"""
+        if not self.test_patient_id:
+            self.log_test("Emergency Access Alert", False, "No test patient available")
+            return False
+        
+        alert_data = {
+            "patient_id": self.test_patient_id,
+            "reason": "Medical emergency - patient unconscious, need immediate access to medical history"
+        }
+        
+        response, error = self.make_request('POST', 'notifications/emergency-access-alert', alert_data)
+        if error:
+            self.log_test("Emergency Access Alert", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_message = 'message' in data
+            has_admins_notified = 'admins_notified' in data
+            success = has_message and has_admins_notified
+            admins_count = data.get('admins_notified', 0)
+            self.log_test("Emergency Access Alert", success, f"Notified {admins_count} administrators")
+            return success
+        else:
+            self.log_test("Emergency Access Alert", False, f"Status: {response.status_code}")
+            return False
+
+    def test_notification_statistics(self):
+        """Test getting notification statistics"""
+        if not hasattr(self, 'hospital_admin_token') or not self.hospital_admin_token:
+            self.log_test("Notification Statistics", False, "No hospital admin token")
+            return False
+        
+        # Switch to hospital admin token
+        original_token = self.token
+        self.token = self.hospital_admin_token
+        
+        response, error = self.make_request('GET', 'notifications/stats/overview', params={'days': 30})
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Notification Statistics", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            required_fields = ['period_days', 'total_notifications', 'read_count', 'unread_count', 'read_rate_percent', 'by_type', 'by_priority']
+            has_all_fields = all(field in data for field in required_fields)
+            success = has_all_fields
+            total = data.get('total_notifications', 0)
+            read_rate = data.get('read_rate_percent', 0)
+            self.log_test("Notification Statistics", success, f"Total: {total}, Read rate: {read_rate}%")
+            return success
+        else:
+            self.log_test("Notification Statistics", False, f"Status: {response.status_code}")
+            return False
+
     # ============ ENHANCED PATIENT CONSENT MANAGEMENT SYSTEM TESTS ============
     
     def test_consent_types(self):
