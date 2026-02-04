@@ -1119,7 +1119,6 @@ class YaccoEMRTester:
                 self.test_hospital_id = hospital.get('id')
                 self.hospital_admin_email = admin.get('email')
                 self.hospital_admin_temp_password = admin.get('temp_password')
-                print(f"DEBUG: Created hospital ID: {self.test_hospital_id}")  # Debug output
             
             self.log_test("Platform Owner Create Hospital", success, 
                          f"Hospital: {hospital.get('name')}, Admin: {admin.get('email')}")
