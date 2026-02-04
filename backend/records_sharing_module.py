@@ -746,6 +746,243 @@ def setup_routes(db, get_current_user):
         
         return {"access_grants": enriched_grants, "count": len(enriched_grants)}
     
+    # ============ ACCESS REVOCATION ============
+    @router.post("/access-grants/{grant_id}/revoke")
+    async def revoke_access_grant(
+        grant_id: str,
+        reason: Optional[str] = None,
+        current_user: dict = Depends(get_current_user)
+    ):
+        """
+        Revoke an active access grant (target physician can revoke before expiration)
+        
+        State Transition: APPROVED --> REVOKED
+        """
+        grant = await db.access_grants.find_one({"id": grant_id})
+        
+        if not grant:
+            raise HTTPException(status_code=404, detail="Access grant not found")
+        
+        # Only granting physician can revoke
+        if grant["granting_physician_id"] != current_user["id"]:
+            raise HTTPException(status_code=403, detail="Only the granting physician can revoke access")
+        
+        if not grant.get("active"):
+            raise HTTPException(status_code=400, detail="Access grant is already inactive")
+        
+        # Revoke the grant
+        await db.access_grants.update_one(
+            {"id": grant_id},
+            {"$set": {
+                "active": False,
+                "revoked_at": datetime.now(timezone.utc).isoformat(),
+                "revoked_by": current_user["id"],
+                "revocation_reason": reason
+            }}
+        )
+        
+        # Update associated request
+        request = await db.records_requests.find_one({"id": grant.get("request_id")})
+        if request:
+            await db.records_requests.update_one(
+                {"id": request["id"]},
+                {"$set": {"status": "revoked"}}
+            )
+        
+        # Notify the granted physician
+        notification_doc = {
+            "id": str(uuid.uuid4()),
+            "user_id": grant["granted_physician_id"],
+            "type": "access_revoked",
+            "title": "Records Access Revoked",
+            "message": f"Dr. {current_user['first_name']} {current_user['last_name']} has revoked your access to patient records." + (f" Reason: {reason}" if reason else ""),
+            "related_request_id": grant.get("request_id"),
+            "read": False,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.notifications.insert_one(notification_doc)
+        
+        # AUDIT: Log the revocation
+        await log_records_sharing_audit(
+            user=current_user,
+            action="access_revoked",
+            resource_type="access_grant",
+            resource_id=grant_id,
+            patient_id=grant.get("patient_id"),
+            details=f"Revoked access grant for Dr. ID {grant['granted_physician_id']}. Reason: {reason or 'Not specified'}",
+            success=True,
+            severity="warning",
+            metadata={
+                "granted_physician_id": grant["granted_physician_id"],
+                "revocation_reason": reason
+            }
+        )
+        
+        return {"message": "Access grant revoked successfully"}
+    
+    # ============ WORKFLOW DOCUMENTATION ============
+    @router.get("/workflow-diagram")
+    async def get_workflow_diagram():
+        """
+        Get the complete workflow documentation for inter-hospital records sharing
+        """
+        return {
+            "workflow_name": "Inter-Hospital Medical Records Request Flow",
+            "version": "1.0",
+            "description": "HIPAA-compliant workflow for sharing patient medical records between healthcare organizations",
+            
+            "steps": [
+                {
+                    "step": 1,
+                    "name": "Physician Search",
+                    "actor": "Requesting Physician",
+                    "action": "Search for another physician across all registered hospitals",
+                    "endpoint": "GET /api/records-sharing/physicians/search",
+                    "outputs": ["List of matching physicians with organization info"]
+                },
+                {
+                    "step": 2,
+                    "name": "View Physician Profile",
+                    "actor": "Requesting Physician",
+                    "action": "View detailed profile of target physician",
+                    "endpoint": "GET /api/records-sharing/physicians/{physician_id}",
+                    "outputs": ["Physician profile with organization details"]
+                },
+                {
+                    "step": 3,
+                    "name": "Create Records Request",
+                    "actor": "Requesting Physician",
+                    "action": "Submit request for patient medical records with clinical reason",
+                    "endpoint": "POST /api/records-sharing/requests",
+                    "required_data": ["target_physician_id", "patient_id", "patient_name", "reason", "urgency", "requested_records"],
+                    "outputs": ["Request ID", "Request Number", "Status: PENDING"]
+                },
+                {
+                    "step": 4,
+                    "name": "Upload Consent Form",
+                    "actor": "Requesting Physician",
+                    "action": "Upload signed patient consent form (PDF/Image)",
+                    "endpoint": "POST /api/records-sharing/requests/{request_id}/consent-form",
+                    "required": True,
+                    "note": "Without consent, request is less likely to be approved"
+                },
+                {
+                    "step": 5,
+                    "name": "Receive Notification",
+                    "actor": "Target Physician",
+                    "action": "System sends notification about incoming request",
+                    "automatic": True,
+                    "notification_type": "records_request"
+                },
+                {
+                    "step": 6,
+                    "name": "Review Request",
+                    "actor": "Target Physician",
+                    "action": "Review request details, patient consent, and clinical reason",
+                    "endpoint": "GET /api/records-sharing/requests/{request_id}",
+                    "considerations": ["Valid consent form", "Clinical necessity", "Patient privacy"]
+                },
+                {
+                    "step": 7,
+                    "name": "Respond to Request",
+                    "actor": "Target Physician",
+                    "action": "Approve or reject the records request",
+                    "endpoint": "POST /api/records-sharing/requests/{request_id}/respond",
+                    "options": {
+                        "approve": {
+                            "sets_access_duration": True,
+                            "default_duration_days": 30,
+                            "creates_access_grant": True
+                        },
+                        "reject": {
+                            "requires_reason": False,
+                            "recommended": True
+                        }
+                    }
+                },
+                {
+                    "step": 8,
+                    "name": "Access Shared Records",
+                    "actor": "Requesting Physician",
+                    "action": "View patient records (read-only, time-limited)",
+                    "endpoint": "GET /api/records-sharing/shared-records/{patient_id}",
+                    "access_type": "READ_ONLY",
+                    "time_limited": True,
+                    "audit_logged": True
+                }
+            ],
+            
+            "states": {
+                "PENDING": {
+                    "description": "Request submitted, awaiting response",
+                    "transitions_to": ["APPROVED", "REJECTED", "CANCELLED"],
+                    "timeout": None
+                },
+                "APPROVED": {
+                    "description": "Request approved with time-limited access",
+                    "transitions_to": ["EXPIRED", "REVOKED"],
+                    "creates": "access_grant"
+                },
+                "REJECTED": {
+                    "description": "Request denied by target physician",
+                    "transitions_to": [],
+                    "final": True
+                },
+                "CANCELLED": {
+                    "description": "Request withdrawn by requesting physician",
+                    "transitions_to": [],
+                    "final": True
+                },
+                "EXPIRED": {
+                    "description": "Access period has ended",
+                    "transitions_to": [],
+                    "final": True,
+                    "automatic": True
+                },
+                "REVOKED": {
+                    "description": "Access revoked before expiration",
+                    "transitions_to": [],
+                    "final": True
+                }
+            },
+            
+            "failure_handling": {
+                "missing_consent": {
+                    "behavior": "Request can be created but target physician sees no consent",
+                    "recommendation": "Always upload consent before expecting approval"
+                },
+                "invalid_patient": {
+                    "behavior": "Request creation fails",
+                    "error_code": 400
+                },
+                "physician_not_found": {
+                    "behavior": "Request creation fails",
+                    "error_code": 404
+                },
+                "already_processed": {
+                    "behavior": "Cannot respond to non-pending request",
+                    "error_code": 400
+                },
+                "access_denied": {
+                    "behavior": "No active access grant or grant expired",
+                    "error_code": 403
+                },
+                "unauthorized": {
+                    "behavior": "User not authorized for this action",
+                    "error_code": 403
+                }
+            },
+            
+            "compliance_notes": {
+                "hipaa": "All PHI access is logged with user, timestamp, and action",
+                "consent": "Patient consent form must be obtained and uploaded",
+                "time_limits": "Access is automatically time-limited (default 30 days)",
+                "audit_trail": "Complete audit trail for all operations",
+                "read_only": "Shared records are read-only, no modifications allowed",
+                "organization_isolation": "Records are scoped to granting organization"
+            }
+        }
+    
     # ============ NOTIFICATIONS ============
     @router.get("/notifications")
     async def get_notifications(
