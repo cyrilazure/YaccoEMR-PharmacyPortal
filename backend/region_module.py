@@ -62,6 +62,8 @@ class UserRoleGhana(str, Enum):
 ROLE_PORTAL_MAP = {
     "physician": "/dashboard",
     "nurse": "/nurse-station",
+    "nursing_supervisor": "/nursing-supervisor",
+    "floor_supervisor": "/nursing-supervisor",
     "admin": "/admin-dashboard",
     "hospital_admin": "/admin-dashboard",
     "hospital_it_admin": "/it-admin",
