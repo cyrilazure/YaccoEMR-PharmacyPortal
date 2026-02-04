@@ -495,6 +495,10 @@ export const regionAPI = {
   }),
   getPlatformOverview: () => api.get('/regions/admin/overview'),
   
+  // Super Admin - Hospital Access (Login As)
+  loginAsHospital: (hospitalId) => api.post(`/regions/admin/login-as-hospital/${hospitalId}`),
+  getHospitalAdmins: (regionId) => api.get('/regions/admin/hospital-admins', { params: { region_id: regionId } }),
+  
   // Hospital Admin - Location Management
   addLocation: (hospitalId, data) => api.post(`/regions/hospitals/${hospitalId}/locations`, data),
   updateLocation: (hospitalId, locationId, data) => api.put(`/regions/hospitals/${hospitalId}/locations/${locationId}`, data),
