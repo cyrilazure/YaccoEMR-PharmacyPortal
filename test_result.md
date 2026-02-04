@@ -3158,3 +3158,207 @@ agent_communication:
       **NEXT STEPS:**
       Main agent should implement proper RBAC middleware to restrict Super Admin access to clinical endpoints while maintaining platform administration capabilities.
 
+---
+
+user_problem_statement: |
+  Test the following fixes:
+
+  **Hospital IT Admin (kofiabedu2019@gmail.com / 2I6ZRBkjVn2ZQg7O)**
+  Hospital ID: e717ed11-7955-4884-8d6b-a529f918c34f
+  Location ID: b61d7896-b4ef-436b-868e-94a60b55c64c
+
+  1. **Create Nursing Supervisor Staff**
+     POST /api/hospital/{hospital_id}/super-admin/staff
+     - Create staff with role: "nursing_supervisor"
+     - Should succeed and return credentials
+
+  2. **Create Floor Supervisor Staff**
+     POST /api/hospital/{hospital_id}/super-admin/staff
+     - Create staff with role: "floor_supervisor"
+     - Should succeed
+
+  3. **List Staff**
+     GET /api/hospital/{hospital_id}/super-admin/staff
+     - Verify new supervisor roles appear
+
+  4. **Unlock Account**
+     POST /api/hospital/{hospital_id}/super-admin/staff/{staff_id}/unlock
+     - Should succeed
+
+  **Nurse Portal (testnurse@hospital.com / test123)**
+
+  5. **Login as Nurse** 
+     POST /api/regions/auth/login
+     - Should return token with redirect_to: "/nurse-station"
+
+  6. **Check Current Shift**
+     GET /api/nurse/current-shift
+     - Should return active_shift status
+
+  7. **Clock In** (if no active shift)
+     POST /api/nurse/shifts/clock-in
+     - {"shift_type": "morning"}
+
+  8. **Clock Out**
+     POST /api/nurse/shifts/clock-out?handoff_notes=Test
+     - Should succeed
+
+backend:
+  - task: "Create Nursing Supervisor Staff"
+    implemented: true
+    working: true
+    file: "backend/hospital_it_admin_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing Hospital IT Admin create nursing supervisor staff with role: 'nursing_supervisor'"
+      - working: true
+        agent: "testing"
+        comment: "✅ Hospital IT Admin Create Nursing Supervisor - Successfully created nursing supervisor staff with role 'nursing_supervisor', returned staff ID and temp password credentials"
+
+  - task: "Create Floor Supervisor Staff"
+    implemented: true
+    working: true
+    file: "backend/hospital_it_admin_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing Hospital IT Admin create floor supervisor staff with role: 'floor_supervisor'"
+      - working: true
+        agent: "testing"
+        comment: "✅ Hospital IT Admin Create Floor Supervisor - Successfully created floor supervisor staff with role 'floor_supervisor', returned staff ID and temp password credentials"
+
+  - task: "List Staff with Supervisor Roles"
+    implemented: true
+    working: true
+    file: "backend/hospital_it_admin_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing Hospital IT Admin list staff to verify new supervisor roles appear"
+      - working: true
+        agent: "testing"
+        comment: "✅ Hospital IT Admin List Staff - Successfully retrieved staff list with required fields (staff, total, page, pages), supervisor roles verification working"
+
+  - task: "Unlock Staff Account"
+    implemented: true
+    working: true
+    file: "backend/hospital_it_admin_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing Hospital IT Admin unlock account functionality"
+      - working: true
+        agent: "testing"
+        comment: "✅ Hospital IT Admin Unlock Account - Account unlock functionality working correctly, handles both existing and non-existing staff IDs appropriately"
+
+  - task: "Nurse Login via Region-Based Auth"
+    implemented: true
+    working: true
+    file: "backend/region_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing nurse login via POST /api/regions/auth/login with redirect_to: '/nurse-station'"
+      - working: true
+        agent: "testing"
+        comment: "✅ Nurse Login Region Based - Successfully authenticated nurse with correct redirect_to '/nurse-station', token generated with proper role verification"
+
+  - task: "Nurse Current Shift Check"
+    implemented: true
+    working: true
+    file: "backend/nurse_portal_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing GET /api/nurse/current-shift to return active_shift status"
+      - working: true
+        agent: "testing"
+        comment: "✅ Nurse Current Shift Check - Successfully retrieved current shift information with required fields (current_time_shift, active_shift, shift_info)"
+
+  - task: "Nurse Clock In Morning Shift"
+    implemented: true
+    working: true
+    file: "backend/nurse_portal_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing POST /api/nurse/shifts/clock-in with shift_type: 'morning'"
+      - working: true
+        agent: "testing"
+        comment: "✅ Nurse Clock In Morning - Successfully clocked in to morning shift, returned shift ID and success message, handles already clocked in scenarios appropriately"
+
+  - task: "Nurse Clock Out with Handoff Notes"
+    implemented: true
+    working: true
+    file: "backend/nurse_portal_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing POST /api/nurse/shifts/clock-out?handoff_notes=Test"
+      - working: true
+        agent: "testing"
+        comment: "✅ Nurse Clock Out with Handoff - Successfully clocked out with handoff notes, handles both active shift and no active shift scenarios appropriately"
+
+frontend:
+  # No frontend testing requested
+
+metadata:
+  created_by: "testing_agent"
+  version: "1.0"
+  test_sequence: 3
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "All requested tests completed successfully"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "testing"
+    message: |
+      ✅ ALL REVIEW REQUEST TESTS COMPLETED SUCCESSFULLY - 8/8 TESTS PASSED (100% SUCCESS RATE)
+      
+      🏥 **HOSPITAL IT ADMIN & NURSE PORTAL TESTING RESULTS:**
+      
+      **Hospital IT Admin Tests (kofiabedu2019@gmail.com / 2I6ZRBkjVn2ZQg7O):**
+      ✅ Create Nursing Supervisor Staff - Role 'nursing_supervisor' created successfully
+      ✅ Create Floor Supervisor Staff - Role 'floor_supervisor' created successfully  
+      ✅ List Staff - Staff list retrieved with supervisor roles verification
+      ✅ Unlock Account - Account unlock functionality working correctly
+      
+      **Nurse Portal Tests (testnurse@hospital.com / test123):**
+      ✅ Login as Nurse - Region-based auth with redirect_to '/nurse-station' working
+      ✅ Check Current Shift - Current shift status retrieval working
+      ✅ Clock In Morning Shift - Morning shift clock-in successful
+      ✅ Clock Out with Handoff - Clock-out with handoff notes successful
+      
+      **SUMMARY:**
+      All requested backend API endpoints are working correctly. The Hospital IT Admin can successfully create supervisor staff roles and manage accounts. The Nurse Portal authentication and shift management features are fully functional with proper region-based authentication and role-based redirects.
+
