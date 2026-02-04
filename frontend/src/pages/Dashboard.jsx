@@ -132,18 +132,79 @@ export default function Dashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-slate-900" style={{ fontFamily: 'Manrope' }}>
-            Welcome back, {user?.first_name}
+            Welcome back, Dr. {user?.first_name}
           </h1>
           <p className="text-slate-500 mt-1">
-            {getRoleDisplayName(user?.role)} Dashboard • {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            {getRoleDisplayName(user?.role)} Portal • {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
           </p>
         </div>
-        <Link to="/patients">
-          <Button className="gap-2 bg-sky-600 hover:bg-sky-700" data-testid="new-patient-btn">
-            <UserPlus className="w-4 h-4" /> New Patient
-          </Button>
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link to="/telehealth">
+            <Button variant="outline" className="gap-2">
+              <Video className="w-4 h-4" /> Telehealth
+            </Button>
+          </Link>
+          <Link to="/analytics">
+            <Button variant="outline" className="gap-2">
+              <BarChart3 className="w-4 h-4" /> Analytics
+            </Button>
+          </Link>
+          <Link to="/patients">
+            <Button className="gap-2 bg-sky-600 hover:bg-sky-700" data-testid="new-patient-btn">
+              <UserPlus className="w-4 h-4" /> New Patient
+            </Button>
+          </Link>
+        </div>
       </div>
+
+      {/* Quick MRN Search */}
+      <Card className="border-sky-100 bg-gradient-to-r from-sky-50 to-white">
+        <CardContent className="py-4">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 text-sky-700">
+              <Stethoscope className="w-5 h-5" />
+              <span className="font-medium">Quick Patient Lookup</span>
+            </div>
+            <div className="flex-1 flex items-center gap-2 max-w-lg">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  placeholder="Search by MRN, First Name, Last Name, or Date of Birth..."
+                  value={mrnSearch}
+                  onChange={(e) => setMrnSearch(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleMRNSearch()}
+                  className="pl-9"
+                />
+              </div>
+              <Button onClick={handleMRNSearch} disabled={searching}>
+                {searching ? 'Searching...' : 'Search'}
+              </Button>
+            </div>
+            {searchResult && (
+              <div className="flex items-center gap-3 px-4 py-2 bg-white rounded-lg border">
+                <div>
+                  <p className="font-medium">{searchResult.first_name} {searchResult.last_name}</p>
+                  {searchResult.mrn ? (
+                    <Badge className="bg-emerald-100 text-emerald-700 font-mono text-xs">{searchResult.mrn}</Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-orange-600 text-xs">No MRN</Badge>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  {!searchResult.mrn && (
+                    <Button size="sm" variant="outline" onClick={() => handleAssignMRN(searchResult.id)}>
+                      <Hash className="w-3 h-3 mr-1" /> Assign MRN
+                    </Button>
+                  )}
+                  <Button size="sm" onClick={() => navigate(`/patients/${searchResult.id}`)}>
+                    View Chart
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
