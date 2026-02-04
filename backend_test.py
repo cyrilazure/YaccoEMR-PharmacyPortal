@@ -9289,6 +9289,19 @@ class YaccoEMRTester:
         # Test shift completion
         self.test_clock_out_shift()  # Uses nurse token
         self.test_get_handoff_notes()  # Uses nurse token
+        
+        # ============ NEW SPECIFIC TESTS FROM REVIEW REQUEST ============
+        print("\n🔧 Testing Hospital IT Admin Staff Management...")
+        self.test_hospital_it_admin_create_nursing_supervisor()
+        self.test_hospital_it_admin_create_floor_supervisor()
+        self.test_hospital_it_admin_list_staff()
+        self.test_hospital_it_admin_unlock_account()
+        
+        print("\n👩‍⚕️ Testing Nurse Portal Region-Based Authentication...")
+        self.test_nurse_login_region_based()
+        self.test_nurse_current_shift_check()
+        self.test_nurse_clock_in_morning()
+        self.test_nurse_clock_out_with_handoff()
 
     def run_platform_owner_rbac_tests(self):
         """Run Platform Owner RBAC and Hospital Management API tests as requested"""
