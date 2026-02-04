@@ -427,6 +427,87 @@ export default function BillingPage() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* NHIS Lookup Tab */}
+        <TabsContent value="nhis" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Heart className="w-5 h-5 text-red-500" />
+                NHIS Insurance Verification
+              </CardTitle>
+              <CardDescription>
+                Search for patients with National Health Insurance Scheme (NHIS) coverage
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Search Section */}
+              <div className="flex items-center gap-4">
+                <div className="relative flex-1 max-w-md">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Input
+                    placeholder="Search by NHIS ID, patient name, or phone..."
+                    value={nhisSearch}
+                    onChange={(e) => setNhisSearch(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleNHISSearch()}
+                    className="pl-9"
+                  />
+                </div>
+                <Button onClick={handleNHISSearch} disabled={nhisSearching}>
+                  {nhisSearching ? 'Searching...' : 'Search NHIS'}
+                </Button>
+              </div>
+
+              {/* Search Results */}
+              {nhisResults.length > 0 && (
+                <div className="space-y-4">
+                  <p className="text-sm text-gray-500">{nhisResults.length} patient(s) with insurance found</p>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-slate-50 border-b">
+                        <tr>
+                          <th className="text-left p-4 font-medium text-slate-600">Patient Name</th>
+                          <th className="text-left p-4 font-medium text-slate-600">NHIS ID</th>
+                          <th className="text-left p-4 font-medium text-slate-600">Phone</th>
+                          <th className="text-left p-4 font-medium text-slate-600">Insurance Provider</th>
+                          <th className="text-center p-4 font-medium text-slate-600">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y">
+                        {nhisResults.map((patient) => (
+                          <tr key={patient.id} className="hover:bg-slate-50">
+                            <td className="p-4 font-medium">
+                              {patient.first_name} {patient.last_name}
+                            </td>
+                            <td className="p-4 font-mono">
+                              {patient.nhis_id || patient.insurance_id || '-'}
+                            </td>
+                            <td className="p-4">{patient.phone || '-'}</td>
+                            <td className="p-4">{patient.insurance_provider || 'NHIS Ghana'}</td>
+                            <td className="p-4 text-center">
+                              <Badge className="bg-green-100 text-green-700">
+                                <CheckCircle className="w-3 h-3 mr-1" />
+                                Active
+                              </Badge>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {nhisResults.length === 0 && !nhisSearching && (
+                <div className="text-center py-12 text-slate-500">
+                  <Shield className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p>Search for patients to verify NHIS coverage</p>
+                  <p className="text-sm mt-2">Enter NHIS ID, patient name, or phone number</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
       {/* Create Invoice Dialog */}
