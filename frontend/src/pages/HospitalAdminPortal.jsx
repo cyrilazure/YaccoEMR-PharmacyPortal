@@ -318,8 +318,11 @@ export default function HospitalAdminPortal() {
           <TabsTrigger value="overview" className="gap-2">
             <LayoutDashboard className="w-4 h-4" /> Overview
           </TabsTrigger>
+          <TabsTrigger value="patients" className="gap-2">
+            <Users className="w-4 h-4" /> Patient Records
+          </TabsTrigger>
           <TabsTrigger value="users" className="gap-2">
-            <Users className="w-4 h-4" /> Staff Management
+            <UserCog className="w-4 h-4" /> Staff Directory
           </TabsTrigger>
           <TabsTrigger value="departments" className="gap-2">
             <FolderTree className="w-4 h-4" /> Departments
