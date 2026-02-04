@@ -45,8 +45,10 @@ import {
 
 // Role to portal mapping
 const ROLE_REDIRECTS = {
-  'super_admin': '/platform-admin',
+  'super_admin': '/platform/super-admin',
   'hospital_admin': '/admin-dashboard',
+  'hospital_it_admin': '/it-admin',
+  'facility_admin': '/facility-admin',
   'admin': '/admin-dashboard',
   'physician': '/dashboard',
   'nurse': '/nurse-station',
