@@ -92,7 +92,7 @@ class ShiftRecord(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     nurse_id: str
     nurse_name: str
-    organization_id: str
+    organization_id: Optional[str] = None
     shift_type: ShiftType
     department_id: Optional[str] = None
     unit: Optional[str] = None
