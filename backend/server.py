@@ -1007,6 +1007,11 @@ from notification_module import notification_router, create_notification_endpoin
 notification_api_router, create_system_notification, create_template_notification = create_notification_endpoints(db, get_current_user)
 app.include_router(notification_router)
 
+# Include Nurse Portal Module
+from nurse_portal_module import nurse_router, create_nurse_portal_endpoints
+nurse_api_router = create_nurse_portal_endpoints(db, get_current_user)
+app.include_router(nurse_router)
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
