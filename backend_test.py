@@ -5703,6 +5703,11 @@ class YaccoEMRTester:
         print("-" * 30)
         self.test_records_sharing_workflow_complete()
         
+        # ============ ADMIN PORTAL MODULE TESTS ============
+        print("\n🔧 Testing Admin Portal Module")
+        print("-" * 50)
+        self.run_admin_portal_tests()
+        
         # Print summary
         print("\n" + "=" * 50)
         print(f"📊 Test Summary: {self.tests_passed}/{self.tests_run} tests passed")
