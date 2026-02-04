@@ -40,6 +40,8 @@ logger = logging.getLogger(__name__)
 class UserRole(str, Enum):
     PHYSICIAN = "physician"
     NURSE = "nurse"
+    NURSING_SUPERVISOR = "nursing_supervisor"
+    FLOOR_SUPERVISOR = "floor_supervisor"
     SCHEDULER = "scheduler"
     ADMIN = "admin"
     HOSPITAL_ADMIN = "hospital_admin"
