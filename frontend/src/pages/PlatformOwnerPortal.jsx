@@ -57,21 +57,7 @@ export default function PlatformOwnerPortal() {
   const { user } = useAuth();
   const navigate = useNavigate();
   
-  // Check if user is super admin
-  if (user?.role !== 'super_admin') {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Alert variant="destructive" className="max-w-md">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Access Denied</AlertTitle>
-          <AlertDescription>
-            You must be a Platform Owner (Super Admin) to access this page.
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-  
+  // All hooks MUST be declared before any conditional returns (React rules of hooks)
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   
@@ -108,7 +94,10 @@ export default function PlatformOwnerPortal() {
   const [createdHospital, setCreatedHospital] = useState(null);
   const [saving, setSaving] = useState(false);
 
+  const isSuperAdmin = user?.role === 'super_admin';
+
   const fetchData = useCallback(async () => {
+    if (!isSuperAdmin) return;
     try {
       setLoading(true);
       const [overviewRes, regionsRes, hospitalsRes] = await Promise.all([
@@ -126,11 +115,26 @@ export default function PlatformOwnerPortal() {
     } finally {
       setLoading(false);
     }
-  }, [selectedRegion]);
+  }, [selectedRegion, isSuperAdmin]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Check if user is super admin (after all hooks are declared)
+  if (!isSuperAdmin) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Alert variant="destructive" className="max-w-md">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Access Denied</AlertTitle>
+          <AlertDescription>
+            You must be a Platform Owner (Super Admin) to access this page.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   const handleCreateHospital = async (e) => {
     e.preventDefault();
