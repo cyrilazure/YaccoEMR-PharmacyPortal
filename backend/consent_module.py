@@ -90,24 +90,24 @@ class ConsentResponse(BaseModel):
     id: str
     patient_id: str
     patient_name: Optional[str] = None
-    organization_id: str
+    organization_id: Optional[str] = None
     consent_type: str
     title: str
     description: str
     status: str
-    scope_start_date: Optional[str]
-    scope_end_date: Optional[str]
-    record_types_included: Optional[List[str]]
-    recipient_organization_name: Optional[str]
-    purpose: Optional[str]
-    patient_signed_at: Optional[str]
-    witness_name: Optional[str]
-    witness_signed_at: Optional[str]
+    scope_start_date: Optional[str] = None
+    scope_end_date: Optional[str] = None
+    record_types_included: Optional[List[str]] = None
+    recipient_organization_name: Optional[str] = None
+    purpose: Optional[str] = None
+    patient_signed_at: Optional[str] = None
+    witness_name: Optional[str] = None
+    witness_signed_at: Optional[str] = None
     effective_date: str
-    expiration_date: Optional[str]
-    revoked_at: Optional[str]
-    revocation_reason: Optional[str]
-    document_url: Optional[str]
+    expiration_date: Optional[str] = None
+    revoked_at: Optional[str] = None
+    revocation_reason: Optional[str] = None
+    document_url: Optional[str] = None
     created_at: str
 
 
