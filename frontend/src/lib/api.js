@@ -421,6 +421,44 @@ export const nurseAPI = {
   // Permissions
   getPermissions: () => api.get('/nurse/permissions'),
   checkPermission: (permission) => api.get(`/nurse/permissions/check/${permission}`),
+  
+  // Shift Reports
+  createReport: (data) => api.post('/nurse/reports', data),
+  getMyReports: (params) => api.get('/nurse/reports', { params }),
+  getReport: (reportId) => api.get(`/nurse/reports/${reportId}`),
+  updateReport: (reportId, data) => api.put(`/nurse/reports/${reportId}`, null, { params: data }),
+  submitReport: (reportId) => api.post(`/nurse/reports/${reportId}/submit`),
+  
+  // Patient Medications
+  getPatientMedications: (patientId) => api.get(`/nurse/patient-medications/${patientId}`),
+  getAllAssignedMedications: () => api.get('/nurse/all-assigned-medications'),
+};
+
+// Nursing Supervisor APIs
+export const nursingSupervisorAPI = {
+  // Dashboard
+  getDashboard: () => api.get('/nursing-supervisor/dashboard'),
+  
+  // Nurses
+  listNurses: (params) => api.get('/nursing-supervisor/nurses', { params }),
+  getNurseWorkload: (nurseId) => api.get(`/nursing-supervisor/nurses/${nurseId}/workload`),
+  
+  // Patient Assignments
+  assignPatient: (data) => api.post('/nursing-supervisor/assign-patient', data),
+  unassignPatient: (assignmentId) => api.delete(`/nursing-supervisor/unassign-patient/${assignmentId}`),
+  getUnassignedPatients: () => api.get('/nursing-supervisor/unassigned-patients'),
+  
+  // Task Assignments
+  assignTask: (data) => api.post('/nursing-supervisor/assign-task', data),
+  
+  // Reports (Read-Only)
+  listReports: (params) => api.get('/nursing-supervisor/reports', { params }),
+  getReport: (reportId) => api.get(`/nursing-supervisor/reports/${reportId}`),
+  reviewReport: (reportId, reviewNotes) => api.post(`/nursing-supervisor/reports/${reportId}/review`, { review_notes: reviewNotes }),
+  
+  // Shifts
+  getCurrentShifts: () => api.get('/nursing-supervisor/shifts/current'),
+  getShiftHistory: (params) => api.get('/nursing-supervisor/shifts/history', { params }),
 };
 
 // Admin Portal APIs
