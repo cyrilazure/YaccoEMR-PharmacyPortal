@@ -3977,6 +3977,17 @@ class YaccoEMRTester:
             has_consent_id = bool(self.records_consent_id)
             has_scope = bool(data.get('scope_start_date')) and bool(data.get('record_types_included'))
             success = has_consent_id and has_scope
+            
+            # Sign the records consent immediately for later tests
+            if success and self.records_consent_id:
+                signature_data = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+                sign_data = {"patient_signature": signature_data}
+                sign_response, _ = self.make_request('POST', f'consents/{self.records_consent_id}/sign', sign_data)
+                if sign_response and sign_response.status_code == 200:
+                    success = True
+                else:
+                    success = False
+            
             self.log_test("Create Records Release Consent", success, f"Consent ID: {self.records_consent_id}")
             return success
         else:
