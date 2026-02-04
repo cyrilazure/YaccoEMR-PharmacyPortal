@@ -75,8 +75,11 @@ function App() {
           {/* Protected Routes */}
           <Route path="/" element={<Layout />}>
             <Route index element={<RoleBasedRedirect />} />
-            {/* Super Admin Dashboard */}
-            <Route path="platform-admin" element={<SuperAdminDashboard />} />
+            {/* Platform Owner (Super Admin) Portal */}
+            <Route path="platform-admin" element={<PlatformOwnerPortal />} />
+            <Route path="po-portal" element={<PlatformOwnerPortal />} />
+            {/* Legacy Super Admin Dashboard */}
+            <Route path="super-admin" element={<SuperAdminDashboard />} />
             {/* Hospital Admin Settings */}
             <Route path="hospital-settings" element={<HospitalSettings />} />
             <Route path="admin-dashboard" element={<AdminDashboard />} />
