@@ -604,4 +604,40 @@ export const hospitalITAdminAPI = {
   getActivityLog: (hospitalId, params) => api.get(`/hospital/${hospitalId}/super-admin/activity-log`, { params }),
 };
 
+// Department Portal API
+export const departmentAPI = {
+  // Get all departments
+  getAll: (params) => api.get('/departments', { params }),
+  
+  // Get department by ID
+  getById: (departmentId) => api.get(`/departments/${departmentId}`),
+  
+  // Get department types
+  getTypes: () => api.get('/departments/types'),
+  
+  // Get department hierarchy
+  getHierarchy: () => api.get('/departments/hierarchy'),
+  
+  // Get department stats
+  getStats: () => api.get('/departments/stats'),
+  
+  // Create department (admin only)
+  create: (data) => api.post('/departments', data),
+  
+  // Update department (admin only)
+  update: (departmentId, data) => api.put(`/departments/${departmentId}`, data),
+  
+  // Delete department (admin only)
+  delete: (departmentId) => api.delete(`/departments/${departmentId}`),
+  
+  // Get department staff
+  getStaff: (departmentId) => api.get(`/departments/${departmentId}/staff`),
+  
+  // Assign staff to department
+  assignStaff: (departmentId, staffId) => api.post(`/departments/${departmentId}/assign-staff`, { staff_id: staffId }),
+  
+  // Get department patients
+  getPatients: (departmentId, params) => api.get(`/departments/${departmentId}/patients`, { params }),
+};
+
 export default api;
