@@ -1,15 +1,18 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { dashboardAPI, patientAPI, appointmentsAPI, ordersAPI } from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
 import { formatDate, formatTime, getRoleDisplayName, getStatusColor, calculateAge } from '@/lib/utils';
+import { toast } from 'sonner';
 import { 
   Users, Calendar, ClipboardList, FileText, ArrowRight, 
-  Activity, Clock, TrendingUp, UserPlus, AlertCircle
+  Activity, Clock, TrendingUp, UserPlus, AlertCircle,
+  Video, BarChart3, Search, Hash, IdCard, Phone, Stethoscope
 } from 'lucide-react';
 
 export default function Dashboard() {
