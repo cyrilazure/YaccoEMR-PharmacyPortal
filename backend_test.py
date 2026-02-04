@@ -4072,7 +4072,12 @@ class YaccoEMRTester:
             self.log_test("Record Consent Usage", False, "No treatment consent available")
             return False
         
-        response, error = self.make_request('POST', f'consents/{self.treatment_consent_id}/use?usage_type=phi_disclosure&details=Shared patient information with specialist for consultation')
+        params = {
+            'usage_type': 'phi_disclosure',
+            'details': 'Shared patient information with specialist for consultation'
+        }
+        
+        response, error = self.make_request('POST', f'consents/{self.treatment_consent_id}/use', params=params)
         if error:
             self.log_test("Record Consent Usage", False, error)
             return False
