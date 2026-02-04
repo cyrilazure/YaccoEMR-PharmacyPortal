@@ -39,6 +39,8 @@ import {
 const STAFF_ROLES = [
   { value: 'physician', label: 'Physician', description: 'Medical doctor' },
   { value: 'nurse', label: 'Nurse', description: 'Nursing staff' },
+  { value: 'nursing_supervisor', label: 'Nursing Supervisor', description: 'Floor/unit supervisor' },
+  { value: 'floor_supervisor', label: 'Floor Supervisor', description: 'Floor management' },
   { value: 'scheduler', label: 'Scheduler', description: 'Appointment management' },
   { value: 'biller', label: 'Biller', description: 'Billing & finance' },
   { value: 'hospital_admin', label: 'Hospital Admin', description: 'Department management' },
