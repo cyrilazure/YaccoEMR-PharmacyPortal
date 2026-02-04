@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/sonner";
 // Pages
 import LoginPage from "@/pages/Login";
 import RegionHospitalLogin from "@/pages/RegionHospitalLogin";
+import EMRLandingPage from "@/pages/EMRLandingPage";
 import PlatformOwnerPortal from "@/pages/PlatformOwnerPortal";
 import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
@@ -34,6 +35,7 @@ import AuditLogs from "@/pages/AuditLogs";
 import SignupPage from "@/pages/SignupPage";
 import HospitalAdminPortal from "@/pages/HospitalAdminPortal";
 import HospitalMainDashboard from "@/pages/HospitalMainDashboard";
+import HospitalSuperAdminIT from "@/pages/HospitalSuperAdminIT";
 
 // Role-based redirect component
 function RoleBasedRedirect() {
