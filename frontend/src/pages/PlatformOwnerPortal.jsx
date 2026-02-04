@@ -76,6 +76,20 @@ export default function PlatformOwnerPortal() {
   const [selectedHospital, setSelectedHospital] = useState(null);
   const [copiedPassword, setCopiedPassword] = useState(null);
   
+  // Staff creation dialog
+  const [createStaffOpen, setCreateStaffOpen] = useState(false);
+  const [staffHospital, setStaffHospital] = useState(null);
+  const [newStaff, setNewStaff] = useState({
+    first_name: '',
+    last_name: '',
+    email: '',
+    phone: '',
+    role: 'physician',
+    department_id: '',
+    employee_id: ''
+  });
+  const [createdStaff, setCreatedStaff] = useState(null);
+  
   // Forms
   const [newHospital, setNewHospital] = useState({
     name: '',
