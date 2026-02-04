@@ -682,6 +682,32 @@ def setup_routes(db, get_current_user):
             "records_types": records_types
         }
         
+        # AUDIT: Log the records access (critical for HIPAA)
+        await log_records_sharing_audit(
+            user=current_user,
+            action="view",
+            resource_type="shared_records",
+            resource_id=access_grant["id"],
+            patient_id=patient_id,
+            patient_name=f"{patient.get('first_name', '')} {patient.get('last_name', '')}".strip() if patient else None,
+            details=f"Accessed shared patient records via access grant. Record types: {', '.join(records_types)}",
+            success=True,
+            severity="info",
+            metadata={
+                "granting_physician_id": access_grant["granting_physician_id"],
+                "granting_organization_id": access_grant["granting_organization_id"],
+                "records_types_accessed": records_types,
+                "access_expires_at": access_grant["expires_at"]
+            }
+        )
+        
+        # Update access grant with last access time
+        await db.access_grants.update_one(
+            {"id": access_grant["id"]},
+            {"$set": {"last_accessed_at": datetime.now(timezone.utc).isoformat()},
+             "$inc": {"access_count": 1}}
+        )
+        
         return records
     
     @router.get("/my-access-grants")
