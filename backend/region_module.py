@@ -60,13 +60,15 @@ class UserRoleGhana(str, Enum):
 
 # Role to portal mapping
 ROLE_PORTAL_MAP = {
-    "physician": "/physician-portal",
-    "nurse": "/nurse-portal",
+    "physician": "/dashboard",
+    "nurse": "/nurse-station",
     "admin": "/admin-dashboard",
     "hospital_admin": "/admin-dashboard",
+    "hospital_it_admin": "/it-admin",
+    "facility_admin": "/facility-admin",
     "biller": "/billing",
-    "scheduler": "/schedule",
-    "super_admin": "/super-admin"
+    "scheduler": "/scheduling",
+    "super_admin": "/platform/super-admin"
 }
 
 # ============ Models ============
