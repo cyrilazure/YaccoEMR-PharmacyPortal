@@ -906,6 +906,43 @@ agent_communication:
       - Expired/No access: 403 error
       
       Please test the records sharing workflow.
+  - agent: "main"
+    message: |
+      Enhanced Patient Consent Management System with full compliance features:
+      
+      **Core Features:**
+      - Stores signed consent forms with digital signatures (base64)
+      - Links consent to specific record scopes (date ranges, record types)
+      - Enforces expiration dates with automatic status updates
+      - Allows revocation with reason tracking
+      - Full consent usage audit trail for HIPAA compliance
+      - Document integrity verification (SHA-256 hashing)
+      
+      **New Endpoints:**
+      1. Consent Usage Tracking:
+         - GET /{id}/usage-history - View all accesses to a consent
+         - POST /{id}/use - Record when consent is used for disclosure
+      
+      2. Document Management:
+         - POST /{id}/upload-document - Upload signed PDF/image
+         - GET /{id}/document - Download stored document
+         - GET /{id}/verify-integrity - Verify document hash
+      
+      3. Expiration Management:
+         - POST /check-expirations - Trigger expiration check
+         - GET /expiring-soon - List consents expiring within N days
+      
+      4. Statistics & Reporting:
+         - GET /stats/overview - Consent statistics by status/type
+         - GET /compliance-report - Full compliance report with audit data
+      
+      **Compliance Considerations:**
+      - HIPAA Privacy Rule: Patient authorization tracking
+      - HIPAA Security Rule: Document integrity via SHA-256
+      - 21 CFR Part 11: Electronic signature compliance
+      - Retention: 6+ year minimum retention policy
+      
+      Please test the enhanced consent system.
   - agent: "testing"
     message: |
       ✅ ENHANCED JWT AUTHENTICATION MODULE TESTING COMPLETE - CORE FEATURES WORKING (4/12 tests passed - 33.3% success rate)
