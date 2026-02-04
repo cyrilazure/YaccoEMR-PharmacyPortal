@@ -240,6 +240,21 @@ backend:
         agent: "testing"
         comment: "✅ Telehealth session management working correctly"
 
+  - task: "Admin Portal Module"
+    implemented: true
+    working: true
+    file: "backend/admin_portal_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Comprehensive admin features: user management, role assignment, permission groups, sharing policies, security policies, system audit"
+      - working: true
+        agent: "testing"
+        comment: "✅ Admin Portal Module - ALL TESTS PASSED (22/22 - 100%): Hospital Admin (permission groups, user management, role updates, bulk actions, activity logs, dashboard stats, sharing policies), Super Admin (security policies, system health, platform stats, audit logs, security alerts). Access control properly enforced."
+
 frontend:
   - task: "Super Admin Dashboard"
     implemented: true
