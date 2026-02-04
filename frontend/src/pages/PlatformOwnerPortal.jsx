@@ -1075,6 +1075,131 @@ export default function PlatformOwnerPortal() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Delete Hospital Dialog */}
+      <Dialog open={deleteHospitalOpen} onOpenChange={setDeleteHospitalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertTriangle className="w-5 h-5" />
+              Delete Hospital
+            </DialogTitle>
+            <DialogDescription>
+              This action will deactivate the hospital and all associated users. This cannot be easily undone.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {hospitalToDelete && (
+            <div className="space-y-4">
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Warning</AlertTitle>
+                <AlertDescription>
+                  You are about to delete <strong>{hospitalToDelete.hospital.name}</strong>.
+                  This will affect:
+                  <ul className="list-disc list-inside mt-2">
+                    <li>{hospitalToDelete.hospital.user_count || 0} staff accounts</li>
+                    <li>{hospitalToDelete.hospital.location_count || 0} locations</li>
+                    <li>All associated patient records</li>
+                  </ul>
+                </AlertDescription>
+              </Alert>
+              
+              <div>
+                <Label>Type hospital name to confirm:</Label>
+                <p className="text-sm text-gray-500 mb-2">
+                  Type: <code className="bg-gray-100 px-2 py-1 rounded">{hospitalToDelete.hospital.name}</code>
+                </p>
+                <Input
+                  value={deleteConfirmation}
+                  onChange={(e) => setDeleteConfirmation(e.target.value)}
+                  placeholder="Enter hospital name"
+                  className={deleteConfirmation === hospitalToDelete.hospital.name ? 'border-red-500' : ''}
+                />
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteHospitalOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteHospital}
+              disabled={deleting || deleteConfirmation !== hospitalToDelete?.hospital.name}
+            >
+              {deleting ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : (
+                <Trash2 className="w-4 h-4 mr-2" />
+              )}
+              Delete Hospital
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Hospital Status Change Dialog */}
+      <Dialog open={statusChangeOpen} onOpenChange={setStatusChangeOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Power className="w-5 h-5" />
+              Change Hospital Status
+            </DialogTitle>
+            <DialogDescription>
+              Update the status of {hospitalToChangeStatus?.hospital.name}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="grid gap-3">
+              <Button
+                variant="outline"
+                className="justify-start gap-3 h-auto py-3"
+                onClick={() => handleChangeHospitalStatus('active')}
+              >
+                <CheckCircle className="w-5 h-5 text-emerald-600" />
+                <div className="text-left">
+                  <p className="font-medium">Active</p>
+                  <p className="text-xs text-gray-500">Hospital is fully operational</p>
+                </div>
+              </Button>
+              
+              <Button
+                variant="outline"
+                className="justify-start gap-3 h-auto py-3"
+                onClick={() => handleChangeHospitalStatus('suspended')}
+              >
+                <Ban className="w-5 h-5 text-orange-600" />
+                <div className="text-left">
+                  <p className="font-medium">Suspended</p>
+                  <p className="text-xs text-gray-500">Temporarily disable all access</p>
+                </div>
+              </Button>
+              
+              <Button
+                variant="outline"
+                className="justify-start gap-3 h-auto py-3"
+                onClick={() => handleChangeHospitalStatus('inactive')}
+              >
+                <XCircle className="w-5 h-5 text-gray-600" />
+                <div className="text-left">
+                  <p className="font-medium">Inactive</p>
+                  <p className="text-xs text-gray-500">Hospital not in use</p>
+                </div>
+              </Button>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setStatusChangeOpen(false)}>
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
