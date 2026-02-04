@@ -431,6 +431,44 @@ export default function NurseDashboard() {
     }
   };
 
+  // Create shift report
+  const handleCreateReport = async (e) => {
+    e.preventDefault();
+    if (!activeShift) {
+      toast.error('Must be clocked in to create a report');
+      return;
+    }
+    try {
+      await nurseAPI.createReport({
+        shift_id: activeShift.id,
+        report_type: 'end_of_shift',
+        title: newReport.title || `Shift Report - ${new Date().toLocaleDateString()}`,
+        content: newReport.content,
+        patient_summary: newReport.patient_summary,
+        critical_events: newReport.critical_events,
+        pending_items: newReport.pending_items,
+        recommendations: newReport.recommendations
+      });
+      toast.success('Report created');
+      setReportOpen(false);
+      setNewReport({ title: '', content: '', patient_summary: '', critical_events: '', pending_items: '', recommendations: '' });
+      fetchReports();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to create report');
+    }
+  };
+
+  // Submit report for supervisor review
+  const handleSubmitReport = async (reportId) => {
+    try {
+      await nurseAPI.submitReport(reportId);
+      toast.success('Report submitted for review');
+      fetchReports();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to submit report');
+    }
+  };
+
   const getShiftProgress = () => {
     if (!activeShift) return 0;
     const elapsed = (new Date() - new Date(activeShift.clock_in_time)) / (1000 * 60 * 60);
