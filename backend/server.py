@@ -1027,6 +1027,21 @@ from region_module import region_router, create_region_endpoints
 region_api_router = create_region_endpoints(db, get_current_user, hash_password)
 app.include_router(region_router)
 
+# Include Hospital Admin Module
+from hospital_admin_module import hospital_admin_router, create_hospital_admin_endpoints
+hospital_admin_api_router = create_hospital_admin_endpoints(db, get_current_user, hash_password)
+app.include_router(hospital_admin_router)
+
+# Include Signup & Onboarding Module
+from signup_module import signup_router, create_signup_endpoints
+signup_api_router = create_signup_endpoints(db, hash_password, get_current_user)
+app.include_router(signup_router)
+
+# Include Hospital Dashboard Module
+from hospital_dashboard_module import hospital_dashboard_router, create_hospital_dashboard_endpoints
+hospital_dashboard_api_router = create_hospital_dashboard_endpoints(db, get_current_user)
+app.include_router(hospital_dashboard_router)
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
