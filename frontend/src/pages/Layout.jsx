@@ -23,10 +23,12 @@ import {
 const navItems = [
   // Super Admin
   { to: '/platform-admin', icon: Globe, label: 'Platform Admin', roles: ['super_admin'] },
+  // Hospital IT Admin - Staff Management Only
+  { to: '/it-admin', icon: UserCog, label: 'IT Admin', roles: ['hospital_it_admin'] },
   // Hospital Admin
-  { to: '/hospital-settings', icon: Building2, label: 'Hospital Settings', roles: ['hospital_admin'] },
+  { to: '/admin-dashboard', icon: Building2, label: 'Hospital Admin', roles: ['hospital_admin'] },
   // Role-specific dashboards
-  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', roles: ['physician', 'hospital_admin'] },
+  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', roles: ['physician'] },
   { to: '/nurse-station', icon: Heart, label: 'Nurse Station', roles: ['nurse'] },
   { to: '/scheduling', icon: Calendar, label: 'Scheduling', roles: ['scheduler'] },
   { to: '/admin', icon: Shield, label: 'Admin Center', roles: ['admin'] },
@@ -36,7 +38,7 @@ const navItems = [
   { to: '/orders', icon: ClipboardList, label: 'Orders', roles: ['physician', 'nurse', 'admin', 'hospital_admin'] },
   { to: '/telehealth', icon: Video, label: 'Telehealth', roles: ['physician', 'nurse', 'admin', 'hospital_admin'] },
   { to: '/records-sharing', icon: Share2, label: 'Records Sharing', roles: ['physician', 'hospital_admin'] },
-  { to: '/billing', icon: CreditCard, label: 'Billing', roles: ['physician', 'admin', 'hospital_admin'] },
+  { to: '/billing', icon: CreditCard, label: 'Billing', roles: ['biller', 'physician', 'admin', 'hospital_admin'] },
   { to: '/analytics', icon: BarChart3, label: 'Analytics', roles: ['physician', 'admin', 'hospital_admin', 'super_admin'] },
   // Security & Audit - Admin roles
   { to: '/audit-logs', icon: FileSearch, label: 'Audit Logs', roles: ['admin', 'hospital_admin', 'super_admin'] },
