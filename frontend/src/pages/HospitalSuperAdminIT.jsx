@@ -1,0 +1,899 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/lib/auth';
+import { hospitalITAdminAPI, hospitalAdminAPI } from '@/lib/api';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { 
+  Dialog, DialogContent, DialogDescription, 
+  DialogHeader, DialogTitle, DialogFooter 
+} from '@/components/ui/dialog';
+import { 
+  Select, SelectContent, SelectItem, 
+  SelectTrigger, SelectValue 
+} from '@/components/ui/select';
+import { 
+  Table, TableBody, TableCell, 
+  TableHead, TableHeader, TableRow 
+} from '@/components/ui/table';
+import { 
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuTrigger, DropdownMenuSeparator
+} from '@/components/ui/dropdown-menu';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Separator } from '@/components/ui/separator';
+import { toast } from 'sonner';
+import { 
+  Users, UserPlus, Key, Shield, Settings, RefreshCw,
+  Search, MoreVertical, CheckCircle, XCircle, AlertCircle,
+  Loader2, Copy, Check, Lock, Unlock, UserCog, Building2,
+  MapPin, FolderTree, Activity, Ban, Eye, EyeOff
+} from 'lucide-react';
+
+// Staff roles available for IT Admin to assign
+const STAFF_ROLES = [
+  { value: 'physician', label: 'Physician', description: 'Medical doctor' },
+  { value: 'nurse', label: 'Nurse', description: 'Nursing staff' },
+  { value: 'scheduler', label: 'Scheduler', description: 'Appointment management' },
+  { value: 'biller', label: 'Biller', description: 'Billing & finance' },
+  { value: 'hospital_admin', label: 'Hospital Admin', description: 'Department management' },
+  { value: 'receptionist', label: 'Receptionist', description: 'Front desk' },
+  { value: 'lab_tech', label: 'Lab Technician', description: 'Laboratory' },
+  { value: 'pharmacist', label: 'Pharmacist', description: 'Pharmacy' },
+];
+
+export default function HospitalSuperAdminIT() {
+  const { hospitalId } = useParams();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  
+  const effectiveHospitalId = hospitalId || user?.organization_id;
+  
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('staff');
+  
+  // Data
+  const [dashboard, setDashboard] = useState(null);
+  const [staff, setStaff] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [locations, setLocations] = useState([]);
+  const [activityLog, setActivityLog] = useState([]);
+  
+  // Filters
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [roleFilter, setRoleFilter] = useState('all');
+  
+  // Dialogs
+  const [createStaffOpen, setCreateStaffOpen] = useState(false);
+  const [viewStaffOpen, setViewStaffOpen] = useState(false);
+  const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
+  const [assignmentOpen, setAssignmentOpen] = useState(false);
+  const [selectedStaff, setSelectedStaff] = useState(null);
+  const [createdCredentials, setCreatedCredentials] = useState(null);
+  
+  // Forms
+  const [newStaff, setNewStaff] = useState({
+    email: '',
+    first_name: '',
+    last_name: '',
+    role: 'physician',
+    department_id: '',
+    location_id: '',
+    phone: '',
+    employee_id: ''
+  });
+  const [assignmentData, setAssignmentData] = useState({
+    type: 'department',
+    value: ''
+  });
+  const [saving, setSaving] = useState(false);
+  const [copiedPassword, setCopiedPassword] = useState(false);
+
+  // Access check
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    
+    // Allow super_admin, hospital_it_admin, or hospital_admin
+    if (user.role === 'super_admin') return;
+    
+    if (!['hospital_it_admin', 'hospital_admin'].includes(user.role)) {
+      toast.error('IT Admin access required');
+      navigate('/');
+      return;
+    }
+    
+    if (effectiveHospitalId && user.organization_id !== effectiveHospitalId) {
+      toast.error('Not authorized for this hospital');
+      navigate('/');
+    }
+  }, [user, effectiveHospitalId, navigate]);
+
+  const fetchData = useCallback(async () => {
+    if (!effectiveHospitalId) return;
+    
+    try {
+      setLoading(true);
+      const [dashboardRes, staffRes] = await Promise.all([
+        hospitalITAdminAPI.getDashboard(effectiveHospitalId),
+        hospitalITAdminAPI.listStaff(effectiveHospitalId, {
+          status: statusFilter === 'all' ? null : statusFilter,
+          role: roleFilter === 'all' ? null : roleFilter,
+          search: searchQuery || null
+        })
+      ]);
+      
+      setDashboard(dashboardRes.data);
+      setStaff(staffRes.data.staff || []);
+      setDepartments(dashboardRes.data.departments || []);
+      setLocations(dashboardRes.data.locations || []);
+      setActivityLog(dashboardRes.data.recent_it_actions || []);
+    } catch (err) {
+      console.error('Error fetching data:', err);
+      toast.error('Failed to load IT Admin dashboard');
+    } finally {
+      setLoading(false);
+    }
+  }, [effectiveHospitalId, statusFilter, roleFilter, searchQuery]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // Create Staff
+  const handleCreateStaff = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const response = await hospitalITAdminAPI.createStaff(effectiveHospitalId, newStaff);
+      setCreatedCredentials(response.data.credentials);
+      toast.success('Staff account created!');
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to create staff');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Reset Password
+  const handleResetPassword = async () => {
+    if (!selectedStaff) return;
+    setSaving(true);
+    try {
+      const response = await hospitalITAdminAPI.resetPassword(effectiveHospitalId, selectedStaff.id);
+      setCreatedCredentials(response.data.credentials);
+      toast.success('Password reset!');
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to reset password');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Activate/Deactivate
+  const handleActivate = async (staffId) => {
+    try {
+      await hospitalITAdminAPI.activateStaff(effectiveHospitalId, staffId);
+      toast.success('Account activated');
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to activate');
+    }
+  };
+
+  const handleDeactivate = async (staffId) => {
+    if (!confirm('Are you sure you want to deactivate this account?')) return;
+    try {
+      await hospitalITAdminAPI.deactivateStaff(effectiveHospitalId, staffId, 'Admin action');
+      toast.success('Account deactivated');
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to deactivate');
+    }
+  };
+
+  const handleSuspend = async (staffId) => {
+    const reason = prompt('Enter suspension reason:');
+    if (!reason) return;
+    try {
+      await hospitalITAdminAPI.suspendStaff(effectiveHospitalId, staffId, reason);
+      toast.success('Account suspended');
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to suspend');
+    }
+  };
+
+  const handleUnlock = async (staffId) => {
+    try {
+      await hospitalITAdminAPI.unlockAccount(effectiveHospitalId, staffId);
+      toast.success('Account unlocked');
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to unlock');
+    }
+  };
+
+  // Assignments
+  const handleAssignment = async () => {
+    if (!selectedStaff || !assignmentData.value) return;
+    setSaving(true);
+    try {
+      if (assignmentData.type === 'department') {
+        await hospitalITAdminAPI.assignDepartment(effectiveHospitalId, selectedStaff.id, assignmentData.value);
+      } else if (assignmentData.type === 'location') {
+        await hospitalITAdminAPI.assignLocation(effectiveHospitalId, selectedStaff.id, assignmentData.value);
+      } else if (assignmentData.type === 'role') {
+        await hospitalITAdminAPI.changeRole(effectiveHospitalId, selectedStaff.id, assignmentData.value);
+      }
+      toast.success('Assignment updated');
+      setAssignmentOpen(false);
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to update assignment');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const copyToClipboard = async (text) => {
+    await navigator.clipboard.writeText(text);
+    setCopiedPassword(true);
+    setTimeout(() => setCopiedPassword(false), 2000);
+    toast.success('Copied!');
+  };
+
+  const getStatusBadge = (staffMember) => {
+    if (!staffMember.is_active && staffMember.status === 'suspended') {
+      return <Badge variant="destructive">Suspended</Badge>;
+    }
+    if (!staffMember.is_active) {
+      return <Badge variant="secondary">Inactive</Badge>;
+    }
+    return <Badge className="bg-emerald-100 text-emerald-700">Active</Badge>;
+  };
+
+  if (loading && !dashboard) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <Shield className="w-6 h-6 text-slate-700" />
+            IT Administration
+          </h1>
+          <p className="text-gray-500">{dashboard?.hospital?.name} - Staff Account Management</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button onClick={fetchData} variant="outline" size="sm">
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Refresh
+          </Button>
+          <Button onClick={() => setCreateStaffOpen(true)} className="bg-slate-800 hover:bg-slate-900">
+            <UserPlus className="w-4 h-4 mr-2" />
+            Add Staff
+          </Button>
+        </div>
+      </div>
+
+      {/* IT Admin Notice */}
+      <Alert className="bg-slate-50 border-slate-200">
+        <Shield className="h-4 w-4 text-slate-600" />
+        <AlertTitle className="text-slate-800">IT Administration Portal</AlertTitle>
+        <AlertDescription className="text-slate-600">
+          This portal is for staff account management only. Patient records, appointments, billing, and clinical features are not accessible here.
+        </AlertDescription>
+      </Alert>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">Total Staff</p>
+                <p className="text-2xl font-bold">{dashboard?.staff_stats?.total || 0}</p>
+              </div>
+              <Users className="w-8 h-8 text-slate-300" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">Active</p>
+                <p className="text-2xl font-bold text-emerald-600">{dashboard?.staff_stats?.active || 0}</p>
+              </div>
+              <CheckCircle className="w-8 h-8 text-emerald-200" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">Inactive</p>
+                <p className="text-2xl font-bold text-gray-600">{dashboard?.staff_stats?.inactive || 0}</p>
+              </div>
+              <XCircle className="w-8 h-8 text-gray-200" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">Departments</p>
+                <p className="text-2xl font-bold text-blue-600">{departments.length}</p>
+              </div>
+              <FolderTree className="w-8 h-8 text-blue-200" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Main Content */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="staff" className="gap-2">
+            <Users className="w-4 h-4" /> Staff Accounts
+          </TabsTrigger>
+          <TabsTrigger value="assignments" className="gap-2">
+            <FolderTree className="w-4 h-4" /> Departments & Locations
+          </TabsTrigger>
+          <TabsTrigger value="activity" className="gap-2">
+            <Activity className="w-4 h-4" /> IT Activity Log
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Staff Tab */}
+        <TabsContent value="staff" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Staff Account Management</CardTitle>
+              <CardDescription>Create, manage, and control staff access</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {/* Filters */}
+              <div className="flex flex-wrap items-center gap-4 mb-6">
+                <div className="relative flex-1 min-w-[200px] max-w-sm">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Input
+                    placeholder="Search by name, email, ID..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={roleFilter} onValueChange={setRoleFilter}>
+                  <SelectTrigger className="w-[160px]">
+                    <SelectValue placeholder="Role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Roles</SelectItem>
+                    {STAFF_ROLES.map(r => (
+                      <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Staff Table */}
+              <div className="rounded-lg border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Staff Member</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Department</TableHead>
+                      <TableHead>Location</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {staff.map((s) => (
+                      <TableRow key={s.id}>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{s.first_name} {s.last_name}</p>
+                            <p className="text-sm text-gray-500">{s.email}</p>
+                            {s.employee_id && (
+                              <p className="text-xs text-gray-400">ID: {s.employee_id}</p>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="capitalize">
+                            {s.role?.replace('_', ' ')}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{s.department_name || '-'}</TableCell>
+                        <TableCell>{s.location_name || '-'}</TableCell>
+                        <TableCell>{getStatusBadge(s)}</TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                <MoreVertical className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => {
+                                setSelectedStaff(s);
+                                setViewStaffOpen(true);
+                              }}>
+                                <Eye className="w-4 h-4 mr-2" /> View Details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => {
+                                setSelectedStaff(s);
+                                setResetPasswordOpen(true);
+                              }}>
+                                <Key className="w-4 h-4 mr-2" /> Reset Password
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => {
+                                setSelectedStaff(s);
+                                setAssignmentData({ type: 'role', value: '' });
+                                setAssignmentOpen(true);
+                              }}>
+                                <UserCog className="w-4 h-4 mr-2" /> Change Role
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => {
+                                setSelectedStaff(s);
+                                setAssignmentData({ type: 'department', value: '' });
+                                setAssignmentOpen(true);
+                              }}>
+                                <FolderTree className="w-4 h-4 mr-2" /> Assign Department
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => {
+                                setSelectedStaff(s);
+                                setAssignmentData({ type: 'location', value: '' });
+                                setAssignmentOpen(true);
+                              }}>
+                                <MapPin className="w-4 h-4 mr-2" /> Assign Location
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              {s.is_active ? (
+                                <>
+                                  <DropdownMenuItem 
+                                    onClick={() => handleSuspend(s.id)}
+                                    className="text-orange-600"
+                                  >
+                                    <Ban className="w-4 h-4 mr-2" /> Suspend
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem 
+                                    onClick={() => handleDeactivate(s.id)}
+                                    className="text-red-600"
+                                  >
+                                    <XCircle className="w-4 h-4 mr-2" /> Deactivate
+                                  </DropdownMenuItem>
+                                </>
+                              ) : (
+                                <DropdownMenuItem 
+                                  onClick={() => handleActivate(s.id)}
+                                  className="text-emerald-600"
+                                >
+                                  <CheckCircle className="w-4 h-4 mr-2" /> Activate
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuItem onClick={() => handleUnlock(s.id)}>
+                                <Unlock className="w-4 h-4 mr-2" /> Unlock Account
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {staff.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-12 text-gray-500">
+                          No staff accounts found
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Assignments Tab */}
+        <TabsContent value="assignments" className="mt-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Departments */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FolderTree className="w-5 h-5 text-blue-600" />
+                  Departments
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {departments.map((dept) => (
+                    <div key={dept.id} className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+                      <div>
+                        <p className="font-medium">{dept.name}</p>
+                        <p className="text-xs text-gray-500">{dept.code}</p>
+                      </div>
+                      <Badge variant="secondary">{dept.staff_count || 0} staff</Badge>
+                    </div>
+                  ))}
+                  {departments.length === 0 && (
+                    <p className="text-center text-gray-500 py-8">No departments</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Locations */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MapPin className="w-5 h-5 text-purple-600" />
+                  Locations
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {locations.map((loc) => (
+                    <div key={loc.id} className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+                      <div>
+                        <p className="font-medium">{loc.name}</p>
+                        <p className="text-xs text-gray-500 capitalize">{loc.location_type?.replace('_', ' ')}</p>
+                      </div>
+                      <Badge variant="secondary">{loc.staff_count || 0} staff</Badge>
+                    </div>
+                  ))}
+                  {locations.length === 0 && (
+                    <p className="text-center text-gray-500 py-8">No locations</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Role Distribution */}
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle>Staff by Role</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {dashboard?.role_distribution && Object.entries(dashboard.role_distribution).map(([role, count]) => (
+                    <div key={role} className="p-4 rounded-lg bg-gray-50 text-center">
+                      <p className="text-2xl font-bold">{count}</p>
+                      <p className="text-sm text-gray-500 capitalize">{role.replace('_', ' ')}</p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* Activity Tab */}
+        <TabsContent value="activity" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>IT Activity Log</CardTitle>
+              <CardDescription>Account management actions (not patient audit logs)</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[400px]">
+                <div className="space-y-3">
+                  {activityLog.map((log, idx) => (
+                    <div key={idx} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                      <Activity className="w-4 h-4 text-gray-400 mt-1" />
+                      <div className="flex-1">
+                        <p className="text-sm">
+                          <span className="font-medium">{log.admin_email}</span>
+                          {' - '}
+                          <span className="capitalize">{log.action?.replace(/_/g, ' ')}</span>
+                        </p>
+                        {log.details && (
+                          <p className="text-xs text-gray-500">
+                            {log.details.email && `User: ${log.details.email}`}
+                            {log.details.role && ` • Role: ${log.details.role}`}
+                          </p>
+                        )}
+                        <p className="text-xs text-gray-400">{new Date(log.timestamp).toLocaleString()}</p>
+                      </div>
+                    </div>
+                  ))}
+                  {activityLog.length === 0 && (
+                    <p className="text-center text-gray-500 py-12">No IT activity recorded</p>
+                  )}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Create Staff Dialog */}
+      <Dialog open={createStaffOpen} onOpenChange={(open) => {
+        setCreateStaffOpen(open);
+        if (!open) {
+          setCreatedCredentials(null);
+          setNewStaff({
+            email: '', first_name: '', last_name: '', role: 'physician',
+            department_id: '', location_id: '', phone: '', employee_id: ''
+          });
+        }
+      }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Create Staff Account</DialogTitle>
+            <DialogDescription>Add a new staff member to the system</DialogDescription>
+          </DialogHeader>
+          
+          {createdCredentials ? (
+            <div className="space-y-4">
+              <Alert className="bg-emerald-50 border-emerald-200">
+                <CheckCircle className="h-4 w-4 text-emerald-600" />
+                <AlertTitle className="text-emerald-800">Account Created!</AlertTitle>
+                <AlertDescription className="text-emerald-700">
+                  Save these credentials - the password cannot be retrieved later.
+                </AlertDescription>
+              </Alert>
+              
+              <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                <div>
+                  <p className="text-sm text-gray-500">Email</p>
+                  <p className="font-medium">{createdCredentials.email}</p>
+                </div>
+                <Separator />
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-500">Temporary Password</p>
+                    <p className="font-mono font-medium">{createdCredentials.temp_password}</p>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => copyToClipboard(createdCredentials.temp_password)}>
+                    {copiedPassword ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  </Button>
+                </div>
+              </div>
+              
+              <DialogFooter>
+                <Button onClick={() => {
+                  setCreateStaffOpen(false);
+                  setCreatedCredentials(null);
+                }}>Done</Button>
+              </DialogFooter>
+            </div>
+          ) : (
+            <form onSubmit={handleCreateStaff} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>First Name *</Label>
+                  <Input
+                    value={newStaff.first_name}
+                    onChange={(e) => setNewStaff({...newStaff, first_name: e.target.value})}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label>Last Name *</Label>
+                  <Input
+                    value={newStaff.last_name}
+                    onChange={(e) => setNewStaff({...newStaff, last_name: e.target.value})}
+                    required
+                  />
+                </div>
+                <div className="col-span-2">
+                  <Label>Email *</Label>
+                  <Input
+                    type="email"
+                    value={newStaff.email}
+                    onChange={(e) => setNewStaff({...newStaff, email: e.target.value})}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label>Role *</Label>
+                  <Select value={newStaff.role} onValueChange={(v) => setNewStaff({...newStaff, role: v})}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {STAFF_ROLES.map(r => (
+                        <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Employee ID</Label>
+                  <Input
+                    value={newStaff.employee_id}
+                    onChange={(e) => setNewStaff({...newStaff, employee_id: e.target.value})}
+                    placeholder="Optional"
+                  />
+                </div>
+                <div>
+                  <Label>Department</Label>
+                  <Select value={newStaff.department_id} onValueChange={(v) => setNewStaff({...newStaff, department_id: v})}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {departments.map(d => (
+                        <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Location</Label>
+                  <Select value={newStaff.location_id} onValueChange={(v) => setNewStaff({...newStaff, location_id: v})}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select location" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {locations.map(l => (
+                        <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="col-span-2">
+                  <Label>Phone</Label>
+                  <Input
+                    value={newStaff.phone}
+                    onChange={(e) => setNewStaff({...newStaff, phone: e.target.value})}
+                    placeholder="+233-XXX-XXXXXX"
+                  />
+                </div>
+              </div>
+              
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setCreateStaffOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" className="bg-slate-800 hover:bg-slate-900" disabled={saving}>
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Create Account'}
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Reset Password Dialog */}
+      <Dialog open={resetPasswordOpen} onOpenChange={(open) => {
+        setResetPasswordOpen(open);
+        if (!open) setCreatedCredentials(null);
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reset Password</DialogTitle>
+            <DialogDescription>
+              Generate new password for {selectedStaff?.email}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {createdCredentials ? (
+            <div className="space-y-4">
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-500">New Password</p>
+                    <p className="font-mono font-medium">{createdCredentials.temp_password}</p>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => copyToClipboard(createdCredentials.temp_password)}>
+                    {copiedPassword ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  </Button>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button onClick={() => {
+                  setResetPasswordOpen(false);
+                  setCreatedCredentials(null);
+                }}>Done</Button>
+              </DialogFooter>
+            </div>
+          ) : (
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setResetPasswordOpen(false)}>Cancel</Button>
+              <Button onClick={handleResetPassword} disabled={saving}>
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Reset Password'}
+              </Button>
+            </DialogFooter>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Assignment Dialog */}
+      <Dialog open={assignmentOpen} onOpenChange={setAssignmentOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {assignmentData.type === 'role' && 'Change Role'}
+              {assignmentData.type === 'department' && 'Assign Department'}
+              {assignmentData.type === 'location' && 'Assign Location'}
+            </DialogTitle>
+            <DialogDescription>
+              Update assignment for {selectedStaff?.first_name} {selectedStaff?.last_name}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            {assignmentData.type === 'role' && (
+              <Select value={assignmentData.value} onValueChange={(v) => setAssignmentData({...assignmentData, value: v})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select new role" />
+                </SelectTrigger>
+                <SelectContent>
+                  {STAFF_ROLES.map(r => (
+                    <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            {assignmentData.type === 'department' && (
+              <Select value={assignmentData.value} onValueChange={(v) => setAssignmentData({...assignmentData, value: v})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select department" />
+                </SelectTrigger>
+                <SelectContent>
+                  {departments.map(d => (
+                    <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            {assignmentData.type === 'location' && (
+              <Select value={assignmentData.value} onValueChange={(v) => setAssignmentData({...assignmentData, value: v})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select location" />
+                </SelectTrigger>
+                <SelectContent>
+                  {locations.map(l => (
+                    <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAssignmentOpen(false)}>Cancel</Button>
+            <Button onClick={handleAssignment} disabled={saving || !assignmentData.value}>
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
