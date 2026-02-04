@@ -1263,19 +1263,28 @@ class YaccoEMRTester:
         }
         
         response, error = self.make_request('POST', 'auth/login', login_data)
-        if error or response.status_code != 200:
-            self.log_test("Hospital Admin Dashboard", False, "Failed to login as hospital admin")
+        if error:
+            self.log_test("Hospital Admin Dashboard", False, f"Login error: {error}")
+            return False
+        
+        if response.status_code != 200:
+            self.log_test("Hospital Admin Dashboard", False, f"Login failed with status: {response.status_code}")
             return False
         
         data = response.json()
         hospital_admin_token = data.get('token')
+        user = data.get('user', {})
         
         if not hospital_admin_token:
             self.log_test("Hospital Admin Dashboard", False, "No hospital admin token received")
             return False
         
-        # Use the hospital ID from the created hospital
-        hospital_id = getattr(self, 'test_hospital_id', 'test-hospital-001')
+        # Get the organization_id from the user data or use the test hospital ID
+        hospital_id = user.get('organization_id') or getattr(self, 'test_hospital_id', None)
+        
+        if not hospital_id:
+            self.log_test("Hospital Admin Dashboard", False, f"No hospital ID found. User data: {user}")
+            return False
         
         # Temporarily switch to hospital admin token
         original_token = self.token
