@@ -36,6 +36,16 @@ class YaccoEMRTester:
         # Enhanced Patient Consent Management System variables
         self.treatment_consent_id = None
         self.records_consent_id = None
+        # New test variables for review request
+        self.nursing_supervisor_id = None
+        self.nursing_supervisor_email = None
+        self.nursing_supervisor_password = None
+        self.floor_supervisor_id = None
+        self.floor_supervisor_email = None
+        self.floor_supervisor_password = None
+        self.nurse_token = None
+        self.nurse_user_id = None
+        self.nurse_shift_id = None
 
     def log_test(self, name, success, details=""):
         """Log test result"""
