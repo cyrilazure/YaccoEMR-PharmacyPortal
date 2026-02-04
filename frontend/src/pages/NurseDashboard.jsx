@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Progress } from '@/components/ui/progress';
+import { Separator } from '@/components/ui/separator';
 import { 
   Dialog, 
   DialogContent, 
@@ -34,7 +35,8 @@ import {
   Activity, Pill, ClipboardList, CheckCircle2, Clock, 
   Heart, User, Plus, Check, Bell, LogIn, LogOut, 
   Users, Stethoscope, AlertCircle, Timer, Shield, 
-  Droplets, Gauge, RefreshCw, Eye, Search, Hash, Calendar, IdCard
+  Droplets, Gauge, RefreshCw, Eye, Search, Hash, Calendar, IdCard,
+  FileText, Send, Edit, Save, FileCheck
 } from 'lucide-react';
 
 const priorityColors = { 
