@@ -9685,15 +9685,15 @@ def main():
     if len(sys.argv) > 1 and sys.argv[1] == "rbac":
         print("🔒 Running Platform Owner RBAC and Hospital Management API Tests...")
         success = tester.run_platform_owner_rbac_tests()
-    elif len(sys.argv) > 1 and sys.argv[1] == "emr-portal":
-        print("🏥 Running EMR Portal Backend API Tests...")
-        success = tester.run_emr_portal_tests()
+    elif len(sys.argv) > 1 and sys.argv[1] == "region-login":
+        print("🇬🇭 Running Region-Based Login Tests...")
+        success = tester.run_region_based_tests()
     elif len(sys.argv) > 1 and sys.argv[1] == "comprehensive":
         print("🏥 Running Comprehensive EMR Portal Tests...")
         success = tester.run_emr_portal_comprehensive_tests()
     else:
-        print("🧪 Running EMR Portal Backend API Tests (Default)...")
-        success = tester.run_emr_portal_tests()
+        print("🧪 Running All EMR Backend API Tests (Default)...")
+        success = tester.run_all_tests()
     
     return 0 if success else 1
 
