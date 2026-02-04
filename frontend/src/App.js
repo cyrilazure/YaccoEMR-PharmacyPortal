@@ -66,12 +66,19 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
+          {/* ========== PUBLIC ROUTES ========== */}
+          
           {/* Ghana Region-Based Login - Main Entry Point */}
           <Route path="/login" element={<RegionHospitalLogin />} />
           
           {/* Platform Owner (Super Admin) Login */}
           <Route path="/po-login" element={<POLogin />} />
           <Route path="/admin-login" element={<POLogin />} />
+          <Route path="/platform/admin" element={<POLogin />} />
+          
+          {/* Public Signup */}
+          <Route path="/signup" element={<SignupPage />} />
+          <Route path="/signup/provider" element={<SignupPage />} />
           
           {/* Legacy/Direct Login (for backward compatibility) */}
           <Route path="/direct-login" element={<LoginPage />} />
@@ -82,25 +89,57 @@ function App() {
           {/* Hidden Super Admin Portal - Only owner knows this URL */}
           <Route path="/yacco-owner-admin" element={<SuperAdminLogin />} />
           
-          {/* Protected Routes */}
+          {/* ========== PROTECTED ROUTES ========== */}
           <Route path="/" element={<Layout />}>
             <Route index element={<RoleBasedRedirect />} />
+            
             {/* Platform Owner (Super Admin) Portal */}
             <Route path="platform-admin" element={<PlatformOwnerPortal />} />
             <Route path="po-portal" element={<PlatformOwnerPortal />} />
+            <Route path="platform/admin" element={<PlatformOwnerPortal />} />
+            
             {/* Legacy Super Admin Dashboard */}
             <Route path="super-admin" element={<SuperAdminDashboard />} />
+            
+            {/* ========== HOSPITAL-SPECIFIC ROUTES ========== */}
+            
+            {/* Hospital Main Dashboard */}
+            <Route path="hospital/:hospitalId/dashboard" element={<HospitalMainDashboard />} />
+            
+            {/* Hospital Admin Portal */}
+            <Route path="hospital/:hospitalId/admin" element={<HospitalAdminPortal />} />
+            
+            {/* Hospital Role-Specific Portals */}
+            <Route path="hospital/:hospitalId/physician" element={<Dashboard />} />
+            <Route path="hospital/:hospitalId/nurse" element={<NurseDashboard />} />
+            <Route path="hospital/:hospitalId/scheduler" element={<SchedulerDashboard />} />
+            <Route path="hospital/:hospitalId/billing" element={<BillingPage />} />
+            <Route path="hospital/:hospitalId/department/:deptId" element={<Dashboard />} />
+            
+            {/* Hospital Shared Pages */}
+            <Route path="hospital/:hospitalId/patients" element={<Patients />} />
+            <Route path="hospital/:hospitalId/patients/:id" element={<PatientChart />} />
+            <Route path="hospital/:hospitalId/appointments" element={<Appointments />} />
+            <Route path="hospital/:hospitalId/orders" element={<Orders />} />
+            
+            {/* ========== LEGACY ROUTES (without hospitalId) ========== */}
+            
             {/* Hospital Admin Settings */}
             <Route path="hospital-settings" element={<HospitalSettings />} />
-            <Route path="admin-dashboard" element={<AdminDashboard />} />
+            <Route path="admin-dashboard" element={<HospitalAdminPortal />} />
+            
             {/* Physician Dashboard */}
             <Route path="dashboard" element={<Dashboard />} />
+            
             {/* Nurse Dashboard */}
             <Route path="nurse-station" element={<NurseDashboard />} />
+            
             {/* Scheduler Dashboard */}
             <Route path="scheduling" element={<SchedulerDashboard />} />
+            
             {/* Admin Dashboard */}
             <Route path="admin" element={<AdminDashboard />} />
+            
             {/* Shared Pages */}
             <Route path="patients" element={<Patients />} />
             <Route path="patients/:id" element={<PatientChart />} />
@@ -111,6 +150,7 @@ function App() {
             <Route path="telehealth/:sessionId" element={<TelehealthPage />} />
             <Route path="billing" element={<BillingPage />} />
             <Route path="records-sharing" element={<RecordsSharing />} />
+            
             {/* Security & Audit */}
             <Route path="security" element={<SecuritySettings />} />
             <Route path="audit-logs" element={<AuditLogs />} />
