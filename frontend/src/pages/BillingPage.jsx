@@ -12,7 +12,8 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import {
   CreditCard, DollarSign, FileText, Receipt, Plus, Send, Eye,
-  TrendingUp, Clock, CheckCircle, XCircle, AlertCircle, Building2
+  TrendingUp, Clock, CheckCircle, XCircle, AlertCircle, Building2,
+  Shield, Search, IdCard, Heart
 } from 'lucide-react';
 
 export default function BillingPage() {
