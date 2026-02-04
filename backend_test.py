@@ -1415,7 +1415,20 @@ class YaccoEMRTester:
     
     def test_departments_list(self):
         """Test Department APIs - GET /api/departments"""
+        # Use super admin token for departments access
+        if not hasattr(self, 'super_admin_token') or not self.super_admin_token:
+            self.log_test("Departments List", False, "No super admin token")
+            return False
+        
+        # Temporarily switch to super admin token
+        original_token = self.token
+        self.token = self.super_admin_token
+        
         response, error = self.make_request('GET', 'departments')
+        
+        # Restore original token
+        self.token = original_token
+        
         if error:
             self.log_test("Departments List", False, error)
             return False
