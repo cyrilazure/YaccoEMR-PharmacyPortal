@@ -1017,6 +1017,11 @@ from admin_portal_module import admin_router, create_admin_portal_endpoints
 admin_api_router = create_admin_portal_endpoints(db, get_current_user)
 app.include_router(admin_router)
 
+# Include Security & Compliance Module
+from security_compliance_module import security_router, create_security_endpoints
+security_api_router = create_security_endpoints(db, get_current_user)
+app.include_router(security_router)
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
