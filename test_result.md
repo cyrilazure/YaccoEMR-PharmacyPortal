@@ -1328,7 +1328,7 @@ backend:
         comment: "Comprehensive nurse workflow management: shift clock-in/out, patient assignments, task management, MAR, quick vitals, role-based access control"
       - working: true
         agent: "main"
-        comment: "✅ Nurse Portal Module - ALL CORE FEATURES WORKING: Shift Management (clock-in/out, shift types, handoff notes), Patient Assignments (assign/unassign, my-patients, load stats), Task Management (create/complete/defer tasks, priorities), MAR placeholder, Dashboard Stats, Quick Vitals, Permission System (correctly allows medication:administer, denies medication:prescribe). All manually tested and verified."
+        comment: "✅ Nurse Portal Module - ALL CORE FEATURES WORKING: Shift Management (5 shift types, clock-in/out, handoff notes), Patient Assignments (assign/unassign, my-patients with vitals/tasks, load stats), Task Management (13 task types, 5 priorities, create/complete/defer), MAR (medication administration, generate schedule), Dashboard Stats, Quick Vitals recording, Permission System (19 allowed actions, 28 denied actions). All APIs tested and verified."
 
 frontend:
   - task: "Security Settings Page"
