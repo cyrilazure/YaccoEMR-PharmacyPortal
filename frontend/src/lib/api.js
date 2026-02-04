@@ -592,6 +592,7 @@ export const hospitalITAdminAPI = {
   bulkCreateStaff: (hospitalId, staffList) => api.post(`/hospital/${hospitalId}/super-admin/staff/bulk`, { staff_list: staffList }),
   getStaff: (hospitalId, staffId) => api.get(`/hospital/${hospitalId}/super-admin/staff/${staffId}`),
   updateStaff: (hospitalId, staffId, data) => api.put(`/hospital/${hospitalId}/super-admin/staff/${staffId}`, data),
+  deleteStaff: (hospitalId, staffId) => api.delete(`/hospital/${hospitalId}/super-admin/staff/${staffId}`),
   
   // Account Status
   activateStaff: (hospitalId, staffId) => api.post(`/hospital/${hospitalId}/super-admin/staff/${staffId}/activate`),
@@ -609,6 +610,11 @@ export const hospitalITAdminAPI = {
   
   // Activity Log
   getActivityLog: (hospitalId, params) => api.get(`/hospital/${hospitalId}/super-admin/activity-log`, { params }),
+  
+  // Department Management
+  listDepartments: (hospitalId) => api.get(`/hospital/${hospitalId}/super-admin/departments`),
+  seedDepartments: (hospitalId) => api.post(`/hospital/${hospitalId}/super-admin/departments/seed`),
+  createDepartment: (hospitalId, code, name, description) => api.post(`/hospital/${hospitalId}/super-admin/departments`, null, { params: { code, name, description } }),
 };
 
 // Department Portal API
