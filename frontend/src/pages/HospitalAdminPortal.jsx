@@ -246,6 +246,67 @@ export default function HospitalAdminPortal() {
     );
   });
 
+  // Filter patients
+  const filteredPatients = patients.filter(p => {
+    if (!patientSearch) return true;
+    const query = patientSearch.toLowerCase();
+    return (
+      p.mrn?.toLowerCase().includes(query) ||
+      p.first_name?.toLowerCase().includes(query) ||
+      p.last_name?.toLowerCase().includes(query) ||
+      p.nhis_id?.toLowerCase().includes(query) ||
+      p.phone?.toLowerCase().includes(query)
+    );
+  });
+
+  // Generate MRN for patient
+  const generateMRN = () => {
+    const hospitalAbbr = dashboard?.hospital?.name
+      ?.split(' ')
+      .map(w => w[0])
+      .join('')
+      .toUpperCase()
+      .substring(0, 3) || 'YAC';
+    const timestamp = Date.now().toString().slice(-6);
+    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    return `${hospitalAbbr}-${timestamp}-${random}`;
+  };
+
+  // Assign MRN to patient
+  const handleAssignMRN = async (patientId) => {
+    const mrn = generateMRN();
+    try {
+      await patientAPI.update(patientId, { mrn });
+      toast.success(`MRN ${mrn} assigned successfully`);
+      fetchData();
+    } catch (err) {
+      toast.error('Failed to assign MRN');
+    }
+  };
+
+  // Search patient
+  const handlePatientSearch = async () => {
+    if (!patientSearch.trim()) {
+      fetchData();
+      return;
+    }
+    try {
+      const response = await patientAPI.getAll({ search: patientSearch });
+      setPatients(response.data || []);
+    } catch (err) {
+      toast.error('Search failed');
+    }
+  };
+
+  const formatDate = (date) => {
+    if (!date) return '-';
+    return new Date(date).toLocaleDateString('en-GH', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
