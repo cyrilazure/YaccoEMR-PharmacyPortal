@@ -1002,6 +1002,11 @@ from auth_module import auth_router, create_auth_endpoints
 auth_api_router, create_enhanced_token, decode_enhanced_token, create_auth_session = create_auth_endpoints(db, get_current_user)
 app.include_router(auth_router)
 
+# Include Comprehensive Notification System
+from notification_module import notification_router, create_notification_endpoints
+notification_api_router, create_system_notification, create_template_notification = create_notification_endpoints(db, get_current_user)
+app.include_router(notification_router)
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
