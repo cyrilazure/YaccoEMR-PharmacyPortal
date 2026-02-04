@@ -43,6 +43,9 @@ class UserRole(str, Enum):
     SCHEDULER = "scheduler"
     ADMIN = "admin"
     HOSPITAL_ADMIN = "hospital_admin"
+    HOSPITAL_IT_ADMIN = "hospital_it_admin"
+    FACILITY_ADMIN = "facility_admin"
+    BILLER = "biller"
     SUPER_ADMIN = "super_admin"
 
 class OrderType(str, Enum):
