@@ -34,7 +34,7 @@ import {
   Activity, Pill, ClipboardList, CheckCircle2, Clock, 
   Heart, User, Plus, Check, Bell, LogIn, LogOut, 
   Users, Stethoscope, AlertCircle, Timer, Shield, 
-  Droplets, Gauge, RefreshCw, Eye 
+  Droplets, Gauge, RefreshCw, Eye, Search, Hash, Calendar, IdCard
 } from 'lucide-react';
 
 const priorityColors = { 
