@@ -959,6 +959,429 @@ class YaccoEMRTester:
             self.log_test("FHIR Patient by ID", False, f"Status: {response.status_code}")
             return False
 
+    # ============ REGION-BASED HOSPITAL DISCOVERY TESTS (GHANA) ============
+    
+    def test_ghana_regions_discovery(self):
+        """Test public region discovery - should return 16 Ghana regions"""
+        response, error = self.make_request('GET', 'regions/')
+        if error:
+            self.log_test("Ghana Regions Discovery", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            regions = data.get('regions', [])
+            has_16_regions = len(regions) == 16
+            has_ghana_regions = any(r.get('name') == 'Greater Accra Region' for r in regions)
+            has_country = data.get('country') == 'Ghana'
+            success = has_16_regions and has_ghana_regions and has_country
+            self.log_test("Ghana Regions Discovery", success, f"Found {len(regions)} regions, Country: {data.get('country')}")
+            return success
+        else:
+            self.log_test("Ghana Regions Discovery", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_region_details(self):
+        """Test getting specific region details"""
+        response, error = self.make_request('GET', 'regions/greater-accra')
+        if error:
+            self.log_test("Region Details", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            is_greater_accra = data.get('name') == 'Greater Accra Region'
+            has_capital = data.get('capital') == 'Accra'
+            has_code = data.get('code') == 'GA'
+            success = is_greater_accra and has_capital and has_code
+            self.log_test("Region Details", success, f"Region: {data.get('name')}, Capital: {data.get('capital')}")
+            return success
+        else:
+            self.log_test("Region Details", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_hospitals_by_region(self):
+        """Test public hospital discovery by region"""
+        response, error = self.make_request('GET', 'regions/greater-accra/hospitals')
+        if error:
+            self.log_test("Hospitals by Region", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_region = 'region' in data
+            has_hospitals = 'hospitals' in data
+            has_total = 'total' in data
+            success = has_region and has_hospitals and has_total
+            hospital_count = len(data.get('hospitals', []))
+            self.log_test("Hospitals by Region", success, f"Found {hospital_count} hospitals in Greater Accra")
+            return success
+        else:
+            self.log_test("Hospitals by Region", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_super_admin_login_ghana(self):
+        """Test super admin login with Ghana EMR credentials"""
+        login_data = {
+            "email": "ygtnetworks@gmail.com",
+            "password": "test123"
+        }
+        
+        response, error = self.make_request('POST', 'auth/login', login_data)
+        if error:
+            self.log_test("Super Admin Login (Ghana)", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            self.super_admin_token = data.get('token')
+            user = data.get('user', {})
+            is_super_admin = user.get('role') == 'super_admin'
+            has_token = bool(self.super_admin_token)
+            success = is_super_admin and has_token
+            self.log_test("Super Admin Login (Ghana)", success, f"Role: {user.get('role')}")
+            return success
+        else:
+            self.log_test("Super Admin Login (Ghana)", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_super_admin_create_hospital_ghana(self):
+        """Test super admin creating hospital in Ashanti region"""
+        if not hasattr(self, 'super_admin_token') or not self.super_admin_token:
+            self.log_test("Super Admin Create Hospital (Ghana)", False, "No super admin token")
+            return False
+        
+        # Temporarily switch to super admin token
+        original_token = self.token
+        self.token = self.super_admin_token
+        
+        hospital_data = {
+            "name": "Komfo Anokye Teaching Hospital",
+            "region_id": "ashanti",
+            "address": "Bantama, Kumasi",
+            "city": "Kumasi",
+            "phone": "+233-32-2022308",
+            "email": "info@kath.gov.gh",
+            "website": "https://kath.gov.gh",
+            "license_number": "KATH-2024-001",
+            "ghana_health_service_id": "GHS-KATH-001",
+            "admin_first_name": "Dr. Oheneba",
+            "admin_last_name": "Owusu-Danso",
+            "admin_email": "admin@kath.gov.gh",
+            "admin_phone": "+233-24-1234567"
+        }
+        
+        response, error = self.make_request('POST', 'regions/admin/hospitals', hospital_data)
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Super Admin Create Hospital (Ghana)", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            hospital = data.get('hospital', {})
+            admin = data.get('admin', {})
+            location = data.get('location', {})
+            
+            has_hospital_id = bool(hospital.get('id'))
+            correct_region = hospital.get('region_id') == 'ashanti'
+            has_admin_creds = bool(admin.get('email')) and bool(admin.get('temp_password'))
+            has_main_location = bool(location.get('id'))
+            
+            success = has_hospital_id and correct_region and has_admin_creds and has_main_location
+            
+            if success:
+                self.test_hospital_id = hospital.get('id')
+                self.hospital_admin_email = admin.get('email')
+                self.hospital_admin_temp_password = admin.get('temp_password')
+                self.main_location_id = location.get('id')
+            
+            self.log_test("Super Admin Create Hospital (Ghana)", success, 
+                         f"Hospital: {hospital.get('name')}, Region: {hospital.get('region_id')}")
+            return success
+        else:
+            self.log_test("Super Admin Create Hospital (Ghana)", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_hospital_details_with_locations(self):
+        """Test getting hospital details with locations"""
+        if not hasattr(self, 'test_hospital_id') or not self.test_hospital_id:
+            self.log_test("Hospital Details with Locations", False, "No test hospital available")
+            return False
+        
+        response, error = self.make_request('GET', f'regions/hospitals/{self.test_hospital_id}')
+        if error:
+            self.log_test("Hospital Details with Locations", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_name = bool(data.get('name'))
+            has_region = bool(data.get('region_id'))
+            has_locations = 'locations' in data
+            has_location_count = 'location_count' in data
+            has_multiple_flag = 'has_multiple_locations' in data
+            
+            success = has_name and has_region and has_locations and has_location_count and has_multiple_flag
+            location_count = data.get('location_count', 0)
+            self.log_test("Hospital Details with Locations", success, 
+                         f"Hospital: {data.get('name')}, Locations: {location_count}")
+            return success
+        else:
+            self.log_test("Hospital Details with Locations", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_location_aware_authentication(self):
+        """Test location-aware authentication with hospital context"""
+        if not hasattr(self, 'hospital_admin_email') or not hasattr(self, 'hospital_admin_temp_password'):
+            self.log_test("Location-Aware Authentication", False, "No hospital admin credentials")
+            return False
+        
+        if not hasattr(self, 'test_hospital_id') or not self.test_hospital_id:
+            self.log_test("Location-Aware Authentication", False, "No test hospital ID")
+            return False
+        
+        login_data = {
+            "email": self.hospital_admin_email,
+            "password": self.hospital_admin_temp_password,
+            "hospital_id": self.test_hospital_id
+        }
+        
+        response, error = self.make_request('POST', 'regions/auth/login', login_data)
+        if error:
+            self.log_test("Location-Aware Authentication", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            token = data.get('token')
+            user = data.get('user', {})
+            hospital = data.get('hospital', {})
+            location = data.get('location')
+            redirect_to = data.get('redirect_to')
+            
+            has_token = bool(token)
+            has_user = bool(user.get('id'))
+            has_hospital = bool(hospital.get('id'))
+            has_redirect = bool(redirect_to)
+            
+            success = has_token and has_user and has_hospital and has_redirect
+            
+            if success:
+                self.hospital_admin_token = token
+                # Decode token to verify JWT claims
+                import jwt
+                try:
+                    payload = jwt.decode(token, options={"verify_signature": False})
+                    has_region_id = 'region_id' in payload
+                    has_hospital_id = 'hospital_id' in payload
+                    has_location_id = 'location_id' in payload
+                    has_role = 'role' in payload
+                    
+                    jwt_valid = has_region_id and has_hospital_id and has_role
+                    success = success and jwt_valid
+                    
+                    self.log_test("Location-Aware Authentication", success, 
+                                 f"Role: {user.get('role')}, Redirect: {redirect_to}, JWT Claims: region_id={has_region_id}, hospital_id={has_hospital_id}, location_id={has_location_id}")
+                except Exception as e:
+                    self.log_test("Location-Aware Authentication", False, f"JWT decode error: {e}")
+                    return False
+            else:
+                self.log_test("Location-Aware Authentication", success, 
+                             f"Token: {has_token}, User: {has_user}, Hospital: {has_hospital}, Redirect: {has_redirect}")
+            
+            return success
+        else:
+            self.log_test("Location-Aware Authentication", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_hospital_admin_add_location(self):
+        """Test hospital admin adding a branch location"""
+        if not hasattr(self, 'hospital_admin_token') or not self.hospital_admin_token:
+            self.log_test("Hospital Admin Add Location", False, "No hospital admin token")
+            return False
+        
+        if not hasattr(self, 'test_hospital_id') or not self.test_hospital_id:
+            self.log_test("Hospital Admin Add Location", False, "No test hospital ID")
+            return False
+        
+        # Temporarily switch to hospital admin token
+        original_token = self.token
+        self.token = self.hospital_admin_token
+        
+        location_data = {
+            "name": "KATH Emergency Center - Adum",
+            "location_type": "emergency_center",
+            "address": "Adum, Kumasi",
+            "city": "Kumasi",
+            "phone": "+233-32-2025000",
+            "email": "emergency@kath.gov.gh",
+            "operating_hours": "24/7",
+            "services": ["Emergency Care", "Trauma", "Ambulance"],
+            "is_24_hour": True,
+            "has_emergency": True
+        }
+        
+        response, error = self.make_request('POST', f'regions/hospitals/{self.test_hospital_id}/locations', location_data)
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Hospital Admin Add Location", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            location = data.get('location', {})
+            has_location_id = bool(location.get('id'))
+            correct_name = location.get('name') == location_data['name']
+            correct_type = location.get('location_type') == 'emergency_center'
+            is_24_hour = location.get('is_24_hour') == True
+            
+            success = has_location_id and correct_name and correct_type and is_24_hour
+            
+            if success:
+                self.branch_location_id = location.get('id')
+            
+            self.log_test("Hospital Admin Add Location", success, 
+                         f"Location: {location.get('name')}, Type: {location.get('location_type')}")
+            return success
+        else:
+            self.log_test("Hospital Admin Add Location", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_verify_multiple_locations_flag(self):
+        """Test that hospital now has has_multiple_locations = true"""
+        if not hasattr(self, 'test_hospital_id') or not self.test_hospital_id:
+            self.log_test("Verify Multiple Locations Flag", False, "No test hospital ID")
+            return False
+        
+        response, error = self.make_request('GET', f'regions/hospitals/{self.test_hospital_id}')
+        if error:
+            self.log_test("Verify Multiple Locations Flag", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_multiple_locations = data.get('has_multiple_locations', False)
+            location_count = data.get('location_count', 0)
+            
+            success = has_multiple_locations and location_count >= 2
+            self.log_test("Verify Multiple Locations Flag", success, 
+                         f"Multiple locations: {has_multiple_locations}, Count: {location_count}")
+            return success
+        else:
+            self.log_test("Verify Multiple Locations Flag", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_hospital_admin_create_staff_with_location(self):
+        """Test hospital admin creating staff with location assignment"""
+        if not hasattr(self, 'hospital_admin_token') or not self.hospital_admin_token:
+            self.log_test("Hospital Admin Create Staff with Location", False, "No hospital admin token")
+            return False
+        
+        if not hasattr(self, 'test_hospital_id') or not self.test_hospital_id:
+            self.log_test("Hospital Admin Create Staff with Location", False, "No test hospital ID")
+            return False
+        
+        # Temporarily switch to hospital admin token
+        original_token = self.token
+        self.token = self.hospital_admin_token
+        
+        import time
+        timestamp = str(int(time.time()))
+        
+        staff_data = {
+            "email": f"physician{timestamp}@kath.gov.gh",
+            "first_name": "Dr. Kwame",
+            "last_name": "Asante",
+            "role": "physician",
+            "department": "Emergency Medicine",
+            "specialty": "Emergency Medicine",
+            "location_id": getattr(self, 'branch_location_id', None) or getattr(self, 'main_location_id', None)
+        }
+        
+        response, error = self.make_request('POST', f'regions/hospitals/{self.test_hospital_id}/staff', staff_data)
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Hospital Admin Create Staff with Location", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            user = data.get('user', {})
+            temp_password = data.get('temp_password')
+            
+            has_user_id = bool(user.get('id'))
+            has_temp_password = bool(temp_password)
+            correct_role = user.get('role') == 'physician'
+            has_location = bool(user.get('location_id'))
+            
+            success = has_user_id and has_temp_password and correct_role and has_location
+            
+            if success:
+                self.test_staff_id = user.get('id')
+                self.test_staff_email = user.get('email')
+                self.test_staff_temp_password = temp_password
+            
+            self.log_test("Hospital Admin Create Staff with Location", success, 
+                         f"Staff: {user.get('name')}, Role: {user.get('role')}, Location: {user.get('location_id')}")
+            return success
+        else:
+            self.log_test("Hospital Admin Create Staff with Location", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_platform_overview_ghana(self):
+        """Test super admin platform overview for Ghana regions"""
+        if not hasattr(self, 'super_admin_token') or not self.super_admin_token:
+            self.log_test("Platform Overview (Ghana)", False, "No super admin token")
+            return False
+        
+        # Temporarily switch to super admin token
+        original_token = self.token
+        self.token = self.super_admin_token
+        
+        response, error = self.make_request('GET', 'regions/admin/overview')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Platform Overview (Ghana)", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            regions = data.get('regions', [])
+            totals = data.get('totals', {})
+            role_distribution = data.get('role_distribution', {})
+            country = data.get('country')
+            
+            has_16_regions = len(regions) == 16
+            has_totals = 'hospitals' in totals and 'users' in totals
+            has_role_dist = len(role_distribution) > 0
+            is_ghana = country == 'Ghana'
+            
+            # Check if Ashanti region has our test hospital
+            ashanti_region = next((r for r in regions if r['id'] == 'ashanti'), None)
+            ashanti_has_hospital = ashanti_region and ashanti_region.get('hospital_count', 0) > 0
+            
+            success = has_16_regions and has_totals and has_role_dist and is_ghana and ashanti_has_hospital
+            
+            self.log_test("Platform Overview (Ghana)", success, 
+                         f"Regions: {len(regions)}, Total Hospitals: {totals.get('hospitals', 0)}, Ashanti Hospitals: {ashanti_region.get('hospital_count', 0) if ashanti_region else 0}")
+            return success
+        else:
+            self.log_test("Platform Overview (Ghana)", False, f"Status: {response.status_code}")
+            return False
+
     # ============ ORGANIZATION MODULE TESTS ============
     
     def test_organization_self_registration(self):
