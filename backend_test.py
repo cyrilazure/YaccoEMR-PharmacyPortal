@@ -9022,9 +9022,24 @@ class YaccoEMRTester:
 
 
 def main():
-    tester = YaccoEMRTester()
-    # Run the comprehensive EMR Portal tests
-    success = tester.run_emr_portal_comprehensive_tests()
+    import sys
+    
+    # Get backend URL from environment or use default
+    backend_url = "https://mystifying-goldwasser.preview.emergentagent.com"
+    
+    tester = YaccoEMRTester(backend_url)
+    
+    # Check if specific test mode is requested
+    if len(sys.argv) > 1 and sys.argv[1] == "emr-portal":
+        print("🏥 Running EMR Portal Backend API Tests...")
+        success = tester.run_emr_portal_tests()
+    elif len(sys.argv) > 1 and sys.argv[1] == "comprehensive":
+        print("🏥 Running Comprehensive EMR Portal Tests...")
+        success = tester.run_emr_portal_comprehensive_tests()
+    else:
+        print("🧪 Running EMR Portal Backend API Tests (Default)...")
+        success = tester.run_emr_portal_tests()
+    
     return 0 if success else 1
 
 if __name__ == "__main__":
