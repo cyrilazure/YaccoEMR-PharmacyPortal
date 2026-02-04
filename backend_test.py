@@ -10605,7 +10605,10 @@ def main():
     tester = YaccoEMRTester(backend_url)
     
     # Check if specific test mode is requested
-    if len(sys.argv) > 1 and sys.argv[1] == "rbac":
+    if len(sys.argv) > 1 and sys.argv[1] == "nursing":
+        print("🏥 Running Nursing Portal and Supervisor Tests...")
+        success = tester.run_nursing_portal_tests()
+    elif len(sys.argv) > 1 and sys.argv[1] == "rbac":
         print("🔒 Running Platform Owner RBAC and Hospital Management API Tests...")
         success = tester.run_platform_owner_rbac_tests()
     elif len(sys.argv) > 1 and sys.argv[1] == "region-login":
