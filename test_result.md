@@ -2983,7 +2983,7 @@ backend:
         agent: "testing"
         comment: "❌ RBAC Enforcement Issue - Super Admin can access patient and appointment endpoints when they should be restricted. Only 1/4 endpoints properly restricted: Patient List: ❌ Has access (should be restricted), Billing Invoices: ✅ Empty results (proper isolation), Appointments: ❌ Has access (should be restricted), Audit Logs: Status 404. Need to implement proper role-based endpoint restrictions for Super Admin."
 
-  - task: "Hospital IT Admin APIs"
+  - task: "Hospital IT Admin Portal Features"
     implemented: true
     working: true
     file: "backend/hospital_it_admin_module.py"
@@ -2993,10 +2993,10 @@ backend:
     status_history:
       - working: "NA"
         agent: "user"
-        comment: "User requested testing of Hospital IT Admin APIs: POST /api/hospital/{hospitalId}/super-admin/staff and verify IT Admin CANNOT access patient records"
+        comment: "User requested comprehensive testing of Hospital IT Admin Portal features with specific credentials: kofiabedu2019@gmail.com / 2I6ZRBkjVn2ZQg7O, Hospital ID: e717ed11-7955-4884-8d6b-a529f918c34f, Location ID: b61d7896-b4ef-436b-868e-94a60b55c64c"
       - working: true
         agent: "testing"
-        comment: "✅ Hospital IT Admin APIs - Working 2/2 tests: IT Admin Create Staff: ✅ Working, IT Admin Patient Access: ✅ Empty results (proper isolation). Hospital IT Admin endpoints functional with proper access restrictions."
+        comment: "✅ Hospital IT Admin Portal Features - ALL TESTS PASSED (9/9 - 100% success rate): 1) Login as IT Admin via POST /api/regions/auth/login with hospital/location context ✅, 2) Get IT Admin Dashboard with hospital info, staff stats, departments, locations ✅, 3) List Departments returning 24 default departments (ER, OPD, ICU, CARD, etc.) ✅, 4) Create Staff Account with temp password generation ✅, 5) Reset Password with new temp password ✅, 6) Deactivate User with is_active=false verification ✅, 7) Activate User with is_active=true verification ✅, 8) Delete User permanently ✅, 9) Verify Deletion with 404 Not Found ✅. Complete staff lifecycle management working perfectly with proper JWT tokens containing region_id, hospital_id, location_id, role claims and correct redirect_to='/it-admin'."
 
   - task: "Hospital Admin APIs"
     implemented: true
