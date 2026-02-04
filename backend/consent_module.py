@@ -253,6 +253,94 @@ I understand and consent to participating in telehealth services. I acknowledge 
 def create_consent_endpoints(db, get_current_user):
     """Create consent form management endpoints"""
     
+    # ============ AUDIT LOGGING HELPER ============
+    async def log_consent_audit(
+        user: dict,
+        action: str,
+        consent_id: str = None,
+        patient_id: str = None,
+        patient_name: str = None,
+        consent_type: str = None,
+        details: str = None,
+        success: bool = True,
+        severity: str = "info",
+        metadata: dict = None
+    ):
+        """Log consent-related audit events for HIPAA compliance"""
+        audit_entry = {
+            "id": str(uuid.uuid4()),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "user_id": user.get("id", "unknown"),
+            "user_name": f"{user.get('first_name', '')} {user.get('last_name', '')}".strip() or "Unknown",
+            "user_role": user.get("role", "unknown"),
+            "organization_id": user.get("organization_id"),
+            "action": action,
+            "resource_type": "consent_form",
+            "resource_id": consent_id,
+            "patient_id": patient_id,
+            "patient_name": patient_name,
+            "details": details,
+            "success": success,
+            "severity": severity,
+            "phi_accessed": True,  # Consent forms contain PHI
+            "metadata": {
+                "consent_type": consent_type,
+                **(metadata or {})
+            }
+        }
+        await db.audit_logs.insert_one(audit_entry)
+        return audit_entry
+    
+    # ============ CONSENT USAGE TRACKING ============
+    async def track_consent_usage(
+        consent_id: str,
+        user: dict,
+        usage_type: str,
+        details: str = None
+    ):
+        """Track when and how a consent is used/accessed"""
+        usage_entry = {
+            "id": str(uuid.uuid4()),
+            "consent_id": consent_id,
+            "user_id": user.get("id"),
+            "user_name": f"{user.get('first_name', '')} {user.get('last_name', '')}".strip(),
+            "user_role": user.get("role"),
+            "usage_type": usage_type,  # viewed, verified, used_for_disclosure, etc.
+            "details": details,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+        await db.consent_usage_log.insert_one(usage_entry)
+        
+        # Update consent access count
+        await db.consent_forms.update_one(
+            {"id": consent_id},
+            {
+                "$inc": {"access_count": 1},
+                "$set": {"last_accessed_at": datetime.now(timezone.utc).isoformat()}
+            }
+        )
+        return usage_entry
+    
+    # ============ EXPIRATION ENFORCEMENT ============
+    async def check_and_update_expired_consents():
+        """Check for expired consents and update their status"""
+        now = datetime.now(timezone.utc).isoformat()
+        
+        # Find active consents that have expired
+        expired = await db.consent_forms.update_many(
+            {
+                "status": ConsentStatus.ACTIVE.value,
+                "expiration_date": {"$lte": now, "$ne": None}
+            },
+            {
+                "$set": {
+                    "status": ConsentStatus.EXPIRED.value,
+                    "expired_at": now
+                }
+            }
+        )
+        return expired.modified_count
+    
     @consent_router.get("/templates")
     async def get_consent_templates(
         consent_type: Optional[str] = None,
