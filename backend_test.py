@@ -5441,6 +5441,12 @@ class YaccoEMRTester:
         print("🏥 Starting Yacco EMR Backend API Tests")
         print("=" * 50)
         
+        # ============ SUPER ADMIN LOGIN TESTS ============
+        print("\n🔐 Testing Super Admin Login Functionality")
+        print("-" * 50)
+        if not self.test_super_admin_login_functionality():
+            print("❌ Super Admin login tests failed - continuing with other tests")
+        
         # Core authentication tests
         if not self.test_health_check():
             return False
