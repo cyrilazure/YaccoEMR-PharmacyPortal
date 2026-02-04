@@ -1030,6 +1030,37 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ============ STARTUP - SEED SUPER ADMIN ============
+@app.on_event("startup")
+async def seed_super_admin():
+    """Create default super admin user if not exists"""
+    try:
+        super_admin_email = "ygtnetworks@gmail.com"
+        existing = await db.users.find_one({"email": super_admin_email})
+        
+        if not existing:
+            super_admin_id = str(uuid.uuid4())
+            super_admin_user = {
+                "id": super_admin_id,
+                "email": super_admin_email,
+                "first_name": "Super",
+                "last_name": "Admin",
+                "role": "super_admin",
+                "department": "Platform Administration",
+                "specialty": None,
+                "organization_id": None,  # Super admin is not tied to any organization
+                "password": hash_password("test123"),
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "is_active": True,
+                "is_temp_password": False
+            }
+            await db.users.insert_one(super_admin_user)
+            logger.info(f"✅ Super Admin created: {super_admin_email}")
+        else:
+            logger.info(f"✅ Super Admin already exists: {super_admin_email}")
+    except Exception as e:
+        logger.error(f"❌ Error seeding super admin: {e}")
+
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
