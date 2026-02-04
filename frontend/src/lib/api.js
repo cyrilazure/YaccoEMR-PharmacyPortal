@@ -511,4 +511,67 @@ export const regionAPI = {
   }),
 };
 
+// Hospital Admin APIs
+export const hospitalAdminAPI = {
+  // Dashboard
+  getDashboard: (hospitalId) => api.get(`/hospital/${hospitalId}/admin/dashboard`),
+  
+  // User Management
+  listUsers: (hospitalId, params) => api.get(`/hospital/${hospitalId}/admin/users`, { params }),
+  createUser: (hospitalId, data) => api.post(`/hospital/${hospitalId}/admin/users`, data),
+  getUser: (hospitalId, userId) => api.get(`/hospital/${hospitalId}/admin/users/${userId}`),
+  updateUser: (hospitalId, userId, data) => api.put(`/hospital/${hospitalId}/admin/users/${userId}`, data),
+  deactivateUser: (hospitalId, userId) => api.delete(`/hospital/${hospitalId}/admin/users/${userId}`),
+  reactivateUser: (hospitalId, userId) => api.post(`/hospital/${hospitalId}/admin/users/${userId}/reactivate`),
+  resetPassword: (hospitalId, userId) => api.post(`/hospital/${hospitalId}/admin/users/${userId}/reset-password`),
+  configureMFA: (hospitalId, userId, requireMfa) => api.post(`/hospital/${hospitalId}/admin/users/${userId}/mfa`, { require_mfa: requireMfa }),
+  
+  // Department Management
+  listDepartments: (hospitalId) => api.get(`/hospital/${hospitalId}/admin/departments`),
+  createDepartment: (hospitalId, data) => api.post(`/hospital/${hospitalId}/admin/departments`, data),
+  updateDepartment: (hospitalId, deptId, data) => api.put(`/hospital/${hospitalId}/admin/departments/${deptId}`, data),
+  deactivateDepartment: (hospitalId, deptId) => api.delete(`/hospital/${hospitalId}/admin/departments/${deptId}`),
+  
+  // Unit Management
+  listUnits: (hospitalId, deptId) => api.get(`/hospital/${hospitalId}/admin/units`, { params: { department_id: deptId } }),
+  createUnit: (hospitalId, data) => api.post(`/hospital/${hospitalId}/admin/units`, data),
+  
+  // Audit Logs
+  getAuditLogs: (hospitalId, params) => api.get(`/hospital/${hospitalId}/admin/audit-logs`, { params }),
+  
+  // Settings
+  getSettings: (hospitalId) => api.get(`/hospital/${hospitalId}/admin/settings`),
+  updateSettings: (hospitalId, data) => api.put(`/hospital/${hospitalId}/admin/settings`, data),
+};
+
+// Hospital Dashboard APIs
+export const hospitalDashboardAPI = {
+  getDashboard: (hospitalId, locationId) => api.get(`/hospital/${hospitalId}/dashboard`, { params: { location_id: locationId } }),
+  getLocations: (hospitalId) => api.get(`/hospital/${hospitalId}/locations`),
+  
+  // Role-Specific Portals
+  getPhysicianPortal: (hospitalId) => api.get(`/hospital/${hospitalId}/physician`),
+  getNursePortal: (hospitalId) => api.get(`/hospital/${hospitalId}/nurse`),
+  getSchedulerPortal: (hospitalId) => api.get(`/hospital/${hospitalId}/scheduler`),
+  getBillingPortal: (hospitalId) => api.get(`/hospital/${hospitalId}/billing`),
+  getDepartmentPortal: (hospitalId, deptId) => api.get(`/hospital/${hospitalId}/department/${deptId}`),
+};
+
+// Signup APIs
+export const signupAPI = {
+  // Public
+  registerHospital: (data) => api.post('/signup/hospital', data),
+  verifyEmail: (token) => api.post('/signup/verify-email', { token }),
+  checkStatus: (registrationId) => api.get(`/signup/status/${registrationId}`),
+  registerProvider: (data) => api.post('/signup/provider', data),
+  resendVerification: (email) => api.post('/signup/resend-verification', null, { params: { email } }),
+  
+  // Admin
+  listPendingRegistrations: (status) => api.get('/signup/admin/pending', { params: { status } }),
+  approveRegistration: (registrationId, decision) => api.post(`/signup/admin/approve/${registrationId}`, decision),
+  createProviderInvite: (hospitalId, email, role, departmentId) => api.post('/signup/admin/invite-provider', null, {
+    params: { hospital_id: hospitalId, email, role, department_id: departmentId }
+  }),
+};
+
 export default api;
