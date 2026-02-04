@@ -614,7 +614,7 @@ def create_nurse_portal_endpoints(db, get_current_user):
             notes=assignment_data.notes
         )
         
-        assignment_dict = assignment.model_dump()
+        assignment_dict = assignment.model_dump(mode='json')
         await db.nurse_assignments.insert_one(assignment_dict)
         if "_id" in assignment_dict: del assignment_dict["_id"]
         
@@ -822,7 +822,7 @@ def create_nurse_portal_endpoints(db, get_current_user):
             created_by=f"{current_user['first_name']} {current_user['last_name']}"
         )
         
-        task_dict = task.model_dump()
+        task_dict = task.model_dump(mode='json')
         await db.nurse_tasks.insert_one(task_dict)
         if "_id" in task_dict: del task_dict["_id"]
         
@@ -1110,7 +1110,7 @@ def create_nurse_portal_endpoints(db, get_current_user):
                         organization_id=org_id or "",
                         created_at=now.isoformat()
                     )
-                    entry_dict = entry.model_dump()
+                    entry_dict = entry.model_dump(mode='json')
                     await db.mar_entries.insert_one(entry_dict)
                     entries_created += 1
         
