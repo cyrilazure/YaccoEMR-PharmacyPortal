@@ -947,6 +947,50 @@ export default function HospitalSuperAdminIT() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-red-600 flex items-center gap-2">
+              <Trash2 className="w-5 h-5" />
+              Delete User Account
+            </DialogTitle>
+            <DialogDescription>
+              This action cannot be undone. The user account will be permanently deleted.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedStaff && (
+            <div className="py-4">
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Warning</AlertTitle>
+                <AlertDescription>
+                  You are about to permanently delete the account for:
+                  <div className="mt-2 font-medium">
+                    <p>{selectedStaff.first_name} {selectedStaff.last_name}</p>
+                    <p className="text-sm">{selectedStaff.email}</p>
+                  </div>
+                </AlertDescription>
+              </Alert>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteConfirmOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleDelete} 
+              disabled={saving}
+            >
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Delete Permanently'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
