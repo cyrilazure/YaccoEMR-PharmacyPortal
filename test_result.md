@@ -1429,6 +1429,30 @@ frontend:
         agent: "main"
         comment: "Complete nurse portal with shift management, patient assignments, task panel, MAR, quick vitals, role-based access restrictions UI"
 
+  - task: "Hospital Admin Dashboard"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/pages/AdminDashboard.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Hospital admin UI with user management, role assignment, permission groups, sharing policy approval"
+
+  - task: "Super Admin Dashboard"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/pages/SuperAdminDashboard.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Platform admin UI with organization management, security policies, system health, audit logs"
+
 test_plan:
   current_focus: []
   stuck_tasks: []
