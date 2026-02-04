@@ -21,35 +21,129 @@ import {
 } from 'lucide-react';
 
 const navItems = [
-  // Platform Level - Super Admin Only
-  { to: '/platform/super-admin', icon: Globe, label: 'Platform Admin', roles: ['super_admin'] },
+  // ========== PLATFORM LEVEL (Super Admin Only) ==========
+  { 
+    to: '/platform/super-admin', 
+    icon: Globe, 
+    label: 'Platform Admin', 
+    roles: ['super_admin'],
+    description: 'Manage hospitals and platform'
+  },
   
-  // Hospital IT Admin - Staff Account Management Only
-  { to: '/it-admin', icon: UserCog, label: 'IT Admin', roles: ['hospital_it_admin'] },
+  // ========== HOSPITAL LEVEL ==========
+  { 
+    to: '/it-admin', 
+    icon: UserCog, 
+    label: 'IT Admin', 
+    roles: ['hospital_it_admin'],
+    description: 'Staff account management'
+  },
+  { 
+    to: '/admin-dashboard', 
+    icon: Building2, 
+    label: 'Hospital Admin', 
+    roles: ['hospital_admin'],
+    description: 'Hospital administration'
+  },
+  { 
+    to: '/facility-admin', 
+    icon: Layers, 
+    label: 'Facility Admin', 
+    roles: ['facility_admin'],
+    description: 'Local facility management'
+  },
   
-  // Hospital Admin - View/Manage Hospital Settings (No Staff Creation)
-  { to: '/admin-dashboard', icon: Building2, label: 'Hospital Admin', roles: ['hospital_admin'] },
+  // ========== CLINICAL PORTALS ==========
+  { 
+    to: '/dashboard', 
+    icon: LayoutDashboard, 
+    label: 'Physician Portal', 
+    roles: ['physician'],
+    description: 'Clinical dashboard'
+  },
+  { 
+    to: '/nurse-station', 
+    icon: Heart, 
+    label: 'Nurse Station', 
+    roles: ['nurse'],
+    description: 'Nursing care portal'
+  },
   
-  // Facility Admin - Local Facility Management
-  { to: '/facility-admin', icon: Layers, label: 'Facility Admin', roles: ['facility_admin'] },
+  // ========== OPERATIONAL PORTALS ==========
+  { 
+    to: '/scheduling', 
+    icon: Calendar, 
+    label: 'Scheduler', 
+    roles: ['scheduler'],
+    description: 'Appointment scheduling'
+  },
+  { 
+    to: '/billing', 
+    icon: CreditCard, 
+    label: 'Billing Portal', 
+    roles: ['biller'],
+    description: 'Financial administration'
+  },
+  { 
+    to: '/department', 
+    icon: Layers, 
+    label: 'Department Portal', 
+    roles: ['records_officer', 'department_staff'],
+    description: 'Department operations'
+  },
   
-  // Role-specific dashboards
-  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', roles: ['physician'] },
-  { to: '/nurse-station', icon: Heart, label: 'Nurse Station', roles: ['nurse'] },
-  { to: '/scheduling', icon: Calendar, label: 'Scheduling', roles: ['scheduler'] },
-  { to: '/billing', icon: CreditCard, label: 'Billing Portal', roles: ['biller'] },
-  { to: '/department', icon: Layers, label: 'Department Portal', roles: ['records_officer', 'department_staff'] },
-  { to: '/admin', icon: Shield, label: 'Admin Center', roles: ['admin'] },
+  // ========== SHARED CLINICAL PAGES (Based on Permissions) ==========
+  { 
+    to: '/patients', 
+    icon: Users, 
+    label: 'Patients', 
+    roles: ['physician', 'nurse', 'scheduler', 'hospital_admin', 'records_officer', 'biller'],
+    // Note: super_admin and hospital_it_admin CANNOT access patients
+  },
+  { 
+    to: '/appointments', 
+    icon: Calendar, 
+    label: 'Appointments', 
+    roles: ['physician', 'nurse', 'scheduler', 'hospital_admin'],
+    // Note: biller and IT admin CANNOT access
+  },
+  { 
+    to: '/orders', 
+    icon: ClipboardList, 
+    label: 'Orders', 
+    roles: ['physician', 'nurse', 'hospital_admin'],
+    // Clinical only
+  },
+  { 
+    to: '/telehealth', 
+    icon: Video, 
+    label: 'Telehealth', 
+    roles: ['physician', 'nurse', 'hospital_admin'],
+    // Clinical only
+  },
+  { 
+    to: '/records-sharing', 
+    icon: Share2, 
+    label: 'Records Sharing', 
+    roles: ['physician', 'hospital_admin'],
+    // Physician and hospital admin only
+  },
+  { 
+    to: '/analytics', 
+    icon: BarChart3, 
+    label: 'Analytics', 
+    roles: ['physician', 'hospital_admin'],
+    // Note: super_admin CANNOT access (platform level only)
+  },
   
-  // Shared pages
-  { to: '/patients', icon: Users, label: 'Patients', roles: ['physician', 'nurse', 'scheduler', 'admin', 'hospital_admin', 'records_officer'] },
-  { to: '/appointments', icon: Calendar, label: 'Appointments', roles: ['physician', 'nurse', 'scheduler', 'admin', 'hospital_admin'] },
-  { to: '/orders', icon: ClipboardList, label: 'Orders', roles: ['physician', 'nurse', 'admin', 'hospital_admin'] },
-  { to: '/telehealth', icon: Video, label: 'Telehealth', roles: ['physician', 'nurse', 'admin', 'hospital_admin'] },
-  { to: '/records-sharing', icon: Share2, label: 'Records Sharing', roles: ['physician', 'hospital_admin'] },
-  
-  // Security & Audit - Admin roles only
-  { to: '/audit-logs', icon: FileSearch, label: 'Audit Logs', roles: ['admin', 'hospital_admin', 'super_admin'] },
+  // ========== AUDIT (Limited Access) ==========
+  { 
+    to: '/audit-logs', 
+    icon: FileSearch, 
+    label: 'Audit Logs', 
+    roles: ['hospital_admin'],
+    // Note: super_admin and IT admin CANNOT access
+  },
 ];
 
 export default function Layout() {
