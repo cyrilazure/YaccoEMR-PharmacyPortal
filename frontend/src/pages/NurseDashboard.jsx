@@ -1071,6 +1071,266 @@ export default function NurseDashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Shift Reports Section */}
+      <Card className="mt-6">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <FileText className="w-5 h-5 text-purple-500" />
+              Shift Reports
+            </CardTitle>
+            <Dialog open={reportOpen} onOpenChange={setReportOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="gap-2 bg-purple-600 hover:bg-purple-700" disabled={!activeShift}>
+                  <Plus className="w-4 h-4" />
+                  New Report
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-purple-500" />
+                    Create Shift Report
+                  </DialogTitle>
+                  <DialogDescription>
+                    Document your shift activities and observations
+                  </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleCreateReport} className="space-y-4 mt-4">
+                  <div className="space-y-2">
+                    <Label>Report Title</Label>
+                    <Input 
+                      placeholder={`Shift Report - ${new Date().toLocaleDateString()}`}
+                      value={newReport.title}
+                      onChange={(e) => setNewReport({ ...newReport, title: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Report Content *</Label>
+                    <Textarea 
+                      placeholder="Overall summary of your shift..." 
+                      value={newReport.content}
+                      onChange={(e) => setNewReport({ ...newReport, content: e.target.value })}
+                      rows={4}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Patient Summary</Label>
+                    <Textarea 
+                      placeholder="Summary of patient conditions and care provided..."
+                      value={newReport.patient_summary}
+                      onChange={(e) => setNewReport({ ...newReport, patient_summary: e.target.value })}
+                      rows={3}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Critical Events</Label>
+                      <Textarea 
+                        placeholder="Any critical events or concerns..."
+                        value={newReport.critical_events}
+                        onChange={(e) => setNewReport({ ...newReport, critical_events: e.target.value })}
+                        rows={3}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Pending Items</Label>
+                      <Textarea 
+                        placeholder="Tasks or items to hand off..."
+                        value={newReport.pending_items}
+                        onChange={(e) => setNewReport({ ...newReport, pending_items: e.target.value })}
+                        rows={3}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Recommendations</Label>
+                    <Textarea 
+                      placeholder="Any recommendations for next shift..."
+                      value={newReport.recommendations}
+                      onChange={(e) => setNewReport({ ...newReport, recommendations: e.target.value })}
+                      rows={2}
+                    />
+                  </div>
+                  <DialogFooter>
+                    <Button type="button" variant="outline" onClick={() => setReportOpen(false)}>Cancel</Button>
+                    <Button type="submit" className="bg-purple-600 hover:bg-purple-700">Save Report</Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
+          <CardDescription>
+            {!activeShift && <span className="text-amber-600">Clock in to create reports</span>}
+            {activeShift && 'Create and manage your shift reports'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ScrollArea className="h-[250px]">
+            {reports.length === 0 ? (
+              <div className="text-center py-8 text-slate-500">
+                <FileText className="w-10 h-10 mx-auto mb-3 text-slate-300" />
+                <p>No reports yet</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {reports.map((report) => (
+                  <div 
+                    key={report.id} 
+                    className={`p-3 rounded-lg border ${
+                      report.status === 'draft' ? 'border-slate-200' :
+                      report.status === 'submitted' ? 'border-amber-200 bg-amber-50' :
+                      'border-emerald-200 bg-emerald-50'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium">{report.title}</p>
+                          <Badge className={
+                            report.status === 'draft' ? 'bg-slate-100 text-slate-700' :
+                            report.status === 'submitted' ? 'bg-amber-100 text-amber-700' :
+                            'bg-emerald-100 text-emerald-700'
+                          }>
+                            {report.status?.toUpperCase()}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-slate-500 mt-1">
+                          {report.shift_type?.toUpperCase()} • {new Date(report.created_at).toLocaleString()}
+                        </p>
+                        <p className="text-sm text-slate-600 mt-2 line-clamp-2">{report.content}</p>
+                      </div>
+                      <div className="flex gap-2 ml-4">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => {
+                            setSelectedReport(report);
+                            setViewReportOpen(true);
+                          }}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        {report.status === 'draft' && (
+                          <Button 
+                            size="sm"
+                            onClick={() => handleSubmitReport(report.id)}
+                            className="bg-amber-500 hover:bg-amber-600"
+                          >
+                            <Send className="w-4 h-4 mr-1" />
+                            Submit
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {report.status === 'reviewed' && report.review_notes && (
+                      <div className="mt-3 p-2 bg-emerald-100 rounded text-sm">
+                        <p className="font-medium text-emerald-800">Supervisor Review:</p>
+                        <p className="text-emerald-700">{report.review_notes}</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
+        </CardContent>
+      </Card>
+
+      {/* View Report Dialog */}
+      <Dialog open={viewReportOpen} onOpenChange={setViewReportOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Shift Report</DialogTitle>
+          </DialogHeader>
+          {selectedReport && (
+            <ScrollArea className="max-h-[60vh]">
+              <div className="space-y-4 py-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-semibold text-lg">{selectedReport.title}</h3>
+                    <p className="text-sm text-gray-500">{selectedReport.shift_type?.toUpperCase()} Shift</p>
+                  </div>
+                  <Badge className={
+                    selectedReport.status === 'draft' ? 'bg-slate-100 text-slate-700' :
+                    selectedReport.status === 'submitted' ? 'bg-amber-100 text-amber-700' :
+                    'bg-emerald-100 text-emerald-700'
+                  }>
+                    {selectedReport.status?.toUpperCase()}
+                  </Badge>
+                </div>
+                
+                <Separator />
+                
+                <div>
+                  <Label className="text-xs text-gray-500">Report Content</Label>
+                  <p className="mt-1 whitespace-pre-wrap">{selectedReport.content}</p>
+                </div>
+                
+                {selectedReport.patient_summary && (
+                  <div>
+                    <Label className="text-xs text-gray-500">Patient Summary</Label>
+                    <p className="mt-1 whitespace-pre-wrap">{selectedReport.patient_summary}</p>
+                  </div>
+                )}
+                
+                {selectedReport.critical_events && (
+                  <div className="p-2 bg-red-50 rounded">
+                    <Label className="text-xs text-red-600">Critical Events</Label>
+                    <p className="mt-1 whitespace-pre-wrap text-red-700">{selectedReport.critical_events}</p>
+                  </div>
+                )}
+                
+                {selectedReport.pending_items && (
+                  <div>
+                    <Label className="text-xs text-gray-500">Pending Items</Label>
+                    <p className="mt-1 whitespace-pre-wrap">{selectedReport.pending_items}</p>
+                  </div>
+                )}
+                
+                {selectedReport.recommendations && (
+                  <div>
+                    <Label className="text-xs text-gray-500">Recommendations</Label>
+                    <p className="mt-1 whitespace-pre-wrap">{selectedReport.recommendations}</p>
+                  </div>
+                )}
+                
+                <div className="text-sm text-gray-500">
+                  Created: {new Date(selectedReport.created_at).toLocaleString()}
+                </div>
+                
+                {selectedReport.review_notes && (
+                  <Alert className="bg-emerald-50 border-emerald-200">
+                    <FileCheck className="h-4 w-4 text-emerald-600" />
+                    <AlertTitle className="text-emerald-800">Supervisor Review</AlertTitle>
+                    <AlertDescription className="text-emerald-700">
+                      {selectedReport.review_notes}
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+            </ScrollArea>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewReportOpen(false)}>Close</Button>
+            {selectedReport?.status === 'draft' && (
+              <Button 
+                onClick={() => {
+                  handleSubmitReport(selectedReport.id);
+                  setViewReportOpen(false);
+                }}
+                className="bg-amber-500 hover:bg-amber-600"
+              >
+                <Send className="w-4 h-4 mr-2" />
+                Submit for Review
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
