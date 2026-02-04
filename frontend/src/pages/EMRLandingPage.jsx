@@ -8,11 +8,11 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { 
-  Activity, MapPin, Building2, Users, LogIn, UserPlus,
+  Activity, MapPin, Building2, Users, LogIn,
   Heart, Shield, Phone, Mail, Globe, ChevronRight,
   Stethoscope, FileText, Calendar, Smartphone, Lock,
   CheckCircle, Star, ArrowRight, Clock, HelpCircle,
-  Loader2, Hospital, Landmark, Menu, X
+  Loader2, Hospital, Landmark, Menu, X, KeyRound
 } from 'lucide-react';
 
 // Ghana's 16 Administrative Regions
@@ -49,9 +49,10 @@ export default function EMRLandingPage() {
   useEffect(() => {
     if (user) {
       const redirects = {
-        'super_admin': '/platform-admin',
+        'super_admin': '/platform/super-admin',
         'hospital_admin': '/admin-dashboard',
-        'hospital_it_admin': '/admin-dashboard',
+        'hospital_it_admin': '/it-admin',
+        'facility_admin': '/facility-admin',
         'physician': '/dashboard',
         'nurse': '/nurse-station',
         'scheduler': '/scheduling',
@@ -81,20 +82,18 @@ export default function EMRLandingPage() {
 
   const handleRegionSelect = (region) => {
     setSelectedRegion(region);
-    // Store in localStorage for routing
+    // Store in localStorage for routing persistence
     localStorage.setItem('selected_region', JSON.stringify(region));
   };
 
-  const handleProceedToLogin = () => {
+  // Single entry point for login - goes to region-based hospital selection
+  const handleLogin = () => {
     if (selectedRegion) {
+      // Navigate with region state
       navigate('/login', { state: { region: selectedRegion } });
     } else {
       navigate('/login');
     }
-  };
-
-  const handleProceedToSignup = () => {
-    navigate('/signup');
   };
 
   const features = [
@@ -139,7 +138,7 @@ export default function EMRLandingPage() {
               </div>
             </div>
 
-            {/* Desktop Navigation */}
+            {/* Desktop Navigation - Simplified */}
             <nav className="hidden md:flex items-center gap-8">
               <a href="#features" className="text-sm font-medium text-gray-600 hover:text-emerald-600 transition-colors">
                 Features
@@ -150,19 +149,13 @@ export default function EMRLandingPage() {
               <a href="#help" className="text-sm font-medium text-gray-600 hover:text-emerald-600 transition-colors">
                 Help
               </a>
-              <Button 
-                variant="ghost" 
-                className="text-sm font-medium text-gray-600 hover:text-emerald-600"
-                onClick={() => navigate('/login')}
-              >
-                Access Records
-              </Button>
+              {/* SINGLE Login Entry Point */}
               <Button 
                 className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-200"
-                onClick={() => navigate('/login')}
+                onClick={handleLogin}
               >
                 <LogIn className="w-4 h-4 mr-2" />
-                Provider Login
+                Staff Login
               </Button>
             </nav>
 
@@ -175,7 +168,7 @@ export default function EMRLandingPage() {
             </button>
           </div>
 
-          {/* Mobile Navigation */}
+          {/* Mobile Navigation - Simplified */}
           {mobileMenuOpen && (
             <div className="md:hidden py-4 border-t border-gray-100">
               <nav className="flex flex-col gap-4">
@@ -189,18 +182,11 @@ export default function EMRLandingPage() {
                   Help
                 </a>
                 <Button 
-                  variant="outline"
-                  className="w-full justify-center"
-                  onClick={() => navigate('/login')}
-                >
-                  Access Records
-                </Button>
-                <Button 
                   className="w-full bg-emerald-600 hover:bg-emerald-700"
-                  onClick={() => navigate('/login')}
+                  onClick={handleLogin}
                 >
                   <LogIn className="w-4 h-4 mr-2" />
-                  Provider Login
+                  Staff Login
                 </Button>
               </nav>
             </div>
@@ -231,38 +217,32 @@ export default function EMRLandingPage() {
             </h1>
             
             <p className="text-lg sm:text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-              Log in or sign up to access your medical records with your healthcare provider in Ghana. 
-              Secure, connected, and designed for Ghana's healthcare system.
+              Ghana's integrated electronic medical records system. 
+              Secure access for healthcare providers across all 16 administrative regions.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button 
-                size="lg"
-                className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-xl shadow-emerald-200 text-lg px-8"
-                onClick={handleProceedToLogin}
-              >
-                <LogIn className="w-5 h-5 mr-2" />
-                Log In
-              </Button>
-              <Button 
-                size="lg"
-                variant="outline"
-                className="border-2 border-emerald-600 text-emerald-700 hover:bg-emerald-50 text-lg px-8"
-                onClick={handleProceedToSignup}
-              >
-                <UserPlus className="w-5 h-5 mr-2" />
-                Sign Up
-              </Button>
-            </div>
+            {/* SINGLE Login Button */}
+            <Button 
+              size="lg"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-xl shadow-emerald-200 text-lg px-10"
+              onClick={handleLogin}
+            >
+              <LogIn className="w-5 h-5 mr-2" />
+              Staff Login
+            </Button>
+            
+            <p className="mt-4 text-sm text-gray-500">
+              Healthcare staff login through your assigned hospital
+            </p>
           </div>
         </div>
       </section>
 
-      {/* ============ EMR CENTRAL CARD ============ */}
+      {/* ============ EMR ACCESS INFO ============ */}
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-center">
-            <Card className="w-full max-w-md border-2 border-emerald-100 shadow-2xl shadow-emerald-100/50">
+            <Card className="w-full max-w-lg border-2 border-emerald-100 shadow-2xl shadow-emerald-100/50">
               <CardHeader className="text-center pb-2">
                 <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-200">
                   <Heart className="w-10 h-10 text-white" />
@@ -273,28 +253,32 @@ export default function EMRLandingPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4 pt-4">
+                {/* Staff Login - Primary Action */}
                 <Button 
                   className="w-full h-14 bg-emerald-600 hover:bg-emerald-700 text-lg shadow-lg"
-                  onClick={handleProceedToLogin}
+                  onClick={handleLogin}
                 >
                   <LogIn className="w-5 h-5 mr-3" />
-                  Log In
-                  <span className="ml-auto text-emerald-200 text-sm">Patients, Clinicians, Admins</span>
+                  Healthcare Staff Login
                 </Button>
-                <Button 
-                  variant="outline"
-                  className="w-full h-14 border-2 text-lg hover:bg-emerald-50"
-                  onClick={handleProceedToSignup}
-                >
-                  <UserPlus className="w-5 h-5 mr-3" />
-                  Sign Up
-                  <span className="ml-auto text-gray-400 text-sm">Patients, Providers, Facilities</span>
-                </Button>
+                
+                <div className="text-center text-sm text-gray-500 py-2">
+                  For physicians, nurses, schedulers, and other healthcare staff
+                </div>
+                
+                <Separator />
+                
+                {/* Hospital Admin Notice */}
+                <div className="bg-gray-50 rounded-lg p-4 text-sm">
+                  <p className="text-gray-600 mb-2">
+                    <strong>Hospital Administrators:</strong> Contact your IT department for account access.
+                  </p>
+                  <p className="text-gray-500">
+                    <strong>New Hospitals:</strong> Registration is managed by the Platform Administrator.
+                  </p>
+                </div>
               </CardContent>
               <CardFooter className="flex flex-col gap-2 pt-4 border-t">
-                <p className="text-xs text-gray-400 text-center">
-                  Secure access to your health records across Ghana's healthcare network
-                </p>
                 <div className="flex items-center justify-center gap-4 text-xs text-gray-500">
                   <span className="flex items-center gap-1">
                     <Shield className="w-3 h-3" /> Encrypted
@@ -337,7 +321,7 @@ export default function EMRLandingPage() {
         </div>
       </section>
 
-      {/* ============ GHANA REGIONS SELECTION ============ */}
+      {/* ============ GHANA REGIONS INFO ============ */}
       <section id="regions" className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
@@ -346,61 +330,34 @@ export default function EMRLandingPage() {
               16 Administrative Regions
             </Badge>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-              Select Your Region
+              Nationwide Coverage
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Choose the region where your health facility is located to find your healthcare provider
+              Connected healthcare across all 16 administrative regions of Ghana
             </p>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {regions.map((region) => (
-              <button
+              <div
                 key={region.id}
-                onClick={() => handleRegionSelect(region)}
-                className={`p-4 rounded-xl border-2 text-left transition-all hover:shadow-lg
-                  ${selectedRegion?.id === region.id 
-                    ? 'border-emerald-500 bg-emerald-50 shadow-lg shadow-emerald-100' 
-                    : 'border-gray-100 bg-white hover:border-emerald-200 hover:bg-emerald-50/50'
-                  }`}
+                className="p-4 rounded-xl border border-gray-100 bg-white hover:border-emerald-200 hover:bg-emerald-50/50 transition-all"
               >
                 <div className="flex items-start justify-between">
                   <div>
-                    <h3 className={`font-semibold ${selectedRegion?.id === region.id ? 'text-emerald-700' : 'text-gray-900'}`}>
+                    <h3 className="font-semibold text-gray-900">
                       {region.name}
                     </h3>
                     <p className="text-xs text-gray-500 mt-1">Capital: {region.capital}</p>
                   </div>
-                  {selectedRegion?.id === region.id && (
-                    <CheckCircle className="w-5 h-5 text-emerald-600" />
-                  )}
                 </div>
                 <div className="flex items-center gap-1 mt-2 text-xs text-gray-400">
                   <Building2 className="w-3 h-3" />
                   <span>{regionHospitalCounts[region.id] || 0} facilities</span>
                 </div>
-              </button>
+              </div>
             ))}
           </div>
-
-          {selectedRegion && (
-            <div className="mt-8 text-center">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-100 rounded-full text-emerald-700 mb-4">
-                <CheckCircle className="w-4 h-4" />
-                <span className="font-medium">Selected: {selectedRegion.name} Region</span>
-              </div>
-              <div className="flex justify-center gap-4">
-                <Button 
-                  size="lg"
-                  className="bg-emerald-600 hover:bg-emerald-700"
-                  onClick={handleProceedToLogin}
-                >
-                  Find My Provider
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </div>
-            </div>
-          )}
         </div>
       </section>
 
@@ -455,6 +412,20 @@ export default function EMRLandingPage() {
               support@yacco-emr.gh
             </Button>
           </div>
+          
+          <div className="mt-8 p-4 bg-white rounded-lg border border-emerald-100 max-w-md mx-auto">
+            <p className="text-sm text-gray-600">
+              <strong>For Platform Administrators:</strong>
+            </p>
+            <Button
+              variant="link"
+              className="text-emerald-600 hover:text-emerald-700"
+              onClick={() => navigate('/po-login')}
+            >
+              <KeyRound className="w-4 h-4 mr-2" />
+              Platform Admin Access
+            </Button>
+          </div>
         </div>
       </section>
 
@@ -486,10 +457,9 @@ export default function EMRLandingPage() {
             <div>
               <h4 className="font-semibold mb-4">Quick Links</h4>
               <ul className="space-y-2 text-sm text-gray-400">
-                <li><Link to="/login" className="hover:text-white transition-colors">Provider Login</Link></li>
-                <li><Link to="/signup" className="hover:text-white transition-colors">Register Facility</Link></li>
                 <li><a href="#features" className="hover:text-white transition-colors">Features</a></li>
-                <li><a href="#regions" className="hover:text-white transition-colors">Find by Region</a></li>
+                <li><a href="#regions" className="hover:text-white transition-colors">Regions</a></li>
+                <li><a href="#help" className="hover:text-white transition-colors">Help & Support</a></li>
               </ul>
             </div>
 
