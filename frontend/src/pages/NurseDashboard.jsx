@@ -531,6 +531,64 @@ export default function NurseDashboard() {
         </div>
       </div>
 
+      {/* Patient Search Section */}
+      <Card className="border-sky-100 bg-gradient-to-r from-sky-50 to-white">
+        <CardContent className="py-4">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 text-sky-700">
+              <Search className="w-5 h-5" />
+              <span className="font-medium">Patient Lookup</span>
+            </div>
+            <div className="flex-1 flex items-center gap-2 max-w-xl">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  placeholder="Search by MRN, First Name, Last Name, or Date of Birth..."
+                  value={patientSearch}
+                  onChange={(e) => setPatientSearch(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handlePatientSearch()}
+                  className="pl-9"
+                />
+              </div>
+              <Button onClick={handlePatientSearch} disabled={searching}>
+                {searching ? 'Searching...' : 'Search'}
+              </Button>
+            </div>
+          </div>
+          
+          {/* Search Results */}
+          {searchResults.length > 0 && (
+            <div className="mt-4 space-y-2">
+              <p className="text-sm text-gray-500">{searchResults.length} patient(s) found</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {searchResults.slice(0, 6).map((patient) => (
+                  <div 
+                    key={patient.id}
+                    className="flex items-center justify-between p-3 bg-white rounded-lg border hover:border-sky-300 cursor-pointer"
+                    onClick={() => navigate(`/patients/${patient.id}`)}
+                  >
+                    <div>
+                      <p className="font-medium">{patient.first_name} {patient.last_name}</p>
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        {patient.mrn ? (
+                          <Badge className="bg-emerald-100 text-emerald-700 font-mono text-xs">{patient.mrn}</Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-orange-600 text-xs">No MRN</Badge>
+                        )}
+                        <span>{patient.date_of_birth ? new Date(patient.date_of_birth).toLocaleDateString() : ''}</span>
+                      </div>
+                    </div>
+                    <Button size="sm" variant="outline">
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
         {statItems.map((stat) => (
