@@ -508,6 +508,27 @@ def setup_routes(db, get_current_user):
             {"$set": update_data}
         )
         
+        # AUDIT: Log the response action
+        await log_records_sharing_audit(
+            user=current_user,
+            action="share_approve" if response.approved else "share_reject",
+            resource_type="records_request",
+            resource_id=request_id,
+            patient_id=request["patient_id"],
+            patient_name=request["patient_name"],
+            details=f"{'Approved' if response.approved else 'Rejected'} records request from Dr. {request['requesting_physician_name']}. " + 
+                    (f"Access granted for {response.access_duration_days} days." if response.approved else f"Reason: {response.notes or 'Not specified'}"),
+            success=True,
+            severity="info" if response.approved else "warning",
+            metadata={
+                "request_number": request.get("request_number"),
+                "requesting_physician_id": request["requesting_physician_id"],
+                "access_duration_days": response.access_duration_days if response.approved else None,
+                "access_expires_at": access_expires_at,
+                "rejection_reason": response.notes if not response.approved else None
+            }
+        )
+        
         # Create notification for requesting physician
         if response.approved:
             notification_doc = {
