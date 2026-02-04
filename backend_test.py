@@ -7172,6 +7172,21 @@ class YaccoEMRTester:
         self.test_hospital_physician_portal()
         self.test_password_reset_functionality()
         
+        # ============ HOSPITAL IT ADMIN MODULE TESTS ============
+        print("\n🔧 Testing Hospital IT Admin Module")
+        print("-" * 50)
+        self.test_super_admin_login_for_it_admin()
+        self.test_it_admin_dashboard()
+        self.test_it_admin_list_staff()
+        self.test_it_admin_create_staff()
+        self.test_it_admin_reset_password()
+        self.test_it_admin_activate_staff()
+        self.test_it_admin_deactivate_staff()
+        self.test_it_admin_change_role()
+        self.test_it_admin_assign_department()
+        self.test_it_admin_access_control()
+        self.test_region_endpoints_still_working()
+        
         # ============ ORGANIZATION MODULE TESTS ============
         print("\n🏥 Testing Multi-Tenant Organization Module")
         print("-" * 30)
