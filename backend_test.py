@@ -2233,65 +2233,36 @@ class YaccoEMRTester:
         return success
     
     def test_hospital_it_admin_apis(self):
-        """Test Hospital IT Admin APIs"""
-        if not hasattr(self, 'super_admin_token') or not self.super_admin_token:
-            self.log_test("Hospital IT Admin APIs", False, "No super admin token")
-            return False
+        """Test Hospital IT Admin Portal Features"""
+        print("\n🏥 Testing Hospital IT Admin Portal Features")
+        print("-" * 50)
         
-        # Use super admin token (can access IT Admin endpoints)
-        original_token = self.token
-        self.token = self.super_admin_token
+        # Run the comprehensive Hospital IT Admin tests
+        tests = [
+            self.test_hospital_it_admin_login,
+            self.test_hospital_it_admin_dashboard,
+            self.test_hospital_it_admin_departments,
+            self.test_hospital_it_admin_create_staff,
+            self.test_hospital_it_admin_reset_password,
+            self.test_hospital_it_admin_deactivate_user,
+            self.test_hospital_it_admin_activate_user,
+            self.test_hospital_it_admin_delete_user,
+            self.test_hospital_it_admin_verify_deletion
+        ]
         
-        hospital_id = getattr(self, 'test_hospital_id', 'test-hospital-001')
-        test_results = []
+        passed = 0
+        total = len(tests)
         
-        # Test 1: POST /api/hospital/{hospitalId}/super-admin/staff
-        staff_data = {
-            "email": f"itstaff{int(datetime.now().timestamp())}@hospital.com",
-            "first_name": "IT",
-            "last_name": "Staff",
-            "role": "physician",
-            "phone": "+233-24-1111111"
-        }
-        
-        response, error = self.make_request('POST', f'hospital/{hospital_id}/super-admin/staff', staff_data)
-        if error:
-            test_results.append("IT Admin Create Staff: Network Error")
-        elif response.status_code == 200:
-            test_results.append("IT Admin Create Staff: ✅ Working")
-        elif response.status_code == 404:
-            test_results.append("IT Admin Create Staff: ✅ Hospital not found (expected)")
-        else:
-            test_results.append(f"IT Admin Create Staff: ❌ Status {response.status_code}")
-        
-        # Test 2: Verify IT Admin CANNOT access patient records
-        response, error = self.make_request('GET', 'patients')
-        if error:
-            test_results.append("IT Admin Patient Access: Network Error")
-        elif response.status_code == 403:
-            test_results.append("IT Admin Patient Access: ✅ Correctly denied (403)")
-        elif response.status_code == 200:
+        for test in tests:
             try:
-                data = response.json()
-                if isinstance(data, list) and len(data) == 0:
-                    test_results.append("IT Admin Patient Access: ✅ Empty results (proper isolation)")
-                else:
-                    test_results.append("IT Admin Patient Access: ❌ Has access (should be restricted)")
-            except:
-                test_results.append("IT Admin Patient Access: ❌ Has access (should be restricted)")
-        else:
-            test_results.append(f"IT Admin Patient Access: Status {response.status_code}")
+                if test():
+                    passed += 1
+            except Exception as e:
+                print(f"❌ {test.__name__} failed with error: {e}")
         
-        # Restore original token
-        self.token = original_token
-        
-        # Count successful tests
-        successful_tests = sum(1 for r in test_results if "✅" in r)
-        total_tests = len(test_results)
-        
-        success = successful_tests >= (total_tests * 0.5)  # At least 50% should work
-        self.log_test("Hospital IT Admin APIs", success, 
-                     f"Working {successful_tests}/{total_tests} tests: {', '.join(test_results)}")
+        success = passed >= (total * 0.8)  # At least 80% should pass
+        self.log_test("Hospital IT Admin Portal", success, 
+                     f"Passed {passed}/{total} tests")
         return success
     
     def test_hospital_admin_apis(self):
