@@ -377,13 +377,15 @@ export default function HospitalAdminPortal() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Staff Management</CardTitle>
-                  <CardDescription>Manage hospital staff accounts</CardDescription>
+                  <CardTitle>Staff Directory</CardTitle>
+                  <CardDescription>View hospital staff members. Contact IT Admin for new accounts.</CardDescription>
                 </div>
-                <Button onClick={() => setCreateUserOpen(true)} className="bg-emerald-600 hover:bg-emerald-700">
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  Add Staff
-                </Button>
+                <Alert className="max-w-md">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription className="text-xs">
+                    User creation is managed by the IT Administrator. Contact your Hospital IT Admin to add new staff.
+                  </AlertDescription>
+                </Alert>
               </div>
             </CardHeader>
             <CardContent>
@@ -411,7 +413,7 @@ export default function HospitalAdminPortal() {
                 </Select>
               </div>
 
-              {/* Users Table */}
+              {/* Users Table - Read Only */}
               <div className="rounded-lg border">
                 <Table>
                   <TableHeader>
@@ -421,7 +423,6 @@ export default function HospitalAdminPortal() {
                       <TableHead>Role</TableHead>
                       <TableHead>Department</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -443,37 +444,6 @@ export default function HospitalAdminPortal() {
                           ) : (
                             <Badge variant="secondary">Inactive</Badge>
                           )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedUser(u);
-                                setResetPasswordOpen(true);
-                              }}
-                            >
-                              <Key className="w-4 h-4" />
-                            </Button>
-                            {u.is_active ? (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeactivateUser(u.id)}
-                              >
-                                <XCircle className="w-4 h-4 text-red-500" />
-                              </Button>
-                            ) : (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleReactivateUser(u.id)}
-                              >
-                                <CheckCircle className="w-4 h-4 text-emerald-500" />
-                              </Button>
-                            )}
-                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
