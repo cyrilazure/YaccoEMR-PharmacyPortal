@@ -678,7 +678,15 @@ def create_consent_endpoints(db, get_current_user):
         if consent:
             # Check expiration
             if consent.get("expiration_date"):
-                exp_date = datetime.fromisoformat(consent["expiration_date"].replace("Z", "+00:00"))
+                exp_date_str = consent["expiration_date"]
+                # Handle both date (YYYY-MM-DD) and datetime formats
+                if "T" in exp_date_str:
+                    exp_date = datetime.fromisoformat(exp_date_str.replace("Z", "+00:00"))
+                else:
+                    # Date only format, assume end of day
+                    exp_date = datetime.strptime(exp_date_str, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+                    exp_date = exp_date.replace(hour=23, minute=59, second=59)
+                
                 if exp_date < datetime.now(timezone.utc):
                     return {"has_consent": False, "reason": "Consent expired"}
             
