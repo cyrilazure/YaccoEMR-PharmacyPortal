@@ -1836,3 +1836,81 @@ agent_communication:
       **SUPER ADMIN LOGIN FUNCTIONALITY IS FULLY OPERATIONAL** with complete authentication, authorization, and platform-level access control working correctly. All specified test credentials and endpoints are functioning as expected.
       
       **RECOMMENDATION:** Super Admin login functionality is production-ready and working correctly with the specified credentials.
+
+  - task: "Region-Based Hospital Discovery Module"
+    implemented: true
+    working: true
+    file: "backend/region_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented Ghana's 16 regions, hospital-location hierarchy, location-aware authentication, role-based redirection"
+      - working: true
+        agent: "main"
+        comment: "✅ All features verified: Public region/hospital discovery, Super Admin hospital creation, Location-aware JWT auth, Hospital Admin location/staff management, Platform overview with regional statistics"
+
+  - task: "Region-Based Login Frontend"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/pages/RegionHospitalLogin.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "4-step discovery flow: Region → Hospital → Location → Login with role-based redirection"
+
+agent_communication:
+  - agent: "main"
+    message: |
+      Implemented Region-Based Hospital Discovery & Authentication System for Ghana EMR:
+      
+      **Backend (region_module.py):**
+      
+      **Public Discovery APIs (No Auth):**
+      - GET /api/regions/ - List all 16 Ghana regions with hospital counts
+      - GET /api/regions/{region_id} - Get region details
+      - GET /api/regions/{region_id}/hospitals - List hospitals by region
+      - GET /api/regions/hospitals/{hospital_id} - Hospital details with locations
+      - GET /api/regions/hospitals/{hospital_id}/locations - List hospital locations
+      
+      **Location-Aware Authentication:**
+      - POST /api/regions/auth/login - Login with hospital/location context
+        - Returns JWT with region_id, hospital_id, location_id, role
+        - Role-based redirect URL (physician→/dashboard, nurse→/nurse-station, etc.)
+        - Multi-location hospitals require location selection
+      
+      **Super Admin APIs:**
+      - POST /api/regions/admin/hospitals - Create hospital under region
+      - PUT /api/regions/admin/hospitals/{id}/region - Reassign hospital region
+      - GET /api/regions/admin/hospitals/all - List all hospitals
+      - GET /api/regions/admin/overview - Platform statistics by region
+      
+      **Hospital Admin APIs:**
+      - POST /api/regions/hospitals/{id}/locations - Add branch location
+      - PUT/DELETE /api/regions/hospitals/{id}/locations/{loc_id}
+      - POST /api/regions/hospitals/{id}/staff - Create staff with location
+      - PUT /api/regions/staff/{user_id}/location - Reassign staff location
+      
+      **Frontend (RegionHospitalLogin.jsx):**
+      - 4-step discovery flow with progress indicator
+      - Region selection (16 Ghana regions with capital/code)
+      - Hospital list by region with search
+      - Location selection for multi-location hospitals
+      - Login form with 2FA support
+      - Role-based automatic redirection
+      
+      **JWT Token Structure:**
+      - user_id, role, region_id, hospital_id, location_id, organization_id, exp
+      
+      **Role → Portal Mapping:**
+      - physician → /dashboard
+      - nurse → /nurse-station
+      - admin/hospital_admin → /admin-dashboard
+      - biller → /billing
+      - scheduler → /scheduling
+      - super_admin → /platform-admin
