@@ -1367,6 +1367,18 @@ frontend:
         agent: "main"
         comment: "Added 2FA verification dialog during login"
 
+  - task: "Nurse Portal Dashboard"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/pages/NurseDashboard.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Complete nurse portal with shift management, patient assignments, task panel, MAR, quick vitals, role-based access restrictions UI"
+
 test_plan:
   current_focus: []
   stuck_tasks: []
