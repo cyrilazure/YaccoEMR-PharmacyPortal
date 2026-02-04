@@ -390,4 +390,45 @@ export const auditAPI = {
   getResourceTypes: () => api.get('/audit/resource-types'),
 };
 
+// Nurse Portal APIs
+export const nurseAPI = {
+  // Dashboard
+  getDashboardStats: () => api.get('/nurse/dashboard/stats'),
+  
+  // Shifts
+  getShifts: () => api.get('/nurse/shifts'),
+  getCurrentShift: () => api.get('/nurse/current-shift'),
+  clockIn: (data) => api.post('/nurse/shifts/clock-in', data),
+  clockOut: (handoffNotes) => api.post('/nurse/shifts/clock-out', null, { params: { handoff_notes: handoffNotes } }),
+  getHandoffNotes: (departmentId) => api.get('/nurse/shifts/handoff-notes', { params: { department_id: departmentId } }),
+  
+  // Patient Assignments
+  getMyPatients: (params) => api.get('/nurse/my-patients', { params }),
+  assignPatient: (data) => api.post('/nurse/assign-patient', data),
+  unassignPatient: (patientId, nurseId) => api.delete(`/nurse/unassign-patient/${patientId}`, { params: { nurse_id: nurseId } }),
+  getPatientLoad: (departmentId) => api.get('/nurse/patient-load', { params: { department_id: departmentId } }),
+  
+  // Tasks
+  getTasks: (params) => api.get('/nurse/tasks', { params }),
+  getDueTasks: () => api.get('/nurse/tasks/due'),
+  createTask: (data) => api.post('/nurse/tasks', data),
+  completeTask: (taskId, notes) => api.post(`/nurse/tasks/${taskId}/complete`, null, { params: { completion_notes: notes } }),
+  deferTask: (taskId, newDueTime, reason) => api.post(`/nurse/tasks/${taskId}/defer`, null, { params: { new_due_time: newDueTime, reason } }),
+  getTaskTypes: () => api.get('/nurse/task-types'),
+  getTaskPriorities: () => api.get('/nurse/task-priorities'),
+  
+  // Medication Administration Record (MAR)
+  getMAR: (patientId, date) => api.get(`/nurse/mar/${patientId}`, { params: { date } }),
+  administerMedication: (data) => api.post('/nurse/mar/administer', data),
+  getMedicationsDue: (windowMinutes) => api.get('/nurse/mar/due', { params: { window_minutes: windowMinutes } }),
+  generateMARSchedule: (patientId, date) => api.post('/nurse/mar/generate-schedule', null, { params: { patient_id: patientId, date } }),
+  
+  // Quick Actions
+  quickRecordVitals: (data) => api.post('/nurse/quick-vitals', null, { params: data }),
+  
+  // Permissions
+  getPermissions: () => api.get('/nurse/permissions'),
+  checkPermission: (permission) => api.get(`/nurse/permissions/check/${permission}`),
+};
+
 export default api;
