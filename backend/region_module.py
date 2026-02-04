@@ -428,7 +428,8 @@ def create_region_endpoints(db, get_current_user, hash_password):
             raise HTTPException(status_code=401, detail="Invalid credentials")
         
         # Verify password
-        if not verify_password(request.password, user.get("password", "")):
+        stored_password = user.get("password_hash") or user.get("password", "")
+        if not stored_password or not verify_password(request.password, stored_password):
             raise HTTPException(status_code=401, detail="Invalid credentials")
         
         # Check if user is active
