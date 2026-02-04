@@ -390,6 +390,12 @@ def create_consent_endpoints(db, get_current_user):
         if not patient:
             raise HTTPException(status_code=404, detail="Patient not found")
         
+        patient_name = f"{patient['first_name']} {patient['last_name']}"
+        
+        # Generate document hash for integrity
+        consent_content = f"{consent_data.consent_type}|{consent_data.consent_text}|{consent_data.patient_id}|{datetime.now(timezone.utc).isoformat()}"
+        document_hash = hashlib.sha256(consent_content.encode()).hexdigest()
+        
         consent = {
             "id": str(uuid.uuid4()),
             "organization_id": org_id,
@@ -398,12 +404,32 @@ def create_consent_endpoints(db, get_current_user):
             "effective_date": datetime.now(timezone.utc).isoformat(),
             "created_at": datetime.now(timezone.utc).isoformat(),
             "updated_at": datetime.now(timezone.utc).isoformat(),
-            "created_by": current_user.get("id")
+            "created_by": current_user.get("id"),
+            "document_hash": document_hash,
+            "access_count": 0,
+            "version": 1
         }
         
         await db.consent_forms.insert_one(consent)
         
-        consent["patient_name"] = f"{patient['first_name']} {patient['last_name']}"
+        # AUDIT: Log consent creation
+        await log_consent_audit(
+            user=current_user,
+            action="consent_created",
+            consent_id=consent["id"],
+            patient_id=consent_data.patient_id,
+            patient_name=patient_name,
+            consent_type=consent_data.consent_type.value,
+            details=f"Created {consent_data.consent_type.value} consent form for patient {patient_name}",
+            metadata={
+                "scope_start_date": consent_data.scope_start_date,
+                "scope_end_date": consent_data.scope_end_date,
+                "record_types": consent_data.record_types_included,
+                "expiration_date": consent_data.expiration_date
+            }
+        )
+        
+        consent["patient_name"] = patient_name
         return ConsentResponse(**consent)
     
     @consent_router.get("", response_model=List[ConsentResponse])
