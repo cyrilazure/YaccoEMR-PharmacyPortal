@@ -1,37 +1,45 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/lib/auth';
-import { organizationAPI } from '@/lib/api';
+import { adminAPI, organizationAPI } from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Switch } from '@/components/ui/switch';
+import { 
+  Dialog, DialogContent, DialogDescription, 
+  DialogHeader, DialogTitle, DialogTrigger, DialogFooter 
 } from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+import { 
+  Select, SelectContent, SelectItem, 
+  SelectTrigger, SelectValue 
 } from '@/components/ui/select';
+import { 
+  Table, TableBody, TableCell, 
+  TableHead, TableHeader, TableRow 
+} from '@/components/ui/table';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { toast } from 'sonner';
 import { formatDateTime } from '@/lib/utils';
-import {
-  Building2, Users, Activity, Clock, CheckCircle2, XCircle, PauseCircle,
-  Plus, Search, Shield, Globe, Phone, Mail, FileText, RefreshCw,
-  TrendingUp, AlertTriangle, Eye
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
+import { 
+  Building2, Shield, Activity, TrendingUp, Server, Database,
+  AlertTriangle, Users, Settings, Lock, CheckCircle2, XCircle,
+  RefreshCw, Eye, Search, Globe, FileText, Clock, Zap,
+  ShieldCheck, ShieldAlert, AlertCircle, Play, Pause
 } from 'lucide-react';
+
+const STATUS_COLORS = {
+  active: '#10b981',
+  pending: '#f59e0b',
+  suspended: '#ef4444',
+  inactive: '#6b7280'
+};
 
 export default function SuperAdminDashboard() {
   const { user } = useAuth();
@@ -39,95 +47,95 @@ export default function SuperAdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   
   // Data
-  const [stats, setStats] = useState(null);
+  const [systemHealth, setSystemHealth] = useState(null);
+  const [platformStats, setPlatformStats] = useState(null);
+  const [securityPolicies, setSecurityPolicies] = useState([]);
   const [organizations, setOrganizations] = useState([]);
-  const [pendingOrgs, setPendingOrgs] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [securityAlerts, setSecurityAlerts] = useState({ alerts: [], summary: {} });
+  
+  // Filters
+  const [orgSearch, setOrgSearch] = useState('');
+  const [auditFilter, setAuditFilter] = useState({ days: 7, org: 'all' });
   
   // Dialogs
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [approveDialogOpen, setApproveDialogOpen] = useState(false);
-  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
-  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [createOrgOpen, setCreateOrgOpen] = useState(false);
+  const [editPolicyOpen, setEditPolicyOpen] = useState(false);
   const [selectedOrg, setSelectedOrg] = useState(null);
+  const [selectedPolicy, setSelectedPolicy] = useState(null);
   
-  // Form states
+  // Forms
   const [newOrg, setNewOrg] = useState({
-    name: '',
-    organization_type: 'hospital',
-    address_line1: '',
-    address_line2: '',
-    city: '',
-    state: '',
-    zip_code: '',
-    country: 'USA',
-    phone: '',
-    fax: '',
-    email: '',
-    website: '',
-    license_number: '',
-    tax_id: '',
-    npi_number: '',
-    admin_first_name: '',
-    admin_last_name: '',
-    admin_email: '',
-    admin_phone: '',
-    admin_title: 'Administrator'
+    name: '', type: 'hospital', contact_email: '', phone: '',
+    address: '', city: '', state: '', zip_code: ''
   });
-  const [approvalData, setApprovalData] = useState({
-    subscription_plan: 'standard',
-    max_users: 50,
-    max_patients: 10000,
-    notes: ''
-  });
-  const [rejectionReason, setRejectionReason] = useState('');
+  const [policySettings, setPolicySettings] = useState({});
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    setLoading(true);
+  const fetchData = useCallback(async () => {
     try {
-      const [statsRes, orgsRes, pendingRes] = await Promise.all([
-        organizationAPI.getPlatformStats(),
-        organizationAPI.listAll(),
-        organizationAPI.getPending()
+      setLoading(true);
+      const [healthRes, statsRes, policiesRes, orgsRes, alertsRes] = await Promise.all([
+        adminAPI.getSystemHealth(),
+        adminAPI.getPlatformStats(),
+        adminAPI.getSecurityPolicies(),
+        organizationAPI.getOrganizations(),
+        adminAPI.getSecurityAlerts(24)
       ]);
-      setStats(statsRes.data);
+      
+      setSystemHealth(healthRes.data);
+      setPlatformStats(statsRes.data);
+      setSecurityPolicies(policiesRes.data.policies || []);
       setOrganizations(orgsRes.data.organizations || []);
-      setPendingOrgs(pendingRes.data.organizations || []);
+      setSecurityAlerts(alertsRes.data);
     } catch (err) {
-      toast.error('Failed to load data');
+      console.error('Super admin dashboard fetch error:', err);
+      toast.error('Failed to load system data');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const handleCreateOrganization = async (e) => {
+  const fetchAuditLogs = useCallback(async () => {
+    try {
+      const params = {
+        days: auditFilter.days,
+        limit: 50
+      };
+      if (auditFilter.org !== 'all') {
+        params.organization_id = auditFilter.org;
+      }
+      const res = await adminAPI.getSystemAuditLogs(params);
+      setAuditLogs(res.data.logs || []);
+    } catch (err) {
+      console.error('Audit logs fetch error:', err);
+    }
+  }, [auditFilter]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  useEffect(() => {
+    if (activeTab === 'audit') {
+      fetchAuditLogs();
+    }
+  }, [activeTab, fetchAuditLogs]);
+
+  const handleCreateOrg = async (e) => {
     e.preventDefault();
     setSaving(true);
     try {
-      const res = await organizationAPI.createByAdmin(newOrg, true);
-      toast.success('Organization created successfully');
-      setCreateDialogOpen(false);
-      
-      // Show credentials
-      if (res.data.temp_password) {
-        toast.info(
-          `Admin credentials:\nEmail: ${res.data.admin_email}\nPassword: ${res.data.temp_password}`,
-          { duration: 15000 }
-        );
-      }
-      
-      setNewOrg({
-        name: '', organization_type: 'hospital', address_line1: '', address_line2: '',
-        city: '', state: '', zip_code: '', country: 'USA', phone: '', fax: '',
-        email: '', website: '', license_number: '', tax_id: '', npi_number: '',
-        admin_first_name: '', admin_last_name: '', admin_email: '', admin_phone: '', admin_title: 'Administrator'
+      await organizationAPI.register({
+        ...newOrg,
+        admin_email: newOrg.contact_email,
+        admin_password: 'TempPassword123!',
+        admin_first_name: 'Admin',
+        admin_last_name: newOrg.name
       });
+      toast.success('Organization created successfully');
+      setCreateOrgOpen(false);
+      setNewOrg({ name: '', type: 'hospital', contact_email: '', phone: '', address: '', city: '', state: '', zip_code: '' });
       fetchData();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to create organization');
@@ -136,101 +144,75 @@ export default function SuperAdminDashboard() {
     }
   };
 
-  const handleApprove = async () => {
-    if (!selectedOrg) return;
-    setSaving(true);
+  const handleOrgAction = async (orgId, action) => {
     try {
-      const res = await organizationAPI.approve(selectedOrg.id, approvalData);
-      toast.success('Organization approved');
-      
-      // Show credentials
-      if (res.data.temp_password) {
-        toast.info(
-          `Admin credentials:\nEmail: ${res.data.admin_email}\nPassword: ${res.data.temp_password}`,
-          { duration: 15000 }
-        );
+      if (action === 'approve') {
+        await organizationAPI.approve(orgId);
+        toast.success('Organization approved');
+      } else if (action === 'suspend') {
+        await organizationAPI.suspend(orgId, 'Suspended by super admin');
+        toast.success('Organization suspended');
+      } else if (action === 'reactivate') {
+        await organizationAPI.reactivate(orgId);
+        toast.success('Organization reactivated');
       }
-      
-      setApproveDialogOpen(false);
-      setSelectedOrg(null);
       fetchData();
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Failed to approve organization');
-    } finally {
-      setSaving(false);
+      toast.error('Action failed');
     }
   };
 
-  const handleReject = async () => {
-    if (!selectedOrg || !rejectionReason) return;
+  const handleTogglePolicy = async (policyType, isActive) => {
+    try {
+      await adminAPI.toggleSecurityPolicy(policyType, isActive);
+      toast.success(`Policy ${isActive ? 'enabled' : 'disabled'}`);
+      fetchData();
+    } catch (err) {
+      toast.error('Failed to update policy');
+    }
+  };
+
+  const handleUpdatePolicy = async () => {
+    if (!selectedPolicy) return;
     setSaving(true);
     try {
-      await organizationAPI.reject(selectedOrg.id, { reason: rejectionReason });
-      toast.success('Organization rejected');
-      setRejectDialogOpen(false);
-      setSelectedOrg(null);
-      setRejectionReason('');
+      await adminAPI.createSecurityPolicy({
+        policy_type: selectedPolicy.policy_type,
+        name: selectedPolicy.name,
+        settings: policySettings
+      });
+      toast.success('Policy updated');
+      setEditPolicyOpen(false);
       fetchData();
     } catch (err) {
-      toast.error('Failed to reject organization');
+      toast.error('Failed to update policy');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleSuspend = async (org) => {
-    try {
-      await organizationAPI.suspend(org.id, 'Suspended by admin');
-      toast.success('Organization suspended');
-      fetchData();
-    } catch (err) {
-      toast.error('Failed to suspend organization');
-    }
-  };
+  // Filter organizations
+  const filteredOrgs = organizations.filter(o =>
+    !orgSearch || o.name?.toLowerCase().includes(orgSearch.toLowerCase())
+  );
 
-  const handleReactivate = async (org) => {
-    try {
-      await organizationAPI.reactivate(org.id);
-      toast.success('Organization reactivated');
-      fetchData();
-    } catch (err) {
-      toast.error('Failed to reactivate organization');
-    }
-  };
+  // Activity trend chart data
+  const activityData = platformStats?.activity_trend || [];
 
-  const getStatusBadge = (status) => {
-    const styles = {
-      pending: { className: 'bg-amber-100 text-amber-700', icon: Clock },
-      active: { className: 'bg-green-100 text-green-700', icon: CheckCircle2 },
-      suspended: { className: 'bg-red-100 text-red-700', icon: PauseCircle },
-      rejected: { className: 'bg-slate-100 text-slate-700', icon: XCircle }
-    };
-    const style = styles[status] || styles.pending;
-    const Icon = style.icon;
-    return (
-      <Badge className={`${style.className} gap-1`}>
-        <Icon className="w-3 h-3" /> {status}
-      </Badge>
-    );
-  };
-
-  const filteredOrgs = organizations.filter(org => {
-    const matchesSearch = !searchQuery || 
-      org.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      org.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      org.license_number?.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesStatus = statusFilter === 'all' || org.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  });
+  // Org status distribution
+  const orgStatusData = platformStats?.organizations ? 
+    Object.entries(platformStats.organizations).map(([status, count]) => ({
+      name: status.charAt(0).toUpperCase() + status.slice(1),
+      value: count,
+      color: STATUS_COLORS[status] || '#6b7280'
+    })) : [];
 
   if (user?.role !== 'super_admin') {
     return (
       <div className="flex items-center justify-center h-96">
         <Card className="w-96 text-center">
           <CardContent className="pt-8">
-            <Shield className="w-16 h-16 mx-auto mb-4 text-red-500" />
+            <ShieldAlert className="w-16 h-16 mx-auto mb-4 text-red-500" />
             <h2 className="text-xl font-bold mb-2">Access Denied</h2>
             <p className="text-slate-500">Super Admin access required</p>
           </CardContent>
@@ -239,12 +221,12 @@ export default function SuperAdminDashboard() {
     );
   }
 
-  if (loading) {
+  if (loading && !systemHealth) {
     return (
       <div className="space-y-6">
         <Skeleton className="h-10 w-64" />
         <div className="grid grid-cols-4 gap-4">
-          {[1,2,3,4].map(i => <Skeleton key={i} className="h-32" />)}
+          {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-32" />)}
         </div>
         <Skeleton className="h-96" />
       </div>
@@ -255,462 +237,610 @@ export default function SuperAdminDashboard() {
     <div className="space-y-6 animate-fade-in" data-testid="super-admin-dashboard">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900" style={{ fontFamily: 'Manrope' }}>
-            Platform Administration
-          </h1>
-          <p className="text-slate-500 mt-1">Manage hospitals and organizations</p>
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-lg">
+            <ShieldCheck className="w-7 h-7 text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">Platform Administration</h1>
+            <p className="text-slate-500">System-wide management and security</p>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={fetchData} className="gap-2">
-            <RefreshCw className="w-4 h-4" /> Refresh
+        <div className="flex items-center gap-3">
+          <Badge 
+            className={systemHealth?.status === 'healthy' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}
+          >
+            System: {systemHealth?.status || 'Unknown'}
+          </Badge>
+          <Button variant="outline" size="icon" onClick={fetchData}>
+            <RefreshCw className="w-4 h-4" />
           </Button>
-          <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2 bg-sky-600 hover:bg-sky-700" data-testid="create-org-btn">
-                <Plus className="w-4 h-4" /> Add Organization
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Create New Organization</DialogTitle>
-                <DialogDescription>Add a new hospital or healthcare organization to the platform</DialogDescription>
-              </DialogHeader>
-              <form onSubmit={handleCreateOrganization} className="space-y-4 mt-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Organization Name *</Label>
-                    <Input required value={newOrg.name} onChange={(e) => setNewOrg({...newOrg, name: e.target.value})} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Type</Label>
-                    <Select value={newOrg.organization_type} onValueChange={(v) => setNewOrg({...newOrg, organization_type: v})}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="hospital">Hospital</SelectItem>
-                        <SelectItem value="clinic">Clinic</SelectItem>
-                        <SelectItem value="medical_center">Medical Center</SelectItem>
-                        <SelectItem value="urgent_care">Urgent Care</SelectItem>
-                        <SelectItem value="specialty_center">Specialty Center</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>Address Line 1 *</Label>
-                  <Input required value={newOrg.address_line1} onChange={(e) => setNewOrg({...newOrg, address_line1: e.target.value})} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Address Line 2</Label>
-                  <Input value={newOrg.address_line2} onChange={(e) => setNewOrg({...newOrg, address_line2: e.target.value})} />
-                </div>
-                
-                <div className="grid grid-cols-4 gap-4">
-                  <div className="space-y-2 col-span-2">
-                    <Label>City *</Label>
-                    <Input required value={newOrg.city} onChange={(e) => setNewOrg({...newOrg, city: e.target.value})} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>State *</Label>
-                    <Input required value={newOrg.state} onChange={(e) => setNewOrg({...newOrg, state: e.target.value})} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>ZIP *</Label>
-                    <Input required value={newOrg.zip_code} onChange={(e) => setNewOrg({...newOrg, zip_code: e.target.value})} />
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Phone *</Label>
-                    <Input required value={newOrg.phone} onChange={(e) => setNewOrg({...newOrg, phone: e.target.value})} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Email *</Label>
-                    <Input type="email" required value={newOrg.email} onChange={(e) => setNewOrg({...newOrg, email: e.target.value})} />
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>License Number *</Label>
-                    <Input required value={newOrg.license_number} onChange={(e) => setNewOrg({...newOrg, license_number: e.target.value})} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>NPI Number</Label>
-                    <Input value={newOrg.npi_number} onChange={(e) => setNewOrg({...newOrg, npi_number: e.target.value})} />
-                  </div>
-                </div>
-                
-                <hr className="my-4" />
-                <h4 className="font-medium">Admin Contact</h4>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>First Name *</Label>
-                    <Input required value={newOrg.admin_first_name} onChange={(e) => setNewOrg({...newOrg, admin_first_name: e.target.value})} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Last Name *</Label>
-                    <Input required value={newOrg.admin_last_name} onChange={(e) => setNewOrg({...newOrg, admin_last_name: e.target.value})} />
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Admin Email *</Label>
-                    <Input type="email" required value={newOrg.admin_email} onChange={(e) => setNewOrg({...newOrg, admin_email: e.target.value})} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Admin Phone *</Label>
-                    <Input required value={newOrg.admin_phone} onChange={(e) => setNewOrg({...newOrg, admin_phone: e.target.value})} />
-                  </div>
-                </div>
-                
-                <Button type="submit" className="w-full" disabled={saving}>
-                  {saving ? 'Creating...' : 'Create Organization'}
-                </Button>
-              </form>
-            </DialogContent>
-          </Dialog>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        <Card>
-          <CardContent className="pt-6">
+      {/* System Health Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card className="border-l-4 border-l-emerald-500">
+          <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-500">Total Organizations</p>
-                <p className="text-3xl font-bold">{stats?.total_organizations || 0}</p>
+                <p className="text-sm text-slate-500">Organizations</p>
+                <p className="text-2xl font-bold text-slate-900">{systemHealth?.stats?.total_organizations || 0}</p>
+                <p className="text-xs text-emerald-600">{systemHealth?.stats?.active_organizations || 0} active</p>
               </div>
-              <Building2 className="w-10 h-10 text-sky-500" />
+              <Building2 className="w-10 h-10 text-emerald-500" />
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-slate-500">Active</p>
-                <p className="text-3xl font-bold text-green-600">{stats?.active_organizations || 0}</p>
-              </div>
-              <CheckCircle2 className="w-10 h-10 text-green-500" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-slate-500">Pending Approval</p>
-                <p className="text-3xl font-bold text-amber-600">{stats?.pending_organizations || 0}</p>
-              </div>
-              <Clock className="w-10 h-10 text-amber-500" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
+        <Card className="border-l-4 border-l-blue-500">
+          <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-slate-500">Total Users</p>
-                <p className="text-3xl font-bold">{stats?.total_users || 0}</p>
+                <p className="text-2xl font-bold text-slate-900">{systemHealth?.stats?.total_users || 0}</p>
               </div>
-              <Users className="w-10 h-10 text-purple-500" />
+              <Users className="w-10 h-10 text-blue-500" />
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="pt-6">
+        <Card className="border-l-4 border-l-purple-500">
+          <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-slate-500">Total Patients</p>
-                <p className="text-3xl font-bold">{stats?.total_patients || 0}</p>
+                <p className="text-2xl font-bold text-slate-900">{systemHealth?.stats?.total_patients || 0}</p>
               </div>
-              <Activity className="w-10 h-10 text-rose-500" />
+              <Activity className="w-10 h-10 text-purple-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className={`border-l-4 ${securityAlerts.total > 0 ? 'border-l-red-500' : 'border-l-emerald-500'}`}>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-slate-500">Security Alerts (24h)</p>
+                <p className="text-2xl font-bold text-slate-900">{securityAlerts.total || 0}</p>
+              </div>
+              <AlertTriangle className={`w-10 h-10 ${securityAlerts.total > 0 ? 'text-red-500' : 'text-emerald-500'}`} />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Pending Approvals Alert */}
-      {pendingOrgs.length > 0 && (
-        <Card className="border-l-4 border-l-amber-500">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-amber-700">
-              <AlertTriangle className="w-5 h-5" /> Pending Approvals ({pendingOrgs.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {pendingOrgs.slice(0, 3).map((org) => (
-                <div key={org.id} className="flex items-center justify-between p-3 bg-amber-50 rounded-lg">
-                  <div>
-                    <p className="font-medium">{org.name}</p>
-                    <p className="text-sm text-slate-500">{org.city}, {org.state} • Applied {formatDateTime(org.created_at)}</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={() => { setSelectedOrg(org); setViewDialogOpen(true); }}
-                    >
-                      <Eye className="w-4 h-4 mr-1" /> View
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      className="bg-green-600 hover:bg-green-700"
-                      onClick={() => { setSelectedOrg(org); setApproveDialogOpen(true); }}
-                    >
-                      Approve
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="destructive"
-                      onClick={() => { setSelectedOrg(org); setRejectDialogOpen(true); }}
-                    >
-                      Reject
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Main Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="organizations">Organizations</TabsTrigger>
+          <TabsTrigger value="security">Security Policies</TabsTrigger>
+          <TabsTrigger value="audit">System Audit</TabsTrigger>
+        </TabsList>
 
-      {/* Organizations List */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Building2 className="w-5 h-5" /> All Organizations
-            </CardTitle>
-            <div className="flex gap-2">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <Input
-                  placeholder="Search organizations..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 w-64"
-                />
-              </div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-36">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="suspended">Suspended</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <ScrollArea className="h-[400px]">
-            <div className="space-y-2">
-              {filteredOrgs.length === 0 ? (
-                <p className="text-center text-slate-500 py-8">No organizations found</p>
-              ) : (
-                filteredOrgs.map((org) => (
-                  <Card key={org.id} className="hover:border-sky-200 transition-colors">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-full bg-sky-100 flex items-center justify-center">
-                            <Building2 className="w-6 h-6 text-sky-600" />
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <p className="font-medium">{org.name}</p>
-                              {getStatusBadge(org.status)}
-                            </div>
-                            <p className="text-sm text-slate-500">
-                              {org.city}, {org.state} • {org.organization_type?.replace('_', ' ')}
-                            </p>
-                            <div className="flex items-center gap-4 text-sm text-slate-400 mt-1">
-                              <span className="flex items-center gap-1">
-                                <Users className="w-3 h-3" /> {org.total_users || 0} users
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Activity className="w-3 h-3" /> {org.total_patients || 0} patients
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Mail className="w-3 h-3" /> {org.email}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => { setSelectedOrg(org); setViewDialogOpen(true); }}
-                          >
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          {org.status === 'active' && (
-                            <Button size="sm" variant="outline" className="text-red-600" onClick={() => handleSuspend(org)}>
-                              Suspend
-                            </Button>
-                          )}
-                          {org.status === 'suspended' && (
-                            <Button size="sm" variant="outline" className="text-green-600" onClick={() => handleReactivate(org)}>
-                              Reactivate
-                            </Button>
-                          )}
-                        </div>
+        {/* Overview Tab */}
+        <TabsContent value="overview" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* System Health */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Server className="w-5 h-5" />System Health
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {systemHealth?.checks?.map((check, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        {check.status === 'healthy' ? (
+                          <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                        ) : (
+                          <XCircle className="w-5 h-5 text-red-500" />
+                        )}
+                        <span className="font-medium">{check.component}</span>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))
-              )}
-            </div>
-          </ScrollArea>
-        </CardContent>
-      </Card>
+                      <Badge className={check.status === 'healthy' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}>
+                        {check.status}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
 
-      {/* Approve Dialog */}
-      <Dialog open={approveDialogOpen} onOpenChange={setApproveDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Approve Organization</DialogTitle>
-            <DialogDescription>Configure subscription and approve {selectedOrg?.name}</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 mt-4">
-            <div className="space-y-2">
-              <Label>Subscription Plan</Label>
-              <Select value={approvalData.subscription_plan} onValueChange={(v) => setApprovalData({...approvalData, subscription_plan: v})}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="starter">Starter (25 users, 2,500 patients)</SelectItem>
-                  <SelectItem value="standard">Standard (50 users, 10,000 patients)</SelectItem>
-                  <SelectItem value="professional">Professional (100 users, 25,000 patients)</SelectItem>
-                  <SelectItem value="enterprise">Enterprise (Unlimited)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Max Users</Label>
-                <Input type="number" value={approvalData.max_users} onChange={(e) => setApprovalData({...approvalData, max_users: parseInt(e.target.value)})} />
-              </div>
-              <div className="space-y-2">
-                <Label>Max Patients</Label>
-                <Input type="number" value={approvalData.max_patients} onChange={(e) => setApprovalData({...approvalData, max_patients: parseInt(e.target.value)})} />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Notes</Label>
-              <Textarea value={approvalData.notes} onChange={(e) => setApprovalData({...approvalData, notes: e.target.value})} placeholder="Internal notes..." />
-            </div>
-            <Button onClick={handleApprove} className="w-full bg-green-600 hover:bg-green-700" disabled={saving}>
-              {saving ? 'Approving...' : 'Approve Organization'}
-            </Button>
+            {/* Activity Trend */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5" />Activity Trend (7 days)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={activityData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+                      <YAxis />
+                      <Tooltip />
+                      <Line type="monotone" dataKey="count" stroke="#3b82f6" strokeWidth={2} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
           </div>
-        </DialogContent>
-      </Dialog>
 
-      {/* Reject Dialog */}
-      <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Reject Organization</DialogTitle>
-            <DialogDescription>Provide a reason for rejecting {selectedOrg?.name}</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 mt-4">
-            <div className="space-y-2">
-              <Label>Rejection Reason *</Label>
-              <Textarea 
-                value={rejectionReason} 
-                onChange={(e) => setRejectionReason(e.target.value)} 
-                placeholder="Explain why this organization is being rejected..."
-                required
+          {/* Organization Distribution */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Organizations by Status</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={orgStatusData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={80}
+                        paddingAngle={5}
+                        dataKey="value"
+                        label={({ name, value }) => `${name}: ${value}`}
+                      >
+                        {orgStatusData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Users by Role</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={platformStats?.users_by_role ? Object.entries(platformStats.users_by_role).map(([role, count]) => ({ role, count })) : []}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="role" tick={{ fontSize: 10 }} />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar dataKey="count" fill="#8b5cf6" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* Organizations Tab */}
+        <TabsContent value="organizations" className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Input
+                placeholder="Search organizations..."
+                className="pl-10"
+                value={orgSearch}
+                onChange={(e) => setOrgSearch(e.target.value)}
               />
             </div>
-            <Button onClick={handleReject} className="w-full" variant="destructive" disabled={saving || !rejectionReason}>
-              {saving ? 'Rejecting...' : 'Reject Organization'}
+            <Dialog open={createOrgOpen} onOpenChange={setCreateOrgOpen}>
+              <DialogTrigger asChild>
+                <Button className="gap-2 bg-red-600 hover:bg-red-700">
+                  <Building2 className="w-4 h-4" />Create Organization
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-lg">
+                <DialogHeader>
+                  <DialogTitle>Create New Organization</DialogTitle>
+                  <DialogDescription>Add a new hospital or clinic to the platform</DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleCreateOrg} className="space-y-4 mt-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2 col-span-2">
+                      <Label>Organization Name *</Label>
+                      <Input
+                        value={newOrg.name}
+                        onChange={(e) => setNewOrg({ ...newOrg, name: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Type *</Label>
+                      <Select value={newOrg.type} onValueChange={(v) => setNewOrg({ ...newOrg, type: v })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="hospital">Hospital</SelectItem>
+                          <SelectItem value="clinic">Clinic</SelectItem>
+                          <SelectItem value="practice">Private Practice</SelectItem>
+                          <SelectItem value="lab">Laboratory</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Contact Email *</Label>
+                      <Input
+                        type="email"
+                        value={newOrg.contact_email}
+                        onChange={(e) => setNewOrg({ ...newOrg, contact_email: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Phone</Label>
+                      <Input
+                        value={newOrg.phone}
+                        onChange={(e) => setNewOrg({ ...newOrg, phone: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>City</Label>
+                      <Input
+                        value={newOrg.city}
+                        onChange={(e) => setNewOrg({ ...newOrg, city: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button type="submit" disabled={saving}>
+                      {saving ? 'Creating...' : 'Create Organization'}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          <Card>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Organization</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Users</TableHead>
+                  <TableHead>Created</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredOrgs.map((org) => (
+                  <TableRow key={org.id}>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium">{org.name}</p>
+                        <p className="text-sm text-slate-500">{org.contact_email}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{org.type}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge style={{ backgroundColor: STATUS_COLORS[org.status] || '#6b7280' }} className="text-white">
+                        {org.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{org.user_count || 0}</TableCell>
+                    <TableCell className="text-sm text-slate-500">
+                      {org.created_at ? formatDateTime(org.created_at) : '-'}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        {org.status === 'pending' && (
+                          <Button 
+                            size="sm" 
+                            className="bg-emerald-600 hover:bg-emerald-700"
+                            onClick={() => handleOrgAction(org.id, 'approve')}
+                          >
+                            Approve
+                          </Button>
+                        )}
+                        {org.status === 'active' && (
+                          <Button 
+                            size="sm" 
+                            variant="destructive"
+                            onClick={() => handleOrgAction(org.id, 'suspend')}
+                          >
+                            Suspend
+                          </Button>
+                        )}
+                        {org.status === 'suspended' && (
+                          <Button 
+                            size="sm"
+                            onClick={() => handleOrgAction(org.id, 'reactivate')}
+                          >
+                            Reactivate
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
+        </TabsContent>
+
+        {/* Security Policies Tab */}
+        <TabsContent value="security" className="space-y-4">
+          <Alert className="border-amber-200 bg-amber-50">
+            <Shield className="h-4 w-4 text-amber-600" />
+            <AlertTitle className="text-amber-800">Security Policies</AlertTitle>
+            <AlertDescription className="text-amber-700">
+              Configure platform-wide security settings. Changes apply to all organizations.
+            </AlertDescription>
+          </Alert>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {securityPolicies.map((policy) => (
+              <Card key={policy.policy_type}>
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      {policy.policy_type === 'password' && <Lock className="w-4 h-4" />}
+                      {policy.policy_type === 'session' && <Clock className="w-4 h-4" />}
+                      {policy.policy_type === 'mfa' && <ShieldCheck className="w-4 h-4" />}
+                      {policy.policy_type === 'access' && <Globe className="w-4 h-4" />}
+                      {policy.name}
+                    </CardTitle>
+                    <Switch
+                      checked={policy.is_active}
+                      onCheckedChange={(checked) => handleTogglePolicy(policy.policy_type, checked)}
+                    />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2 text-sm">
+                    {policy.policy_type === 'password' && policy.settings && (
+                      <>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Min Length:</span>
+                          <span>{policy.settings.min_length}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Max Age (days):</span>
+                          <span>{policy.settings.max_age_days}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Lockout After:</span>
+                          <span>{policy.settings.lockout_attempts} attempts</span>
+                        </div>
+                      </>
+                    )}
+                    {policy.policy_type === 'session' && policy.settings && (
+                      <>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Max Duration:</span>
+                          <span>{policy.settings.max_session_duration_hours}h</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Idle Timeout:</span>
+                          <span>{policy.settings.idle_timeout_minutes}m</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Max Concurrent:</span>
+                          <span>{policy.settings.max_concurrent_sessions}</span>
+                        </div>
+                      </>
+                    )}
+                    {policy.policy_type === 'mfa' && policy.settings && (
+                      <>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Required For:</span>
+                          <span>{policy.settings.required_for_roles?.join(', ') || 'None'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Methods:</span>
+                          <span>{policy.settings.allowed_methods?.join(', ')}</span>
+                        </div>
+                      </>
+                    )}
+                    {policy.policy_type === 'access' && policy.settings && (
+                      <>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Working Hours Only:</span>
+                          <span>{policy.settings.working_hours_only ? 'Yes' : 'No'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">VPN Required:</span>
+                          <span>{policy.settings.require_vpn_for_admin ? 'Yes' : 'No'}</span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    className="w-full mt-4"
+                    onClick={() => {
+                      setSelectedPolicy(policy);
+                      setPolicySettings(policy.settings || {});
+                      setEditPolicyOpen(true);
+                    }}
+                  >
+                    Edit Settings
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+
+        {/* Audit Tab */}
+        <TabsContent value="audit" className="space-y-4">
+          <div className="flex items-center gap-4">
+            <Select 
+              value={auditFilter.days.toString()} 
+              onValueChange={(v) => setAuditFilter({ ...auditFilter, days: parseInt(v) })}
+            >
+              <SelectTrigger className="w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">Last 24 hours</SelectItem>
+                <SelectItem value="7">Last 7 days</SelectItem>
+                <SelectItem value="30">Last 30 days</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select 
+              value={auditFilter.org} 
+              onValueChange={(v) => setAuditFilter({ ...auditFilter, org: v })}
+            >
+              <SelectTrigger className="w-60">
+                <SelectValue placeholder="Filter by organization" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Organizations</SelectItem>
+                {organizations.map((org) => (
+                  <SelectItem key={org.id} value={org.id}>{org.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button variant="outline" onClick={fetchAuditLogs}>
+              <RefreshCw className="w-4 h-4 mr-2" />Refresh
             </Button>
           </div>
-        </DialogContent>
-      </Dialog>
 
-      {/* View Dialog */}
-      <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{selectedOrg?.name}</DialogTitle>
-            <DialogDescription>Organization Details</DialogDescription>
-          </DialogHeader>
-          {selectedOrg && (
-            <div className="space-y-4 mt-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-slate-500">Type</p>
-                  <p className="font-medium">{selectedOrg.organization_type?.replace('_', ' ')}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-slate-500">Status</p>
-                  {getStatusBadge(selectedOrg.status)}
-                </div>
-                <div>
-                  <p className="text-sm text-slate-500">License Number</p>
-                  <p className="font-medium">{selectedOrg.license_number}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-slate-500">NPI</p>
-                  <p className="font-medium">{selectedOrg.npi_number || 'N/A'}</p>
-                </div>
-              </div>
-              <hr />
-              <div>
-                <p className="text-sm text-slate-500">Address</p>
-                <p className="font-medium">
-                  {selectedOrg.address_line1}<br />
-                  {selectedOrg.address_line2 && <>{selectedOrg.address_line2}<br /></>}
-                  {selectedOrg.city}, {selectedOrg.state} {selectedOrg.zip_code}
-                </p>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-slate-500">Phone</p>
-                  <p className="font-medium">{selectedOrg.phone}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-slate-500">Email</p>
-                  <p className="font-medium">{selectedOrg.email}</p>
-                </div>
-              </div>
-              <hr />
-              <div>
-                <p className="text-sm text-slate-500 mb-2">Admin Contact</p>
-                <p className="font-medium">{selectedOrg.admin_first_name} {selectedOrg.admin_last_name}</p>
-                <p className="text-sm text-slate-600">{selectedOrg.admin_email}</p>
-                <p className="text-sm text-slate-600">{selectedOrg.admin_phone}</p>
-              </div>
-              <hr />
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p className="text-slate-500">Created</p>
-                  <p>{formatDateTime(selectedOrg.created_at)}</p>
-                </div>
-                {selectedOrg.approved_at && (
-                  <div>
-                    <p className="text-slate-500">Approved</p>
-                    <p>{formatDateTime(selectedOrg.approved_at)}</p>
-                  </div>
-                )}
-              </div>
-            </div>
+          {/* Security Alerts Summary */}
+          {securityAlerts.total > 0 && (
+            <Alert className="border-red-200 bg-red-50">
+              <AlertCircle className="h-4 w-4 text-red-600" />
+              <AlertTitle className="text-red-800">Security Alerts</AlertTitle>
+              <AlertDescription className="text-red-700">
+                {securityAlerts.total} security-related events in the last 24 hours:
+                {Object.entries(securityAlerts.summary || {}).map(([type, count]) => (
+                  <Badge key={type} variant="destructive" className="ml-2">{type}: {count}</Badge>
+                ))}
+              </AlertDescription>
+            </Alert>
           )}
+
+          <Card>
+            <CardHeader>
+              <CardTitle>System Audit Logs</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[500px]">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Timestamp</TableHead>
+                      <TableHead>User</TableHead>
+                      <TableHead>Action</TableHead>
+                      <TableHead>Resource</TableHead>
+                      <TableHead>Organization</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {auditLogs.map((log) => (
+                      <TableRow key={log.id}>
+                        <TableCell className="text-sm">
+                          {formatDateTime(log.timestamp)}
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <p className="text-sm font-medium">{log.user_name || 'System'}</p>
+                            <p className="text-xs text-slate-500">{log.user_role}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{log.action}</Badge>
+                        </TableCell>
+                        <TableCell className="text-sm text-slate-500">
+                          {log.resource_type}
+                        </TableCell>
+                        <TableCell className="text-sm text-slate-500">
+                          {organizations.find(o => o.id === log.organization_id)?.name || '-'}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Edit Policy Dialog */}
+      <Dialog open={editPolicyOpen} onOpenChange={setEditPolicyOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit {selectedPolicy?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            {selectedPolicy?.policy_type === 'password' && (
+              <>
+                <div className="space-y-2">
+                  <Label>Minimum Password Length</Label>
+                  <Input
+                    type="number"
+                    value={policySettings.min_length || 12}
+                    onChange={(e) => setPolicySettings({ ...policySettings, min_length: parseInt(e.target.value) })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Password Expiration (days)</Label>
+                  <Input
+                    type="number"
+                    value={policySettings.max_age_days || 90}
+                    onChange={(e) => setPolicySettings({ ...policySettings, max_age_days: parseInt(e.target.value) })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Lockout After Failed Attempts</Label>
+                  <Input
+                    type="number"
+                    value={policySettings.lockout_attempts || 5}
+                    onChange={(e) => setPolicySettings({ ...policySettings, lockout_attempts: parseInt(e.target.value) })}
+                  />
+                </div>
+              </>
+            )}
+            {selectedPolicy?.policy_type === 'session' && (
+              <>
+                <div className="space-y-2">
+                  <Label>Max Session Duration (hours)</Label>
+                  <Input
+                    type="number"
+                    value={policySettings.max_session_duration_hours || 12}
+                    onChange={(e) => setPolicySettings({ ...policySettings, max_session_duration_hours: parseInt(e.target.value) })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Idle Timeout (minutes)</Label>
+                  <Input
+                    type="number"
+                    value={policySettings.idle_timeout_minutes || 30}
+                    onChange={(e) => setPolicySettings({ ...policySettings, idle_timeout_minutes: parseInt(e.target.value) })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Max Concurrent Sessions</Label>
+                  <Input
+                    type="number"
+                    value={policySettings.max_concurrent_sessions || 3}
+                    onChange={(e) => setPolicySettings({ ...policySettings, max_concurrent_sessions: parseInt(e.target.value) })}
+                  />
+                </div>
+              </>
+            )}
+          </div>
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setEditPolicyOpen(false)}>Cancel</Button>
+            <Button onClick={handleUpdatePolicy} disabled={saving}>
+              {saving ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
