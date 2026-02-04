@@ -1583,7 +1583,7 @@ agent_communication:
       
       **CREDENTIALS TESTED:**
       - Super Admin: ygtnetworks@gmail.com / test123 ✅ Working
-      - Backend URL: https://mystifying-goldwasser.preview.emergentagent.com ✅ Accessible
+      - Backend URL: https://portal-index.preview.emergentagent.com ✅ Accessible
       
       ✅ GHANA EMR FRONTEND UI TESTING COMPLETE - ALL CORE FLOWS WORKING (4/4 major flows tested - 100% success rate)
       
@@ -1796,7 +1796,7 @@ agent_communication:
       
       **CREDENTIALS VERIFIED:**
       - Super Admin: ygtnetworks@gmail.com / test123 ✅ Working with role=super_admin in JWT token
-      - Backend URL: https://mystifying-goldwasser.preview.emergentagent.com ✅ Accessible
+      - Backend URL: https://portal-index.preview.emergentagent.com ✅ Accessible
       
       **RECOMMENDATION:** 
       EMR Portal backend APIs are largely functional with 92.3% success rate. Core platform administration, IT admin functions, and access controls are working correctly. Main agent should investigate hospital admin authentication to ensure proper organization_id context is set during login for dashboard access.

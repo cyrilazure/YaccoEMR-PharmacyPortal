@@ -6,7 +6,7 @@ import json
 from datetime import datetime, timedelta
 
 class YaccoEMRTester:
-    def __init__(self, base_url="https://mystifying-goldwasser.preview.emergentagent.com"):
+    def __init__(self, base_url="https://portal-index.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_base = f"{base_url}/api"
         self.token = None
@@ -9370,7 +9370,7 @@ def main():
     import sys
     
     # Get backend URL from environment or use default
-    backend_url = "https://mystifying-goldwasser.preview.emergentagent.com"
+    backend_url = "https://portal-index.preview.emergentagent.com"
     
     tester = YaccoEMRTester(backend_url)
     
