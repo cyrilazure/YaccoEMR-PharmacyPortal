@@ -276,10 +276,9 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Nurse Portal - Shift Management"
-    - "Nurse Portal - Patient Assignments"
-    - "Nurse Portal - Task Management"
-    - "Nurse Portal - MAR (Medication Administration Record)"
+    - "Admin Portal - Hospital Admin Features"
+    - "Admin Portal - Super Admin Features"
+    - "Admin Portal - Security Policies"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -287,56 +286,50 @@ test_plan:
 agent_communication:
   - agent: "main"
     message: |
-      Implemented comprehensive Nurse Portal Module for EMR:
+      Implemented comprehensive Admin Portals for EMR:
       
-      **Backend (nurse_portal_module.py):**
-      1. Shift Management:
-         - GET /api/nurse/shifts - Get shift definitions (morning, evening, night, 12-hour)
-         - GET /api/nurse/current-shift - Get current user's active shift
-         - POST /api/nurse/shifts/clock-in - Clock in to shift
-         - POST /api/nurse/shifts/clock-out - Clock out with handoff notes
-         - GET /api/nurse/shifts/handoff-notes - Get handoff notes from previous shift
+      **Backend (admin_portal_module.py):**
       
-      2. Patient Assignments:
-         - GET /api/nurse/my-patients - Get assigned patients (with vitals, tasks count)
-         - POST /api/nurse/assign-patient - Assign patient to nurse (charge nurse/admin)
-         - DELETE /api/nurse/unassign-patient/{id} - Unassign patient
-         - GET /api/nurse/patient-load - Get patient load statistics per nurse
+      **Hospital Admin Features:**
+      1. Permission Groups:
+         - GET /api/admin/permission-groups - Get all groups
+         - POST /api/admin/permission-groups - Create group
+         - PUT /api/admin/permission-groups/{id} - Update group
+         - DELETE /api/admin/permission-groups/{id} - Delete group
+         - GET /api/admin/available-permissions - Get all permissions
       
-      3. Task Management:
-         - GET /api/nurse/tasks - Get tasks (with priority/status filters)
-         - GET /api/nurse/tasks/due - Get overdue and upcoming tasks
-         - POST /api/nurse/tasks - Create new task
-         - POST /api/nurse/tasks/{id}/complete - Complete task
-         - POST /api/nurse/tasks/{id}/defer - Defer task
-         - GET /api/nurse/task-types, /task-priorities - Task metadata
+      2. User Management:
+         - GET /api/admin/users - Get users with search/filter
+         - PUT /api/admin/users/{id}/role - Update user role
+         - POST /api/admin/users/bulk-action - Bulk actions
+         - GET /api/admin/users/{id}/activity - User activity logs
       
-      4. MAR (Medication Administration Record):
-         - GET /api/nurse/mar/{patient_id} - Get MAR for patient
-         - POST /api/nurse/mar/administer - Record medication administration
-         - GET /api/nurse/mar/due - Get medications due in time window
-         - POST /api/nurse/mar/generate-schedule - Generate MAR schedule
+      3. Sharing Policies:
+         - GET /api/admin/sharing-policies - Get policy requests
+         - POST /api/admin/sharing-policies/{id}/approve - Approve
+         - POST /api/admin/sharing-policies/{id}/deny - Deny
+         - POST /api/admin/sharing-policies/request - Create request
       
-      5. Dashboard & Quick Actions:
-         - GET /api/nurse/dashboard/stats - Comprehensive dashboard statistics
-         - POST /api/nurse/quick-vitals - Quick vitals recording
-         - GET /api/nurse/permissions - Get nurse role permissions
+      4. Dashboard:
+         - GET /api/admin/dashboard/stats - Dashboard statistics
       
-      **Role-Based Access Control:**
-      - Nurses can view/administer medications but CANNOT prescribe
-      - Nurses can view/update order status but CANNOT create orders
-      - Nurses can only access patients assigned to them (enforced)
-      - Explicit permission lists for allowed vs denied actions
+      **Super Admin Features:**
+      5. Security Policies:
+         - GET /api/admin/security-policies - Get all policies
+         - POST /api/admin/security-policies - Create/update policy
+         - PUT /api/admin/security-policies/{type}/toggle - Enable/disable
       
-      **Frontend (NurseDashboard.jsx):**
-      - Shift clock-in/clock-out with handoff notes
-      - Assigned patients list with acuity indicators
-      - Tasks panel with priority-based display
-      - MAR with administration workflow
-      - Quick vitals recording
-      - Real-time refresh every 2 minutes
+      6. System Management:
+         - GET /api/admin/system/audit-logs - System-wide audit
+         - GET /api/admin/system/security-alerts - Security alerts
+         - GET /api/admin/system/health - System health check
+         - GET /api/admin/system/stats - Platform statistics
       
-      Please test the Nurse Portal backend APIs.
+      **Frontend:**
+      - AdminDashboard.jsx - Hospital admin with user management, roles, sharing policies
+      - SuperAdminDashboard.jsx - Platform admin with security policies, org management
+      
+      Please test the Admin Portal backend APIs.
   - agent: "testing"
     message: |
       **NURSE PORTAL TESTING COMPLETED**
