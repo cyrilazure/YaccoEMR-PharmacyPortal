@@ -1274,6 +1274,7 @@ class YaccoEMRTester:
             self.log_test("Hospital Admin Dashboard", False, "No hospital admin token received")
             return False
         
+        # Use the hospital ID from the created hospital
         hospital_id = getattr(self, 'test_hospital_id', 'test-hospital-001')
         
         # Temporarily switch to hospital admin token
