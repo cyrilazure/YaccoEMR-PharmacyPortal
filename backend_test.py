@@ -4068,8 +4068,8 @@ class YaccoEMRTester:
     
     def test_record_consent_usage(self):
         """Test recording consent usage"""
-        if not hasattr(self, 'treatment_consent_id') or not self.treatment_consent_id:
-            self.log_test("Record Consent Usage", False, "No treatment consent available")
+        if not hasattr(self, 'records_consent_id') or not self.records_consent_id:
+            self.log_test("Record Consent Usage", False, "No records consent available")
             return False
         
         params = {
@@ -4077,7 +4077,7 @@ class YaccoEMRTester:
             'details': 'Shared patient information with specialist for consultation'
         }
         
-        response, error = self.make_request('POST', f'consents/{self.treatment_consent_id}/use', params=params)
+        response, error = self.make_request('POST', f'consents/{self.records_consent_id}/use', params=params)
         if error:
             self.log_test("Record Consent Usage", False, error)
             return False
