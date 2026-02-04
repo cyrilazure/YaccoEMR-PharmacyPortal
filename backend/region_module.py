@@ -554,7 +554,8 @@ def create_region_endpoints(db, get_current_user, hash_password):
         }
         
         await db["regions"].insert_one(region)
-        del region["_id"] if "_id" in region else None
+        if "_id" in region:
+            del region["_id"]
         
         return {"message": "Region created", "region": region}
     
