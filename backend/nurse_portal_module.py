@@ -414,7 +414,7 @@ def create_nurse_portal_endpoints(db, get_current_user):
         
         shift_dict = shift_record.model_dump()
         await db.nurse_shifts.insert_one(shift_dict)
-        del shift_dict["_id"] if "_id" in shift_dict else None
+        if "_id" in shift_dict: del shift_dict["_id"]
         
         return {
             "message": "Successfully clocked in",
@@ -532,7 +532,7 @@ def create_nurse_portal_endpoints(db, get_current_user):
                     ).sort("recorded_at", -1).limit(1).to_list(1)
                     if vitals:
                         latest_vitals = vitals[0]
-                        del latest_vitals["_id"] if "_id" in latest_vitals else None
+                        if "_id" in latest_vitals: del latest_vitals["_id"]
                 
                 # Get pending tasks count
                 pending_tasks = await db.nurse_tasks.count_documents({
@@ -616,7 +616,7 @@ def create_nurse_portal_endpoints(db, get_current_user):
         
         assignment_dict = assignment.model_dump()
         await db.nurse_assignments.insert_one(assignment_dict)
-        del assignment_dict["_id"] if "_id" in assignment_dict else None
+        if "_id" in assignment_dict: del assignment_dict["_id"]
         
         # Create notification for the nurse
         notification = {
@@ -824,7 +824,7 @@ def create_nurse_portal_endpoints(db, get_current_user):
         
         task_dict = task.model_dump()
         await db.nurse_tasks.insert_one(task_dict)
-        del task_dict["_id"] if "_id" in task_dict else None
+        if "_id" in task_dict: del task_dict["_id"]
         
         return task_dict
     
@@ -1314,7 +1314,7 @@ def create_nurse_portal_endpoints(db, get_current_user):
         vitals = {k: v for k, v in vitals.items() if v is not None}
         
         await db.vitals.insert_one(vitals)
-        del vitals["_id"] if "_id" in vitals else None
+        if "_id" in vitals: del vitals["_id"]
         
         # Complete any pending vitals tasks for this patient
         await db.nurse_tasks.update_many(
