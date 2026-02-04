@@ -412,6 +412,9 @@ def create_consent_endpoints(db, get_current_user):
         
         await db.consent_forms.insert_one(consent)
         
+        # Remove MongoDB ObjectId for serialization
+        consent.pop("_id", None)
+        
         # AUDIT: Log consent creation
         await log_consent_audit(
             user=current_user,
