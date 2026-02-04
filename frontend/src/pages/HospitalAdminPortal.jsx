@@ -442,6 +442,132 @@ export default function HospitalAdminPortal() {
           </div>
         </TabsContent>
 
+        {/* Patients Tab - MRN Creation & Patient Records */}
+        <TabsContent value="patients" className="mt-6">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <IdCard className="w-5 h-5 text-emerald-600" />
+                    Patient Records & MRN Management
+                  </CardTitle>
+                  <CardDescription>
+                    Create Medical Record Numbers (MRN) and access patient records
+                  </CardDescription>
+                </div>
+                <Badge variant="outline" className="text-emerald-600">
+                  {patients.length} Patients
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {/* Info Alert */}
+              <Alert className="mb-6 border-blue-200 bg-blue-50">
+                <Shield className="h-4 w-4 text-blue-600" />
+                <AlertDescription className="text-blue-700">
+                  MRN format: <code className="bg-blue-100 px-1 rounded">[Hospital Initials]-[Timestamp]-[Sequence]</code>
+                  <br />
+                  Example: <code className="bg-blue-100 px-1 rounded">ARH-123456-001</code> for Accra Regional Hospital
+                </AlertDescription>
+              </Alert>
+
+              {/* Search */}
+              <div className="flex items-center gap-4 mb-6">
+                <div className="relative flex-1 max-w-lg">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Input
+                    placeholder="Search by MRN, Name, NHIS ID, or Phone..."
+                    value={patientSearch}
+                    onChange={(e) => setPatientSearch(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handlePatientSearch()}
+                    className="pl-9"
+                  />
+                </div>
+                <Button onClick={handlePatientSearch}>
+                  <Search className="w-4 h-4 mr-2" />
+                  Search
+                </Button>
+              </div>
+
+              {/* Patients Table */}
+              {filteredPatients.length === 0 ? (
+                <div className="text-center py-12 text-gray-500">
+                  <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p>No patients found</p>
+                </div>
+              ) : (
+                <div className="rounded-lg border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>MRN</TableHead>
+                        <TableHead>Patient Name</TableHead>
+                        <TableHead>Date of Birth</TableHead>
+                        <TableHead>NHIS ID</TableHead>
+                        <TableHead>Phone</TableHead>
+                        <TableHead>Registration</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredPatients.map((patient) => (
+                        <TableRow key={patient.id}>
+                          <TableCell>
+                            {patient.mrn ? (
+                              <Badge className="bg-emerald-100 text-emerald-700 font-mono">
+                                {patient.mrn}
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-orange-600">
+                                No MRN
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            {patient.first_name} {patient.middle_name || ''} {patient.last_name}
+                          </TableCell>
+                          <TableCell>{formatDate(patient.date_of_birth)}</TableCell>
+                          <TableCell>
+                            {patient.nhis_id || patient.insurance_id || '-'}
+                          </TableCell>
+                          <TableCell>{patient.phone || '-'}</TableCell>
+                          <TableCell>{formatDate(patient.created_at)}</TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              {!patient.mrn && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleAssignMRN(patient.id)}
+                                  className="text-emerald-600 hover:text-emerald-700"
+                                >
+                                  <Hash className="w-4 h-4 mr-1" />
+                                  Assign MRN
+                                </Button>
+                              )}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedPatient(patient);
+                                  setViewPatientOpen(true);
+                                }}
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         {/* Users Tab */}
         <TabsContent value="users" className="mt-6">
           <Card>
