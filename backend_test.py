@@ -1260,6 +1260,7 @@ class YaccoEMRTester:
         
         # Use the hospital ID from the created hospital
         hospital_id = getattr(self, 'test_hospital_id', None)
+        print(f"DEBUG: Hospital ID for dashboard test: {hospital_id}")  # Debug output
         
         if not hospital_id:
             # Try to use a fallback hospital ID or skip this test
