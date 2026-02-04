@@ -65,6 +65,8 @@ class YaccoEMRTester:
                 response = requests.post(url, json=data, headers=headers)
             elif method == 'PUT':
                 response = requests.put(url, json=data, headers=headers, params=params)
+            elif method == 'DELETE':
+                response = requests.delete(url, headers=headers, params=params)
             else:
                 return None, f"Unsupported method: {method}"
 
