@@ -125,6 +125,41 @@ class NotificationResponse(BaseModel):
 def setup_routes(db, get_current_user):
     """Setup records sharing routes with database and auth dependency"""
     
+    # Audit logging helper
+    async def log_records_sharing_audit(
+        user: dict,
+        action: str,
+        resource_type: str,
+        resource_id: str = None,
+        patient_id: str = None,
+        patient_name: str = None,
+        details: str = None,
+        success: bool = True,
+        severity: str = "info",
+        metadata: dict = None
+    ):
+        """Log audit event for records sharing activities"""
+        audit_entry = {
+            "id": str(uuid.uuid4()),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "user_id": user.get("id", "unknown"),
+            "user_name": f"{user.get('first_name', '')} {user.get('last_name', '')}".strip() or "Unknown",
+            "user_role": user.get("role", "unknown"),
+            "organization_id": user.get("organization_id"),
+            "action": action,
+            "resource_type": resource_type,
+            "resource_id": resource_id,
+            "patient_id": patient_id,
+            "patient_name": patient_name,
+            "details": details,
+            "success": success,
+            "severity": severity,
+            "phi_accessed": patient_id is not None,
+            "metadata": metadata
+        }
+        await db.audit_logs.insert_one(audit_entry)
+        return audit_entry
+    
     # ============ PHYSICIAN DIRECTORY ============
     @router.get("/physicians/search")
     async def search_physicians(
