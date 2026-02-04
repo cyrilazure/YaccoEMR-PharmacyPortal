@@ -125,7 +125,10 @@ function App() {
             <Route path="hospital/:hospitalId/nurse" element={<NurseDashboard />} />
             <Route path="hospital/:hospitalId/scheduler" element={<SchedulerDashboard />} />
             <Route path="hospital/:hospitalId/billing" element={<BillingPage />} />
-            <Route path="hospital/:hospitalId/department/:deptId" element={<Dashboard />} />
+            
+            {/* Department / Unit Portal */}
+            <Route path="hospital/:hospitalId/department" element={<DepartmentUnitPortal />} />
+            <Route path="hospital/:hospitalId/department/:deptId" element={<DepartmentUnitPortal />} />
             
             {/* Hospital Shared Pages */}
             <Route path="hospital/:hospitalId/patients" element={<Patients />} />
