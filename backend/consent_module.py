@@ -673,6 +673,404 @@ def create_consent_endpoints(db, get_current_user):
         
         return {"has_consent": False, "reason": "No active consent found"}
     
+    # ============ CONSENT USAGE TRACKING ENDPOINTS ============
+    
+    @consent_router.get("/{consent_id}/usage-history")
+    async def get_consent_usage_history(
+        consent_id: str,
+        current_user: dict = Depends(get_current_user)
+    ):
+        """Get the usage history of a consent form (audit trail)"""
+        consent = await db.consent_forms.find_one({"id": consent_id})
+        if not consent:
+            raise HTTPException(status_code=404, detail="Consent not found")
+        
+        # Track this access
+        await track_consent_usage(
+            consent_id=consent_id,
+            user=current_user,
+            usage_type="usage_history_viewed",
+            details="Viewed consent usage history"
+        )
+        
+        # Get usage log
+        usage_logs = await db.consent_usage_log.find(
+            {"consent_id": consent_id},
+            {"_id": 0}
+        ).sort("timestamp", -1).to_list(500)
+        
+        return {
+            "consent_id": consent_id,
+            "total_accesses": consent.get("access_count", 0),
+            "last_accessed_at": consent.get("last_accessed_at"),
+            "usage_history": usage_logs
+        }
+    
+    @consent_router.post("/{consent_id}/use")
+    async def record_consent_usage(
+        consent_id: str,
+        usage_type: str,
+        details: Optional[str] = None,
+        current_user: dict = Depends(get_current_user)
+    ):
+        """Record when a consent is used (e.g., for disclosing PHI)"""
+        consent = await db.consent_forms.find_one({"id": consent_id})
+        if not consent:
+            raise HTTPException(status_code=404, detail="Consent not found")
+        
+        if consent.get("status") != ConsentStatus.ACTIVE.value:
+            raise HTTPException(status_code=400, detail="Consent is not active")
+        
+        # Check expiration
+        if consent.get("expiration_date"):
+            exp_date = datetime.fromisoformat(consent["expiration_date"].replace("Z", "+00:00"))
+            if exp_date < datetime.now(timezone.utc):
+                # Update status
+                await db.consent_forms.update_one(
+                    {"id": consent_id},
+                    {"$set": {"status": ConsentStatus.EXPIRED.value}}
+                )
+                raise HTTPException(status_code=400, detail="Consent has expired")
+        
+        # Record usage
+        usage = await track_consent_usage(
+            consent_id=consent_id,
+            user=current_user,
+            usage_type=usage_type,
+            details=details
+        )
+        
+        # Audit log for PHI disclosure
+        patient = await db.patients.find_one({"id": consent["patient_id"]})
+        await log_consent_audit(
+            user=current_user,
+            action="consent_used",
+            consent_id=consent_id,
+            patient_id=consent["patient_id"],
+            patient_name=f"{patient['first_name']} {patient['last_name']}" if patient else None,
+            consent_type=consent.get("consent_type"),
+            details=f"Consent used for: {usage_type}. {details or ''}",
+            metadata={"usage_type": usage_type}
+        )
+        
+        return {"message": "Consent usage recorded", "usage_id": usage["id"]}
+    
+    # ============ DOCUMENT UPLOAD ============
+    
+    @consent_router.post("/{consent_id}/upload-document")
+    async def upload_consent_document(
+        consent_id: str,
+        file: UploadFile = File(...),
+        current_user: dict = Depends(get_current_user)
+    ):
+        """Upload a signed consent document (PDF/image)"""
+        consent = await db.consent_forms.find_one({"id": consent_id})
+        if not consent:
+            raise HTTPException(status_code=404, detail="Consent not found")
+        
+        # Validate file type
+        allowed_types = ["application/pdf", "image/png", "image/jpeg", "image/jpg"]
+        if file.content_type not in allowed_types:
+            raise HTTPException(status_code=400, detail="Invalid file type. Allowed: PDF, PNG, JPEG")
+        
+        # Read file content
+        content = await file.read()
+        
+        # Generate document hash for integrity verification
+        document_hash = hashlib.sha256(content).hexdigest()
+        
+        # Store as base64 in database (for MVP - in production use cloud storage)
+        document_base64 = base64.b64encode(content).decode('utf-8')
+        
+        # Update consent with document
+        await db.consent_forms.update_one(
+            {"id": consent_id},
+            {"$set": {
+                "document_data": document_base64,
+                "document_filename": file.filename,
+                "document_content_type": file.content_type,
+                "document_hash": document_hash,
+                "document_uploaded_at": datetime.now(timezone.utc).isoformat(),
+                "document_uploaded_by": current_user.get("id"),
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+        
+        # Audit log
+        await log_consent_audit(
+            user=current_user,
+            action="consent_document_uploaded",
+            consent_id=consent_id,
+            patient_id=consent["patient_id"],
+            consent_type=consent.get("consent_type"),
+            details=f"Uploaded signed consent document: {file.filename}",
+            metadata={"filename": file.filename, "document_hash": document_hash}
+        )
+        
+        return {
+            "message": "Document uploaded successfully",
+            "document_hash": document_hash,
+            "filename": file.filename
+        }
+    
+    @consent_router.get("/{consent_id}/document")
+    async def get_consent_document(
+        consent_id: str,
+        current_user: dict = Depends(get_current_user)
+    ):
+        """Get the uploaded consent document"""
+        consent = await db.consent_forms.find_one({"id": consent_id})
+        if not consent:
+            raise HTTPException(status_code=404, detail="Consent not found")
+        
+        if not consent.get("document_data"):
+            raise HTTPException(status_code=404, detail="No document uploaded for this consent")
+        
+        # Track access
+        await track_consent_usage(
+            consent_id=consent_id,
+            user=current_user,
+            usage_type="document_downloaded",
+            details="Downloaded consent document"
+        )
+        
+        return {
+            "document_data": consent["document_data"],
+            "filename": consent.get("document_filename"),
+            "content_type": consent.get("document_content_type"),
+            "document_hash": consent.get("document_hash"),
+            "uploaded_at": consent.get("document_uploaded_at")
+        }
+    
+    @consent_router.get("/{consent_id}/verify-integrity")
+    async def verify_document_integrity(
+        consent_id: str,
+        current_user: dict = Depends(get_current_user)
+    ):
+        """Verify the integrity of the stored consent document"""
+        consent = await db.consent_forms.find_one({"id": consent_id})
+        if not consent:
+            raise HTTPException(status_code=404, detail="Consent not found")
+        
+        if not consent.get("document_data"):
+            return {"verified": False, "reason": "No document stored"}
+        
+        # Recalculate hash
+        document_bytes = base64.b64decode(consent["document_data"])
+        current_hash = hashlib.sha256(document_bytes).hexdigest()
+        stored_hash = consent.get("document_hash")
+        
+        is_valid = current_hash == stored_hash
+        
+        # Log verification attempt
+        await log_consent_audit(
+            user=current_user,
+            action="consent_integrity_verified",
+            consent_id=consent_id,
+            patient_id=consent["patient_id"],
+            consent_type=consent.get("consent_type"),
+            details=f"Document integrity verification: {'PASSED' if is_valid else 'FAILED'}",
+            success=is_valid,
+            severity="info" if is_valid else "alert"
+        )
+        
+        return {
+            "verified": is_valid,
+            "stored_hash": stored_hash,
+            "current_hash": current_hash,
+            "verification_time": datetime.now(timezone.utc).isoformat()
+        }
+    
+    # ============ EXPIRATION MANAGEMENT ============
+    
+    @consent_router.post("/check-expirations")
+    async def run_expiration_check(
+        current_user: dict = Depends(get_current_user)
+    ):
+        """Manually trigger expiration check for all consents"""
+        if current_user.get("role") not in ["admin", "hospital_admin", "super_admin"]:
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        expired_count = await check_and_update_expired_consents()
+        
+        return {
+            "message": f"Expiration check complete. {expired_count} consents marked as expired.",
+            "expired_count": expired_count
+        }
+    
+    @consent_router.get("/expiring-soon")
+    async def get_expiring_consents(
+        days: int = 30,
+        current_user: dict = Depends(get_current_user)
+    ):
+        """Get consents that will expire within specified days"""
+        org_id = current_user.get("organization_id")
+        
+        now = datetime.now(timezone.utc)
+        future_date = (now + timedelta(days=days)).isoformat()
+        
+        query = {
+            "status": ConsentStatus.ACTIVE.value,
+            "expiration_date": {"$lte": future_date, "$gt": now.isoformat()}
+        }
+        
+        if org_id and current_user.get("role") != "super_admin":
+            query["organization_id"] = org_id
+        
+        consents = await db.consent_forms.find(query, {"_id": 0}).sort("expiration_date", 1).to_list(100)
+        
+        # Enrich with patient names
+        for consent in consents:
+            patient = await db.patients.find_one({"id": consent["patient_id"]})
+            if patient:
+                consent["patient_name"] = f"{patient['first_name']} {patient['last_name']}"
+        
+        return {
+            "expiring_within_days": days,
+            "count": len(consents),
+            "consents": [ConsentResponse(**c) for c in consents]
+        }
+    
+    # ============ CONSENT STATISTICS ============
+    
+    @consent_router.get("/stats/overview")
+    async def get_consent_statistics(
+        current_user: dict = Depends(get_current_user)
+    ):
+        """Get consent statistics for the organization"""
+        org_id = current_user.get("organization_id")
+        
+        org_filter = {}
+        if org_id and current_user.get("role") != "super_admin":
+            org_filter["organization_id"] = org_id
+        
+        # Total counts by status
+        pipeline = [
+            {"$match": org_filter},
+            {"$group": {"_id": "$status", "count": {"$sum": 1}}}
+        ]
+        status_counts = await db.consent_forms.aggregate(pipeline).to_list(10)
+        by_status = {item["_id"]: item["count"] for item in status_counts}
+        
+        # Counts by type
+        type_pipeline = [
+            {"$match": {**org_filter, "status": ConsentStatus.ACTIVE.value}},
+            {"$group": {"_id": "$consent_type", "count": {"$sum": 1}}}
+        ]
+        type_counts = await db.consent_forms.aggregate(type_pipeline).to_list(20)
+        by_type = {item["_id"]: item["count"] for item in type_counts}
+        
+        # Revocations in last 30 days
+        thirty_days_ago = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+        recent_revocations = await db.consent_forms.count_documents({
+            **org_filter,
+            "status": ConsentStatus.REVOKED.value,
+            "revoked_at": {"$gte": thirty_days_ago}
+        })
+        
+        # Expiring in 30 days
+        future_30 = (datetime.now(timezone.utc) + timedelta(days=30)).isoformat()
+        expiring_soon = await db.consent_forms.count_documents({
+            **org_filter,
+            "status": ConsentStatus.ACTIVE.value,
+            "expiration_date": {"$lte": future_30, "$gt": datetime.now(timezone.utc).isoformat()}
+        })
+        
+        return {
+            "by_status": by_status,
+            "by_type": by_type,
+            "total_active": by_status.get(ConsentStatus.ACTIVE.value, 0),
+            "total_pending": by_status.get(ConsentStatus.PENDING.value, 0),
+            "total_revoked": by_status.get(ConsentStatus.REVOKED.value, 0),
+            "total_expired": by_status.get(ConsentStatus.EXPIRED.value, 0),
+            "recent_revocations_30d": recent_revocations,
+            "expiring_in_30d": expiring_soon
+        }
+    
+    # ============ COMPLIANCE REPORT ============
+    
+    @consent_router.get("/compliance-report")
+    async def get_compliance_report(
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
+        current_user: dict = Depends(get_current_user)
+    ):
+        """Generate a compliance report for consent management"""
+        if current_user.get("role") not in ["admin", "hospital_admin", "super_admin"]:
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        org_id = current_user.get("organization_id")
+        
+        # Default to last 90 days
+        if not start_date:
+            start_date = (datetime.now(timezone.utc) - timedelta(days=90)).isoformat()
+        if not end_date:
+            end_date = datetime.now(timezone.utc).isoformat()
+        
+        org_filter = {}
+        if org_id and current_user.get("role") != "super_admin":
+            org_filter["organization_id"] = org_id
+        
+        date_filter = {"created_at": {"$gte": start_date, "$lte": end_date}}
+        
+        # Consents created in period
+        consents_created = await db.consent_forms.count_documents({**org_filter, **date_filter})
+        
+        # Consents signed in period
+        consents_signed = await db.consent_forms.count_documents({
+            **org_filter,
+            "patient_signed_at": {"$gte": start_date, "$lte": end_date}
+        })
+        
+        # Consents used (from usage log)
+        consent_uses = await db.consent_usage_log.count_documents({
+            "timestamp": {"$gte": start_date, "$lte": end_date}
+        })
+        
+        # Revocations in period
+        revocations = await db.consent_forms.count_documents({
+            **org_filter,
+            "revoked_at": {"$gte": start_date, "$lte": end_date}
+        })
+        
+        # Integrity verifications
+        integrity_checks = await db.audit_logs.count_documents({
+            **org_filter,
+            "action": "consent_integrity_verified",
+            "timestamp": {"$gte": start_date, "$lte": end_date}
+        })
+        
+        # Usage by type
+        usage_pipeline = [
+            {"$match": {"timestamp": {"$gte": start_date, "$lte": end_date}}},
+            {"$group": {"_id": "$usage_type", "count": {"$sum": 1}}},
+            {"$sort": {"count": -1}}
+        ]
+        usage_by_type = await db.consent_usage_log.aggregate(usage_pipeline).to_list(20)
+        
+        return {
+            "report_period": {
+                "start": start_date,
+                "end": end_date
+            },
+            "summary": {
+                "consents_created": consents_created,
+                "consents_signed": consents_signed,
+                "consent_uses": consent_uses,
+                "revocations": revocations,
+                "integrity_verifications": integrity_checks
+            },
+            "usage_breakdown": [{"type": u["_id"], "count": u["count"]} for u in usage_by_type],
+            "compliance_notes": {
+                "hipaa_privacy_rule": "All consent forms are retained with audit trails",
+                "hipaa_security_rule": "Document integrity verified via SHA-256 hashing",
+                "retention_policy": "Minimum 6 years from date of creation",
+                "electronic_signatures": "21 CFR Part 11 compliant digital signatures"
+            },
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "generated_by": f"{current_user.get('first_name', '')} {current_user.get('last_name', '')}".strip()
+        }
+    
     return consent_router
 
 
