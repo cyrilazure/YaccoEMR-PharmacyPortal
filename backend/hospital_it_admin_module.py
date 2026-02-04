@@ -23,6 +23,8 @@ hospital_it_admin_router = APIRouter(prefix="/api/hospital", tags=["Hospital IT 
 class ITStaffRole(str, Enum):
     PHYSICIAN = "physician"
     NURSE = "nurse"
+    NURSING_SUPERVISOR = "nursing_supervisor"
+    FLOOR_SUPERVISOR = "floor_supervisor"
     SCHEDULER = "scheduler"
     BILLER = "biller"
     HOSPITAL_ADMIN = "hospital_admin"
