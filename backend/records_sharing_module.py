@@ -1,6 +1,36 @@
 """
 Medical Records Sharing Module for Yacco EMR
 Handles inter-hospital physician search, records requests, consent management, and notifications
+
+WORKFLOW DOCUMENTATION:
+========================
+
+Step-by-Step Inter-Hospital Records Request Flow:
+------------------------------------------------
+1. SEARCH: Requesting physician searches for another physician across hospitals
+2. SELECT: Physician selects target physician and views their profile
+3. REQUEST: Creates records request with patient info, reason, urgency, and record types
+4. CONSENT: Uploads signed patient consent form (required for approval)
+5. NOTIFY: Target physician receives notification of incoming request
+6. REVIEW: Target physician reviews request, consent form, and patient records
+7. RESPOND: Target physician approves (with duration) or rejects (with reason)
+8. ACCESS: If approved, requesting physician gets time-limited read-only access
+9. AUDIT: All actions are logged for HIPAA compliance
+
+States and Transitions:
+----------------------
+[PENDING] --> APPROVED (with access grant) --> [EXPIRED] (auto after duration)
+[PENDING] --> REJECTED (with reason)
+[PENDING] --> CANCELLED (by requester)
+
+Failure and Denial Handling:
+---------------------------
+- Missing consent form: Request can be created but less likely to be approved
+- Invalid patient: Request fails at creation
+- Target physician not found: Request fails at creation
+- Already processed: Cannot respond to non-pending requests
+- Expired access: Requesting physician loses access automatically
+- Revoked access: Target physician can revoke before expiration
 """
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form
 from pydantic import BaseModel, Field, EmailStr
