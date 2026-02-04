@@ -27,6 +27,7 @@ class YaccoEMRTester:
         self.hospital_admin_temp_password = None
         self.test_staff_email = None
         self.test_staff_temp_password = None
+        self.test_staff_id = None  # For Hospital IT Admin tests
         # Enhanced JWT Authentication variables
         self.enhanced_auth_token = None
         self.enhanced_refresh_token = None
