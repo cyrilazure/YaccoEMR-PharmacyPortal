@@ -870,6 +870,23 @@ export default function HospitalSuperAdminIT() {
                   </Button>
                 </div>
               </div>
+              <DialogFooter>
+                <Button onClick={() => {
+                  setResetPasswordOpen(false);
+                  setCreatedCredentials(null);
+                }}>Done</Button>
+              </DialogFooter>
+            </div>
+          ) : (
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setResetPasswordOpen(false)}>Cancel</Button>
+              <Button onClick={handleResetPassword} disabled={saving}>
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Reset Password'}
+              </Button>
+            </DialogFooter>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* View Staff Details Dialog */}
       <Dialog open={viewStaffOpen} onOpenChange={setViewStaffOpen}>
@@ -967,23 +984,6 @@ export default function HospitalSuperAdminIT() {
               Reset Password
             </Button>
           </DialogFooter>
-        </DialogContent>
-      </Dialog>
-              <DialogFooter>
-                <Button onClick={() => {
-                  setResetPasswordOpen(false);
-                  setCreatedCredentials(null);
-                }}>Done</Button>
-              </DialogFooter>
-            </div>
-          ) : (
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setResetPasswordOpen(false)}>Cancel</Button>
-              <Button onClick={handleResetPassword} disabled={saving}>
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Reset Password'}
-              </Button>
-            </DialogFooter>
-          )}
         </DialogContent>
       </Dialog>
 
