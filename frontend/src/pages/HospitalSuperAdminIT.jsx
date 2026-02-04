@@ -32,7 +32,7 @@ import {
   Users, UserPlus, Key, Shield, Settings, RefreshCw,
   Search, MoreVertical, CheckCircle, XCircle, AlertCircle,
   Loader2, Copy, Check, Lock, Unlock, UserCog, Building2,
-  MapPin, FolderTree, Activity, Ban, Eye, EyeOff
+  MapPin, FolderTree, Activity, Ban, Eye, EyeOff, Trash2, Plus
 } from 'lucide-react';
 
 // Staff roles available for IT Admin to assign
