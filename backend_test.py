@@ -5874,6 +5874,21 @@ class YaccoEMRTester:
         if not self.test_health_check():
             return False
         
+        # ============ REGION-BASED HOSPITAL DISCOVERY TESTS (GHANA) ============
+        print("\n🇬🇭 Testing Region-Based Hospital Discovery and Authentication (Ghana EMR)")
+        print("-" * 70)
+        self.test_ghana_regions_discovery()
+        self.test_region_details()
+        self.test_hospitals_by_region()
+        self.test_super_admin_login_ghana()
+        self.test_super_admin_create_hospital_ghana()
+        self.test_hospital_details_with_locations()
+        self.test_location_aware_authentication()
+        self.test_hospital_admin_add_location()
+        self.test_verify_multiple_locations_flag()
+        self.test_hospital_admin_create_staff_with_location()
+        self.test_platform_overview_ghana()
+        
         if not self.test_user_registration():
             return False
         
