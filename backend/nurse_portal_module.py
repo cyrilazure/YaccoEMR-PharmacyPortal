@@ -205,6 +205,42 @@ class HandoffNotes(BaseModel):
     abnormal_findings: Optional[str] = None
 
 
+class NurseReportCreate(BaseModel):
+    """Model for creating a shift report"""
+    shift_id: str
+    report_type: str = "end_of_shift"  # end_of_shift, incident, patient_update
+    title: str
+    content: str
+    patient_summary: Optional[str] = None
+    critical_events: Optional[str] = None
+    pending_items: Optional[str] = None
+    recommendations: Optional[str] = None
+
+
+class NurseReport(BaseModel):
+    """Model for nurse shift report"""
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    nurse_id: str
+    nurse_name: str
+    organization_id: str
+    shift_id: str
+    shift_type: str
+    report_type: str
+    title: str
+    content: str
+    patient_summary: Optional[str] = None
+    critical_events: Optional[str] = None
+    pending_items: Optional[str] = None
+    recommendations: Optional[str] = None
+    patient_count: int = 0
+    status: str = "draft"  # draft, submitted, reviewed
+    reviewed_by: Optional[str] = None
+    reviewed_at: Optional[str] = None
+    review_notes: Optional[str] = None
+    created_at: str
+    updated_at: Optional[str] = None
+
+
 # ============ Shift Definitions ============
 
 SHIFT_DEFINITIONS: Dict[ShiftType, ShiftDefinition] = {
