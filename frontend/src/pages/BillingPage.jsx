@@ -174,6 +174,27 @@ export default function BillingPage() {
     }
   };
 
+  // NHIS Insurance Lookup
+  const handleNHISSearch = async () => {
+    if (!nhisSearch.trim()) return;
+    
+    setNhisSearching(true);
+    try {
+      // Search patients by NHIS ID
+      const res = await patientAPI.getAll({ search: nhisSearch });
+      // Filter only those with insurance info
+      const withInsurance = res.data.filter(p => p.nhis_id || p.insurance_id || p.insurance_provider);
+      setNhisResults(withInsurance);
+      if (withInsurance.length === 0) {
+        toast.info('No patients found with NHIS coverage');
+      }
+    } catch (err) {
+      toast.error('NHIS search failed');
+    } finally {
+      setNhisSearching(false);
+    }
+  };
+
   const getStatusBadge = (status) => {
     const statusConfig = {
       draft: { color: 'bg-slate-100 text-slate-700', icon: FileText },
