@@ -868,6 +868,105 @@ export default function HospitalSuperAdminIT() {
                   </Button>
                 </div>
               </div>
+
+      {/* View Staff Details Dialog */}
+      <Dialog open={viewStaffOpen} onOpenChange={setViewStaffOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="w-5 h-5 text-blue-600" />
+              Staff Details
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedStaff && (
+            <div className="space-y-4 py-4">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-xl font-bold">
+                  {selectedStaff.first_name?.[0]}{selectedStaff.last_name?.[0]}
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold">{selectedStaff.first_name} {selectedStaff.last_name}</h3>
+                  <p className="text-gray-500">{selectedStaff.email}</p>
+                </div>
+              </div>
+              
+              <Separator />
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs text-gray-500">Role</Label>
+                  <p className="font-medium capitalize">{selectedStaff.role?.replace('_', ' ')}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-gray-500">Status</Label>
+                  <div className="flex items-center gap-2">
+                    {selectedStaff.is_active ? (
+                      <Badge className="bg-emerald-100 text-emerald-700">Active</Badge>
+                    ) : (
+                      <Badge className="bg-red-100 text-red-700">Inactive</Badge>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs text-gray-500">Department</Label>
+                  <p className="font-medium">{selectedStaff.department_name || 'Not assigned'}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-gray-500">Location</Label>
+                  <p className="font-medium">{selectedStaff.location_name || 'Not assigned'}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-gray-500">Phone</Label>
+                  <p className="font-medium">{selectedStaff.phone || 'Not provided'}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-gray-500">Employee ID</Label>
+                  <p className="font-medium font-mono">{selectedStaff.employee_id || 'Not assigned'}</p>
+                </div>
+              </div>
+              
+              <Separator />
+              
+              <div>
+                <Label className="text-xs text-gray-500">Account Created</Label>
+                <p className="text-sm">{selectedStaff.created_at ? new Date(selectedStaff.created_at).toLocaleString() : 'Unknown'}</p>
+              </div>
+              
+              {selectedStaff.is_locked && (
+                <Alert className="border-red-200 bg-red-50">
+                  <Lock className="h-4 w-4 text-red-600" />
+                  <AlertTitle className="text-red-800">Account Locked</AlertTitle>
+                  <AlertDescription className="text-red-600">
+                    This account is locked due to multiple failed login attempts.
+                  </AlertDescription>
+                </Alert>
+              )}
+              
+              {selectedStaff.is_temp_password && (
+                <Alert className="border-amber-200 bg-amber-50">
+                  <Key className="h-4 w-4 text-amber-600" />
+                  <AlertTitle className="text-amber-800">Temporary Password</AlertTitle>
+                  <AlertDescription className="text-amber-600">
+                    User must change password on next login.
+                  </AlertDescription>
+                </Alert>
+              )}
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewStaffOpen(false)}>Close</Button>
+            <Button onClick={() => {
+              setViewStaffOpen(false);
+              setResetPasswordOpen(true);
+            }}>
+              <Key className="w-4 h-4 mr-2" />
+              Reset Password
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
               <DialogFooter>
                 <Button onClick={() => {
                   setResetPasswordOpen(false);
