@@ -32,6 +32,9 @@ class YaccoEMRTester:
         self.enhanced_refresh_token = None
         self.enhanced_session_id = None
         self.enhanced_user_id = None
+        # Enhanced Patient Consent Management System variables
+        self.treatment_consent_id = None
+        self.records_consent_id = None
 
     def log_test(self, name, success, details=""):
         """Log test result"""
