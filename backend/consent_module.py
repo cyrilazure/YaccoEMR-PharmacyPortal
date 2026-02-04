@@ -2,20 +2,31 @@
 Patient Consent Forms Module for Yacco EMR
 HIPAA-Compliant Consent Management System
 
-Supports:
-- Multiple consent types (treatment, HIPAA, records release, etc.)
-- Digital signatures
-- Consent tracking and revocation
-- Document storage
+Features:
+- Stores signed consent forms with digital signatures
+- Links consent to specific record scopes (date ranges, record types)
+- Enforces expiration dates with automatic status updates
+- Allows revocation with reason tracking
+- Logs all consent usage for HIPAA audits
+- Document storage with integrity verification (SHA-256)
+
+Compliance Considerations:
+- HIPAA Privacy Rule: Patient authorization for use/disclosure of PHI
+- HIPAA Security Rule: Integrity controls for consent documents
+- 21 CFR Part 11: Electronic signatures and records
+- State-specific consent laws may apply
+- Retention: Minimum 6 years from date of creation or last effective date
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, Request
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone, timedelta
 from enum import Enum
 import uuid
 import hashlib
+import base64
+import os
 
 consent_router = APIRouter(prefix="/api/consents", tags=["Consent Forms"])
 
