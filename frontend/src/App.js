@@ -38,7 +38,7 @@ function RoleBasedRedirect() {
     case 'super_admin':
       return <Navigate to="/platform-admin" replace />;
     case 'hospital_admin':
-      return <Navigate to="/hospital-settings" replace />;
+      return <Navigate to="/admin-dashboard" replace />;
     case 'physician':
       return <Navigate to="/dashboard" replace />;
     case 'nurse':
@@ -47,6 +47,8 @@ function RoleBasedRedirect() {
       return <Navigate to="/scheduling" replace />;
     case 'admin':
       return <Navigate to="/admin" replace />;
+    case 'biller':
+      return <Navigate to="/billing" replace />;
     default:
       return <Navigate to="/dashboard" replace />;
   }
@@ -57,8 +59,11 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* Customer-Facing Portal (Hospitals & Staff) */}
-          <Route path="/login" element={<LoginPage />} />
+          {/* Ghana Region-Based Login - Main Entry Point */}
+          <Route path="/login" element={<RegionHospitalLogin />} />
+          
+          {/* Legacy/Direct Login (for backward compatibility) */}
+          <Route path="/direct-login" element={<LoginPage />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/register-hospital" element={<HospitalRegistration />} />
@@ -73,6 +78,7 @@ function App() {
             <Route path="platform-admin" element={<SuperAdminDashboard />} />
             {/* Hospital Admin Settings */}
             <Route path="hospital-settings" element={<HospitalSettings />} />
+            <Route path="admin-dashboard" element={<AdminDashboard />} />
             {/* Physician Dashboard */}
             <Route path="dashboard" element={<Dashboard />} />
             {/* Nurse Dashboard */}
