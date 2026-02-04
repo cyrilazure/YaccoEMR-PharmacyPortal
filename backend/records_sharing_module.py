@@ -322,6 +322,26 @@ def setup_routes(db, get_current_user):
         
         await db.records_requests.insert_one(request_doc)
         
+        # AUDIT: Log records request creation
+        await log_records_sharing_audit(
+            user=current_user,
+            action="share_request",
+            resource_type="records_request",
+            resource_id=request_doc["id"],
+            patient_id=request_data.patient_id,
+            patient_name=request_data.patient_name,
+            details=f"Created records request {request_number} to Dr. {target_physician['first_name']} {target_physician['last_name']} for patient {request_data.patient_name}. Urgency: {request_data.urgency}",
+            success=True,
+            severity="info",
+            metadata={
+                "request_number": request_number,
+                "target_physician_id": request_data.target_physician_id,
+                "target_organization": target_org_name,
+                "requested_records": request_data.requested_records,
+                "urgency": request_data.urgency
+            }
+        )
+        
         # Create notification for target physician
         notification_doc = {
             "id": str(uuid.uuid4()),
