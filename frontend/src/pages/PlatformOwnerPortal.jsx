@@ -187,6 +187,41 @@ export default function PlatformOwnerPortal() {
     }
   };
 
+  // Create hospital staff
+  const handleCreateStaff = async (e) => {
+    e.preventDefault();
+    if (!staffHospital) {
+      toast.error('Please select a hospital first');
+      return;
+    }
+    
+    setSaving(true);
+    try {
+      const response = await regionAPI.createHospitalStaff(staffHospital.hospital.id, newStaff);
+      setCreatedStaff(response.data);
+      toast.success('Staff account created successfully!');
+      setNewStaff({
+        first_name: '',
+        last_name: '',
+        email: '',
+        phone: '',
+        role: 'physician',
+        department_id: '',
+        employee_id: ''
+      });
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to create staff account');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const openStaffDialog = (hospital) => {
+    setStaffHospital(hospital);
+    setCreatedStaff(null);
+    setCreateStaffOpen(true);
+  };
+
   const copyToClipboard = async (text, id) => {
     await navigator.clipboard.writeText(text);
     setCopiedPassword(id);
