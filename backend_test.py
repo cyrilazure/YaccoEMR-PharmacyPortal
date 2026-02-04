@@ -1382,6 +1382,616 @@ class YaccoEMRTester:
             self.log_test("Platform Overview (Ghana)", False, f"Status: {response.status_code}")
             return False
 
+    # ============ HOSPITAL SIGNUP & ADMIN MODULE TESTS ============
+    
+    def test_hospital_signup_flow(self):
+        """Test complete hospital signup workflow"""
+        import time
+        timestamp = str(int(time.time()))
+        
+        # Step 1: Hospital Registration
+        signup_data = {
+            "hospital_name": "Test General Hospital",
+            "region_id": "volta",
+            "address": "123 Medical Street",
+            "city": "Ho",
+            "phone": "+233-24-1234567",
+            "hospital_email": f"info{timestamp}@testhosp.gh",
+            "license_number": f"LIC-{timestamp}",
+            "admin_first_name": "Dr. John",
+            "admin_last_name": "Administrator",
+            "admin_email": f"test.admin{timestamp}@testhosp.gh",
+            "admin_phone": "+233-24-7654321",
+            "accept_terms": True
+        }
+        
+        response, error = self.make_request('POST', 'signup/hospital', signup_data)
+        if error:
+            self.log_test("Hospital Signup Registration", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            registration_id = data.get('registration_id')
+            verification_token = data.get('dev_verification_token')
+            
+            has_registration_id = bool(registration_id)
+            has_verification_token = bool(verification_token)
+            
+            if has_registration_id and has_verification_token:
+                self.test_registration_id = registration_id
+                self.test_verification_token = verification_token
+                self.test_admin_email = signup_data['admin_email']
+                
+                self.log_test("Hospital Signup Registration", True, f"Registration ID: {registration_id}")
+                return True
+            else:
+                self.log_test("Hospital Signup Registration", False, "Missing registration ID or token")
+                return False
+        else:
+            self.log_test("Hospital Signup Registration", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_email_verification(self):
+        """Test email verification step"""
+        if not hasattr(self, 'test_verification_token') or not self.test_verification_token:
+            self.log_test("Email Verification", False, "No verification token available")
+            return False
+        
+        verification_data = {
+            "token": self.test_verification_token
+        }
+        
+        response, error = self.make_request('POST', 'signup/verify-email', verification_data)
+        if error:
+            self.log_test("Email Verification", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            status = data.get('status')
+            success = status == 'pending_approval'
+            self.log_test("Email Verification", success, f"Status: {status}")
+            return success
+        else:
+            self.log_test("Email Verification", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_registration_status_check(self):
+        """Test checking registration status"""
+        if not hasattr(self, 'test_registration_id') or not self.test_registration_id:
+            self.log_test("Registration Status Check", False, "No registration ID available")
+            return False
+        
+        response, error = self.make_request('GET', f'signup/status/{self.test_registration_id}')
+        if error:
+            self.log_test("Registration Status Check", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            status = data.get('status')
+            email_verified = data.get('email_verified', False)
+            success = status in ['pending_approval', 'approved'] and email_verified
+            self.log_test("Registration Status Check", success, f"Status: {status}, Verified: {email_verified}")
+            return success
+        else:
+            self.log_test("Registration Status Check", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_super_admin_list_pending_registrations(self):
+        """Test super admin listing pending registrations"""
+        if not hasattr(self, 'super_admin_token') or not self.super_admin_token:
+            # Try to login as super admin first
+            if not self.test_super_admin_login_ghana():
+                self.log_test("Super Admin List Pending", False, "No super admin access")
+                return False
+        
+        # Temporarily switch to super admin token
+        original_token = self.token
+        self.token = self.super_admin_token
+        
+        response, error = self.make_request('GET', 'signup/admin/pending')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Super Admin List Pending", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            registrations = data.get('registrations', [])
+            total = data.get('total', 0)
+            success = isinstance(registrations, list) and total >= 0
+            self.log_test("Super Admin List Pending", success, f"Found {total} pending registrations")
+            return success
+        else:
+            self.log_test("Super Admin List Pending", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_super_admin_approve_registration(self):
+        """Test super admin approving registration"""
+        if not hasattr(self, 'test_registration_id') or not self.test_registration_id:
+            self.log_test("Super Admin Approve Registration", False, "No registration ID available")
+            return False
+        
+        if not hasattr(self, 'super_admin_token') or not self.super_admin_token:
+            self.log_test("Super Admin Approve Registration", False, "No super admin access")
+            return False
+        
+        # Temporarily switch to super admin token
+        original_token = self.token
+        self.token = self.super_admin_token
+        
+        approval_data = {
+            "approved": True,
+            "notes": "Approved for testing purposes"
+        }
+        
+        response, error = self.make_request('POST', f'signup/admin/approve/{self.test_registration_id}', approval_data)
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Super Admin Approve Registration", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            status = data.get('status')
+            hospital = data.get('hospital', {})
+            admin = data.get('admin', {})
+            location = data.get('location', {})
+            
+            has_hospital_id = bool(hospital.get('id'))
+            has_admin_creds = bool(admin.get('email')) and bool(admin.get('temp_password'))
+            has_location = bool(location.get('id'))
+            
+            success = status == 'approved' and has_hospital_id and has_admin_creds and has_location
+            
+            if success:
+                self.test_approved_hospital_id = hospital.get('id')
+                self.test_approved_admin_email = admin.get('email')
+                self.test_approved_admin_password = admin.get('temp_password')
+                self.test_approved_location_id = location.get('id')
+            
+            self.log_test("Super Admin Approve Registration", success, 
+                         f"Status: {status}, Hospital: {hospital.get('name')}")
+            return success
+        else:
+            self.log_test("Super Admin Approve Registration", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_hospital_admin_login(self):
+        """Test hospital admin login with approved credentials"""
+        if not hasattr(self, 'test_approved_admin_email') or not hasattr(self, 'test_approved_admin_password'):
+            self.log_test("Hospital Admin Login", False, "No approved admin credentials available")
+            return False
+        
+        login_data = {
+            "email": self.test_approved_admin_email,
+            "password": self.test_approved_admin_password
+        }
+        
+        response, error = self.make_request('POST', 'auth/login', login_data)
+        if error:
+            self.log_test("Hospital Admin Login", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            token = data.get('token')
+            user = data.get('user', {})
+            
+            has_token = bool(token)
+            is_hospital_admin = user.get('role') == 'hospital_admin'
+            has_org_id = bool(user.get('organization_id'))
+            
+            success = has_token and is_hospital_admin and has_org_id
+            
+            if success:
+                self.hospital_admin_token = token
+                self.hospital_admin_id = user.get('id')
+                self.hospital_admin_org_id = user.get('organization_id')
+            
+            self.log_test("Hospital Admin Login", success, f"Role: {user.get('role')}")
+            return success
+        else:
+            self.log_test("Hospital Admin Login", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_hospital_admin_dashboard(self):
+        """Test hospital admin dashboard access"""
+        if not hasattr(self, 'hospital_admin_token') or not self.hospital_admin_token:
+            self.log_test("Hospital Admin Dashboard", False, "No hospital admin token")
+            return False
+        
+        if not hasattr(self, 'hospital_admin_org_id') or not self.hospital_admin_org_id:
+            self.log_test("Hospital Admin Dashboard", False, "No hospital organization ID")
+            return False
+        
+        # Temporarily switch to hospital admin token
+        original_token = self.token
+        self.token = self.hospital_admin_token
+        
+        response, error = self.make_request('GET', f'hospital/{self.hospital_admin_org_id}/admin/dashboard')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Hospital Admin Dashboard", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            hospital = data.get('hospital', {})
+            stats = data.get('stats', {})
+            departments = data.get('departments', [])
+            
+            has_hospital_info = bool(hospital.get('id'))
+            has_stats = 'total_users' in stats
+            has_departments = isinstance(departments, list)
+            
+            success = has_hospital_info and has_stats and has_departments
+            self.log_test("Hospital Admin Dashboard", success, 
+                         f"Hospital: {hospital.get('name')}, Users: {stats.get('total_users', 0)}")
+            return success
+        else:
+            self.log_test("Hospital Admin Dashboard", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_hospital_admin_list_users(self):
+        """Test hospital admin listing users"""
+        if not hasattr(self, 'hospital_admin_token') or not self.hospital_admin_token:
+            self.log_test("Hospital Admin List Users", False, "No hospital admin token")
+            return False
+        
+        if not hasattr(self, 'hospital_admin_org_id') or not self.hospital_admin_org_id:
+            self.log_test("Hospital Admin List Users", False, "No hospital organization ID")
+            return False
+        
+        # Temporarily switch to hospital admin token
+        original_token = self.token
+        self.token = self.hospital_admin_token
+        
+        response, error = self.make_request('GET', f'hospital/{self.hospital_admin_org_id}/admin/users')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Hospital Admin List Users", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            users = data.get('users', [])
+            total = data.get('total', 0)
+            
+            has_users = isinstance(users, list)
+            has_total = isinstance(total, int)
+            
+            success = has_users and has_total
+            self.log_test("Hospital Admin List Users", success, f"Found {total} users")
+            return success
+        else:
+            self.log_test("Hospital Admin List Users", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_hospital_admin_create_user(self):
+        """Test hospital admin creating a new user"""
+        if not hasattr(self, 'hospital_admin_token') or not self.hospital_admin_token:
+            self.log_test("Hospital Admin Create User", False, "No hospital admin token")
+            return False
+        
+        if not hasattr(self, 'hospital_admin_org_id') or not self.hospital_admin_org_id:
+            self.log_test("Hospital Admin Create User", False, "No hospital organization ID")
+            return False
+        
+        # Temporarily switch to hospital admin token
+        original_token = self.token
+        self.token = self.hospital_admin_token
+        
+        import time
+        timestamp = str(int(time.time()))
+        
+        user_data = {
+            "email": f"newdoctor{timestamp}@testhosp.gh",
+            "first_name": "Dr. Jane",
+            "last_name": "Smith",
+            "role": "physician",
+            "phone": "+233-24-9876543",
+            "specialty": "Internal Medicine",
+            "send_welcome_email": False
+        }
+        
+        response, error = self.make_request('POST', f'hospital/{self.hospital_admin_org_id}/admin/users', user_data)
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Hospital Admin Create User", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            user = data.get('user', {})
+            credentials = data.get('credentials', {})
+            
+            has_user_id = bool(user.get('id'))
+            has_temp_password = bool(credentials.get('temp_password'))
+            correct_role = user.get('role') == 'physician'
+            
+            success = has_user_id and has_temp_password and correct_role
+            
+            if success:
+                self.test_created_user_id = user.get('id')
+                self.test_created_user_email = user.get('email')
+                self.test_created_user_password = credentials.get('temp_password')
+            
+            self.log_test("Hospital Admin Create User", success, 
+                         f"User: {user.get('name')}, Role: {user.get('role')}")
+            return success
+        else:
+            self.log_test("Hospital Admin Create User", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_hospital_admin_list_departments(self):
+        """Test hospital admin listing departments"""
+        if not hasattr(self, 'hospital_admin_token') or not self.hospital_admin_token:
+            self.log_test("Hospital Admin List Departments", False, "No hospital admin token")
+            return False
+        
+        if not hasattr(self, 'hospital_admin_org_id') or not self.hospital_admin_org_id:
+            self.log_test("Hospital Admin List Departments", False, "No hospital organization ID")
+            return False
+        
+        # Temporarily switch to hospital admin token
+        original_token = self.token
+        self.token = self.hospital_admin_token
+        
+        response, error = self.make_request('GET', f'hospital/{self.hospital_admin_org_id}/admin/departments')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Hospital Admin List Departments", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            departments = data.get('departments', [])
+            total = data.get('total', 0)
+            
+            has_departments = isinstance(departments, list)
+            has_total = isinstance(total, int)
+            
+            success = has_departments and has_total
+            self.log_test("Hospital Admin List Departments", success, f"Found {total} departments")
+            return success
+        else:
+            self.log_test("Hospital Admin List Departments", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_hospital_admin_create_department(self):
+        """Test hospital admin creating a new department"""
+        if not hasattr(self, 'hospital_admin_token') or not self.hospital_admin_token:
+            self.log_test("Hospital Admin Create Department", False, "No hospital admin token")
+            return False
+        
+        if not hasattr(self, 'hospital_admin_org_id') or not self.hospital_admin_org_id:
+            self.log_test("Hospital Admin Create Department", False, "No hospital organization ID")
+            return False
+        
+        # Temporarily switch to hospital admin token
+        original_token = self.token
+        self.token = self.hospital_admin_token
+        
+        import time
+        timestamp = str(int(time.time()))
+        
+        dept_data = {
+            "name": f"Test Department {timestamp}",
+            "code": f"TEST{timestamp}",
+            "department_type": "clinical",
+            "description": "Test department for automated testing",
+            "phone": "+233-24-1111111",
+            "email": f"testdept{timestamp}@testhosp.gh"
+        }
+        
+        response, error = self.make_request('POST', f'hospital/{self.hospital_admin_org_id}/admin/departments', dept_data)
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Hospital Admin Create Department", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            department = data.get('department', {})
+            
+            has_dept_id = bool(department.get('id'))
+            correct_name = department.get('name') == dept_data['name']
+            correct_code = department.get('code') == dept_data['code']
+            
+            success = has_dept_id and correct_name and correct_code
+            
+            if success:
+                self.test_created_dept_id = department.get('id')
+            
+            self.log_test("Hospital Admin Create Department", success, 
+                         f"Department: {department.get('name')}")
+            return success
+        else:
+            self.log_test("Hospital Admin Create Department", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_hospital_main_dashboard(self):
+        """Test hospital main dashboard access"""
+        if not hasattr(self, 'hospital_admin_token') or not self.hospital_admin_token:
+            self.log_test("Hospital Main Dashboard", False, "No hospital admin token")
+            return False
+        
+        if not hasattr(self, 'hospital_admin_org_id') or not self.hospital_admin_org_id:
+            self.log_test("Hospital Main Dashboard", False, "No hospital organization ID")
+            return False
+        
+        # Temporarily switch to hospital admin token
+        original_token = self.token
+        self.token = self.hospital_admin_token
+        
+        response, error = self.make_request('GET', f'hospital/{self.hospital_admin_org_id}/dashboard')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Hospital Main Dashboard", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            hospital = data.get('hospital', {})
+            user = data.get('user', {})
+            stats = data.get('stats', {})
+            quick_links = data.get('quick_links', [])
+            
+            has_hospital_info = bool(hospital.get('id'))
+            has_user_info = bool(user.get('id'))
+            has_stats = 'total_users' in stats
+            has_quick_links = isinstance(quick_links, list) and len(quick_links) > 0
+            
+            success = has_hospital_info and has_user_info and has_stats and has_quick_links
+            self.log_test("Hospital Main Dashboard", success, 
+                         f"Hospital: {hospital.get('name')}, Portal: {user.get('portal')}")
+            return success
+        else:
+            self.log_test("Hospital Main Dashboard", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_hospital_locations_list(self):
+        """Test listing hospital locations"""
+        if not hasattr(self, 'hospital_admin_token') or not self.hospital_admin_token:
+            self.log_test("Hospital Locations List", False, "No hospital admin token")
+            return False
+        
+        if not hasattr(self, 'hospital_admin_org_id') or not self.hospital_admin_org_id:
+            self.log_test("Hospital Locations List", False, "No hospital organization ID")
+            return False
+        
+        # Temporarily switch to hospital admin token
+        original_token = self.token
+        self.token = self.hospital_admin_token
+        
+        response, error = self.make_request('GET', f'hospital/{self.hospital_admin_org_id}/locations')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Hospital Locations List", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            locations = data.get('locations', [])
+            total = data.get('total', 0)
+            
+            has_locations = isinstance(locations, list)
+            has_total = isinstance(total, int)
+            
+            success = has_locations and has_total
+            self.log_test("Hospital Locations List", success, f"Found {total} locations")
+            return success
+        else:
+            self.log_test("Hospital Locations List", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_hospital_physician_portal(self):
+        """Test hospital physician portal access"""
+        if not hasattr(self, 'hospital_admin_org_id') or not self.hospital_admin_org_id:
+            self.log_test("Hospital Physician Portal", False, "No hospital organization ID")
+            return False
+        
+        # Use regular physician token if available, otherwise skip
+        if not self.token:
+            self.log_test("Hospital Physician Portal", False, "No physician token available")
+            return False
+        
+        response, error = self.make_request('GET', f'hospital/{self.hospital_admin_org_id}/physician')
+        if error:
+            self.log_test("Hospital Physician Portal", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            portal = data.get('portal')
+            user = data.get('user', {})
+            stats = data.get('stats', {})
+            
+            is_physician_portal = portal == 'physician'
+            has_user_info = bool(user.get('id'))
+            has_stats = 'todays_patients' in stats
+            
+            success = is_physician_portal and has_user_info and has_stats
+            self.log_test("Hospital Physician Portal", success, 
+                         f"Portal: {portal}, User: {user.get('name')}")
+            return success
+        else:
+            self.log_test("Hospital Physician Portal", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_password_reset_functionality(self):
+        """Test password reset for hospital users"""
+        if not hasattr(self, 'hospital_admin_token') or not self.hospital_admin_token:
+            self.log_test("Password Reset Functionality", False, "No hospital admin token")
+            return False
+        
+        if not hasattr(self, 'hospital_admin_org_id') or not self.hospital_admin_org_id:
+            self.log_test("Password Reset Functionality", False, "No hospital organization ID")
+            return False
+        
+        if not hasattr(self, 'test_created_user_id') or not self.test_created_user_id:
+            self.log_test("Password Reset Functionality", False, "No test user available")
+            return False
+        
+        # Temporarily switch to hospital admin token
+        original_token = self.token
+        self.token = self.hospital_admin_token
+        
+        response, error = self.make_request('POST', f'hospital/{self.hospital_admin_org_id}/admin/users/{self.test_created_user_id}/reset-password')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Password Reset Functionality", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            temp_password = data.get('temp_password')
+            message = data.get('message')
+            
+            has_temp_password = bool(temp_password)
+            has_message = bool(message)
+            
+            success = has_temp_password and has_message
+            self.log_test("Password Reset Functionality", success, 
+                         f"New temp password generated: {bool(temp_password)}")
+            return success
+        else:
+            self.log_test("Password Reset Functionality", False, f"Status: {response.status_code}")
+            return False
+
     # ============ ORGANIZATION MODULE TESTS ============
     
     def test_organization_self_registration(self):
