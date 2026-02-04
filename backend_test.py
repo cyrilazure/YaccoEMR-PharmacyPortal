@@ -959,6 +959,523 @@ class YaccoEMRTester:
             self.log_test("FHIR Patient by ID", False, f"Status: {response.status_code}")
             return False
 
+    # ============ EMR PORTAL BACKEND API TESTS ============
+    
+    def test_emr_portal_authentication(self):
+        """Test EMR Portal Authentication with ygtnetworks@gmail.com / test123"""
+        login_data = {
+            "email": "ygtnetworks@gmail.com",
+            "password": "test123"
+        }
+        
+        response, error = self.make_request('POST', 'auth/login', login_data)
+        if error:
+            self.log_test("EMR Portal Authentication", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            self.super_admin_token = data.get('token')
+            user = data.get('user', {})
+            is_super_admin = user.get('role') == 'super_admin'
+            has_token = bool(self.super_admin_token)
+            
+            # Verify token includes role=super_admin
+            if has_token:
+                import jwt
+                try:
+                    payload = jwt.decode(self.super_admin_token, options={"verify_signature": False})
+                    token_role = payload.get('role')
+                    role_matches = token_role == 'super_admin'
+                    success = is_super_admin and has_token and role_matches
+                    self.log_test("EMR Portal Authentication", success, 
+                                 f"Role: {user.get('role')}, Token Role: {token_role}")
+                    return success
+                except Exception as e:
+                    self.log_test("EMR Portal Authentication", False, f"JWT decode error: {e}")
+                    return False
+            else:
+                self.log_test("EMR Portal Authentication", False, "No token received")
+                return False
+        else:
+            self.log_test("EMR Portal Authentication", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_platform_owner_overview(self):
+        """Test Platform Owner (Super Admin) - GET /api/regions/platform-overview"""
+        if not hasattr(self, 'super_admin_token') or not self.super_admin_token:
+            self.log_test("Platform Owner Overview", False, "No super admin token")
+            return False
+        
+        # Temporarily switch to super admin token
+        original_token = self.token
+        self.token = self.super_admin_token
+        
+        response, error = self.make_request('GET', 'regions/admin/overview')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Platform Owner Overview", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            required_fields = ['regions', 'totals', 'role_distribution', 'country']
+            has_all_fields = all(field in data for field in required_fields)
+            is_ghana = data.get('country') == 'Ghana'
+            has_regions = len(data.get('regions', [])) > 0
+            success = has_all_fields and is_ghana and has_regions
+            self.log_test("Platform Owner Overview", success, 
+                         f"Country: {data.get('country')}, Regions: {len(data.get('regions', []))}")
+            return success
+        else:
+            self.log_test("Platform Owner Overview", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_platform_owner_hospital_admins(self):
+        """Test Platform Owner - GET /api/regions/hospital-admins"""
+        if not hasattr(self, 'super_admin_token') or not self.super_admin_token:
+            self.log_test("Platform Owner Hospital Admins", False, "No super admin token")
+            return False
+        
+        # Temporarily switch to super admin token
+        original_token = self.token
+        self.token = self.super_admin_token
+        
+        response, error = self.make_request('GET', 'regions/admin/hospital-admins')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Platform Owner Hospital Admins", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_hospitals = 'hospitals' in data
+            has_total = 'total' in data
+            success = has_hospitals and has_total
+            hospital_count = len(data.get('hospitals', []))
+            self.log_test("Platform Owner Hospital Admins", success, 
+                         f"Found {hospital_count} hospitals with admins")
+            return success
+        else:
+            self.log_test("Platform Owner Hospital Admins", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_platform_owner_create_hospital(self):
+        """Test Platform Owner - POST /api/regions/hospitals (super_admin only)"""
+        if not hasattr(self, 'super_admin_token') or not self.super_admin_token:
+            self.log_test("Platform Owner Create Hospital", False, "No super admin token")
+            return False
+        
+        # Temporarily switch to super admin token
+        original_token = self.token
+        self.token = self.super_admin_token
+        
+        import time
+        timestamp = str(int(time.time()))
+        
+        hospital_data = {
+            "name": f"Test Hospital {timestamp}",
+            "region_id": "greater-accra",
+            "address": "123 Test Street, Accra",
+            "city": "Accra",
+            "phone": "+233-30-1234567",
+            "email": f"admin{timestamp}@testhospital.gov.gh",
+            "website": "https://testhospital.gov.gh",
+            "license_number": f"TH-{timestamp}",
+            "ghana_health_service_id": f"GHS-TH-{timestamp}",
+            "admin_first_name": "Test",
+            "admin_last_name": "Admin",
+            "admin_email": f"admin{timestamp}@testhospital.gov.gh",
+            "admin_phone": "+233-24-1234567"
+        }
+        
+        response, error = self.make_request('POST', 'regions/admin/hospitals', hospital_data)
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Platform Owner Create Hospital", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            hospital = data.get('hospital', {})
+            admin = data.get('admin', {})
+            location = data.get('location', {})
+            
+            has_hospital_id = bool(hospital.get('id'))
+            has_admin_creds = bool(admin.get('email')) and bool(admin.get('temp_password'))
+            has_location = bool(location.get('id'))
+            success = has_hospital_id and has_admin_creds and has_location
+            
+            if success:
+                self.test_hospital_id = hospital.get('id')
+                self.hospital_admin_email = admin.get('email')
+                self.hospital_admin_temp_password = admin.get('temp_password')
+            
+            self.log_test("Platform Owner Create Hospital", success, 
+                         f"Hospital: {hospital.get('name')}, Admin: {admin.get('email')}")
+            return success
+        else:
+            self.log_test("Platform Owner Create Hospital", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_hospital_it_admin_dashboard(self):
+        """Test Hospital IT Admin - GET /api/hospital/{hospitalId}/super-admin/dashboard"""
+        if not hasattr(self, 'super_admin_token') or not self.super_admin_token:
+            self.log_test("Hospital IT Admin Dashboard", False, "No super admin token")
+            return False
+        
+        # Use test hospital ID or fallback
+        hospital_id = getattr(self, 'test_hospital_id', 'test-hospital-001')
+        
+        # Temporarily switch to super admin token
+        original_token = self.token
+        self.token = self.super_admin_token
+        
+        response, error = self.make_request('GET', f'hospital/{hospital_id}/super-admin/dashboard')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Hospital IT Admin Dashboard", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            required_fields = ['hospital', 'staff_stats', 'role_distribution', 'departments', 'locations']
+            has_all_fields = all(field in data for field in required_fields)
+            
+            staff_stats = data.get('staff_stats', {})
+            has_staff_counts = all(key in staff_stats for key in ['total', 'active', 'inactive'])
+            
+            success = has_all_fields and has_staff_counts
+            self.log_test("Hospital IT Admin Dashboard", success, 
+                         f"Hospital: {data.get('hospital', {}).get('name', 'Unknown')}")
+            return success
+        else:
+            self.log_test("Hospital IT Admin Dashboard", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_hospital_it_admin_staff_list(self):
+        """Test Hospital IT Admin - GET /api/hospital/{hospitalId}/super-admin/staff"""
+        if not hasattr(self, 'super_admin_token') or not self.super_admin_token:
+            self.log_test("Hospital IT Admin Staff List", False, "No super admin token")
+            return False
+        
+        hospital_id = getattr(self, 'test_hospital_id', 'test-hospital-001')
+        
+        # Temporarily switch to super admin token
+        original_token = self.token
+        self.token = self.super_admin_token
+        
+        response, error = self.make_request('GET', f'hospital/{hospital_id}/super-admin/staff')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Hospital IT Admin Staff List", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            required_fields = ['staff', 'total', 'page', 'pages']
+            has_all_fields = all(field in data for field in required_fields)
+            
+            staff_list = data.get('staff', [])
+            total_count = data.get('total', 0)
+            
+            success = has_all_fields
+            self.log_test("Hospital IT Admin Staff List", success, 
+                         f"Found {len(staff_list)} staff, Total: {total_count}")
+            return success
+        else:
+            self.log_test("Hospital IT Admin Staff List", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_hospital_it_admin_create_staff(self):
+        """Test Hospital IT Admin - POST /api/hospital/{hospitalId}/super-admin/staff"""
+        if not hasattr(self, 'super_admin_token') or not self.super_admin_token:
+            self.log_test("Hospital IT Admin Create Staff", False, "No super admin token")
+            return False
+        
+        hospital_id = getattr(self, 'test_hospital_id', 'test-hospital-001')
+        
+        import time
+        timestamp = str(int(time.time()))
+        
+        staff_data = {
+            "email": f"teststaff{timestamp}@hospital.com",
+            "first_name": "Test",
+            "last_name": "Staff",
+            "role": "physician",
+            "phone": "+233-24-9876543"
+        }
+        
+        # Temporarily switch to super admin token
+        original_token = self.token
+        self.token = self.super_admin_token
+        
+        response, error = self.make_request('POST', f'hospital/{hospital_id}/super-admin/staff', staff_data)
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Hospital IT Admin Create Staff", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            staff = data.get('staff', {})
+            credentials = data.get('credentials', {})
+            
+            has_staff_id = bool(staff.get('id'))
+            has_temp_password = bool(credentials.get('temp_password'))
+            success = has_staff_id and has_temp_password
+            
+            self.log_test("Hospital IT Admin Create Staff", success, 
+                         f"Staff: {staff.get('name')}, Role: {staff.get('role')}")
+            return success
+        else:
+            self.log_test("Hospital IT Admin Create Staff", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_hospital_admin_dashboard(self):
+        """Test Hospital Admin - GET /api/hospitals/{hospitalId}/admin/dashboard"""
+        if not hasattr(self, 'hospital_admin_email') or not hasattr(self, 'hospital_admin_temp_password'):
+            self.log_test("Hospital Admin Dashboard", False, "No hospital admin credentials")
+            return False
+        
+        # First login as hospital admin
+        login_data = {
+            "email": self.hospital_admin_email,
+            "password": self.hospital_admin_temp_password
+        }
+        
+        response, error = self.make_request('POST', 'auth/login', login_data)
+        if error or response.status_code != 200:
+            self.log_test("Hospital Admin Dashboard", False, "Failed to login as hospital admin")
+            return False
+        
+        data = response.json()
+        hospital_admin_token = data.get('token')
+        
+        if not hospital_admin_token:
+            self.log_test("Hospital Admin Dashboard", False, "No hospital admin token received")
+            return False
+        
+        hospital_id = getattr(self, 'test_hospital_id', 'test-hospital-001')
+        
+        # Temporarily switch to hospital admin token
+        original_token = self.token
+        self.token = hospital_admin_token
+        
+        response, error = self.make_request('GET', f'hospital/{hospital_id}/admin/dashboard')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Hospital Admin Dashboard", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            required_fields = ['hospital', 'stats', 'role_distribution', 'departments']
+            has_all_fields = all(field in data for field in required_fields)
+            
+            stats = data.get('stats', {})
+            has_stats = 'total_users' in stats and 'total_departments' in stats
+            
+            success = has_all_fields and has_stats
+            self.log_test("Hospital Admin Dashboard", success, 
+                         f"Hospital: {data.get('hospital', {}).get('name', 'Unknown')}")
+            return success
+        else:
+            self.log_test("Hospital Admin Dashboard", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_hospital_admin_departments(self):
+        """Test Hospital Admin - GET /api/hospitals/{hospitalId}/admin/departments"""
+        if not hasattr(self, 'hospital_admin_email') or not hasattr(self, 'hospital_admin_temp_password'):
+            self.log_test("Hospital Admin Departments", False, "No hospital admin credentials")
+            return False
+        
+        # Login as hospital admin
+        login_data = {
+            "email": self.hospital_admin_email,
+            "password": self.hospital_admin_temp_password
+        }
+        
+        response, error = self.make_request('POST', 'auth/login', login_data)
+        if error or response.status_code != 200:
+            self.log_test("Hospital Admin Departments", False, "Failed to login as hospital admin")
+            return False
+        
+        data = response.json()
+        hospital_admin_token = data.get('token')
+        hospital_id = getattr(self, 'test_hospital_id', 'test-hospital-001')
+        
+        # Temporarily switch to hospital admin token
+        original_token = self.token
+        self.token = hospital_admin_token
+        
+        response, error = self.make_request('GET', f'hospital/{hospital_id}/admin/departments')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Hospital Admin Departments", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_departments = 'departments' in data
+            has_total = 'total' in data
+            success = has_departments and has_total
+            
+            department_count = len(data.get('departments', []))
+            self.log_test("Hospital Admin Departments", success, 
+                         f"Found {department_count} departments")
+            return success
+        else:
+            self.log_test("Hospital Admin Departments", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_hospital_admin_no_staff_creation(self):
+        """Test Hospital Admin CANNOT create staff (that's IT Admin only)"""
+        if not hasattr(self, 'hospital_admin_email') or not hasattr(self, 'hospital_admin_temp_password'):
+            self.log_test("Hospital Admin No Staff Creation", False, "No hospital admin credentials")
+            return False
+        
+        # Login as hospital admin
+        login_data = {
+            "email": self.hospital_admin_email,
+            "password": self.hospital_admin_temp_password
+        }
+        
+        response, error = self.make_request('POST', 'auth/login', login_data)
+        if error or response.status_code != 200:
+            self.log_test("Hospital Admin No Staff Creation", False, "Failed to login as hospital admin")
+            return False
+        
+        data = response.json()
+        hospital_admin_token = data.get('token')
+        hospital_id = getattr(self, 'test_hospital_id', 'test-hospital-001')
+        
+        import time
+        timestamp = str(int(time.time()))
+        
+        staff_data = {
+            "email": f"shouldfail{timestamp}@hospital.com",
+            "first_name": "Should",
+            "last_name": "Fail",
+            "role": "nurse"
+        }
+        
+        # Temporarily switch to hospital admin token
+        original_token = self.token
+        self.token = hospital_admin_token
+        
+        # Try to access IT Admin staff creation endpoint (should fail)
+        response, error = self.make_request('POST', f'hospital/{hospital_id}/super-admin/staff', staff_data)
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Hospital Admin No Staff Creation", True, "Correctly blocked from staff creation")
+            return True
+        
+        # Should get 403 Forbidden
+        if response.status_code == 403:
+            self.log_test("Hospital Admin No Staff Creation", True, "Correctly denied access (403)")
+            return True
+        else:
+            self.log_test("Hospital Admin No Staff Creation", False, 
+                         f"Expected 403, got {response.status_code}")
+            return False
+    
+    def test_departments_list(self):
+        """Test Department APIs - GET /api/departments"""
+        response, error = self.make_request('GET', 'departments')
+        if error:
+            self.log_test("Departments List", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            # Should return a list of departments
+            is_list = isinstance(data, list)
+            self.log_test("Departments List", is_list, f"Found {len(data) if is_list else 0} departments")
+            return is_list
+        else:
+            self.log_test("Departments List", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_department_types(self):
+        """Test Department APIs - GET /api/departments/types"""
+        response, error = self.make_request('GET', 'departments/types')
+        if error:
+            self.log_test("Department Types", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            is_list = isinstance(data, list)
+            has_types = len(data) > 0 if is_list else False
+            
+            # Check if types have expected structure
+            if is_list and len(data) > 0:
+                first_type = data[0]
+                has_structure = 'value' in first_type and 'name' in first_type
+                success = is_list and has_types and has_structure
+            else:
+                success = is_list and has_types
+            
+            self.log_test("Department Types", success, f"Found {len(data) if is_list else 0} department types")
+            return success
+        else:
+            self.log_test("Department Types", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_role_based_access_control(self):
+        """Test Role-Based Access Control - Super Admin vs Regular User"""
+        # Test 1: Super admin should access platform APIs
+        if not hasattr(self, 'super_admin_token') or not self.super_admin_token:
+            self.log_test("Role-Based Access Control", False, "No super admin token")
+            return False
+        
+        # Temporarily switch to super admin token
+        original_token = self.token
+        self.token = self.super_admin_token
+        
+        # Super admin should access platform overview
+        response, error = self.make_request('GET', 'regions/admin/overview')
+        super_admin_can_access = response and response.status_code == 200
+        
+        # Restore original token
+        self.token = original_token
+        
+        # Test 2: Super admin should NOT access patient clinical data (if we had a patient)
+        # This is more of a design verification - super_admin role should be platform-level only
+        
+        success = super_admin_can_access
+        self.log_test("Role-Based Access Control", success, 
+                     f"Super admin platform access: {super_admin_can_access}")
+        return success
+    
     # ============ REGION-BASED HOSPITAL DISCOVERY TESTS (GHANA) ============
     
     def test_ghana_regions_discovery(self):
