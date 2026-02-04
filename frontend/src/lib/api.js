@@ -459,4 +459,52 @@ export const adminAPI = {
   getPlatformStats: () => api.get('/admin/system/stats'),
 };
 
+// Region & Hospital Discovery APIs (Ghana)
+export const regionAPI = {
+  // Public Discovery (no auth required)
+  getRegions: () => api.get('/regions/'),
+  getRegion: (regionId) => api.get(`/regions/${regionId}`),
+  getHospitalsByRegion: (regionId, search, city) => api.get(`/regions/${regionId}/hospitals`, { 
+    params: { search, city } 
+  }),
+  getHospitalDetails: (hospitalId) => api.get(`/regions/hospitals/${hospitalId}`),
+  getHospitalLocations: (hospitalId) => api.get(`/regions/hospitals/${hospitalId}/locations`),
+  
+  // Location-Aware Authentication
+  locationLogin: (email, password, hospitalId, locationId, totpCode) => api.post('/regions/auth/login', {
+    email,
+    password,
+    hospital_id: hospitalId,
+    location_id: locationId,
+    totp_code: totpCode
+  }),
+  getRedirectUrl: () => api.get('/regions/auth/redirect-url'),
+  
+  // Super Admin - Region Management
+  createRegion: (data) => api.post('/regions/admin/regions', data),
+  updateRegion: (regionId, data) => api.put(`/regions/admin/regions/${regionId}`, data),
+  deleteRegion: (regionId) => api.delete(`/regions/admin/regions/${regionId}`),
+  
+  // Super Admin - Hospital Management
+  createHospital: (data) => api.post('/regions/admin/hospitals', data),
+  assignHospitalToRegion: (hospitalId, regionId) => api.put(`/regions/admin/hospitals/${hospitalId}/region`, null, { 
+    params: { region_id: regionId } 
+  }),
+  getAllHospitals: (regionId, status) => api.get('/regions/admin/hospitals/all', { 
+    params: { region_id: regionId, status } 
+  }),
+  getPlatformOverview: () => api.get('/regions/admin/overview'),
+  
+  // Hospital Admin - Location Management
+  addLocation: (hospitalId, data) => api.post(`/regions/hospitals/${hospitalId}/locations`, data),
+  updateLocation: (hospitalId, locationId, data) => api.put(`/regions/hospitals/${hospitalId}/locations/${locationId}`, data),
+  deactivateLocation: (hospitalId, locationId) => api.delete(`/regions/hospitals/${hospitalId}/locations/${locationId}`),
+  
+  // Hospital Admin - Staff Management
+  createStaffWithLocation: (hospitalId, data) => api.post(`/regions/hospitals/${hospitalId}/staff`, data),
+  assignStaffToLocation: (userId, locationId) => api.put(`/regions/staff/${userId}/location`, null, { 
+    params: { location_id: locationId } 
+  }),
+};
+
 export default api;
