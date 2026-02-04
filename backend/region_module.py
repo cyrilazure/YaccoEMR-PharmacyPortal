@@ -873,6 +873,134 @@ def create_region_endpoints(db, get_current_user, hash_password):
             "note": "User should change password on first login"
         }
     
+    @region_router.delete("/admin/hospitals/{hospital_id}", response_model=dict)
+    async def delete_hospital(
+        hospital_id: str,
+        user: dict = Depends(get_current_user)
+    ):
+        """Delete (soft-delete/deactivate) a hospital (Super Admin only)"""
+        if user.get("role") != "super_admin":
+            raise HTTPException(status_code=403, detail="Super Admin access required")
+        
+        # Get hospital
+        hospital = await db["hospitals"].find_one({"id": hospital_id})
+        if not hospital:
+            raise HTTPException(status_code=404, detail="Hospital not found")
+        
+        # Get counts for audit
+        user_count = await db["users"].count_documents({"organization_id": hospital_id})
+        patient_count = await db["patients"].count_documents({"organization_id": hospital_id})
+        
+        # Soft delete - mark as deleted, don't actually remove
+        await db["hospitals"].update_one(
+            {"id": hospital_id},
+            {"$set": {
+                "status": "deleted",
+                "is_active": False,
+                "deleted_at": datetime.now(timezone.utc).isoformat(),
+                "deleted_by": user["id"]
+            }}
+        )
+        
+        # Deactivate all users in this hospital
+        await db["users"].update_many(
+            {"organization_id": hospital_id},
+            {"$set": {"is_active": False, "deactivated_reason": "hospital_deleted"}}
+        )
+        
+        # Audit log
+        await db["audit_logs"].insert_one({
+            "id": str(uuid.uuid4()),
+            "event_type": "hospital_deleted",
+            "user_id": user["id"],
+            "hospital_id": hospital_id,
+            "details": {
+                "hospital_name": hospital.get("name"),
+                "region_id": hospital.get("region_id"),
+                "user_count": user_count,
+                "patient_count": patient_count,
+                "action": "soft_delete"
+            },
+            "ip_address": "system",
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        })
+        
+        return {
+            "message": f"Hospital '{hospital.get('name')}' has been deactivated",
+            "hospital_id": hospital_id,
+            "affected_users": user_count,
+            "affected_patients": patient_count,
+            "note": "This is a soft delete. Data is preserved but inaccessible."
+        }
+    
+    @region_router.put("/admin/hospitals/{hospital_id}/status", response_model=dict)
+    async def update_hospital_status(
+        hospital_id: str,
+        status_data: dict,
+        user: dict = Depends(get_current_user)
+    ):
+        """Update hospital status (Super Admin only)"""
+        if user.get("role") != "super_admin":
+            raise HTTPException(status_code=403, detail="Super Admin access required")
+        
+        # Get hospital
+        hospital = await db["hospitals"].find_one({"id": hospital_id})
+        if not hospital:
+            raise HTTPException(status_code=404, detail="Hospital not found")
+        
+        new_status = status_data.get("status", "active")
+        valid_statuses = ["active", "suspended", "inactive", "pending"]
+        
+        if new_status not in valid_statuses:
+            raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: {valid_statuses}")
+        
+        # Update status
+        is_active = new_status == "active"
+        await db["hospitals"].update_one(
+            {"id": hospital_id},
+            {"$set": {
+                "status": new_status,
+                "is_active": is_active,
+                "status_updated_at": datetime.now(timezone.utc).isoformat(),
+                "status_updated_by": user["id"]
+            }}
+        )
+        
+        # If suspended/inactive, also deactivate user logins
+        if not is_active:
+            await db["users"].update_many(
+                {"organization_id": hospital_id},
+                {"$set": {"login_disabled": True, "login_disabled_reason": f"hospital_{new_status}"}}
+            )
+        else:
+            # Reactivate user logins
+            await db["users"].update_many(
+                {"organization_id": hospital_id, "login_disabled_reason": {"$regex": "^hospital_"}},
+                {"$set": {"login_disabled": False}, "$unset": {"login_disabled_reason": ""}}
+            )
+        
+        # Audit log
+        await db["audit_logs"].insert_one({
+            "id": str(uuid.uuid4()),
+            "event_type": "hospital_status_changed",
+            "user_id": user["id"],
+            "hospital_id": hospital_id,
+            "details": {
+                "hospital_name": hospital.get("name"),
+                "old_status": hospital.get("status", "unknown"),
+                "new_status": new_status
+            },
+            "ip_address": "system",
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        })
+        
+        return {
+            "message": f"Hospital status changed to '{new_status}'",
+            "hospital_id": hospital_id,
+            "status": new_status,
+            "is_active": is_active
+        }
+    
     # ============ Hospital Admin - Location Management ============
     
     @region_router.post("/hospitals/{hospital_id}/locations", response_model=dict)
