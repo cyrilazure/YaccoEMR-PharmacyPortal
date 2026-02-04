@@ -4745,6 +4745,11 @@ class YaccoEMRTester:
         # AI functionality
         self.test_ai_note_generation()
         
+        # ============ NURSE PORTAL MODULE TESTS ============
+        print("\n🏥 Testing Nurse Portal Module")
+        print("-" * 50)
+        self.run_nurse_portal_tests()
+        
         # ============ NEW MODULE TESTS ============
         print("\n💊 Testing Pharmacy Module")
         print("-" * 30)
