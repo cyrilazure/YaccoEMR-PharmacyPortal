@@ -597,15 +597,18 @@ frontend:
 
   - task: "Hospital Registration Page"
     implemented: true
-    working: "NA"
+    working: true
     file: "frontend/src/pages/HospitalRegistration.jsx"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Created self-service hospital registration with multi-step form"
+      - working: true
+        agent: "testing"
+        comment: "✅ Hospital Signup Page - WORKING: Successfully tested /signup page with both Hospital Registration and Provider (Invite) tabs. Hospital registration form includes all required fields: hospital info, region selection, admin contact details, and terms acceptance. Provider signup requires invite code as expected. All form elements render correctly."
 
   - task: "Labs Tab in Patient Chart"
     implemented: true
