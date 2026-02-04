@@ -991,6 +991,102 @@ export default function HospitalAdminPortal() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* View Patient Dialog */}
+      <Dialog open={viewPatientOpen} onOpenChange={setViewPatientOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <IdCard className="w-5 h-5 text-emerald-600" />
+              Patient Record
+            </DialogTitle>
+          </DialogHeader>
+          {selectedPatient && (
+            <div className="space-y-6">
+              {/* MRN Badge */}
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div>
+                  <Label className="text-xs text-gray-500">Medical Record Number (MRN)</Label>
+                  {selectedPatient.mrn ? (
+                    <p className="text-lg font-mono font-bold text-emerald-700">{selectedPatient.mrn}</p>
+                  ) : (
+                    <p className="text-orange-600">Not assigned</p>
+                  )}
+                </div>
+                {!selectedPatient.mrn && (
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      handleAssignMRN(selectedPatient.id);
+                      setViewPatientOpen(false);
+                    }}
+                  >
+                    <Hash className="w-4 h-4 mr-1" />
+                    Assign MRN
+                  </Button>
+                )}
+              </div>
+              
+              <Separator />
+              
+              {/* Patient Details */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs text-gray-500">Full Name</Label>
+                  <p className="font-medium">
+                    {selectedPatient.first_name} {selectedPatient.middle_name || ''} {selectedPatient.last_name}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-xs text-gray-500">Date of Birth</Label>
+                  <p>{formatDate(selectedPatient.date_of_birth)}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-gray-500">Gender</Label>
+                  <p className="capitalize">{selectedPatient.gender}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-gray-500">NHIS ID</Label>
+                  <p>{selectedPatient.nhis_id || selectedPatient.insurance_id || '-'}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-gray-500">Phone</Label>
+                  <p>{selectedPatient.phone || '-'}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-gray-500">Email</Label>
+                  <p>{selectedPatient.email || '-'}</p>
+                </div>
+                <div className="col-span-2">
+                  <Label className="text-xs text-gray-500">Address</Label>
+                  <p>
+                    {selectedPatient.address || '-'}
+                    {selectedPatient.city && `, ${selectedPatient.city}`}
+                  </p>
+                </div>
+              </div>
+              
+              <Separator />
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs text-gray-500">Registration Date</Label>
+                  <p>{formatDate(selectedPatient.created_at)}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-gray-500">Department</Label>
+                  <p>{selectedPatient.department_name || '-'}</p>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewPatientOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
