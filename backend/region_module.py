@@ -785,6 +785,94 @@ def create_region_endpoints(db, get_current_user, hash_password):
             "by_region": by_region
         }
     
+    @region_router.post("/admin/hospitals/{hospital_id}/staff", response_model=dict)
+    async def create_hospital_staff_as_super_admin(
+        hospital_id: str,
+        staff_data: dict,
+        user: dict = Depends(get_current_user)
+    ):
+        """Create a staff account for any hospital (Super Admin only)"""
+        if user.get("role") != "super_admin":
+            raise HTTPException(status_code=403, detail="Super Admin access required")
+        
+        # Get hospital
+        hospital = await db["hospitals"].find_one({"id": hospital_id})
+        if not hospital:
+            raise HTTPException(status_code=404, detail="Hospital not found")
+        
+        # Check if email already exists
+        existing = await db["users"].find_one({"email": staff_data.get("email")})
+        if existing:
+            raise HTTPException(status_code=400, detail="Email already exists")
+        
+        # Generate temp password
+        import secrets
+        temp_password = secrets.token_urlsafe(12)
+        
+        # Create user
+        staff_id = str(uuid.uuid4())
+        staff_user = {
+            "id": staff_id,
+            "email": staff_data.get("email"),
+            "password": hash_password(temp_password),
+            "first_name": staff_data.get("first_name"),
+            "last_name": staff_data.get("last_name"),
+            "phone": staff_data.get("phone"),
+            "role": staff_data.get("role", "physician"),
+            "organization_id": hospital_id,
+            "hospital_id": hospital_id,
+            "region_id": hospital.get("region_id"),
+            "department_id": staff_data.get("department_id"),
+            "employee_id": staff_data.get("employee_id"),
+            "is_active": True,
+            "email_verified": False,
+            "mfa_enabled": False,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "created_by": user["id"],
+            "created_by_super_admin": True
+        }
+        
+        await db["users"].insert_one(staff_user)
+        
+        # Update hospital user count
+        await db["hospitals"].update_one(
+            {"id": hospital_id},
+            {"$inc": {"user_count": 1}}
+        )
+        
+        # Audit log
+        await db["audit_logs"].insert_one({
+            "id": str(uuid.uuid4()),
+            "event_type": "staff_created_by_super_admin",
+            "user_id": user["id"],
+            "target_user_id": staff_id,
+            "hospital_id": hospital_id,
+            "details": {
+                "staff_email": staff_data.get("email"),
+                "staff_role": staff_data.get("role"),
+                "staff_name": f"{staff_data.get('first_name')} {staff_data.get('last_name')}"
+            },
+            "ip_address": "system",
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        })
+        
+        return {
+            "message": "Staff account created successfully",
+            "user": {
+                "id": staff_id,
+                "email": staff_user["email"],
+                "first_name": staff_user["first_name"],
+                "last_name": staff_user["last_name"],
+                "role": staff_user["role"]
+            },
+            "hospital": {
+                "id": hospital_id,
+                "name": hospital.get("name")
+            },
+            "temp_password": temp_password,
+            "note": "User should change password on first login"
+        }
+    
     # ============ Hospital Admin - Location Management ============
     
     @region_router.post("/hospitals/{hospital_id}/locations", response_model=dict)
