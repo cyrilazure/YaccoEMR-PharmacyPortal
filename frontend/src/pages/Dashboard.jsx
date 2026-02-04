@@ -54,6 +54,51 @@ export default function Dashboard() {
     }
   };
 
+  // Search patient by MRN, name, or DOB
+  const handleMRNSearch = async () => {
+    if (!mrnSearch.trim()) return;
+    
+    setSearching(true);
+    try {
+      const res = await patientAPI.getAll({ search: mrnSearch });
+      if (res.data && res.data.length > 0) {
+        setSearchResult(res.data[0]);
+      } else {
+        setSearchResult(null);
+        toast.info('No patient found');
+      }
+    } catch (err) {
+      toast.error('Search failed');
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  // Generate MRN for patient
+  const generateMRN = () => {
+    const hospitalAbbr = user?.organization_name
+      ?.split(' ')
+      .map(w => w[0])
+      .join('')
+      .toUpperCase()
+      .substring(0, 3) || 'YAC';
+    const timestamp = Date.now().toString().slice(-6);
+    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    return `${hospitalAbbr}-${timestamp}-${random}`;
+  };
+
+  // Assign MRN to found patient
+  const handleAssignMRN = async (patientId) => {
+    const mrn = generateMRN();
+    try {
+      await patientAPI.update(patientId, { mrn });
+      toast.success(`MRN ${mrn} assigned successfully`);
+      setSearchResult(prev => prev ? { ...prev, mrn } : null);
+    } catch (err) {
+      toast.error('Failed to assign MRN');
+    }
+  };
+
   const StatCard = ({ title, value, icon: Icon, trend, color }) => (
     <Card className="hover-card">
       <CardContent className="p-6">
