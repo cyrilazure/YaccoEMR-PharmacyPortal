@@ -4257,6 +4257,27 @@ class YaccoEMRTester:
         self.test_allergy_creation()
         self.test_clinical_note_creation()
         
+        # ============ COMPREHENSIVE NOTIFICATION SYSTEM TESTS ============
+        print("\n🔔 Testing Comprehensive Notification System")
+        print("-" * 50)
+        self.test_notification_types()
+        self.test_notification_priorities()
+        self.test_create_notification_admin()
+        self.test_get_notifications()
+        self.test_get_notifications_unread_only()
+        self.test_get_unread_count()
+        self.test_notification_read_unread_lifecycle()
+        self.test_notification_dismiss()
+        self.test_notification_delete()
+        self.test_mark_all_notifications_read()
+        self.test_clear_all_notifications()
+        self.test_notification_preferences_get()
+        self.test_notification_preferences_update()
+        self.test_bulk_notifications()
+        self.test_expiration_checks()
+        self.test_emergency_access_alert()
+        self.test_notification_statistics()
+        
         # ============ ENHANCED PATIENT CONSENT MANAGEMENT SYSTEM TESTS ============
         print("\n📋 Testing Enhanced Patient Consent Management System")
         print("-" * 50)
