@@ -1260,11 +1260,24 @@ class YaccoEMRTester:
         
         # Use the hospital ID from the created hospital
         hospital_id = getattr(self, 'test_hospital_id', None)
-        print(f"DEBUG: Hospital ID for dashboard test: {hospital_id}")  # Debug output
         
         if not hospital_id:
-            # Try to use a fallback hospital ID or skip this test
-            self.log_test("Hospital Admin Dashboard", True, "Skipped - No test hospital ID available (hospital creation may have failed)")
+            # If no hospital ID from creation, try to get one from the hospital list
+            original_token = self.token
+            self.token = self.super_admin_token
+            
+            response, error = self.make_request('GET', 'regions/admin/hospital-admins')
+            if not error and response.status_code == 200:
+                data = response.json()
+                hospitals = data.get('hospitals', [])
+                if hospitals:
+                    hospital_id = hospitals[0]['hospital']['id']
+                    self.test_hospital_id = hospital_id
+            
+            self.token = original_token
+        
+        if not hospital_id:
+            self.log_test("Hospital Admin Dashboard", True, "Skipped - No hospital ID available")
             return True
         
         # Temporarily switch to super admin token
