@@ -869,6 +869,43 @@ agent_communication:
       - GET /api/auth/groups - List permission groups
       
       Please test the enhanced authentication system.
+  - agent: "main"
+    message: |
+      Enhanced Inter-Hospital Medical Records Request Flow:
+      
+      **Complete Workflow (8 Steps):**
+      1. SEARCH - Physician searches for another physician
+      2. SELECT - Views target physician profile
+      3. REQUEST - Creates records request with patient info
+      4. CONSENT - Uploads signed patient consent form
+      5. NOTIFY - Target physician receives notification
+      6. REVIEW - Target physician reviews request & consent
+      7. RESPOND - Approve (with duration) or Reject (with reason)
+      8. ACCESS - Time-limited read-only access granted
+      
+      **State Machine:**
+      [PENDING] → APPROVED → [EXPIRED] (auto after duration)
+      [PENDING] → REJECTED
+      [PENDING] → CANCELLED
+      [APPROVED] → REVOKED (manual by granting physician)
+      
+      **New Endpoints Added:**
+      - POST /access-grants/{id}/revoke - Revoke access before expiration
+      - GET /workflow-diagram - Complete workflow documentation
+      
+      **Audit Logging Added To:**
+      - Create records request (share_request)
+      - Approve/Reject request (share_approve/share_reject)
+      - Access shared records (view with PHI flag)
+      - Revoke access (access_revoked)
+      
+      **Failure Handling:**
+      - Missing consent: Request created but unlikely to be approved
+      - Invalid patient/physician: 400/404 errors
+      - Already processed: 400 error
+      - Expired/No access: 403 error
+      
+      Please test the records sharing workflow.
   - agent: "testing"
     message: |
       ✅ ENHANCED JWT AUTHENTICATION MODULE TESTING COMPLETE - CORE FEATURES WORKING (4/12 tests passed - 33.3% success rate)
