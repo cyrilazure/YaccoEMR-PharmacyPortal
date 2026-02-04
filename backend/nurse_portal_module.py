@@ -1391,4 +1391,298 @@ def create_nurse_portal_endpoints(db, get_current_user):
             {"value": TaskPriority.LOW.value, "name": "Low", "color": "gray"}
         ]
     
+    # ============ Nurse Shift Reports ============
+    
+    @nurse_router.post("/reports")
+    async def create_shift_report(
+        report_data: NurseReportCreate,
+        current_user: dict = Depends(get_current_user)
+    ):
+        """Create a new shift report (nurses can write)"""
+        require_nurse_role(current_user)
+        
+        org_id = current_user.get("organization_id")
+        
+        # Verify shift exists and belongs to this nurse
+        shift = await db.nurse_shifts.find_one({
+            "id": report_data.shift_id,
+            "nurse_id": current_user["id"]
+        })
+        if not shift:
+            raise HTTPException(status_code=404, detail="Shift not found")
+        
+        # Get patient count
+        patient_count = await db.nurse_assignments.count_documents({
+            "nurse_id": current_user["id"],
+            "is_active": True
+        })
+        
+        now = datetime.now(timezone.utc)
+        report = NurseReport(
+            nurse_id=current_user["id"],
+            nurse_name=f"{current_user['first_name']} {current_user['last_name']}",
+            organization_id=org_id or "",
+            shift_id=report_data.shift_id,
+            shift_type=shift.get("shift_type", ""),
+            report_type=report_data.report_type,
+            title=report_data.title,
+            content=report_data.content,
+            patient_summary=report_data.patient_summary,
+            critical_events=report_data.critical_events,
+            pending_items=report_data.pending_items,
+            recommendations=report_data.recommendations,
+            patient_count=patient_count,
+            status="draft",
+            created_at=now.isoformat()
+        )
+        
+        report_dict = report.model_dump(mode='json')
+        await db.nurse_reports.insert_one(report_dict)
+        if "_id" in report_dict: del report_dict["_id"]
+        
+        return {
+            "message": "Report created",
+            "report": report_dict
+        }
+    
+    @nurse_router.get("/reports")
+    async def get_my_reports(
+        status: Optional[str] = None,
+        limit: int = 20,
+        current_user: dict = Depends(get_current_user)
+    ):
+        """Get nurse's own reports (read/write access)"""
+        require_nurse_role(current_user)
+        
+        query = {"nurse_id": current_user["id"]}
+        if status:
+            query["status"] = status
+        
+        reports = await db.nurse_reports.find(
+            query, {"_id": 0}
+        ).sort("created_at", -1).limit(limit).to_list(limit)
+        
+        return {
+            "reports": reports,
+            "total": len(reports)
+        }
+    
+    @nurse_router.get("/reports/{report_id}")
+    async def get_report(
+        report_id: str,
+        current_user: dict = Depends(get_current_user)
+    ):
+        """Get a specific report"""
+        require_nurse_role(current_user)
+        
+        report = await db.nurse_reports.find_one(
+            {"id": report_id}, {"_id": 0}
+        )
+        if not report:
+            raise HTTPException(status_code=404, detail="Report not found")
+        
+        # Nurses can only view their own reports unless they are supervisors
+        if report["nurse_id"] != current_user["id"] and current_user.get("role") not in ["nursing_supervisor", "hospital_admin", "super_admin"]:
+            raise HTTPException(status_code=403, detail="Access denied")
+        
+        return report
+    
+    @nurse_router.put("/reports/{report_id}")
+    async def update_report(
+        report_id: str,
+        title: Optional[str] = None,
+        content: Optional[str] = None,
+        patient_summary: Optional[str] = None,
+        critical_events: Optional[str] = None,
+        pending_items: Optional[str] = None,
+        recommendations: Optional[str] = None,
+        current_user: dict = Depends(get_current_user)
+    ):
+        """Update own report (nurses can edit their own reports)"""
+        require_nurse_role(current_user)
+        
+        report = await db.nurse_reports.find_one({
+            "id": report_id,
+            "nurse_id": current_user["id"]
+        })
+        if not report:
+            raise HTTPException(status_code=404, detail="Report not found or access denied")
+        
+        # Can only edit draft reports
+        if report["status"] != "draft":
+            raise HTTPException(status_code=400, detail="Can only edit draft reports")
+        
+        updates = {"updated_at": datetime.now(timezone.utc).isoformat()}
+        if title: updates["title"] = title
+        if content: updates["content"] = content
+        if patient_summary is not None: updates["patient_summary"] = patient_summary
+        if critical_events is not None: updates["critical_events"] = critical_events
+        if pending_items is not None: updates["pending_items"] = pending_items
+        if recommendations is not None: updates["recommendations"] = recommendations
+        
+        await db.nurse_reports.update_one({"id": report_id}, {"$set": updates})
+        
+        return {"message": "Report updated"}
+    
+    @nurse_router.post("/reports/{report_id}/submit")
+    async def submit_report(
+        report_id: str,
+        current_user: dict = Depends(get_current_user)
+    ):
+        """Submit report for supervisor review"""
+        require_nurse_role(current_user)
+        
+        report = await db.nurse_reports.find_one({
+            "id": report_id,
+            "nurse_id": current_user["id"],
+            "status": "draft"
+        })
+        if not report:
+            raise HTTPException(status_code=404, detail="Report not found or already submitted")
+        
+        await db.nurse_reports.update_one(
+            {"id": report_id},
+            {"$set": {
+                "status": "submitted",
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+        
+        return {"message": "Report submitted for review"}
+    
+    # ============ Patient Medications (from Physician Orders) ============
+    
+    @nurse_router.get("/patient-medications/{patient_id}")
+    async def get_patient_medications(
+        patient_id: str,
+        current_user: dict = Depends(get_current_user)
+    ):
+        """Get medications ordered by physicians for assigned patients"""
+        require_nurse_role(current_user)
+        
+        # Verify nurse is assigned to this patient
+        assignment = await db.nurse_assignments.find_one({
+            "nurse_id": current_user["id"],
+            "patient_id": patient_id,
+            "is_active": True
+        })
+        
+        # Nurses can view any patient's meds, but highlight if not assigned
+        is_assigned = assignment is not None
+        
+        # Get active medications/orders for the patient
+        medications = await db.medications.find(
+            {"patient_id": patient_id, "status": {"$in": ["active", "ordered"]}},
+            {"_id": 0}
+        ).sort("created_at", -1).to_list(100)
+        
+        # Get pharmacy orders
+        pharmacy_orders = await db.pharmacy_orders.find(
+            {"patient_id": patient_id, "status": {"$in": ["pending", "verified", "dispensed"]}},
+            {"_id": 0}
+        ).sort("created_at", -1).to_list(100)
+        
+        # Get MAR entries for today
+        today = datetime.now(timezone.utc).date()
+        today_start = datetime(today.year, today.month, today.day, tzinfo=timezone.utc)
+        today_end = today_start + timedelta(days=1)
+        
+        mar_entries = await db.mar_entries.find(
+            {
+                "patient_id": patient_id,
+                "scheduled_time": {
+                    "$gte": today_start.isoformat(),
+                    "$lt": today_end.isoformat()
+                }
+            },
+            {"_id": 0}
+        ).sort("scheduled_time", 1).to_list(100)
+        
+        return {
+            "patient_id": patient_id,
+            "is_assigned_to_me": is_assigned,
+            "medications": medications,
+            "pharmacy_orders": pharmacy_orders,
+            "mar_entries": mar_entries,
+            "total_medications": len(medications),
+            "pending_administrations": sum(1 for m in mar_entries if m.get("status") == "scheduled")
+        }
+    
+    @nurse_router.get("/all-assigned-medications")
+    async def get_all_assigned_patient_medications(
+        current_user: dict = Depends(get_current_user)
+    ):
+        """Get all medications for all assigned patients"""
+        require_nurse_role(current_user)
+        
+        # Get all assigned patients
+        assignments = await db.nurse_assignments.find(
+            {"nurse_id": current_user["id"], "is_active": True},
+            {"_id": 0}
+        ).to_list(100)
+        
+        patient_ids = [a["patient_id"] for a in assignments]
+        
+        if not patient_ids:
+            return {"patients": [], "total_medications": 0}
+        
+        result = []
+        total_meds = 0
+        
+        for assignment in assignments:
+            patient_id = assignment["patient_id"]
+            
+            # Get patient info
+            patient = await db.patients.find_one(
+                {"id": patient_id}, {"_id": 0, "id": 1, "first_name": 1, "last_name": 1, "mrn": 1}
+            )
+            if not patient:
+                continue
+            
+            # Get active medications
+            medications = await db.medications.find(
+                {"patient_id": patient_id, "status": {"$in": ["active", "ordered"]}},
+                {"_id": 0}
+            ).to_list(50)
+            
+            # Get today's MAR entries
+            today = datetime.now(timezone.utc).date()
+            today_start = datetime(today.year, today.month, today.day, tzinfo=timezone.utc)
+            today_end = today_start + timedelta(days=1)
+            
+            mar_entries = await db.mar_entries.find(
+                {
+                    "patient_id": patient_id,
+                    "scheduled_time": {
+                        "$gte": today_start.isoformat(),
+                        "$lt": today_end.isoformat()
+                    }
+                },
+                {"_id": 0}
+            ).sort("scheduled_time", 1).to_list(50)
+            
+            pending = [m for m in mar_entries if m.get("status") == "scheduled"]
+            overdue = [m for m in mar_entries if m.get("status") == "scheduled" and m.get("scheduled_time", "") < datetime.now(timezone.utc).isoformat()]
+            
+            total_meds += len(medications)
+            
+            result.append({
+                "patient": patient,
+                "room_bed": assignment.get("room_bed"),
+                "acuity_level": assignment.get("acuity_level", 2),
+                "medications": medications,
+                "mar_entries": mar_entries,
+                "pending_count": len(pending),
+                "overdue_count": len(overdue)
+            })
+        
+        # Sort by overdue count (highest first), then acuity
+        result.sort(key=lambda x: (-x["overdue_count"], -x["acuity_level"]))
+        
+        return {
+            "patients": result,
+            "total_patients": len(result),
+            "total_medications": total_meds
+        }
+    
     return nurse_router
