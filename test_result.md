@@ -565,12 +565,133 @@ agent_communication:
       **RECOMMENDATION:** Region-based hospital discovery system is production-ready for core functionality. Main agent should investigate token compatibility between region auth and main auth systems for admin operations.
 
 user_problem_statement: |
-  Build multi-hospital/multi-tenant system for Yacco EMR:
-  1. Hospital/Organization management with Super Admin (platform level)
-  2. Hospital Admin can manage their hospital and create staff accounts
-  3. Self-service registration with approval workflow
-  4. Data isolation by organization (each hospital sees only their data)
-  5. Staff account creation via direct account or invitation
+  Test the Region-Based Login for all staff types. The following users exist:
+
+  1. **Hospital IT Admin (kofiabedu2019@gmail.com)**
+     - Password: 2I6ZRBkjVn2ZQg7O
+     - Role: hospital_it_admin
+     - Hospital ID: e717ed11-7955-4884-8d6b-a529f918c34f
+     - Location ID: b61d7896-b4ef-436b-868e-94a60b55c64c
+
+  2. **Hospital Admin (cyrilfiifi@gmail.com)**
+     - Role: hospital_admin
+     - Hospital ID: e717ed11-7955-4884-8d6b-a529f918c34f
+     - Location ID: b61d7896-b4ef-436b-868e-94a60b55c64c
+     - (The password is in the database with is_temp_password=True)
+
+  3. **Super Admin (ygtnetworks@gmail.com)**
+     - Password: test123
+     - Role: super_admin
+
+  Test Cases:
+  1. POST /api/regions/auth/login - Test IT Admin login with hospital_id and location_id
+     - Verify JWT token is returned
+     - Verify redirect_to is "/it-admin"
+     - Verify user.role is "hospital_it_admin"
+
+  2. Test GET /api/auth/me with IT Admin token
+     - Should return user details with role "hospital_it_admin"
+
+  3. Test Hospital Admin login via POST /api/regions/auth/login
+
+  4. Test Super Admin login via POST /api/auth/login (not region-based)
+     - Email: ygtnetworks@gmail.com, Password: test123
+     - Should return role="super_admin"
+
+  5. Test GET /api/regions/ to verify Ghana regions are returned (16 regions)
+
+  6. Test GET /api/regions/greater-accra/hospitals to verify hospital discovery works
+
+backend:
+  - task: "Ghana Regions Discovery (Public)"
+    implemented: true
+    working: true
+    file: "backend/region_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of Ghana regions discovery - should return 16 administrative regions"
+      - working: true
+        agent: "testing"
+        comment: "✅ Ghana Regions Discovery - GET /api/regions/ returns 16 Ghana regions with correct structure (regions, total, country=Ghana). Found Greater Accra Region and other expected regions."
+
+  - task: "Greater Accra Hospital Discovery"
+    implemented: true
+    working: true
+    file: "backend/region_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of hospital discovery in Greater Accra region"
+      - working: true
+        agent: "testing"
+        comment: "✅ Greater Accra Hospital Discovery - GET /api/regions/greater-accra/hospitals returns proper structure with region info (Greater Accra Region), hospitals array, and total count."
+
+  - task: "Super Admin Login (Non-Region Based)"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of Super Admin login via POST /api/auth/login with ygtnetworks@gmail.com / test123"
+      - working: true
+        agent: "testing"
+        comment: "✅ Super Admin Login - POST /api/auth/login with ygtnetworks@gmail.com / test123 successful. JWT token verified to contain role=super_admin. Authentication working correctly."
+
+  - task: "Hospital IT Admin Region-Based Login"
+    implemented: true
+    working: true
+    file: "backend/region_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of Hospital IT Admin login via POST /api/regions/auth/login with hospital_id and location_id context"
+      - working: true
+        agent: "testing"
+        comment: "✅ Hospital IT Admin Region-Based Login - POST /api/regions/auth/login with kofiabedu2019@gmail.com / 2I6ZRBkjVn2ZQg7O successful. JWT token contains region_id, hospital_id (e717ed11-7955-4884-8d6b-a529f918c34f), location_id (b61d7896-b4ef-436b-868e-94a60b55c64c), and role=hospital_it_admin. Redirect_to='/it-admin' correct."
+
+  - task: "Hospital IT Admin Auth Me Endpoint"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of GET /api/auth/me with Hospital IT Admin token"
+      - working: true
+        agent: "testing"
+        comment: "✅ Hospital IT Admin Auth Me - GET /api/auth/me with IT Admin token returns correct user details with role=hospital_it_admin and email=kofiabedu2019@gmail.com."
+
+  - task: "Hospital Admin Region-Based Login"
+    implemented: true
+    working: false
+    file: "backend/region_module.py"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of Hospital Admin login via POST /api/regions/auth/login for cyrilfiifi@gmail.com with temp password in database"
+      - working: false
+        agent: "testing"
+        comment: "❌ Hospital Admin Region-Based Login - Cannot test cyrilfiifi@gmail.com login because temp password is stored in database with is_temp_password=True. Testing agent cannot access database directly to retrieve the temp password. Need database access or test setup endpoint to get/reset the temp password."
 
 backend:
   - task: "Super Admin Login Functionality"
