@@ -537,6 +537,16 @@ export default function HospitalSuperAdminIT() {
                               <DropdownMenuItem onClick={() => handleUnlock(s.id)}>
                                 <Unlock className="w-4 h-4 mr-2" /> Unlock Account
                               </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem 
+                                onClick={() => {
+                                  setSelectedStaff(s);
+                                  setDeleteConfirmOpen(true);
+                                }}
+                                className="text-red-600"
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" /> Delete Account
+                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
