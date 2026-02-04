@@ -162,9 +162,10 @@ def create_hospital_it_admin_endpoints(db, get_current_user, hash_password):
             })
         
         # Recent IT actions (not patient audits)
-        recent_actions = await db["it_audit_logs"].find({
-            "organization_id": hospital_id
-        }).sort("timestamp", -1).limit(10).to_list(10)
+        recent_actions = await db["it_audit_logs"].find(
+            {"organization_id": hospital_id},
+            {"_id": 0}
+        ).sort("timestamp", -1).limit(10).to_list(10)
         
         return {
             "hospital": hospital,
