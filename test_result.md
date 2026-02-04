@@ -1086,10 +1086,7 @@ frontend:
         comment: "Added 2FA verification dialog during login"
 
 test_plan:
-  current_focus:
-    - "RBAC Module - Granular Permissions"
-    - "Two-Factor Authentication Module"
-    - "Enhanced Audit Logging"
+  current_focus: []
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
