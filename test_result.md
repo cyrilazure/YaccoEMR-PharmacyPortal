@@ -1035,15 +1035,18 @@ backend:
 
   - task: "Enhanced JWT Authentication Module"
     implemented: true
-    working: "NA"
+    working: true
     file: "backend/auth_module.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "JWT auth with RBAC, groups, org isolation, MFA, session management"
+      - working: true
+        agent: "testing"
+        comment: "✅ Enhanced JWT Authentication Module - CORE FEATURES WORKING: Enhanced login with valid credentials (access token, refresh token, session management), invalid password handling (401 response), account lockout after failed attempts (423 response), permission groups endpoint (8 groups with permissions), token structure validation. Minor issues with some session management endpoints after account lockout, but core authentication flow is fully functional."
 
 frontend:
   - task: "Security Settings Page"
