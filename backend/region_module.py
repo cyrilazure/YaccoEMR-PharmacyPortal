@@ -1104,6 +1104,156 @@ def create_region_endpoints(db, get_current_user, hash_password):
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
     
+    # ============ Super Admin - Impersonation (Login As Hospital) ============
+    
+    @region_router.post("/admin/login-as-hospital/{hospital_id}", response_model=dict)
+    async def login_as_hospital(
+        hospital_id: str,
+        user: dict = Depends(get_current_user)
+    ):
+        """
+        Super Admin can login as any hospital admin to manage their account.
+        Creates a temporary token that identifies as super_admin impersonating hospital.
+        """
+        if user.get("role") != "super_admin":
+            raise HTTPException(status_code=403, detail="Super Admin access required")
+        
+        # Get hospital
+        hospital = await db["hospitals"].find_one({"id": hospital_id}, {"_id": 0})
+        if not hospital:
+            raise HTTPException(status_code=404, detail="Hospital not found")
+        
+        # Get hospital admin user
+        admin_user = await db["users"].find_one({
+            "organization_id": hospital_id,
+            "role": "hospital_admin"
+        }, {"_id": 0})
+        
+        if not admin_user:
+            raise HTTPException(status_code=404, detail="Hospital admin not found")
+        
+        # Get main location
+        main_location = await db["hospital_locations"].find_one({
+            "hospital_id": hospital_id,
+            "is_active": True
+        }, {"_id": 0})
+        
+        # Create impersonation token (marks it as impersonation)
+        payload = {
+            "user_id": admin_user["id"],
+            "role": "hospital_admin",
+            "region_id": hospital.get("region_id"),
+            "hospital_id": hospital_id,
+            "location_id": main_location["id"] if main_location else None,
+            "organization_id": hospital_id,
+            "impersonated_by": user["id"],  # Track who is impersonating
+            "impersonated_by_email": user.get("email"),
+            "is_impersonation": True,
+            "exp": datetime.now(timezone.utc) + timedelta(hours=4)  # Shorter expiration for security
+        }
+        token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+        
+        # Log the impersonation
+        await db["audit_logs"].insert_one({
+            "id": str(uuid.uuid4()),
+            "action": "impersonate_hospital",
+            "user_id": user["id"],
+            "user_email": user.get("email"),
+            "resource_type": "hospital",
+            "resource_id": hospital_id,
+            "details": {
+                "hospital_name": hospital["name"],
+                "impersonated_user": admin_user["email"],
+                "reason": "Super Admin access"
+            },
+            "severity": "high",
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        })
+        
+        return {
+            "token": token,
+            "message": f"Now logged in as {hospital['name']} admin",
+            "hospital": {
+                "id": hospital_id,
+                "name": hospital["name"],
+                "region_id": hospital.get("region_id"),
+                "city": hospital.get("city")
+            },
+            "user": {
+                "id": admin_user["id"],
+                "email": admin_user["email"],
+                "first_name": admin_user.get("first_name", ""),
+                "last_name": admin_user.get("last_name", ""),
+                "role": "hospital_admin"
+            },
+            "location": main_location,
+            "impersonation": {
+                "is_impersonation": True,
+                "super_admin_id": user["id"],
+                "super_admin_email": user.get("email"),
+                "expires_in_hours": 4
+            },
+            "redirect_to": "/admin-dashboard"
+        }
+    
+    @region_router.get("/admin/hospital-admins", response_model=dict)
+    async def list_hospital_admins(
+        region_id: Optional[str] = None,
+        user: dict = Depends(get_current_user)
+    ):
+        """List all hospitals with their admin credentials (Super Admin only)"""
+        if user.get("role") != "super_admin":
+            raise HTTPException(status_code=403, detail="Super Admin access required")
+        
+        # Build query
+        hospital_query = {"status": "active"}
+        if region_id:
+            hospital_query["region_id"] = region_id
+        
+        hospitals = await db["hospitals"].find(hospital_query, {"_id": 0}).to_list(200)
+        
+        result = []
+        for hospital in hospitals:
+            # Get admin user for this hospital
+            admin = await db["users"].find_one({
+                "organization_id": hospital["id"],
+                "role": "hospital_admin"
+            }, {"_id": 0, "password": 0})
+            
+            # Get location count
+            location_count = await db["hospital_locations"].count_documents({
+                "hospital_id": hospital["id"],
+                "is_active": True
+            })
+            
+            # Get user count
+            user_count = await db["users"].count_documents({
+                "organization_id": hospital["id"],
+                "is_active": True
+            })
+            
+            result.append({
+                "hospital": {
+                    "id": hospital["id"],
+                    "name": hospital["name"],
+                    "region_id": hospital.get("region_id"),
+                    "city": hospital.get("city"),
+                    "status": hospital.get("status"),
+                    "location_count": location_count,
+                    "user_count": user_count
+                },
+                "admin": {
+                    "id": admin["id"] if admin else None,
+                    "email": admin["email"] if admin else None,
+                    "name": f"{admin.get('first_name', '')} {admin.get('last_name', '')}" if admin else None
+                } if admin else None
+            })
+        
+        return {
+            "hospitals": result,
+            "total": len(result)
+        }
+    
     return region_router
 
 
