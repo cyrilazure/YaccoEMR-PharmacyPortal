@@ -1505,6 +1505,308 @@ class YaccoEMRTester:
                      f"Super admin platform access: {super_admin_can_access}")
         return success
     
+    # ============ REGION-BASED LOGIN TESTS ============
+    
+    def test_ghana_regions_discovery(self):
+        """Test GET /api/regions/ - Ghana regions discovery (16 regions)"""
+        response, error = self.make_request('GET', 'regions/')
+        if error:
+            self.log_test("Ghana Regions Discovery", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            regions = data.get('regions', [])
+            country = data.get('country')
+            total = data.get('total', 0)
+            
+            # Check for 16 Ghana regions
+            has_16_regions = len(regions) == 16
+            is_ghana = country == 'Ghana'
+            has_greater_accra = any(r.get('id') == 'greater-accra' for r in regions)
+            
+            success = has_16_regions and is_ghana and has_greater_accra
+            self.log_test("Ghana Regions Discovery", success, 
+                         f"Found {len(regions)} regions, Country: {country}")
+            return success
+        else:
+            self.log_test("Ghana Regions Discovery", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_greater_accra_hospitals(self):
+        """Test GET /api/regions/greater-accra/hospitals - Hospital discovery"""
+        response, error = self.make_request('GET', 'regions/greater-accra/hospitals')
+        if error:
+            self.log_test("Greater Accra Hospitals", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            region = data.get('region', {})
+            hospitals = data.get('hospitals', [])
+            total = data.get('total', 0)
+            
+            # Check structure
+            has_region = region.get('name') == 'Greater Accra Region'
+            has_hospitals_array = isinstance(hospitals, list)
+            
+            success = has_region and has_hospitals_array
+            self.log_test("Greater Accra Hospitals", success, 
+                         f"Region: {region.get('name')}, Hospitals: {len(hospitals)}")
+            return success
+        else:
+            self.log_test("Greater Accra Hospitals", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_super_admin_login_region_based(self):
+        """Test Super Admin login via POST /api/auth/login (not region-based)"""
+        login_data = {
+            "email": "ygtnetworks@gmail.com",
+            "password": "test123"
+        }
+        
+        response, error = self.make_request('POST', 'auth/login', login_data)
+        if error:
+            self.log_test("Super Admin Login (Region-Based)", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            token = data.get('token')
+            user = data.get('user', {})
+            role = user.get('role')
+            
+            # Verify JWT token contains role=super_admin
+            if token:
+                import jwt
+                try:
+                    payload = jwt.decode(token, options={"verify_signature": False})
+                    token_role = payload.get('role')
+                    success = role == 'super_admin' and token_role == 'super_admin'
+                    self.log_test("Super Admin Login (Region-Based)", success, 
+                                 f"Role: {role}, Token Role: {token_role}")
+                    
+                    # Store for other tests
+                    self.super_admin_token = token
+                    return success
+                except Exception as e:
+                    self.log_test("Super Admin Login (Region-Based)", False, f"JWT decode error: {e}")
+                    return False
+            else:
+                self.log_test("Super Admin Login (Region-Based)", False, "No token received")
+                return False
+        else:
+            self.log_test("Super Admin Login (Region-Based)", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_hospital_it_admin_region_login(self):
+        """Test Hospital IT Admin login via POST /api/regions/auth/login"""
+        # First, we need to find the hospital and location IDs for the IT Admin
+        # Let's get the hospital details first
+        
+        # Get hospitals in Greater Accra
+        response, error = self.make_request('GET', 'regions/greater-accra/hospitals')
+        if error or response.status_code != 200:
+            self.log_test("Hospital IT Admin Region Login", False, "Could not get hospitals")
+            return False
+        
+        data = response.json()
+        hospitals = data.get('hospitals', [])
+        
+        if not hospitals:
+            self.log_test("Hospital IT Admin Region Login", False, "No hospitals found in Greater Accra")
+            return False
+        
+        # Use the first hospital
+        hospital = hospitals[0]
+        hospital_id = hospital.get('id')
+        
+        # Get hospital locations
+        response, error = self.make_request('GET', f'regions/hospitals/{hospital_id}')
+        if error or response.status_code != 200:
+            self.log_test("Hospital IT Admin Region Login", False, "Could not get hospital locations")
+            return False
+        
+        hospital_data = response.json()
+        locations = hospital_data.get('locations', [])
+        
+        if not locations:
+            self.log_test("Hospital IT Admin Region Login", False, "No locations found for hospital")
+            return False
+        
+        location_id = locations[0].get('id')
+        
+        # Now attempt login with IT Admin credentials
+        login_data = {
+            "email": "kofiabedu2019@gmail.com",
+            "password": "2I6ZRBkjVn2ZQg7O",
+            "hospital_id": hospital_id,
+            "location_id": location_id
+        }
+        
+        response, error = self.make_request('POST', 'regions/auth/login', login_data)
+        if error:
+            self.log_test("Hospital IT Admin Region Login", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            token = data.get('token')
+            user = data.get('user', {})
+            hospital_info = data.get('hospital', {})
+            location_info = data.get('location', {})
+            redirect_to = data.get('redirect_to')
+            
+            # Verify JWT token contains required fields
+            if token:
+                import jwt
+                try:
+                    payload = jwt.decode(token, options={"verify_signature": False})
+                    has_region_id = 'region_id' in payload
+                    has_hospital_id = payload.get('hospital_id') == hospital_id
+                    has_location_id = payload.get('location_id') == location_id
+                    has_role = payload.get('role') == 'hospital_it_admin'
+                    correct_redirect = redirect_to == '/it-admin'
+                    
+                    success = (has_region_id and has_hospital_id and has_location_id and 
+                              has_role and correct_redirect)
+                    
+                    # Store token for further tests
+                    if success:
+                        self.hospital_it_admin_token = token
+                        self.hospital_it_admin_hospital_id = hospital_id
+                        self.hospital_it_admin_location_id = location_id
+                    
+                    self.log_test("Hospital IT Admin Region Login", success, 
+                                 f"Role: {user.get('role')}, Redirect: {redirect_to}")
+                    return success
+                except Exception as e:
+                    self.log_test("Hospital IT Admin Region Login", False, f"JWT decode error: {e}")
+                    return False
+            else:
+                self.log_test("Hospital IT Admin Region Login", False, "No token received")
+                return False
+        else:
+            self.log_test("Hospital IT Admin Region Login", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_hospital_it_admin_auth_me(self):
+        """Test GET /api/auth/me with IT Admin token"""
+        if not hasattr(self, 'hospital_it_admin_token') or not self.hospital_it_admin_token:
+            self.log_test("Hospital IT Admin Auth Me", False, "No IT Admin token available")
+            return False
+        
+        # Temporarily switch to IT Admin token
+        original_token = self.token
+        self.token = self.hospital_it_admin_token
+        
+        response, error = self.make_request('GET', 'auth/me')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Hospital IT Admin Auth Me", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            role = data.get('role')
+            email = data.get('email')
+            
+            success = role == 'hospital_it_admin' and email == 'kofiabedu2019@gmail.com'
+            self.log_test("Hospital IT Admin Auth Me", success, 
+                         f"Role: {role}, Email: {email}")
+            return success
+        else:
+            self.log_test("Hospital IT Admin Auth Me", False, f"Status: {response.status_code}")
+            return False
+    
+    def test_hospital_admin_region_login(self):
+        """Test Hospital Admin login via POST /api/regions/auth/login"""
+        # First get the hospital admin's temp password from database
+        # Since we can't access the database directly, we'll try to login with common temp passwords
+        # or use the super admin to get the credentials
+        
+        if not hasattr(self, 'super_admin_token') or not self.super_admin_token:
+            self.log_test("Hospital Admin Region Login", False, "No super admin token to get credentials")
+            return False
+        
+        # Get hospital admins list using super admin token
+        original_token = self.token
+        self.token = self.super_admin_token
+        
+        response, error = self.make_request('GET', 'regions/admin/hospital-admins')
+        
+        self.token = original_token
+        
+        if error or response.status_code != 200:
+            self.log_test("Hospital Admin Region Login", False, "Could not get hospital admins list")
+            return False
+        
+        data = response.json()
+        hospitals = data.get('hospitals', [])
+        
+        # Find hospital with admin email cyrilfiifi@gmail.com
+        target_hospital = None
+        for hospital_info in hospitals:
+            admin = hospital_info.get('admin', {})
+            if admin and admin.get('email') == 'cyrilfiifi@gmail.com':
+                target_hospital = hospital_info
+                break
+        
+        if not target_hospital:
+            self.log_test("Hospital Admin Region Login", False, "Hospital admin cyrilfiifi@gmail.com not found")
+            return False
+        
+        hospital = target_hospital.get('hospital', {})
+        hospital_id = hospital.get('id')
+        
+        # Get hospital locations
+        response, error = self.make_request('GET', f'regions/hospitals/{hospital_id}')
+        if error or response.status_code != 200:
+            self.log_test("Hospital Admin Region Login", False, "Could not get hospital locations")
+            return False
+        
+        hospital_data = response.json()
+        locations = hospital_data.get('locations', [])
+        
+        if not locations:
+            self.log_test("Hospital Admin Region Login", False, "No locations found for hospital")
+            return False
+        
+        location_id = locations[0].get('id')
+        
+        # Since the password is temp and in database, we'll mark this as a limitation
+        # In a real test, we'd need database access or a test setup endpoint
+        self.log_test("Hospital Admin Region Login", False, 
+                     "Cannot test - temp password in database, need direct DB access or test setup endpoint")
+        return False
+    
+    def run_region_based_tests(self):
+        """Run all region-based login tests"""
+        print("\n" + "="*60)
+        print("REGION-BASED LOGIN TESTING")
+        print("="*60)
+        
+        # Test Ghana regions discovery
+        self.test_ghana_regions_discovery()
+        
+        # Test hospital discovery
+        self.test_greater_accra_hospitals()
+        
+        # Test Super Admin login (not region-based)
+        self.test_super_admin_login_region_based()
+        
+        # Test Hospital IT Admin region-based login
+        self.test_hospital_it_admin_region_login()
+        
+        # Test auth/me with IT Admin token
+        self.test_hospital_it_admin_auth_me()
+        
+        # Test Hospital Admin region-based login
+        self.test_hospital_admin_region_login()
+    
     # ============ PLATFORM OWNER RBAC TESTS ============
     
     def test_super_admin_rbac_enforcement(self):
