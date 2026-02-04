@@ -10563,6 +10563,42 @@ class YaccoEMRTester:
 def main():
     import sys
     
+    def run_nursing_portal_tests(self):
+        """Run nursing portal and supervisor specific tests"""
+        print("🏥 Starting Nursing Portal and Supervisor Tests...")
+        print("=" * 60)
+        
+        # Nursing Supervisor Tests
+        self.test_nursing_supervisor_dashboard()
+        self.test_nursing_supervisor_nurses_list()
+        self.test_nursing_supervisor_current_shifts()
+        
+        # Nurse Portal Tests
+        self.test_nurse_portal_clock_in()
+        self.test_nurse_portal_clock_out()
+        
+        # Nurse Shift Reports (Read/Write)
+        self.test_nurse_shift_reports_create()
+        self.test_nurse_shift_reports_list()
+        self.test_nurse_shift_reports_update()
+        self.test_nurse_shift_reports_submit()
+        
+        # Supervisor Reviews Reports (Read-Only with Review)
+        self.test_supervisor_reviews_reports()
+        self.test_supervisor_review_specific_report()
+        
+        # Assigned Patient Medications
+        self.test_nurse_assigned_patient_medications()
+        
+        # IT Admin View Details and Unlock
+        self.test_it_admin_view_staff_details()
+        self.test_it_admin_unlock_account()
+        
+        print("\n" + "=" * 60)
+        print(f"🏥 Nursing Portal Tests completed: {self.tests_passed}/{self.tests_run} passed")
+        print(f"📊 Success rate: {(self.tests_passed/self.tests_run)*100:.1f}%")
+        
+        return self.tests_passed == self.tests_run
     # Get backend URL from environment or use default
     backend_url = "https://portal-index.preview.emergentagent.com"
     
