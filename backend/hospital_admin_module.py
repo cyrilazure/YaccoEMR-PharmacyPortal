@@ -606,7 +606,8 @@ def create_hospital_admin_endpoints(db, get_current_user, hash_password):
             {"name": dept.name, "code": dept.code}
         )
         
-        del new_dept["_id"] if "_id" in new_dept else None
+        if "_id" in new_dept:
+            del new_dept["_id"]
         return {"message": "Department created", "department": new_dept}
     
     @hospital_admin_router.put("/{hospital_id}/admin/departments/{dept_id}")
