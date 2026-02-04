@@ -1012,6 +1012,11 @@ from nurse_portal_module import nurse_router, create_nurse_portal_endpoints
 nurse_api_router = create_nurse_portal_endpoints(db, get_current_user)
 app.include_router(nurse_router)
 
+# Include Admin Portal Module
+from admin_portal_module import admin_router, create_admin_portal_endpoints
+admin_api_router = create_admin_portal_endpoints(db, get_current_user)
+app.include_router(admin_router)
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
