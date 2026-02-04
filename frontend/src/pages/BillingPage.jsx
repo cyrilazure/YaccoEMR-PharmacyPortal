@@ -319,6 +319,10 @@ export default function BillingPage() {
             <Building2 className="w-4 h-4" />
             Insurance Claims ({claims.length})
           </TabsTrigger>
+          <TabsTrigger value="nhis" className="gap-2">
+            <Heart className="w-4 h-4" />
+            NHIS Lookup
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="invoices" className="mt-4">
