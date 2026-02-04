@@ -756,6 +756,215 @@ export default function PlatformOwnerPortal() {
             </Card>
           </TabsContent>
 
+          {/* Staff Tab - Create Staff for Any Hospital */}
+          <TabsContent value="staff">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <UserCog className="w-5 h-5 text-emerald-600" />
+                      Hospital Staff Management
+                    </CardTitle>
+                    <CardDescription>Create staff accounts for any hospital in the platform</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Alert className="mb-6 border-blue-200 bg-blue-50">
+                  <Shield className="h-4 w-4 text-blue-600" />
+                  <AlertDescription className="text-blue-700">
+                    As Platform Owner, you can create staff accounts for any hospital. 
+                    Select a hospital first, then fill in the staff details.
+                  </AlertDescription>
+                </Alert>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Select Hospital */}
+                  <Card className="border-2 border-dashed">
+                    <CardHeader>
+                      <CardTitle className="text-lg">1. Select Hospital</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ScrollArea className="h-[400px]">
+                        <div className="space-y-2">
+                          {hospitals.map((item) => (
+                            <div
+                              key={item.hospital.id}
+                              onClick={() => setStaffHospital(item)}
+                              className={`p-4 rounded-lg border cursor-pointer transition-all ${
+                                staffHospital?.hospital.id === item.hospital.id
+                                  ? 'border-emerald-500 bg-emerald-50'
+                                  : 'border-gray-200 hover:border-emerald-300 hover:bg-gray-50'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="font-medium">{item.hospital.name}</p>
+                                  <p className="text-sm text-gray-500">{item.hospital.city}</p>
+                                </div>
+                                {staffHospital?.hospital.id === item.hospital.id && (
+                                  <CheckCircle className="w-5 h-5 text-emerald-600" />
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    </CardContent>
+                  </Card>
+
+                  {/* Create Staff Form */}
+                  <Card className={`border-2 ${staffHospital ? 'border-emerald-200' : 'border-dashed opacity-50'}`}>
+                    <CardHeader>
+                      <CardTitle className="text-lg">2. Create Staff Account</CardTitle>
+                      {staffHospital && (
+                        <Badge className="w-fit bg-emerald-100 text-emerald-700">
+                          {staffHospital.hospital.name}
+                        </Badge>
+                      )}
+                    </CardHeader>
+                    <CardContent>
+                      {createdStaff ? (
+                        <div className="space-y-4">
+                          <Alert className="border-emerald-200 bg-emerald-50">
+                            <CheckCircle className="h-4 w-4 text-emerald-600" />
+                            <AlertTitle className="text-emerald-800">Staff Created Successfully!</AlertTitle>
+                          </Alert>
+                          <div className="p-4 bg-gray-50 rounded-lg space-y-3">
+                            <div>
+                              <Label className="text-xs text-gray-500">Name</Label>
+                              <p className="font-medium">{createdStaff.user?.first_name} {createdStaff.user?.last_name}</p>
+                            </div>
+                            <div>
+                              <Label className="text-xs text-gray-500">Email</Label>
+                              <p>{createdStaff.user?.email}</p>
+                            </div>
+                            <div>
+                              <Label className="text-xs text-gray-500">Role</Label>
+                              <Badge variant="outline" className="capitalize">{createdStaff.user?.role}</Badge>
+                            </div>
+                            <Separator />
+                            <div>
+                              <Label className="text-xs text-gray-500">Temporary Password</Label>
+                              <div className="flex items-center gap-2 mt-1">
+                                <code className="px-3 py-2 bg-white border rounded text-sm font-mono">
+                                  {createdStaff.temp_password}
+                                </code>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => copyToClipboard(createdStaff.temp_password, 'staff-pass')}
+                                >
+                                  {copiedPassword === 'staff-pass' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                          <Button
+                            className="w-full"
+                            variant="outline"
+                            onClick={() => setCreatedStaff(null)}
+                          >
+                            Create Another Staff
+                          </Button>
+                        </div>
+                      ) : (
+                        <form onSubmit={handleCreateStaff} className="space-y-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label>First Name *</Label>
+                              <Input
+                                value={newStaff.first_name}
+                                onChange={(e) => setNewStaff({...newStaff, first_name: e.target.value})}
+                                placeholder="First name"
+                                required
+                                disabled={!staffHospital}
+                              />
+                            </div>
+                            <div>
+                              <Label>Last Name *</Label>
+                              <Input
+                                value={newStaff.last_name}
+                                onChange={(e) => setNewStaff({...newStaff, last_name: e.target.value})}
+                                placeholder="Last name"
+                                required
+                                disabled={!staffHospital}
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <Label>Email *</Label>
+                            <Input
+                              type="email"
+                              value={newStaff.email}
+                              onChange={(e) => setNewStaff({...newStaff, email: e.target.value})}
+                              placeholder="staff@hospital.gov.gh"
+                              required
+                              disabled={!staffHospital}
+                            />
+                          </div>
+                          <div>
+                            <Label>Phone</Label>
+                            <Input
+                              value={newStaff.phone}
+                              onChange={(e) => setNewStaff({...newStaff, phone: e.target.value})}
+                              placeholder="+233-XXX-XXXXXX"
+                              disabled={!staffHospital}
+                            />
+                          </div>
+                          <div>
+                            <Label>Role *</Label>
+                            <Select
+                              value={newStaff.role}
+                              onValueChange={(v) => setNewStaff({...newStaff, role: v})}
+                              disabled={!staffHospital}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select role" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="hospital_admin">Hospital Admin</SelectItem>
+                                <SelectItem value="hospital_it_admin">Hospital IT Admin</SelectItem>
+                                <SelectItem value="facility_admin">Facility Admin</SelectItem>
+                                <SelectItem value="physician">Physician</SelectItem>
+                                <SelectItem value="nurse">Nurse</SelectItem>
+                                <SelectItem value="scheduler">Scheduler</SelectItem>
+                                <SelectItem value="biller">Billing Staff</SelectItem>
+                                <SelectItem value="records_officer">Records Officer</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label>Employee ID (Optional)</Label>
+                            <Input
+                              value={newStaff.employee_id}
+                              onChange={(e) => setNewStaff({...newStaff, employee_id: e.target.value})}
+                              placeholder="EMP-XXXX"
+                              disabled={!staffHospital}
+                            />
+                          </div>
+                          <Button
+                            type="submit"
+                            className="w-full bg-emerald-600 hover:bg-emerald-700"
+                            disabled={!staffHospital || saving}
+                          >
+                            {saving ? (
+                              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                            ) : (
+                              <Plus className="w-4 h-4 mr-2" />
+                            )}
+                            Create Staff Account
+                          </Button>
+                        </form>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* Regions Tab */}
           <TabsContent value="regions">
             <Card>
