@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
-import { hospitalAdminAPI, regionAPI } from '@/lib/api';
+import { hospitalAdminAPI, regionAPI, patientAPI } from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,7 +29,7 @@ import {
   Settings, Shield, Activity, UserPlus, Key, Lock,
   CheckCircle, XCircle, AlertCircle, Loader2,
   LayoutDashboard, FileText, Clock, Copy, Check,
-  UserCog, FolderTree, Mail, Phone
+  UserCog, FolderTree, Mail, Phone, IdCard, Eye, Hash
 } from 'lucide-react';
 
 const STAFF_ROLES = [
