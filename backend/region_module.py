@@ -194,18 +194,12 @@ def create_region_endpoints(db, get_current_user, hash_password):
         """Create JWT token with region/hospital/location context"""
         payload = {
             "user_id": user["id"],
-            "email": user["email"],
             "role": user["role"],
             "region_id": hospital.get("region_id"),
             "hospital_id": hospital["id"],
-            "hospital_name": hospital["name"],
             "location_id": location["id"] if location else None,
-            "location_name": location["name"] if location else None,
             "organization_id": hospital["id"],  # For backward compatibility
-            "permissions": user.get("permissions", []),
-            "exp": datetime.now(timezone.utc) + timedelta(hours=JWT_EXPIRATION_HOURS),
-            "iat": datetime.now(timezone.utc),
-            "iss": "yacco-emr-ghana"
+            "exp": datetime.now(timezone.utc) + timedelta(hours=JWT_EXPIRATION_HOURS)
         }
         return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
     
