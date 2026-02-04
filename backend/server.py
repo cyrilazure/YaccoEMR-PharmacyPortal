@@ -1022,6 +1022,11 @@ from security_compliance_module import security_router, create_security_endpoint
 security_api_router = create_security_endpoints(db, get_current_user)
 app.include_router(security_router)
 
+# Include Region-Based Hospital Discovery Module (Ghana)
+from region_module import region_router, create_region_endpoints
+region_api_router = create_region_endpoints(db, get_current_user, hash_password)
+app.include_router(region_router)
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
