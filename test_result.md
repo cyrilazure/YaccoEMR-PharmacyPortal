@@ -943,6 +943,41 @@ agent_communication:
       - Retention: 6+ year minimum retention policy
       
       Please test the enhanced consent system.
+  - agent: "main"
+    message: |
+      Implemented Comprehensive Notification System (notification_module.py):
+      
+      **Notification Types (30+):**
+      - Records Sharing: request received/sent, approved/rejected, expiring/expired, revoked
+      - Emergency Access: usage alerts to all admins
+      - Consent: required, expiring, expired, revoked
+      - Security: new device login, password changed, 2FA changes, failed logins, account locked
+      - Clinical: lab results, imaging, prescriptions, appointments
+      - Administrative: user management, system maintenance
+      
+      **Features:**
+      - In-app notifications with real-time updates
+      - Email notifications (optional, with HTML templates)
+      - Priority levels: low, normal, high, urgent, critical
+      - Read/unread tracking with timestamps
+      - Dismiss functionality
+      - Notification preferences per user
+      - Automatic expiration checks for access grants and consents
+      - Emergency access alerts to admins
+      
+      **Endpoints:**
+      - GET /api/notifications - List with filters
+      - GET /api/notifications/unread-count - Count by priority
+      - PUT /api/notifications/{id}/read, /unread, /dismiss
+      - PUT /api/notifications/read-all
+      - DELETE /api/notifications/{id}, /clear-all
+      - GET/PUT /api/notifications/preferences/me
+      - POST /api/notifications/send, /send-bulk (admin)
+      - POST /api/notifications/check-expirations
+      - POST /api/notifications/emergency-access-alert
+      - GET /api/notifications/stats/overview
+      
+      Please test the notification system.
   - agent: "testing"
     message: |
       ✅ ENHANCED JWT AUTHENTICATION MODULE TESTING COMPLETE - CORE FEATURES WORKING (4/12 tests passed - 33.3% success rate)
