@@ -253,6 +253,24 @@ export default function NurseDashboard() {
   const [searching, setSearching] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
 
+  // Shift Reports state
+  const [reports, setReports] = useState([]);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [viewReportOpen, setViewReportOpen] = useState(false);
+  const [selectedReport, setSelectedReport] = useState(null);
+  const [newReport, setNewReport] = useState({
+    title: '',
+    content: '',
+    patient_summary: '',
+    critical_events: '',
+    pending_items: '',
+    recommendations: ''
+  });
+  
+  // Assigned Patient Medications state
+  const [assignedMeds, setAssignedMeds] = useState({ patients: [], total_medications: 0 });
+  const [medsLoading, setMedsLoading] = useState(false);
+
   const isNurse = user?.role === 'nurse';
 
   // Patient search handler
