@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/sonner";
 
 // Pages
 import LoginPage from "@/pages/Login";
+import RegionHospitalLogin from "@/pages/RegionHospitalLogin";
 import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
 import Layout from "@/pages/Layout";
