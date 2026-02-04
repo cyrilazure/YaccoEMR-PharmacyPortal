@@ -74,6 +74,7 @@ export default function HospitalSuperAdminIT() {
   const [viewStaffOpen, setViewStaffOpen] = useState(false);
   const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
   const [assignmentOpen, setAssignmentOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState(null);
   const [createdCredentials, setCreatedCredentials] = useState(null);
   
