@@ -4667,6 +4667,775 @@ class YaccoEMRTester:
             self.log_test("Compliance Report", False, f"Status: {response.status_code}")
             return False
 
+    # ============ NURSE PORTAL MODULE TESTS ============
+    
+    def test_nurse_user_registration(self):
+        """Test nurse user registration"""
+        test_nurse = {
+            "email": "testnurse@test.com",
+            "password": "nurse123",
+            "first_name": "Test",
+            "last_name": "Nurse",
+            "role": "nurse",
+            "department": "Emergency",
+            "specialty": "Emergency Nursing"
+        }
+        
+        response, error = self.make_request('POST', 'auth/register', test_nurse)
+        if error:
+            self.log_test("Nurse User Registration", False, error)
+            return False
+        
+        if response.status_code in [200, 201]:
+            data = response.json()
+            self.nurse_token = data.get('token')
+            self.nurse_user_id = data.get('user', {}).get('id')
+            self.log_test("Nurse User Registration", True, "Nurse user authenticated")
+            return True
+        elif response.status_code == 400:
+            # User already exists, try login
+            return self.test_nurse_user_login()
+        else:
+            self.log_test("Nurse User Registration", False, f"Status: {response.status_code}")
+            return False
+
+    def test_nurse_user_login(self):
+        """Test nurse user login"""
+        login_data = {
+            "email": "testnurse@test.com",
+            "password": "nurse123"
+        }
+        
+        response, error = self.make_request('POST', 'auth/login', login_data)
+        if error:
+            self.log_test("Nurse User Login", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            self.nurse_token = data.get('token')
+            self.nurse_user_id = data.get('user', {}).get('id')
+            self.log_test("Nurse User Login", True, f"Nurse token received")
+            return True
+        else:
+            self.log_test("Nurse User Login", False, f"Status: {response.status_code}")
+            return False
+
+    def test_shift_definitions(self):
+        """Test getting shift definitions (no auth required)"""
+        response, error = self.make_request('GET', 'nurse/shifts')
+        if error:
+            self.log_test("Shift Definitions", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_shifts = isinstance(data, list) and len(data) > 0
+            expected_shifts = ['morning', 'evening', 'night', 'day_12', 'night_12']
+            shift_types = [s.get('shift_type') for s in data]
+            has_expected = all(shift in shift_types for shift in expected_shifts)
+            success = has_shifts and has_expected
+            self.log_test("Shift Definitions", success, f"Found {len(data)} shifts: {shift_types}")
+            return success
+        else:
+            self.log_test("Shift Definitions", False, f"Status: {response.status_code}")
+            return False
+
+    def test_current_shift_with_auth(self):
+        """Test getting current shift info (requires nurse auth)"""
+        if not hasattr(self, 'nurse_token') or not self.nurse_token:
+            self.log_test("Current Shift With Auth", False, "No nurse token available")
+            return False
+        
+        # Switch to nurse token
+        original_token = self.token
+        self.token = self.nurse_token
+        
+        response, error = self.make_request('GET', 'nurse/current-shift')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Current Shift With Auth", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_current_time_shift = 'current_time_shift' in data
+            has_shift_info = 'shift_info' in data
+            success = has_current_time_shift and has_shift_info
+            self.log_test("Current Shift With Auth", success, f"Current shift: {data.get('current_time_shift')}")
+            return success
+        else:
+            self.log_test("Current Shift With Auth", False, f"Status: {response.status_code}")
+            return False
+
+    def test_clock_in_shift(self):
+        """Test clocking in to a shift"""
+        if not hasattr(self, 'nurse_token') or not self.nurse_token:
+            self.log_test("Clock In Shift", False, "No nurse token available")
+            return False
+        
+        # Switch to nurse token
+        original_token = self.token
+        self.token = self.nurse_token
+        
+        shift_data = {
+            "shift_type": "morning",
+            "department_id": "emergency",
+            "unit": "ED-1",
+            "notes": "Starting morning shift"
+        }
+        
+        response, error = self.make_request('POST', 'nurse/shifts/clock-in', shift_data)
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Clock In Shift", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_message = 'message' in data
+            has_shift = 'shift' in data and data['shift'].get('is_active') == True
+            success = has_message and has_shift
+            if success:
+                self.nurse_shift_id = data['shift'].get('id')
+            self.log_test("Clock In Shift", success, f"Clocked in: {data.get('message')}")
+            return success
+        else:
+            self.log_test("Clock In Shift", False, f"Status: {response.status_code}")
+            return False
+
+    def test_assign_patient_to_nurse(self):
+        """Test assigning a patient to nurse (requires admin/charge nurse role)"""
+        if not self.test_patient_id or not hasattr(self, 'nurse_user_id'):
+            self.log_test("Assign Patient to Nurse", False, "Missing patient or nurse ID")
+            return False
+        
+        assignment_data = {
+            "patient_id": self.test_patient_id,
+            "nurse_id": self.nurse_user_id,
+            "shift_type": "morning",
+            "department_id": "emergency",
+            "notes": "Test assignment",
+            "is_primary": True
+        }
+        
+        response, error = self.make_request('POST', 'nurse/assign-patient', assignment_data)
+        if error:
+            self.log_test("Assign Patient to Nurse", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_message = 'message' in data
+            has_assignment = 'assignment' in data
+            success = has_message and has_assignment
+            if success:
+                self.nurse_assignment_id = data['assignment'].get('id')
+            self.log_test("Assign Patient to Nurse", success, f"Assignment: {data.get('message')}")
+            return success
+        else:
+            self.log_test("Assign Patient to Nurse", False, f"Status: {response.status_code}")
+            return False
+
+    def test_get_my_patients(self):
+        """Test getting assigned patients for nurse"""
+        if not hasattr(self, 'nurse_token') or not self.nurse_token:
+            self.log_test("Get My Patients", False, "No nurse token available")
+            return False
+        
+        # Switch to nurse token
+        original_token = self.token
+        self.token = self.nurse_token
+        
+        response, error = self.make_request('GET', 'nurse/my-patients')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Get My Patients", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_patients = 'patients' in data
+            has_total_count = 'total_count' in data
+            has_current_shift = 'current_shift' in data
+            success = has_patients and has_total_count and has_current_shift
+            patient_count = data.get('total_count', 0)
+            self.log_test("Get My Patients", success, f"Found {patient_count} assigned patients")
+            return success
+        else:
+            self.log_test("Get My Patients", False, f"Status: {response.status_code}")
+            return False
+
+    def test_patient_load_statistics(self):
+        """Test getting patient load statistics"""
+        if not hasattr(self, 'nurse_token') or not self.nurse_token:
+            self.log_test("Patient Load Statistics", False, "No nurse token available")
+            return False
+        
+        # Switch to nurse token
+        original_token = self.token
+        self.token = self.nurse_token
+        
+        response, error = self.make_request('GET', 'nurse/patient-load')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Patient Load Statistics", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_my_count = 'my_patient_count' in data
+            has_staff_load = 'staff_load' in data
+            has_current_shift = 'current_shift' in data
+            success = has_my_count and has_staff_load and has_current_shift
+            my_count = data.get('my_patient_count', 0)
+            self.log_test("Patient Load Statistics", success, f"My patient count: {my_count}")
+            return success
+        else:
+            self.log_test("Patient Load Statistics", False, f"Status: {response.status_code}")
+            return False
+
+    def test_task_types_and_priorities(self):
+        """Test getting task types and priorities"""
+        # Test task types
+        response, error = self.make_request('GET', 'nurse/task-types')
+        if error:
+            self.log_test("Task Types", False, error)
+            return False
+        
+        task_types_success = False
+        if response.status_code == 200:
+            data = response.json()
+            has_types = isinstance(data, list) and len(data) > 0
+            expected_types = ['vitals_due', 'medication_due', 'assessment_due']
+            type_values = [t.get('value') for t in data]
+            has_expected = any(t in type_values for t in expected_types)
+            task_types_success = has_types and has_expected
+            self.log_test("Task Types", task_types_success, f"Found {len(data)} task types")
+        
+        # Test task priorities
+        response, error = self.make_request('GET', 'nurse/task-priorities')
+        if error:
+            self.log_test("Task Priorities", False, error)
+            return False
+        
+        priorities_success = False
+        if response.status_code == 200:
+            data = response.json()
+            has_priorities = isinstance(data, list) and len(data) > 0
+            expected_priorities = ['stat', 'urgent', 'high', 'routine', 'low']
+            priority_values = [p.get('value') for p in data]
+            has_expected = all(p in priority_values for p in expected_priorities)
+            priorities_success = has_priorities and has_expected
+            self.log_test("Task Priorities", priorities_success, f"Found {len(data)} priority levels")
+        
+        return task_types_success and priorities_success
+
+    def test_create_nursing_task(self):
+        """Test creating a nursing task"""
+        if not hasattr(self, 'nurse_token') or not self.nurse_token or not self.test_patient_id:
+            self.log_test("Create Nursing Task", False, "Missing nurse token or patient ID")
+            return False
+        
+        # Switch to nurse token
+        original_token = self.token
+        self.token = self.nurse_token
+        
+        from datetime import datetime, timedelta
+        due_time = (datetime.now() + timedelta(hours=1)).isoformat()
+        
+        task_data = {
+            "patient_id": self.test_patient_id,
+            "task_type": "vitals_due",
+            "description": "Check vital signs - routine assessment",
+            "priority": "routine",
+            "due_time": due_time,
+            "notes": "Patient stable, routine vitals check"
+        }
+        
+        response, error = self.make_request('POST', 'nurse/tasks', task_data)
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Create Nursing Task", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_id = 'id' in data
+            has_task_type = data.get('task_type') == 'vitals_due'
+            has_status = data.get('status') == 'pending'
+            success = has_id and has_task_type and has_status
+            if success:
+                self.nurse_task_id = data.get('id')
+            self.log_test("Create Nursing Task", success, f"Task created: {data.get('description')}")
+            return success
+        else:
+            self.log_test("Create Nursing Task", False, f"Status: {response.status_code}")
+            return False
+
+    def test_get_nurse_tasks(self):
+        """Test getting tasks for nurse"""
+        if not hasattr(self, 'nurse_token') or not self.nurse_token:
+            self.log_test("Get Nurse Tasks", False, "No nurse token available")
+            return False
+        
+        # Switch to nurse token
+        original_token = self.token
+        self.token = self.nurse_token
+        
+        response, error = self.make_request('GET', 'nurse/tasks')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Get Nurse Tasks", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_tasks = 'tasks' in data
+            has_by_priority = 'by_priority' in data
+            has_total_count = 'total_count' in data
+            success = has_tasks and has_by_priority and has_total_count
+            task_count = data.get('total_count', 0)
+            self.log_test("Get Nurse Tasks", success, f"Found {task_count} tasks")
+            return success
+        else:
+            self.log_test("Get Nurse Tasks", False, f"Status: {response.status_code}")
+            return False
+
+    def test_get_due_tasks(self):
+        """Test getting due/overdue tasks"""
+        if not hasattr(self, 'nurse_token') or not self.nurse_token:
+            self.log_test("Get Due Tasks", False, "No nurse token available")
+            return False
+        
+        # Switch to nurse token
+        original_token = self.token
+        self.token = self.nurse_token
+        
+        response, error = self.make_request('GET', 'nurse/tasks/due')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Get Due Tasks", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_overdue = 'overdue' in data
+            has_upcoming = 'upcoming_30min' in data
+            has_total = 'total_due' in data
+            success = has_overdue and has_upcoming and has_total
+            total_due = data.get('total_due', 0)
+            self.log_test("Get Due Tasks", success, f"Found {total_due} due tasks")
+            return success
+        else:
+            self.log_test("Get Due Tasks", False, f"Status: {response.status_code}")
+            return False
+
+    def test_complete_task(self):
+        """Test completing a nursing task"""
+        if not hasattr(self, 'nurse_token') or not self.nurse_token or not hasattr(self, 'nurse_task_id'):
+            self.log_test("Complete Task", False, "Missing nurse token or task ID")
+            return False
+        
+        # Switch to nurse token
+        original_token = self.token
+        self.token = self.nurse_token
+        
+        completion_data = {
+            "completion_notes": "Vitals completed - all normal values"
+        }
+        
+        response, error = self.make_request('POST', f'nurse/tasks/{self.nurse_task_id}/complete', completion_data)
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Complete Task", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_message = 'message' in data
+            success = has_message and 'completed' in data.get('message', '').lower()
+            self.log_test("Complete Task", success, f"Task completion: {data.get('message')}")
+            return success
+        else:
+            self.log_test("Complete Task", False, f"Status: {response.status_code}")
+            return False
+
+    def test_generate_mar_schedule(self):
+        """Test generating MAR schedule for patient"""
+        if not hasattr(self, 'nurse_token') or not self.nurse_token or not self.test_patient_id:
+            self.log_test("Generate MAR Schedule", False, "Missing nurse token or patient ID")
+            return False
+        
+        # Switch to nurse token
+        original_token = self.token
+        self.token = self.nurse_token
+        
+        from datetime import datetime
+        today = datetime.now().strftime("%Y-%m-%d")
+        
+        response, error = self.make_request('POST', f'nurse/mar/generate-schedule?patient_id={self.test_patient_id}&date={today}')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Generate MAR Schedule", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_message = 'message' in data
+            has_entries_created = 'entries_created' in data
+            success = has_message and has_entries_created
+            entries_count = data.get('entries_created', 0)
+            self.log_test("Generate MAR Schedule", success, f"Created {entries_count} MAR entries")
+            return success
+        else:
+            self.log_test("Generate MAR Schedule", False, f"Status: {response.status_code}")
+            return False
+
+    def test_get_mar_for_patient(self):
+        """Test getting MAR for patient"""
+        if not hasattr(self, 'nurse_token') or not self.nurse_token or not self.test_patient_id:
+            self.log_test("Get MAR for Patient", False, "Missing nurse token or patient ID")
+            return False
+        
+        # Switch to nurse token
+        original_token = self.token
+        self.token = self.nurse_token
+        
+        response, error = self.make_request('GET', f'nurse/mar/{self.test_patient_id}')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Get MAR for Patient", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_patient = 'patient' in data
+            has_medications = 'medications' in data
+            has_mar_entries = 'mar_entries' in data
+            has_summary = 'summary' in data
+            success = has_patient and has_medications and has_mar_entries and has_summary
+            mar_count = len(data.get('mar_entries', []))
+            self.log_test("Get MAR for Patient", success, f"Found {mar_count} MAR entries")
+            return success
+        else:
+            self.log_test("Get MAR for Patient", False, f"Status: {response.status_code}")
+            return False
+
+    def test_get_medications_due(self):
+        """Test getting medications due for administration"""
+        if not hasattr(self, 'nurse_token') or not self.nurse_token:
+            self.log_test("Get Medications Due", False, "No nurse token available")
+            return False
+        
+        # Switch to nurse token
+        original_token = self.token
+        self.token = self.nurse_token
+        
+        response, error = self.make_request('GET', 'nurse/mar/due?window_minutes=60')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Get Medications Due", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_overdue = 'overdue' in data
+            has_upcoming = 'upcoming' in data
+            has_total = 'total' in data
+            success = has_overdue and has_upcoming and has_total
+            total_due = data.get('total', 0)
+            self.log_test("Get Medications Due", success, f"Found {total_due} medications due")
+            return success
+        else:
+            self.log_test("Get Medications Due", False, f"Status: {response.status_code}")
+            return False
+
+    def test_nurse_dashboard_stats(self):
+        """Test getting nurse dashboard statistics"""
+        if not hasattr(self, 'nurse_token') or not self.nurse_token:
+            self.log_test("Nurse Dashboard Stats", False, "No nurse token available")
+            return False
+        
+        # Switch to nurse token
+        original_token = self.token
+        self.token = self.nurse_token
+        
+        response, error = self.make_request('GET', 'nurse/dashboard/stats')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Nurse Dashboard Stats", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            required_fields = ['patient_count', 'pending_tasks', 'stat_tasks', 'urgent_tasks', 
+                             'medications_due', 'vitals_due', 'current_shift']
+            has_all_fields = all(field in data for field in required_fields)
+            success = has_all_fields
+            patient_count = data.get('patient_count', 0)
+            pending_tasks = data.get('pending_tasks', 0)
+            self.log_test("Nurse Dashboard Stats", success, f"Patients: {patient_count}, Tasks: {pending_tasks}")
+            return success
+        else:
+            self.log_test("Nurse Dashboard Stats", False, f"Status: {response.status_code}")
+            return False
+
+    def test_quick_record_vitals(self):
+        """Test quick vitals recording"""
+        if not hasattr(self, 'nurse_token') or not self.nurse_token or not self.test_patient_id:
+            self.log_test("Quick Record Vitals", False, "Missing nurse token or patient ID")
+            return False
+        
+        # Switch to nurse token
+        original_token = self.token
+        self.token = self.nurse_token
+        
+        vitals_data = {
+            "patient_id": self.test_patient_id,
+            "blood_pressure_systolic": 125,
+            "blood_pressure_diastolic": 82,
+            "heart_rate": 75,
+            "respiratory_rate": 18,
+            "temperature": 98.7,
+            "oxygen_saturation": 97,
+            "pain_level": 2,
+            "notes": "Patient comfortable, vitals stable"
+        }
+        
+        response, error = self.make_request('POST', 'nurse/quick-vitals', vitals_data)
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Quick Record Vitals", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_message = 'message' in data
+            has_vitals = 'vitals' in data
+            success = has_message and has_vitals
+            self.log_test("Quick Record Vitals", success, f"Vitals recorded: {data.get('message')}")
+            return success
+        else:
+            self.log_test("Quick Record Vitals", False, f"Status: {response.status_code}")
+            return False
+
+    def test_nurse_permissions(self):
+        """Test getting nurse permissions"""
+        if not hasattr(self, 'nurse_token') or not self.nurse_token:
+            self.log_test("Nurse Permissions", False, "No nurse token available")
+            return False
+        
+        # Switch to nurse token
+        original_token = self.token
+        self.token = self.nurse_token
+        
+        response, error = self.make_request('GET', 'nurse/permissions')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Nurse Permissions", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_role = 'role' in data
+            has_allowed = 'allowed_actions' in data
+            has_denied = 'denied_actions' in data
+            has_restrictions = 'restrictions' in data
+            success = has_role and has_allowed and has_denied and has_restrictions
+            allowed_count = len(data.get('allowed_actions', []))
+            denied_count = len(data.get('denied_actions', []))
+            self.log_test("Nurse Permissions", success, f"Allowed: {allowed_count}, Denied: {denied_count}")
+            return success
+        else:
+            self.log_test("Nurse Permissions", False, f"Status: {response.status_code}")
+            return False
+
+    def test_nurse_permission_checks(self):
+        """Test specific permission checks for nurses"""
+        if not hasattr(self, 'nurse_token') or not self.nurse_token:
+            self.log_test("Nurse Permission Checks", False, "No nurse token available")
+            return False
+        
+        # Switch to nurse token
+        original_token = self.token
+        self.token = self.nurse_token
+        
+        # Test allowed permission
+        response, error = self.make_request('GET', 'nurse/permissions/check/medication:administer')
+        if error or response.status_code != 200:
+            self.token = original_token
+            self.log_test("Nurse Permission Checks", False, "Failed to check allowed permission")
+            return False
+        
+        allowed_data = response.json()
+        is_allowed = allowed_data.get('allowed') == True
+        
+        # Test denied permission
+        response, error = self.make_request('GET', 'nurse/permissions/check/medication:prescribe')
+        if error or response.status_code != 200:
+            self.token = original_token
+            self.log_test("Nurse Permission Checks", False, "Failed to check denied permission")
+            return False
+        
+        denied_data = response.json()
+        is_denied = denied_data.get('allowed') == False
+        
+        # Restore original token
+        self.token = original_token
+        
+        success = is_allowed and is_denied
+        self.log_test("Nurse Permission Checks", success, f"Administer: {is_allowed}, Prescribe: {is_denied}")
+        return success
+
+    def test_clock_out_shift(self):
+        """Test clocking out of shift"""
+        if not hasattr(self, 'nurse_token') or not self.nurse_token:
+            self.log_test("Clock Out Shift", False, "No nurse token available")
+            return False
+        
+        # Switch to nurse token
+        original_token = self.token
+        self.token = self.nurse_token
+        
+        handoff_data = {
+            "handoff_notes": "Shift completed successfully. Patient stable, all tasks completed. No issues to report."
+        }
+        
+        response, error = self.make_request('POST', 'nurse/shifts/clock-out', handoff_data)
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Clock Out Shift", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_message = 'message' in data
+            has_patient_count = 'patient_count' in data
+            success = has_message and has_patient_count
+            patient_count = data.get('patient_count', 0)
+            self.log_test("Clock Out Shift", success, f"Clocked out with {patient_count} patients")
+            return success
+        else:
+            self.log_test("Clock Out Shift", False, f"Status: {response.status_code}")
+            return False
+
+    def test_get_handoff_notes(self):
+        """Test getting handoff notes from previous shifts"""
+        if not hasattr(self, 'nurse_token') or not self.nurse_token:
+            self.log_test("Get Handoff Notes", False, "No nurse token available")
+            return False
+        
+        # Switch to nurse token
+        original_token = self.token
+        self.token = self.nurse_token
+        
+        response, error = self.make_request('GET', 'nurse/shifts/handoff-notes')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Get Handoff Notes", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_handoff_notes = 'handoff_notes' in data
+            success = has_handoff_notes
+            notes_count = len(data.get('handoff_notes', []))
+            self.log_test("Get Handoff Notes", success, f"Found {notes_count} handoff notes")
+            return success
+        else:
+            self.log_test("Get Handoff Notes", False, f"Status: {response.status_code}")
+            return False
+
+    def run_nurse_portal_tests(self):
+        """Run comprehensive nurse portal tests"""
+        print("\n🏥 TESTING NURSE PORTAL MODULE...")
+        
+        # First ensure we have a nurse user
+        self.test_nurse_user_registration()
+        
+        # Test shift management (some without auth, some with)
+        self.test_shift_definitions()  # No auth required
+        self.test_current_shift_with_auth()  # Requires nurse auth
+        self.test_clock_in_shift()  # Requires nurse auth
+        
+        # Test patient assignments (requires admin/charge nurse role)
+        self.test_assign_patient_to_nurse()  # Uses physician token (admin role)
+        self.test_get_my_patients()  # Uses nurse token
+        self.test_patient_load_statistics()  # Uses nurse token
+        
+        # Test task management
+        self.test_task_types_and_priorities()  # No auth required
+        self.test_create_nursing_task()  # Uses nurse token
+        self.test_get_nurse_tasks()  # Uses nurse token
+        self.test_get_due_tasks()  # Uses nurse token
+        self.test_complete_task()  # Uses nurse token
+        
+        # Test MAR (Medication Administration Record)
+        self.test_generate_mar_schedule()  # Uses nurse token
+        self.test_get_mar_for_patient()  # Uses nurse token
+        self.test_get_medications_due()  # Uses nurse token
+        
+        # Test dashboard and quick actions
+        self.test_nurse_dashboard_stats()  # Uses nurse token
+        self.test_quick_record_vitals()  # Uses nurse token
+        
+        # Test permissions
+        self.test_nurse_permissions()  # Uses nurse token
+        self.test_nurse_permission_checks()  # Uses nurse token
+        
+        # Test shift completion
+        self.test_clock_out_shift()  # Uses nurse token
+        self.test_get_handoff_notes()  # Uses nurse token
+
     def run_all_tests(self):
         """Run comprehensive backend API tests"""
         print("🏥 Starting Yacco EMR Backend API Tests")
