@@ -451,12 +451,23 @@ class BedManagementTester:
     
     def test_create_admission(self):
         """Test POST /api/beds/admissions/create - Admit patient to bed"""
-        if not self.token or not self.bed_ids:
-            self.log_test("Create Admission", False, "No token or bed IDs")
+        if not self.token:
+            self.log_test("Create Admission", False, "No token")
+            return False
+        
+        # Get available beds
+        response, error = self.make_request('GET', 'beds/beds', params={"status": "available"})
+        if error or response.status_code != 200:
+            self.log_test("Create Admission", False, "Failed to get available beds")
+            return False
+        
+        available_beds = response.json().get('beds', [])
+        if not available_beds:
+            self.log_test("Create Admission", False, "No available beds")
             return False
         
         # Use first available bed
-        bed_id = self.bed_ids[0]
+        bed_id = available_beds[0].get('id')
         
         admission_data = {
             "patient_id": self.patient_id,
