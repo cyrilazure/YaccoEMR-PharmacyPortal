@@ -294,9 +294,15 @@ export default function NursingSupervisorDashboard() {
 
       {/* Tabs */}
       <Tabs defaultValue="nurses" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 max-w-xl">
+        <TabsList className="grid w-full grid-cols-5 max-w-2xl">
           <TabsTrigger value="nurses">Nurses</TabsTrigger>
           <TabsTrigger value="shifts">Current Shifts</TabsTrigger>
+          <TabsTrigger value="handoff">
+            Handoff Notes
+            {handoffNotes.length > 0 && (
+              <Badge className="ml-2 bg-blue-500">{handoffNotes.length}</Badge>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="reports">
             Reports
             {dashboard?.pending_reports_for_review > 0 && (
