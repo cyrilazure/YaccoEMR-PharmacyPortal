@@ -225,6 +225,23 @@ export default function NursingSupervisorDashboard() {
     }
   };
 
+  const handleForceClockOut = async () => {
+    if (!selectedNurse) return;
+    setSaving(true);
+    try {
+      await nursingSupervisorAPI.forceClockOut(selectedNurse.id, forceClockOutReason);
+      toast.success(`${selectedNurse.first_name} ${selectedNurse.last_name} has been clocked out`);
+      setForceClockOutOpen(false);
+      setSelectedNurse(null);
+      setForceClockOutReason('Forgot to clock out');
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to clock out nurse');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (loading && !dashboard) {
     return (
       <div className="space-y-6 p-6">
