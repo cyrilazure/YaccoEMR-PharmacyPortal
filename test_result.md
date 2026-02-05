@@ -4674,15 +4674,79 @@ agent_communication:
       **RECOMMENDATION:** The Bed Management Portal UI is production-ready and working perfectly. All requested UI components and features have been successfully tested and verified. The portal provides an intuitive interface for managing hospital bed capacity with real-time census tracking, admission management, and visual bed status indicators. The UI is fully functional, responsive, and error-free.
 
 user_problem_statement: |
-  Test the Radiology Portal UI fixes and role-based access control.
+  Test the following 4 feature implementations in the Yacco EMR system:
   
-  **Fixes Implemented:**
-  1. SelectItem empty value error - changed from value="" to value="all"
-  2. Role-based UI restrictions for radiology_staff vs radiologist
+  **Test URL:** http://localhost:3000
   
-  **Test Users:**
-  - Radiology Staff: radiology_staff@yacco.health / test123 (Limited Access)
-  - Radiologist: radiologist@yacco.health / test123 (Full Access)
+  **Test Scenarios:**
+  
+  ### **1. Test Radiology Portal SelectItem Fix**
+  **User:** radiologist@yacco.health / test123
+  **Login Flow:** Region: Greater Accra → Hospital: ygtworks Health Center → Location: Main → Login
+  **Expected Redirect:** /radiology
+  
+  **Tests:**
+  1. Verify page loads WITHOUT "SelectItem empty value" runtime error
+  2. Click "All Modalities" filter dropdown - should work without errors
+  3. Click "All Priority" filter dropdown - should work without errors
+  4. Verify filter values are "all" not empty string
+  5. Verify radiologist sees "Radiologist" badge in header
+  6. Verify title says "Radiology - Physician Dashboard"
+  
+  ### **2. Test Radiology Staff Limited Access**
+  **User:** radiology_staff@yacco.health / test123
+  
+  **Tests:**
+  1. Login and verify redirect to /radiology
+  2. Verify title says "Radiology Department - Tech Station"
+  3. Verify "Radiology Tech" badge displayed in header
+  4. Verify "Ordering Physician" column is HIDDEN in table
+  5. Verify "Eye" (view details) button is HIDDEN
+  6. Verify "Report" button is HIDDEN (even if completed orders exist)
+  7. Verify Schedule/Start/Complete buttons ARE visible
+  
+  ### **3. Test Physician Can Order Imaging Studies**
+  **User:** Create or use existing physician account
+  **Navigation:** Login as physician → Go to Patients → Select a patient → Patient Chart
+  
+  **Tests:**
+  1. Verify "Imaging" tab exists in PatientChart (should be 8 tabs total: Overview, Vitals, Problems, Meds, Labs, Imaging, Notes, Orders)
+  2. Click on "Imaging" tab
+  3. Verify "Order Imaging" button is visible
+  4. Click "Order Imaging" button
+  5. Verify dialog opens with radiology order form
+  6. Verify form fields:
+     - Imaging Modality dropdown (X-Ray, CT, MRI, Ultrasound, etc.)
+     - Study Type dropdown (populated based on modality)
+     - Body Part field
+     - Laterality dropdown (Bilateral, Left, Right, N/A)
+     - Clinical Indication textarea
+     - Priority dropdown (Routine, Urgent, STAT, Emergency)
+     - Contrast Required checkbox
+     - Special Instructions textarea
+  7. Verify physicians CAN create radiology orders
+  
+  ### **4. Test Nursing Supervisor Bed Management Access**
+  **User:** Create nursing_supervisor account or use existing
+  
+  **Tests:**
+  1. Login as nursing_supervisor
+  2. Navigate to /nursing-supervisor dashboard
+  3. Verify "Beds" tab exists (should be 6 tabs: Nurses, Shifts, Beds, Handoff Notes, Reports, Unassigned)
+  4. Click on "Beds" tab
+  5. Verify 3 buttons displayed:
+     - "Open Full Bed Management" button
+     - "View All Patients" button
+     - "Appointments" button
+  6. Click "Open Full Bed Management" - should navigate to /bed-management
+  7. Verify nursing supervisor can access bed management portal
+  8. Verify nursing supervisor can view wards, beds, and admissions
+  
+  **Expected Results:**
+  - All 4 features should be working correctly
+  - No runtime errors
+  - Proper role-based access control
+  - All navigation and buttons functional
 
 frontend:
   - task: "Radiology Portal - SelectItem value='all' Fix"
