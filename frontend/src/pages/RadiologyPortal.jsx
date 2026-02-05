@@ -531,7 +531,7 @@ export default function RadiologyPortal() {
                     </div>
                     <div>
                       <span className="text-gray-500">Priority:</span>
-                      <Badge className={`ml-2 ${getPriorityBadge(order.priority)}`}>
+                      <Badge className={`ml-2 ${getPriorityBadge(selectedOrder.priority)}`}>
                         {selectedOrder.priority?.toUpperCase()}
                       </Badge>
                     </div>
