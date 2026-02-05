@@ -175,7 +175,20 @@ export default function Patients() {
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="mrn" className="flex items-center gap-1">
+                      <Hash className="w-3 h-3" /> MRN (Medical Record Number)
+                    </Label>
+                    <Input 
+                      id="mrn"
+                      data-testid="patient-mrn"
+                      placeholder="Auto-generated if empty"
+                      value={newPatient.mrn}
+                      onChange={(e) => setNewPatient({ ...newPatient, mrn: e.target.value })}
+                    />
+                    <p className="text-xs text-slate-500">Leave empty to auto-generate</p>
+                  </div>
                   <div className="space-y-2">
                     <Label htmlFor="dob">Date of Birth *</Label>
                     <Input 
