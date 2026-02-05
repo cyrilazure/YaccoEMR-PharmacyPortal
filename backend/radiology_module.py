@@ -323,9 +323,10 @@ def create_radiology_endpoints(db, get_current_user):
         user: dict = Depends(get_current_user)
     ):
         """Create/upload radiology result (radiologist report)"""
-        allowed_roles = ["radiology_staff", "radiologist", "physician", "hospital_admin", "super_admin"]
+        # Only radiologists can create official reports
+        allowed_roles = ["radiologist", "physician", "hospital_admin", "super_admin"]
         if user.get("role") not in allowed_roles:
-            raise HTTPException(status_code=403, detail="Not authorized to create radiology results")
+            raise HTTPException(status_code=403, detail="Only radiologists can create official radiology reports")
         
         # Get order
         order = await db["radiology_orders"].find_one({"id": data.order_id})
