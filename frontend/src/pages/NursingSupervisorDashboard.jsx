@@ -1246,6 +1246,196 @@ export default function NursingSupervisorDashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Add Patient Dialog */}
+      <Dialog open={addPatientOpen} onOpenChange={setAddPatientOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="w-5 h-5 text-sky-600" />
+              Add New Patient
+            </DialogTitle>
+            <DialogDescription>
+              Register a new patient in the system
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleAddPatient} className="space-y-4 py-4">
+            {/* Basic Information */}
+            <div className="space-y-3">
+              <h4 className="font-medium text-sm text-gray-700">Basic Information</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>First Name *</Label>
+                  <Input
+                    value={newPatient.first_name}
+                    onChange={(e) => setNewPatient({...newPatient, first_name: e.target.value})}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Last Name *</Label>
+                  <Input
+                    value={newPatient.last_name}
+                    onChange={(e) => setNewPatient({...newPatient, last_name: e.target.value})}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Date of Birth *</Label>
+                  <Input
+                    type="date"
+                    value={newPatient.date_of_birth}
+                    onChange={(e) => setNewPatient({...newPatient, date_of_birth: e.target.value})}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Gender *</Label>
+                  <Select 
+                    value={newPatient.gender} 
+                    onValueChange={(v) => setNewPatient({...newPatient, gender: v})}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="male">Male</SelectItem>
+                      <SelectItem value="female">Female</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+            
+            <Separator />
+            
+            {/* Contact Information */}
+            <div className="space-y-3">
+              <h4 className="font-medium text-sm text-gray-700">Contact Information</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Email</Label>
+                  <Input
+                    type="email"
+                    value={newPatient.email}
+                    onChange={(e) => setNewPatient({...newPatient, email: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Phone</Label>
+                  <Input
+                    value={newPatient.phone}
+                    onChange={(e) => setNewPatient({...newPatient, phone: e.target.value})}
+                    placeholder="+233-XXX-XXXXXX"
+                  />
+                </div>
+                <div className="col-span-2 space-y-2">
+                  <Label>Address</Label>
+                  <Input
+                    value={newPatient.address}
+                    onChange={(e) => setNewPatient({...newPatient, address: e.target.value})}
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <Separator />
+            
+            {/* Emergency Contact */}
+            <div className="space-y-3">
+              <h4 className="font-medium text-sm text-gray-700">Emergency Contact</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Contact Name</Label>
+                  <Input
+                    value={newPatient.emergency_contact_name}
+                    onChange={(e) => setNewPatient({...newPatient, emergency_contact_name: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Contact Phone</Label>
+                  <Input
+                    value={newPatient.emergency_contact_phone}
+                    onChange={(e) => setNewPatient({...newPatient, emergency_contact_phone: e.target.value})}
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <Separator />
+            
+            {/* Payment & Insurance */}
+            <div className="space-y-3">
+              <h4 className="font-medium text-sm text-gray-700">Payment Information</h4>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Payment Type</Label>
+                  <Select value={paymentType} onValueChange={setPaymentType}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="insurance">Insurance</SelectItem>
+                      <SelectItem value="cash">Cash / Self-Pay</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {paymentType === 'insurance' && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Insurance Provider *</Label>
+                      <Input
+                        value={newPatient.insurance_provider}
+                        onChange={(e) => setNewPatient({...newPatient, insurance_provider: e.target.value})}
+                        placeholder="e.g., NHIS, MetHealth"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Insurance ID *</Label>
+                      <Input
+                        value={newPatient.insurance_id}
+                        onChange={(e) => setNewPatient({...newPatient, insurance_id: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <DialogFooter className="pt-4">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => {
+                  setAddPatientOpen(false);
+                  setNewPatient({
+                    first_name: '', last_name: '', date_of_birth: '', gender: 'male',
+                    email: '', phone: '', address: '',
+                    emergency_contact_name: '', emergency_contact_phone: '',
+                    insurance_provider: '', insurance_id: '',
+                    payment_type: 'insurance'
+                  });
+                  setPaymentType('insurance');
+                }}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" className="bg-sky-600 hover:bg-sky-700" disabled={saving}>
+                {saving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Create Patient
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
