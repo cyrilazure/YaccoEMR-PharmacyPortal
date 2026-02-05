@@ -48,6 +48,12 @@ export const calculateAge = (dateOfBirth) => {
   return age;
 };
 
+export const formatCurrency = (amount) => {
+  if (amount === null || amount === undefined) return '₵0.00';
+  return `₵${parseFloat(amount).toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+};
+
+
 export const getRoleDisplayName = (role) => {
   const roleMap = {
     physician: 'Physician',
