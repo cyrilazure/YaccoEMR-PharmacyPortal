@@ -229,10 +229,20 @@ export default function PlatformOwnerPortal() {
     }
   };
 
-  const openStaffDialog = (hospital) => {
+  const openStaffDialog = async (hospital) => {
     setStaffHospital(hospital);
     setCreatedStaff(null);
+    setHospitalDepartments([]);
     setCreateStaffOpen(true);
+    
+    // Fetch departments for the selected hospital
+    try {
+      const response = await regionAPI.getHospitalDepartments(hospital.hospital.id);
+      setHospitalDepartments(response.data.departments || []);
+    } catch (err) {
+      console.error('Failed to fetch hospital departments:', err);
+      // If endpoint doesn't exist, don't show error - departments are optional
+    }
   };
 
   // Hospital Deletion (Soft Delete with Safeguards)
