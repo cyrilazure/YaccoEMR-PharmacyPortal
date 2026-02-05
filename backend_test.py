@@ -1089,5 +1089,5 @@ class YaccoEMRTester:
 
 if __name__ == "__main__":
     tester = YaccoEMRTester()
-    success = tester.run_nurse_portal_clock_flow_tests()
+    success = tester.run_super_admin_review_tests()
     sys.exit(0 if success else 1)
