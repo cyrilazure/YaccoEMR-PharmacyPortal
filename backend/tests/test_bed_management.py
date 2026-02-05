@@ -643,12 +643,23 @@ class BedManagementTester:
     
     def test_transfer_patient(self):
         """Test POST /api/beds/admissions/{id}/transfer - Transfer patient to different bed"""
-        if not self.token or not self.admission_id or len(self.bed_ids) < 2:
-            self.log_test("Transfer Patient", False, "No token, admission ID, or insufficient beds")
+        if not self.token or not self.admission_id:
+            self.log_test("Transfer Patient", False, "No token or admission ID")
             return False
         
-        # Use second bed for transfer
-        self.transfer_bed_id = self.bed_ids[1]
+        # Get available beds for transfer
+        response, error = self.make_request('GET', 'beds/beds', params={"status": "available"})
+        if error or response.status_code != 200:
+            self.log_test("Transfer Patient", False, "Failed to get available beds")
+            return False
+        
+        available_beds = response.json().get('beds', [])
+        if not available_beds:
+            self.log_test("Transfer Patient", False, "No available beds for transfer")
+            return False
+        
+        # Use first available bed for transfer
+        self.transfer_bed_id = available_beds[0].get('id')
         
         transfer_data = {
             "to_bed_id": self.transfer_bed_id,
