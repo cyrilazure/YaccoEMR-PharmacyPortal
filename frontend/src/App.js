@@ -198,6 +198,11 @@ function App() {
             <Route path="billing" element={<BillingPage />} />
             <Route path="records-sharing" element={<RecordsSharing />} />
             
+            {/* New Module Portals (Legacy routes without hospitalId) */}
+            <Route path="pharmacy" element={<PharmacyPortal />} />
+            <Route path="radiology" element={<RadiologyPortal />} />
+            <Route path="bed-management" element={<BedManagementPortal />} />
+            
             {/* Security & Audit */}
             <Route path="security" element={<SecuritySettings />} />
             <Route path="audit-logs" element={<AuditLogs />} />
