@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 import jwt
 
 class YaccoEMRTester:
-    def __init__(self, base_url="https://code-resume-25.preview.emergentagent.com"):
+    def __init__(self, base_url="https://careflow-183.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_base = f"{base_url}/api"
         self.token = None
@@ -2214,7 +2214,7 @@ class YaccoEMRTester:
         print("🧪 Starting Yacco EMR New Backend Modules Testing")
         print("=" * 60)
         print("Testing: e-Prescribing, NHIS Claims, Radiology, Bed Management")
-        print("Backend URL: https://code-resume-25.preview.emergentagent.com")
+        print("Backend URL: https://careflow-183.preview.emergentagent.com")
         print("Super Admin: ygtnetworks@gmail.com / test123")
         print("=" * 60)
         

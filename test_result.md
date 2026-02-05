@@ -1255,7 +1255,7 @@ user_problem_statement: |
   - POST /api/beds/wards/seed-defaults - Seed default wards
   - GET /api/beds/census - Get ward census
 
-  Backend URL: https://code-resume-25.preview.emergentagent.com
+  Backend URL: https://careflow-183.preview.emergentagent.com
   Super Admin: ygtnetworks@gmail.com / test123
 
 backend:
@@ -2212,7 +2212,7 @@ agent_communication:
       
       **CREDENTIALS TESTED:**
       - Super Admin: ygtnetworks@gmail.com / test123 ✅ Working
-      - Backend URL: https://code-resume-25.preview.emergentagent.com ✅ Accessible
+      - Backend URL: https://careflow-183.preview.emergentagent.com ✅ Accessible
       
       ✅ GHANA EMR FRONTEND UI TESTING COMPLETE - ALL CORE FLOWS WORKING (4/4 major flows tested - 100% success rate)
       
@@ -2425,7 +2425,7 @@ agent_communication:
       
       **CREDENTIALS VERIFIED:**
       - Super Admin: ygtnetworks@gmail.com / test123 ✅ Working with role=super_admin in JWT token
-      - Backend URL: https://code-resume-25.preview.emergentagent.com ✅ Accessible
+      - Backend URL: https://careflow-183.preview.emergentagent.com ✅ Accessible
       
       **RECOMMENDATION:** 
       EMR Portal backend APIs are largely functional with 92.3% success rate. Core platform administration, IT admin functions, and access controls are working correctly. Main agent should investigate hospital admin authentication to ensure proper organization_id context is set during login for dashboard access.
@@ -3864,7 +3864,7 @@ agent_communication:
       
       **DEPARTMENT AUTO-SEEDING STATUS:** Fully functional and production-ready. The system correctly handles both new hospitals (creates departments) and existing hospitals (prevents duplicates) with appropriate messaging.
       
-      **TEST ENVIRONMENT:** Successfully tested against https://code-resume-25.preview.emergentagent.com/api
+      **TEST ENVIRONMENT:** Successfully tested against https://careflow-183.preview.emergentagent.com/api
   - agent: "testing"
     message: |
       ✅ ALL REVIEW REQUEST TESTS COMPLETED SUCCESSFULLY - 8/8 TESTS PASSED (100% SUCCESS RATE)
