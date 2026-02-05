@@ -1399,6 +1399,211 @@ export default function PatientChart() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* Imaging/Radiology Tab */}
+        <TabsContent value="imaging" className="mt-6 space-y-6">
+          {/* Radiology Orders Card */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Imaging Orders</CardTitle>
+                <CardDescription>Radiology and imaging studies</CardDescription>
+              </div>
+              {!['nurse', 'nursing_supervisor', 'floor_supervisor'].includes(user?.role) && (
+                <Dialog open={radiologyOrderDialogOpen} onOpenChange={setRadiologyOrderDialogOpen}>
+                  <Button onClick={() => setRadiologyOrderDialogOpen(true)} className="gap-2 bg-purple-600 hover:bg-purple-700">
+                    <Scan className="w-4 h-4" /> Order Imaging
+                  </Button>
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>Order Radiology Study</DialogTitle>
+                      <DialogDescription>Place imaging order for {patient?.first_name} {patient?.last_name}</DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleSaveRadiologyOrder} className="space-y-4 mt-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Imaging Modality *</Label>
+                          <Select value={newRadiologyOrder.modality} onValueChange={handleModalityChange}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {radiologyModalities.map(mod => (
+                                <SelectItem key={mod.value} value={mod.value}>
+                                  {mod.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Study Type *</Label>
+                          <Select 
+                            value={newRadiologyOrder.study_type} 
+                            onValueChange={(v) => {
+                              const study = radiologyStudyTypes.find(s => s.code === v);
+                              setNewRadiologyOrder({
+                                ...newRadiologyOrder,
+                                study_type: study?.name || v,
+                                body_part: study?.body_part || ''
+                              });
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select study type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {radiologyStudyTypes.map(study => (
+                                <SelectItem key={study.code} value={study.code}>
+                                  {study.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Body Part</Label>
+                          <Input 
+                            value={newRadiologyOrder.body_part}
+                            onChange={(e) => setNewRadiologyOrder({...newRadiologyOrder, body_part: e.target.value})}
+                            placeholder="Auto-filled from study type"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Laterality</Label>
+                          <Select value={newRadiologyOrder.laterality} onValueChange={(v) => setNewRadiologyOrder({...newRadiologyOrder, laterality: v})}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="bilateral">Bilateral</SelectItem>
+                              <SelectItem value="left">Left</SelectItem>
+                              <SelectItem value="right">Right</SelectItem>
+                              <SelectItem value="na">N/A</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label>Clinical Indication *</Label>
+                        <Textarea
+                          value={newRadiologyOrder.clinical_indication}
+                          onChange={(e) => setNewRadiologyOrder({...newRadiologyOrder, clinical_indication: e.target.value})}
+                          placeholder="Reason for imaging study..."
+                          rows={3}
+                          required
+                        />
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Priority</Label>
+                          <Select value={newRadiologyOrder.priority} onValueChange={(v) => setNewRadiologyOrder({...newRadiologyOrder, priority: v})}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="routine">Routine</SelectItem>
+                              <SelectItem value="urgent">Urgent</SelectItem>
+                              <SelectItem value="stat">STAT</SelectItem>
+                              <SelectItem value="emergency">Emergency</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={newRadiologyOrder.contrast_required}
+                              onChange={(e) => setNewRadiologyOrder({...newRadiologyOrder, contrast_required: e.target.checked})}
+                              className="rounded"
+                            />
+                            Contrast Required
+                          </Label>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label>Special Instructions</Label>
+                        <Textarea
+                          value={newRadiologyOrder.special_instructions}
+                          onChange={(e) => setNewRadiologyOrder({...newRadiologyOrder, special_instructions: e.target.value})}
+                          placeholder="Any special instructions or precautions..."
+                          rows={2}
+                        />
+                      </div>
+                      
+                      <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700" disabled={saving}>
+                        {saving ? 'Placing Order...' : 'Place Imaging Order'}
+                      </Button>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              )}
+            </CardHeader>
+            <CardContent>
+              {radiologyOrders.length === 0 ? (
+                <p className="text-slate-500 text-center py-8">No imaging orders placed</p>
+              ) : (
+                <div className="space-y-4">
+                  {radiologyOrders.map((order) => (
+                    <Card key={order.id} className="border-purple-200">
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <CardTitle className="text-base flex items-center gap-2">
+                              <Scan className="w-5 h-5 text-purple-600" />
+                              {order.study_type}
+                            </CardTitle>
+                            <CardDescription className="mt-1">
+                              Accession: {order.accession_number} • {order.modality?.toUpperCase()}
+                            </CardDescription>
+                          </div>
+                          <div className="flex gap-2">
+                            <Badge className={getPriorityBadge(order.priority)}>
+                              {order.priority?.toUpperCase()}
+                            </Badge>
+                            <Badge className={getStatusBadge(order.status)}>
+                              {order.status?.replace(/_/g, ' ')}
+                            </Badge>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2 text-sm">
+                          <p><span className="font-medium">Body Part:</span> {order.body_part} ({order.laterality})</p>
+                          <p><span className="font-medium">Indication:</span> {order.clinical_indication}</p>
+                          <p><span className="font-medium">Contrast:</span> {order.contrast_required ? 'Required' : 'Not Required'}</p>
+                          <p className="text-slate-500">Ordered: {new Date(order.created_at).toLocaleDateString()}</p>
+                          {order.result && (
+                            <div className="mt-4 p-4 bg-emerald-50 rounded-lg border border-emerald-200">
+                              <h5 className="font-medium text-emerald-800 mb-2">Radiology Report</h5>
+                              <p className="text-sm"><span className="font-medium">Findings:</span> {order.result.findings}</p>
+                              <p className="text-sm mt-1"><span className="font-medium">Impression:</span> {order.result.impression}</p>
+                              {order.result.recommendations && (
+                                <p className="text-sm mt-1"><span className="font-medium">Recommendations:</span> {order.result.recommendations}</p>
+                              )}
+                              {order.result.critical_finding && (
+                                <Badge className="mt-2 bg-red-100 text-red-700">
+                                  <AlertTriangle className="w-3 h-3 mr-1" /> Critical Finding
+                                </Badge>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
       </Tabs>
     </div>
   );
