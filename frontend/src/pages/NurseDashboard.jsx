@@ -332,6 +332,10 @@ export default function NurseDashboard() {
       fetchReports();
     } catch (err) {
       console.error('Dashboard fetch error:', err);
+      // Don't show error on initial load, just log it
+      if (err.response?.status === 403) {
+        toast.error('Session expired. Please login again.');
+      }
     } finally {
       setLoading(false);
     }
