@@ -343,6 +343,29 @@ export default function PatientChart() {
     }
   };
 
+  const handleSaveRadiologyOrder = async (e) => {
+    e.preventDefault();
+    if (!newRadiologyOrder.study_type || !newRadiologyOrder.clinical_indication) {
+      toast.error('Study type and clinical indication are required');
+      return;
+    }
+    setSaving(true);
+    try {
+      await radiologyAPI.createOrder({ ...newRadiologyOrder, patient_id: id });
+      toast.success('Radiology order placed');
+      setRadiologyOrderDialogOpen(false);
+      setNewRadiologyOrder({
+        modality: 'xray', study_type: '', body_part: '', laterality: 'bilateral',
+        clinical_indication: '', priority: 'routine', contrast_required: false, special_instructions: ''
+      });
+      fetchRadiologyData();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to place radiology order');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const getLabResultFlag = (flag) => {
     const flagStyles = {
       'N': { label: 'Normal', className: 'bg-green-100 text-green-700' },
