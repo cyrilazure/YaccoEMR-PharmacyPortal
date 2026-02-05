@@ -219,9 +219,11 @@ export default function SecuritySettings() {
           <TabsTrigger value="password" className="gap-2">
             <Lock className="w-4 h-4" /> Password
           </TabsTrigger>
-          <TabsTrigger value="permissions" className="gap-2">
-            <Shield className="w-4 h-4" /> Permissions
-          </TabsTrigger>
+          {showPermissions && (
+            <TabsTrigger value="permissions" className="gap-2">
+              <Shield className="w-4 h-4" /> Permissions
+            </TabsTrigger>
+          )}
         </TabsList>
 
         {/* 2FA Tab */}
