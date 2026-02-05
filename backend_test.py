@@ -1565,7 +1565,7 @@ class YaccoEMRTester:
             message = data.get('message', '')
             
             # Should either seed departments or return "already has departments"
-            is_seeded = 'seeded' in message.lower()
+            is_seeded = 'created' in message.lower() and 'departments' in message.lower()
             already_has = 'already has departments' in message.lower()
             
             success = is_seeded or already_has
