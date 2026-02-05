@@ -176,6 +176,60 @@ export default function NursingSupervisorDashboard() {
     return () => clearInterval(interval);
   }, [fetchData]);
 
+  // Patient Search
+  const handlePatientSearch = async (query) => {
+    setPatientSearchQuery(query);
+    if (!query || query.length < 2) {
+      setPatientSearchResults([]);
+      return;
+    }
+    
+    setSearchingPatients(true);
+    try {
+      const response = await patientAPI.getAll({ search: query });
+      setPatientSearchResults(response.data || []);
+    } catch (err) {
+      console.error('Patient search error:', err);
+      toast.error('Failed to search patients');
+    } finally {
+      setSearchingPatients(false);
+    }
+  };
+  
+  // Add Patient
+  const handleAddPatient = async (e) => {
+    e.preventDefault();
+    
+    if (paymentType === 'insurance' && (!newPatient.insurance_provider || !newPatient.insurance_id)) {
+      toast.error('Insurance information is required. Select "Pay Cash" to skip.');
+      return;
+    }
+    
+    setSaving(true);
+    try {
+      const patientData = {
+        ...newPatient,
+        payment_type: paymentType
+      };
+      const res = await patientAPI.create(patientData);
+      toast.success('Patient created successfully');
+      setAddPatientOpen(false);
+      setNewPatient({
+        first_name: '', last_name: '', date_of_birth: '', gender: 'male',
+        email: '', phone: '', address: '',
+        emergency_contact_name: '', emergency_contact_phone: '',
+        insurance_provider: '', insurance_id: '',
+        payment_type: 'insurance'
+      });
+      setPaymentType('insurance');
+      fetchData();
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Failed to create patient'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleAssignPatient = async () => {
     if (!assignmentForm.patient_id || !assignmentForm.nurse_id) {
       toast.error('Please select both patient and nurse');
