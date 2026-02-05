@@ -124,6 +124,9 @@ class PatientCreate(BaseModel):
     emergency_contact_phone: Optional[str] = None
     insurance_provider: Optional[str] = None
     insurance_id: Optional[str] = None
+    insurance_plan: Optional[str] = None
+    payment_type: Optional[str] = "insurance"  # 'insurance' or 'cash'
+    adt_notification: Optional[bool] = True  # ADT notification flag
 
 class Patient(PatientCreate):
     model_config = ConfigDict(extra="ignore")
