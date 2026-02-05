@@ -1757,6 +1757,505 @@ class YaccoEMRTester:
         
         return self.tests_passed == self.tests_run
 
+    def test_prescribing_drug_database(self):
+        """Test e-Prescribing Drug Database - GET /api/prescriptions/drugs/database"""
+        if not self.super_admin_token:
+            self.log_test("e-Prescribing Drug Database", False, "No super admin token")
+            return False
+        
+        # Switch to super admin token
+        original_token = self.token
+        self.token = self.super_admin_token
+        
+        response, error = self.make_request('GET', 'prescriptions/drugs/database')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("e-Prescribing Drug Database", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            # Verify response structure
+            has_drugs = 'drugs' in data
+            has_total = 'total' in data
+            drugs_list = data.get('drugs', [])
+            is_list = isinstance(drugs_list, list)
+            has_drugs_data = len(drugs_list) > 0 if is_list else False
+            
+            # Check drug structure
+            drug_structure_valid = True
+            if has_drugs_data:
+                first_drug = drugs_list[0]
+                required_fields = ['name', 'generic', 'class', 'forms', 'strengths']
+                drug_structure_valid = all(field in first_drug for field in required_fields)
+            
+            success = has_drugs and has_total and is_list and has_drugs_data and drug_structure_valid
+            details = f"Drugs count: {len(drugs_list) if is_list else 'N/A'}, Total: {data.get('total')}, Structure valid: {drug_structure_valid}"
+            self.log_test("e-Prescribing Drug Database", success, details)
+            return success
+        else:
+            try:
+                error_data = response.json()
+                error_msg = error_data.get('detail', f'Status: {response.status_code}')
+            except:
+                error_msg = f'Status: {response.status_code}'
+            self.log_test("e-Prescribing Drug Database", False, error_msg)
+            return False
+
+    def test_prescribing_drug_search(self):
+        """Test e-Prescribing Drug Search - GET /api/prescriptions/drugs/search?query=amox"""
+        if not self.super_admin_token:
+            self.log_test("e-Prescribing Drug Search", False, "No super admin token")
+            return False
+        
+        # Switch to super admin token
+        original_token = self.token
+        self.token = self.super_admin_token
+        
+        response, error = self.make_request('GET', 'prescriptions/drugs/search', params={"query": "amox"})
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("e-Prescribing Drug Search", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            # Should return a list of drugs matching "amox"
+            is_list = isinstance(data, list)
+            has_results = len(data) > 0 if is_list else False
+            
+            # Check if results contain amoxicillin-related drugs
+            amox_found = False
+            if has_results:
+                for drug in data:
+                    if 'amox' in drug.get('name', '').lower() or 'amox' in drug.get('generic', '').lower():
+                        amox_found = True
+                        break
+            
+            success = is_list and has_results and amox_found
+            details = f"Results count: {len(data) if is_list else 'N/A'}, Amoxicillin found: {amox_found}"
+            self.log_test("e-Prescribing Drug Search", success, details)
+            return success
+        else:
+            try:
+                error_data = response.json()
+                error_msg = error_data.get('detail', f'Status: {response.status_code}')
+            except:
+                error_msg = f'Status: {response.status_code}'
+            self.log_test("e-Prescribing Drug Search", False, error_msg)
+            return False
+
+    def test_nhis_tariff_codes(self):
+        """Test NHIS Tariff Codes - GET /api/nhis/tariff-codes"""
+        if not self.super_admin_token:
+            self.log_test("NHIS Tariff Codes", False, "No super admin token")
+            return False
+        
+        # Switch to super admin token
+        original_token = self.token
+        self.token = self.super_admin_token
+        
+        response, error = self.make_request('GET', 'nhis/tariff-codes')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("NHIS Tariff Codes", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            # Should return a list of tariff codes
+            is_list = isinstance(data, list)
+            has_codes = len(data) > 0 if is_list else False
+            
+            # Check tariff code structure
+            code_structure_valid = True
+            if has_codes:
+                first_code = data[0]
+                required_fields = ['code', 'description', 'category', 'price']
+                code_structure_valid = all(field in first_code for field in required_fields)
+            
+            # Look for specific Ghana NHIS codes
+            ghana_codes_found = False
+            if has_codes:
+                for code in data:
+                    if code.get('code', '').startswith(('OPD', 'LAB', 'IMG')):
+                        ghana_codes_found = True
+                        break
+            
+            success = is_list and has_codes and code_structure_valid and ghana_codes_found
+            details = f"Codes count: {len(data) if is_list else 'N/A'}, Structure valid: {code_structure_valid}, Ghana codes: {ghana_codes_found}"
+            self.log_test("NHIS Tariff Codes", success, details)
+            return success
+        else:
+            try:
+                error_data = response.json()
+                error_msg = error_data.get('detail', f'Status: {response.status_code}')
+            except:
+                error_msg = f'Status: {response.status_code}'
+            self.log_test("NHIS Tariff Codes", False, error_msg)
+            return False
+
+    def test_nhis_diagnosis_codes(self):
+        """Test NHIS ICD-10 Diagnosis Codes - GET /api/nhis/diagnosis-codes"""
+        if not self.super_admin_token:
+            self.log_test("NHIS ICD-10 Diagnosis Codes", False, "No super admin token")
+            return False
+        
+        # Switch to super admin token
+        original_token = self.token
+        self.token = self.super_admin_token
+        
+        response, error = self.make_request('GET', 'nhis/diagnosis-codes')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("NHIS ICD-10 Diagnosis Codes", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            # Should return a list of ICD-10 codes
+            is_list = isinstance(data, list)
+            has_codes = len(data) > 0 if is_list else False
+            
+            # Check ICD-10 code structure
+            code_structure_valid = True
+            if has_codes:
+                first_code = data[0]
+                required_fields = ['code', 'description']
+                code_structure_valid = all(field in first_code for field in required_fields)
+            
+            # Look for specific ICD-10 codes common in Ghana
+            ghana_icd_found = False
+            if has_codes:
+                for code in data:
+                    if code.get('code') in ['B50', 'B54', 'E11', 'I10']:  # Malaria, Diabetes, Hypertension
+                        ghana_icd_found = True
+                        break
+            
+            success = is_list and has_codes and code_structure_valid and ghana_icd_found
+            details = f"ICD-10 codes count: {len(data) if is_list else 'N/A'}, Structure valid: {code_structure_valid}, Ghana ICD codes: {ghana_icd_found}"
+            self.log_test("NHIS ICD-10 Diagnosis Codes", success, details)
+            return success
+        else:
+            try:
+                error_data = response.json()
+                error_msg = error_data.get('detail', f'Status: {response.status_code}')
+            except:
+                error_msg = f'Status: {response.status_code}'
+            self.log_test("NHIS ICD-10 Diagnosis Codes", False, error_msg)
+            return False
+
+    def test_radiology_modalities(self):
+        """Test Radiology Modalities - GET /api/radiology/modalities"""
+        if not self.super_admin_token:
+            self.log_test("Radiology Modalities", False, "No super admin token")
+            return False
+        
+        # Switch to super admin token
+        original_token = self.token
+        self.token = self.super_admin_token
+        
+        response, error = self.make_request('GET', 'radiology/modalities')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Radiology Modalities", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            # Should return a list of imaging modalities
+            is_list = isinstance(data, list)
+            has_modalities = len(data) > 0 if is_list else False
+            
+            # Check modality structure
+            modality_structure_valid = True
+            if has_modalities:
+                first_modality = data[0]
+                required_fields = ['value', 'name']
+                modality_structure_valid = all(field in first_modality for field in required_fields)
+            
+            # Look for common imaging modalities
+            common_modalities = ['xray', 'ct', 'mri', 'ultrasound']
+            modalities_found = []
+            if has_modalities:
+                for modality in data:
+                    if modality.get('value') in common_modalities:
+                        modalities_found.append(modality.get('value'))
+            
+            success = is_list and has_modalities and modality_structure_valid and len(modalities_found) >= 3
+            details = f"Modalities count: {len(data) if is_list else 'N/A'}, Structure valid: {modality_structure_valid}, Common modalities: {modalities_found}"
+            self.log_test("Radiology Modalities", success, details)
+            return success
+        else:
+            try:
+                error_data = response.json()
+                error_msg = error_data.get('detail', f'Status: {response.status_code}')
+            except:
+                error_msg = f'Status: {response.status_code}'
+            self.log_test("Radiology Modalities", False, error_msg)
+            return False
+
+    def test_radiology_study_types(self):
+        """Test Radiology Study Types - GET /api/radiology/study-types"""
+        if not self.super_admin_token:
+            self.log_test("Radiology Study Types", False, "No super admin token")
+            return False
+        
+        # Switch to super admin token
+        original_token = self.token
+        self.token = self.super_admin_token
+        
+        response, error = self.make_request('GET', 'radiology/study-types')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Radiology Study Types", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            # Should return a dict with modalities as keys
+            is_dict = isinstance(data, dict)
+            has_modalities = len(data) > 0 if is_dict else False
+            
+            # Check for X-ray studies
+            has_xray_studies = 'xray' in data if is_dict else False
+            xray_studies_valid = False
+            if has_xray_studies:
+                xray_studies = data.get('xray', [])
+                xray_studies_valid = isinstance(xray_studies, list) and len(xray_studies) > 0
+                if xray_studies_valid and len(xray_studies) > 0:
+                    first_study = xray_studies[0]
+                    required_fields = ['code', 'name', 'body_part']
+                    xray_studies_valid = all(field in first_study for field in required_fields)
+            
+            # Check for CT studies
+            has_ct_studies = 'ct' in data if is_dict else False
+            
+            success = is_dict and has_modalities and has_xray_studies and xray_studies_valid and has_ct_studies
+            details = f"Modalities: {list(data.keys()) if is_dict else 'N/A'}, X-ray studies: {len(data.get('xray', [])) if has_xray_studies else 0}, CT studies: {len(data.get('ct', [])) if has_ct_studies else 0}"
+            self.log_test("Radiology Study Types", success, details)
+            return success
+        else:
+            try:
+                error_data = response.json()
+                error_msg = error_data.get('detail', f'Status: {response.status_code}')
+            except:
+                error_msg = f'Status: {response.status_code}'
+            self.log_test("Radiology Study Types", False, error_msg)
+            return False
+
+    def test_bed_management_wards(self):
+        """Test Bed Management Wards - GET /api/beds/wards (should be empty initially)"""
+        if not self.super_admin_token:
+            self.log_test("Bed Management Wards (Initial)", False, "No super admin token")
+            return False
+        
+        # Switch to super admin token
+        original_token = self.token
+        self.token = self.super_admin_token
+        
+        response, error = self.make_request('GET', 'beds/wards')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Bed Management Wards (Initial)", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            # Should return wards structure
+            has_wards = 'wards' in data
+            has_total = 'total' in data
+            wards_list = data.get('wards', [])
+            is_list = isinstance(wards_list, list)
+            
+            # Initially should be empty or have minimal wards
+            ward_count = len(wards_list) if is_list else 0
+            
+            success = has_wards and has_total and is_list
+            details = f"Wards count: {ward_count}, Total: {data.get('total')}, Structure valid: {success}"
+            self.log_test("Bed Management Wards (Initial)", success, details)
+            return success
+        else:
+            try:
+                error_data = response.json()
+                error_msg = error_data.get('detail', f'Status: {response.status_code}')
+            except:
+                error_msg = f'Status: {response.status_code}'
+            self.log_test("Bed Management Wards (Initial)", False, error_msg)
+            return False
+
+    def test_bed_management_seed_defaults(self):
+        """Test Bed Management Seed Defaults - POST /api/beds/wards/seed-defaults"""
+        if not self.super_admin_token:
+            self.log_test("Bed Management Seed Defaults", False, "No super admin token")
+            return False
+        
+        # Switch to super admin token
+        original_token = self.token
+        self.token = self.super_admin_token
+        
+        response, error = self.make_request('POST', 'beds/wards/seed-defaults')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Bed Management Seed Defaults", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            # Should return success message and count
+            has_message = 'message' in data
+            message = data.get('message', '')
+            
+            # Check if wards were created or already existed
+            wards_created = 'Created' in message or 'already exist' in message
+            has_count = 'count' in data or 'skipped' in data
+            
+            success = has_message and wards_created
+            details = f"Message: {message}, Count/Skipped: {data.get('count', data.get('skipped', 'N/A'))}"
+            self.log_test("Bed Management Seed Defaults", success, details)
+            return success
+        else:
+            try:
+                error_data = response.json()
+                error_msg = error_data.get('detail', f'Status: {response.status_code}')
+            except:
+                error_msg = f'Status: {response.status_code}'
+            self.log_test("Bed Management Seed Defaults", False, error_msg)
+            return False
+
+    def test_bed_management_census(self):
+        """Test Bed Management Census - GET /api/beds/census"""
+        if not self.super_admin_token:
+            self.log_test("Bed Management Census", False, "No super admin token")
+            return False
+        
+        # Switch to super admin token
+        original_token = self.token
+        self.token = self.super_admin_token
+        
+        response, error = self.make_request('GET', 'beds/census')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Bed Management Census", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            # Should return census structure
+            has_summary = 'summary' in data
+            has_wards = 'wards' in data
+            has_timestamp = 'timestamp' in data
+            has_critical_care = 'critical_care' in data
+            
+            # Check summary structure
+            summary_valid = False
+            if has_summary:
+                summary = data.get('summary', {})
+                required_fields = ['total_beds', 'occupied', 'available', 'overall_occupancy']
+                summary_valid = all(field in summary for field in required_fields)
+            
+            # Check wards structure
+            wards_valid = False
+            if has_wards:
+                wards = data.get('wards', [])
+                wards_valid = isinstance(wards, list)
+            
+            success = has_summary and has_wards and has_timestamp and has_critical_care and summary_valid and wards_valid
+            details = f"Summary valid: {summary_valid}, Wards count: {len(data.get('wards', [])) if wards_valid else 'N/A'}, Critical care: {has_critical_care}"
+            self.log_test("Bed Management Census", success, details)
+            return success
+        else:
+            try:
+                error_data = response.json()
+                error_msg = error_data.get('detail', f'Status: {response.status_code}')
+            except:
+                error_msg = f'Status: {response.status_code}'
+            self.log_test("Bed Management Census", False, error_msg)
+            return False
+
+    def run_yacco_emr_new_modules_tests(self):
+        """Run tests for the new Yacco EMR backend modules as specified in review request"""
+        print("🧪 Starting Yacco EMR New Backend Modules Testing")
+        print("=" * 60)
+        print("Testing: e-Prescribing, NHIS Claims, Radiology, Bed Management")
+        print("Backend URL: https://code-resume-25.preview.emergentagent.com")
+        print("Super Admin: ygtnetworks@gmail.com / test123")
+        print("=" * 60)
+        
+        # Test sequence for new backend modules
+        tests = [
+            self.test_health_check,
+            self.test_super_admin_login,
+            self.test_prescribing_drug_database,
+            self.test_prescribing_drug_search,
+            self.test_nhis_tariff_codes,
+            self.test_nhis_diagnosis_codes,
+            self.test_radiology_modalities,
+            self.test_radiology_study_types,
+            self.test_bed_management_wards,
+            self.test_bed_management_seed_defaults,
+            self.test_bed_management_census
+        ]
+        
+        for test in tests:
+            try:
+                test()
+            except Exception as e:
+                self.log_test(test.__name__, False, f"Exception: {str(e)}")
+        
+        # Print summary
+        print("\n" + "=" * 60)
+        print(f"📊 YACCO EMR NEW MODULES TEST SUMMARY")
+        print(f"Total Tests: {self.tests_run}")
+        print(f"Passed: {self.tests_passed}")
+        print(f"Failed: {self.tests_run - self.tests_passed}")
+        print(f"Success Rate: {(self.tests_passed/self.tests_run*100):.1f}%")
+        
+        # Print failed tests
+        failed_tests = [t for t in self.test_results if not t['success']]
+        if failed_tests:
+            print(f"\n❌ FAILED TESTS:")
+            for test in failed_tests:
+                print(f"  - {test['test']}: {test['details']}")
+        
+        return self.tests_passed == self.tests_run
+
 if __name__ == "__main__":
     tester = YaccoEMRTester()
     success = tester.run_department_seeding_tests()
