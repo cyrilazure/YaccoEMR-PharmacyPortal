@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { nursingSupervisorAPI, patientAPI } from '@/lib/api';
+import { getErrorMessage } from '@/lib/utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,7 +32,7 @@ import {
   Clock, CheckCircle, AlertCircle, RefreshCw,
   Eye, UserCheck, Activity, Stethoscope, 
   Calendar, ChevronRight, Search, Plus,
-  FileCheck, Send, Star
+  FileCheck, Send, Star, Loader2
 } from 'lucide-react';
 
 // Stat Card Component
