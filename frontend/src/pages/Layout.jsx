@@ -199,16 +199,29 @@ export default function Layout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [pageLoading, setPageLoading] = useState(false);
 
-  // Handle route changes with loading state
+  // Handle route changes with loading state - using ref to track pathname
+  const prevPathname = React.useRef(location.pathname);
   useEffect(() => {
-    setPageLoading(true);
-    const timer = setTimeout(() => setPageLoading(false), 300);
-    return () => clearTimeout(timer);
+    if (prevPathname.current !== location.pathname) {
+      prevPathname.current = location.pathname;
+      // Use timeout to avoid synchronous state updates
+      const timer = setTimeout(() => {
+        setPageLoading(true);
+        setTimeout(() => setPageLoading(false), 300);
+      }, 0);
+      return () => clearTimeout(timer);
+    }
   }, [location.pathname]);
 
-  // Close mobile menu on route change
+  // Close mobile menu on route change - using callback ref
+  const prevPathnameForMenu = React.useRef(location.pathname);
   useEffect(() => {
-    setMobileMenuOpen(false);
+    if (prevPathnameForMenu.current !== location.pathname) {
+      prevPathnameForMenu.current = location.pathname;
+      // Delay to avoid synchronous setState in effect
+      const timer = setTimeout(() => setMobileMenuOpen(false), 0);
+      return () => clearTimeout(timer);
+    }
   }, [location.pathname]);
 
   // Handle window resize
