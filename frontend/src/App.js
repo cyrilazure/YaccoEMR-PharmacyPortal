@@ -73,6 +73,14 @@ function RoleBasedRedirect() {
       return <Navigate to="/admin" replace />;
     case 'biller':
       return <Navigate to="/billing" replace />;
+    case 'pharmacist':
+    case 'pharmacy_tech':
+      return <Navigate to="/pharmacy" replace />;
+    case 'radiologist':
+    case 'radiology_staff':
+      return <Navigate to="/radiology" replace />;
+    case 'bed_manager':
+      return <Navigate to="/bed-management" replace />;
     default:
       return <Navigate to="/dashboard" replace />;
   }
