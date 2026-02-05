@@ -882,6 +882,12 @@ export default function PatientChart() {
                   </form>
                 </DialogContent>
               </Dialog>
+              )}
+              {user?.role === 'nurse' && (
+                <Badge variant="outline" className="text-amber-600 border-amber-300">
+                  View Only
+                </Badge>
+              )}
             </CardHeader>
             <CardContent>
               {medications.length === 0 ? (
