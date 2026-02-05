@@ -44,8 +44,8 @@ export default function RadiologyPortal() {
   const [stats, setStats] = useState({});
   const [activeTab, setActiveTab] = useState('queue');
   const [searchQuery, setSearchQuery] = useState('');
-  const [modalityFilter, setModalityFilter] = useState('');
-  const [priorityFilter, setPriorityFilter] = useState('');
+  const [modalityFilter, setModalityFilter] = useState('all');
+  const [priorityFilter, setPriorityFilter] = useState('all');
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
@@ -71,8 +71,8 @@ export default function RadiologyPortal() {
     setLoading(true);
     try {
       const params = {};
-      if (modalityFilter) params.modality = modalityFilter;
-      if (priorityFilter) params.priority = priorityFilter;
+      if (modalityFilter && modalityFilter !== 'all') params.modality = modalityFilter;
+      if (priorityFilter && priorityFilter !== 'all') params.priority = priorityFilter;
       
       const response = await radiologyAPI.getQueue(params);
       setOrders(response.data.orders || []);
@@ -295,7 +295,7 @@ export default function RadiologyPortal() {
             <SelectValue placeholder="All Modalities" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Modalities</SelectItem>
+            <SelectItem value="all">All Modalities</SelectItem>
             <SelectItem value="xray">X-Ray</SelectItem>
             <SelectItem value="ct">CT Scan</SelectItem>
             <SelectItem value="mri">MRI</SelectItem>
@@ -308,7 +308,7 @@ export default function RadiologyPortal() {
             <SelectValue placeholder="All Priority" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Priority</SelectItem>
+            <SelectItem value="all">All Priority</SelectItem>
             <SelectItem value="stat">STAT</SelectItem>
             <SelectItem value="urgent">Urgent</SelectItem>
             <SelectItem value="routine">Routine</SelectItem>
