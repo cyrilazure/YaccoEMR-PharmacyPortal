@@ -81,6 +81,7 @@ export default function PlatformOwnerPortal() {
   // Staff creation dialog
   const [createStaffOpen, setCreateStaffOpen] = useState(false);
   const [staffHospital, setStaffHospital] = useState(null);
+  const [hospitalDepartments, setHospitalDepartments] = useState([]);
   const [newStaff, setNewStaff] = useState({
     first_name: '',
     last_name: '',
