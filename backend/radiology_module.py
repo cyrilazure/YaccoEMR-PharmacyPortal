@@ -196,6 +196,7 @@ def create_radiology_endpoints(db, get_current_user):
         }
         
         await db["radiology_orders"].insert_one(order_doc)
+        order_doc.pop("_id", None)
         
         # Audit log
         await db["audit_logs"].insert_one({
