@@ -20,7 +20,7 @@ export default function SuperAdminLogin() {
 
   // If already logged in as super_admin, redirect to dashboard
   if (user?.role === 'super_admin') {
-    return <Navigate to="/platform-admin" replace />;
+    return <Navigate to="/platform/super-admin" replace />;
   }
 
   // If logged in as other role, show access denied (no links to other portals)
