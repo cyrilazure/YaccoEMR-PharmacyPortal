@@ -1024,6 +1024,26 @@ export default function PlatformOwnerPortal() {
                             </Select>
                           </div>
                           <div>
+                            <Label>Department</Label>
+                            <Select
+                              value={newStaff.department_id}
+                              onValueChange={(v) => setNewStaff({...newStaff, department_id: v})}
+                              disabled={!staffHospital}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder={hospitalDepartments.length === 0 ? "No departments available" : "Select department"} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {hospitalDepartments.map(dept => (
+                                  <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            {hospitalDepartments.length === 0 && staffHospital && (
+                              <p className="text-xs text-amber-600 mt-1">No departments configured. Add departments via Hospital Admin portal.</p>
+                            )}
+                          </div>
+                          <div>
                             <Label>Employee ID (Optional)</Label>
                             <Input
                               value={newStaff.employee_id}
