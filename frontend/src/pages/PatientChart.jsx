@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { 
   patientAPI, vitalsAPI, problemsAPI, medicationsAPI, 
-  allergiesAPI, notesAPI, ordersAPI, aiAPI, labAPI 
+  allergiesAPI, notesAPI, ordersAPI, aiAPI, labAPI, radiologyAPI 
 } from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -34,7 +34,7 @@ import { calculateAge, formatDate, formatDateTime, getStatusColor } from '@/lib/
 import { 
   ArrowLeft, User, Heart, AlertTriangle, Pill, FileText, ClipboardList,
   Plus, Activity, Thermometer, Droplets, Wind, Scale, Ruler,
-  Sparkles, Check, Loader2, Calendar, FlaskConical, TrendingUp, TrendingDown
+  Sparkles, Check, Loader2, Calendar, FlaskConical, TrendingUp, TrendingDown, Scan
 } from 'lucide-react';
 
 export default function PatientChart() {
