@@ -4456,3 +4456,219 @@ agent_communication:
       10. ✅ Audit Logging: All admission/transfer/discharge operations logged
       
       **RECOMMENDATION:** The Bed Management Module is production-ready and working perfectly. All requested features have been successfully tested and verified. The module provides comprehensive inpatient capacity management with real-time census tracking, admission/transfer/discharge workflows, and proper data validation.
+
+user_problem_statement: |
+  Test the Bed Management Portal UI for Yacco EMR.
+
+  **Context:**
+  The Bed Management Portal has been fully implemented at the route /bed-management. The backend APIs are all working (100% tested and verified). Now we need to verify the frontend UI is functional.
+
+  **Test URL:** http://localhost:3000
+
+  **Test User Credentials:**
+  - Email: bed_manager@yacco.health
+  - Password: test123
+  - Role: bed_manager
+
+  **Login Flow:**
+  The app uses region-based authentication. To login:
+  1. Navigate to http://localhost:3000/login
+  2. Select "Greater Accra Region"
+  3. Select hospital (there should be 1 hospital: "ygtworks Health Center")
+  4. Select location (Main location)
+  5. Login with credentials above
+  6. Should redirect to /bed-management
+
+frontend:
+  - task: "Bed Management Portal - Login Flow"
+    implemented: true
+    working: true
+    file: "frontend/src/pages/BedManagementPortal.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of region-based login flow for bed manager role"
+      - working: true
+        agent: "testing"
+        comment: "✅ Login Flow - Successfully completed region-based login. Selected Greater Accra Region → ygtworks Health Center → Login with bed_manager@yacco.health / test123. Successfully redirected to /bed-management. Authentication working correctly."
+
+  - task: "Bed Management Portal - Ward Census Tab"
+    implemented: true
+    working: true
+    file: "frontend/src/pages/BedManagementPortal.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of Ward Census tab with 5 summary cards and ward list"
+      - working: true
+        agent: "testing"
+        comment: "✅ Ward Census Tab - ALL WORKING: 5 summary cards displayed correctly (Total Beds: 298, Available: 291, Occupied: 3, Isolation: 0, Occupancy: 1%). Ward list shows 52 wards with proper details (name, type, floor, occupancy rate, bed counts). Progress bars visible for each ward. No Critical Care Alert displayed (ICU/CCU capacity adequate). Default tab loads correctly."
+
+  - task: "Bed Management Portal - Current Admissions Tab"
+    implemented: true
+    working: true
+    file: "frontend/src/pages/BedManagementPortal.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of Current Admissions tab with Admit Patient button and admissions table"
+      - working: true
+        agent: "testing"
+        comment: "✅ Current Admissions Tab - ALL WORKING: 'Admit Patient' button present and functional. Admissions table displays with all required columns (Patient, Admission #, Ward/Bed, Diagnosis, Admitted, Actions). Found 3 current admissions in the system. Transfer and Discharge action buttons present on each admission row. Table layout and data display working correctly."
+
+  - task: "Bed Management Portal - Bed Map Tab"
+    implemented: true
+    working: true
+    file: "frontend/src/pages/BedManagementPortal.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of Bed Map tab with ward list, bed grid, and color coding"
+      - working: true
+        agent: "testing"
+        comment: "✅ Bed Map Tab - ALL WORKING: Ward list on left side displays 14 wards with bed counts. Color legend present showing all 5 bed statuses (Available-Green, Occupied-Red, Reserved-Yellow, Cleaning-Blue, Isolation-Purple). Clicking ward loads bed grid on right side. Bed grid displays beds with correct color coding. Clicking available bed opens 'Admit Patient' dialog with Patient ID and Diagnosis fields. All interactive elements functional."
+
+  - task: "Bed Management Portal - Refresh Functionality"
+    implemented: true
+    working: true
+    file: "frontend/src/pages/BedManagementPortal.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of Refresh button functionality"
+      - working: true
+        agent: "testing"
+        comment: "✅ Refresh Functionality - Refresh button present in header. Clicking refresh reloads all data without errors. Loading spinner animation works correctly. Data updates successfully after refresh."
+
+  - task: "Bed Management Portal - UI Components"
+    implemented: true
+    working: true
+    file: "frontend/src/pages/BedManagementPortal.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested verification of all UI components and interactive elements"
+      - working: true
+        agent: "testing"
+        comment: "✅ UI Components - ALL WORKING: All tabs accessible and functional (Ward Census, Current Admissions, Bed Map). Summary cards display with proper icons and colors. Ward progress bars render correctly. Admit Patient dialog opens with form fields. No console errors detected. Responsive design elements present. All buttons and interactive elements respond to clicks."
+
+metadata:
+  created_by: "testing_agent"
+  version: "1.1"
+  test_sequence: 4
+  run_ui: true
+
+test_plan:
+  current_focus: []
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "testing"
+    message: |
+      ✅ BED MANAGEMENT PORTAL UI TESTING COMPLETE - ALL FEATURES WORKING (100% SUCCESS RATE - 6/6 TESTS PASSED)
+      
+      🏥 **Bed Management Portal UI for Yacco EMR - COMPREHENSIVE TEST RESULTS:**
+      
+      **Test Environment:**
+      - Frontend URL: http://localhost:3000
+      - Test User: bed_manager@yacco.health / test123
+      - Role: bed_manager
+      - Test Date: February 5, 2026
+      
+      **1. Login Flow (1/1 tests passed):**
+      - ✅ Region Selection: Successfully selected Greater Accra Region
+      - ✅ Hospital Selection: Successfully selected ygtworks Health Center
+      - ✅ Authentication: Login with bed_manager credentials successful
+      - ✅ Redirect: Properly redirected to /bed-management route
+      
+      **2. Ward Census Tab - Default View (1/1 tests passed):**
+      - ✅ Summary Cards: All 5 cards displayed correctly
+        • Total Beds: 298
+        • Available: 291
+        • Occupied: 3
+        • Isolation: 0
+        • Occupancy: 1%
+      - ✅ Ward List: 52 wards displayed with proper details
+      - ✅ Ward Details: Each ward shows name, type, floor, occupancy rate, bed counts
+      - ✅ Progress Bars: Visual occupancy indicators working
+      - ✅ Critical Care Alert: Not displayed (ICU/CCU capacity adequate)
+      
+      **3. Current Admissions Tab (1/1 tests passed):**
+      - ✅ Admit Patient Button: Present and functional
+      - ✅ Admissions Table: Displays with all required columns
+        • Patient (name and MRN)
+        • Admission # (admission number)
+        • Ward / Bed (location details)
+        • Diagnosis (admitting diagnosis)
+        • Admitted (admission date)
+        • Actions (Transfer and Discharge buttons)
+      - ✅ Current Admissions: 3 admissions displayed
+      - ✅ Action Buttons: Transfer and Discharge buttons present on each row
+      
+      **4. Bed Map Tab (1/1 tests passed):**
+      - ✅ Ward List: 14 wards displayed on left side with bed counts
+      - ✅ Color Legend: All 5 bed statuses shown
+        • Green: Available
+        • Red: Occupied
+        • Yellow: Reserved
+        • Blue: Cleaning
+        • Purple: Isolation
+      - ✅ Bed Grid: Loads when ward is selected
+      - ✅ Bed Color Coding: Beds display with correct status colors
+      - ✅ Admit Dialog: Opens when clicking available bed
+      - ✅ Dialog Fields: Patient ID and Diagnosis fields present
+      
+      **5. Refresh Functionality (1/1 tests passed):**
+      - ✅ Refresh Button: Present in header
+      - ✅ Data Reload: Successfully reloads all data
+      - ✅ Loading State: Spinner animation works correctly
+      - ✅ No Errors: Refresh completes without errors
+      
+      **6. UI Components & Interactions (1/1 tests passed):**
+      - ✅ Tab Navigation: All 3 tabs accessible and functional
+      - ✅ Summary Cards: Display with proper icons and gradient colors
+      - ✅ Progress Bars: Render correctly for ward occupancy
+      - ✅ Dialogs: Admit Patient dialog opens and closes properly
+      - ✅ Buttons: All interactive elements respond to clicks
+      - ✅ Console: No JavaScript errors detected
+      - ✅ Responsive Design: Layout adapts properly
+      
+      **📊 COMPREHENSIVE TEST SUMMARY:**
+      - Total Tests: 6
+      - Passed: 6
+      - Failed: 0
+      - Success Rate: 100.0%
+      
+      **🎯 KEY FEATURES VERIFIED:**
+      1. ✅ Region-Based Authentication: Login flow working correctly
+      2. ✅ Ward Census Dashboard: Real-time bed availability display
+      3. ✅ Summary Statistics: 5 key metrics displayed accurately
+      4. ✅ Ward List: Comprehensive ward information with occupancy rates
+      5. ✅ Current Admissions: Patient admission management interface
+      6. ✅ Bed Map: Visual bed status with color-coded indicators
+      7. ✅ Interactive Elements: All buttons, tabs, and dialogs functional
+      8. ✅ Data Refresh: Real-time data updates working
+      9. ✅ User Experience: Smooth navigation and responsive design
+      10. ✅ Error-Free: No console errors or UI issues detected
+      
+      **RECOMMENDATION:** The Bed Management Portal UI is production-ready and working perfectly. All requested UI components and features have been successfully tested and verified. The portal provides an intuitive interface for managing hospital bed capacity with real-time census tracking, admission management, and visual bed status indicators. The UI is fully functional, responsive, and error-free.
