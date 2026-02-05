@@ -503,17 +503,18 @@ def create_nurse_portal_endpoints(db, get_current_user):
         department_id: Optional[str] = None,
         current_user: dict = Depends(get_current_user)
     ):
-        """Get handoff notes from previous shift"""
+        """Get handoff notes from previous shift with patient info"""
         require_nurse_role(current_user)
         
         org_id = current_user.get("organization_id")
         
         # Get recent completed shifts with handoff notes
         query = {
-            "organization_id": org_id,
             "is_active": False,
-            "handoff_notes": {"$ne": None}
+            "handoff_notes": {"$exists": True, "$ne": None, "$ne": ""}
         }
+        if org_id:
+            query["organization_id"] = org_id
         if department_id:
             query["department_id"] = department_id
         
@@ -521,6 +522,14 @@ def create_nurse_portal_endpoints(db, get_current_user):
             query,
             {"_id": 0}
         ).sort("clock_out_time", -1).limit(10).to_list(10)
+        
+        # Enrich with patient info for each shift
+        for shift in recent_shifts:
+            # Get patients that were assigned to this nurse
+            assignments = await db.nurse_assignments.find({
+                "nurse_id": shift.get("nurse_id"),
+            }, {"_id": 0, "patient_id": 1, "patient_name": 1, "patient_mrn": 1, "room_bed": 1}).to_list(20)
+            shift["patients"] = assignments
         
         return {
             "handoff_notes": recent_shifts
