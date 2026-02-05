@@ -141,6 +141,11 @@ function App() {
             <Route path="hospital/:hospitalId/scheduler" element={<SchedulerDashboard />} />
             <Route path="hospital/:hospitalId/billing" element={<BillingPage />} />
             
+            {/* New Module Portals */}
+            <Route path="hospital/:hospitalId/pharmacy" element={<PharmacyPortal />} />
+            <Route path="hospital/:hospitalId/radiology" element={<RadiologyPortal />} />
+            <Route path="hospital/:hospitalId/bed-management" element={<BedManagementPortal />} />
+            
             {/* Department / Unit Portal */}
             <Route path="hospital/:hospitalId/department" element={<DepartmentUnitPortal />} />
             <Route path="hospital/:hospitalId/department/:deptId" element={<DepartmentUnitPortal />} />
