@@ -861,12 +861,23 @@ class BedManagementTester:
     
     def test_admit_to_occupied_bed_fails(self):
         """Test that admitting to an occupied bed fails"""
-        if not self.token or not self.bed_ids:
-            self.log_test("Admit to Occupied Bed (Should Fail)", False, "No token or bed IDs")
+        if not self.token:
+            self.log_test("Admit to Occupied Bed (Should Fail)", False, "No token")
             return False
         
-        # First, create a new admission
-        bed_id = self.bed_ids[2] if len(self.bed_ids) > 2 else self.bed_ids[0]
+        # Get an occupied bed
+        response, error = self.make_request('GET', 'beds/beds', params={"status": "occupied"})
+        if error or response.status_code != 200:
+            self.log_test("Admit to Occupied Bed (Should Fail)", False, "Failed to get occupied beds")
+            return False
+        
+        occupied_beds = response.json().get('beds', [])
+        if not occupied_beds:
+            self.log_test("Admit to Occupied Bed (Should Fail)", False, "No occupied beds to test with")
+            return False
+        
+        # Try to admit to an occupied bed
+        bed_id = occupied_beds[0].get('id')
         
         admission_data = {
             "patient_id": self.patient_id,
@@ -877,16 +888,9 @@ class BedManagementTester:
             "admission_source": "emergency"
         }
         
-        # First admission should succeed
-        response1, error1 = self.make_request('POST', 'beds/admissions/create', admission_data)
-        if error1 or response1.status_code != 200:
-            self.log_test("Admit to Occupied Bed (Should Fail)", False, "Failed to create first admission")
-            return False
+        response, error = self.make_request('POST', 'beds/admissions/create', admission_data)
         
-        # Second admission to same bed should fail
-        response2, error2 = self.make_request('POST', 'beds/admissions/create', admission_data)
-        
-        if response2.status_code == 400:
+        if response.status_code == 400:
             # Expected failure
             success = True
             details = "Correctly rejected admission to occupied bed"
@@ -894,7 +898,7 @@ class BedManagementTester:
             return True
         else:
             success = False
-            details = f"Unexpected status: {response2.status_code}"
+            details = f"Unexpected status: {response.status_code}"
             self.log_test("Admit to Occupied Bed (Should Fail)", success, details)
             return False
 
