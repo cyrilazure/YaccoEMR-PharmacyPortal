@@ -697,15 +697,15 @@ export default function BillingPage() {
                   <tfoot className="bg-slate-50 font-medium">
                     <tr>
                       <td colSpan={3} className="p-3 text-right">Total:</td>
-                      <td className="p-3 text-right">${viewInvoice.total?.toFixed(2)}</td>
+                      <td className="p-3 text-right">{formatCurrency(viewInvoice.total)}</td>
                     </tr>
                     <tr>
                       <td colSpan={3} className="p-3 text-right">Paid:</td>
-                      <td className="p-3 text-right text-green-600">${viewInvoice.amount_paid?.toFixed(2)}</td>
+                      <td className="p-3 text-right text-green-600">{formatCurrency(viewInvoice.amount_paid)}</td>
                     </tr>
                     <tr className="text-lg">
                       <td colSpan={3} className="p-3 text-right">Balance Due:</td>
-                      <td className="p-3 text-right text-amber-600">${viewInvoice.balance_due?.toFixed(2)}</td>
+                      <td className="p-3 text-right text-amber-600">{formatCurrency(viewInvoice.balance_due)}</td>
                     </tr>
                   </tfoot>
                 </table>
