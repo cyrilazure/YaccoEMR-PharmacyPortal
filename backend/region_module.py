@@ -744,6 +744,9 @@ def create_region_endpoints(db, get_current_user, hash_password):
         await db["hospital_locations"].insert_one(main_location)
         await db["users"].insert_one(admin_user)
         
+        # Auto-seed default departments for the hospital
+        departments_created = await seed_hospital_departments(db, hospital_id)
+        
         # Update region hospital count
         await db["regions"].update_one(
             {"id": hospital_data.region_id},
@@ -766,6 +769,10 @@ def create_region_endpoints(db, get_current_user, hash_password):
                 "email": hospital_data.admin_email,
                 "temp_password": temp_password,
                 "note": "Please change password on first login"
+            },
+            "departments": {
+                "count": departments_created,
+                "message": f"{departments_created} default departments created automatically"
             }
         }
     
