@@ -823,6 +823,8 @@ export default function PatientChart() {
                 <CardTitle>Medications</CardTitle>
                 <CardDescription>Current and past medications</CardDescription>
               </div>
+              {/* Hide Add Medication for nurses - they can only view medications */}
+              {user?.role !== 'nurse' && (
               <Dialog open={medDialogOpen} onOpenChange={setMedDialogOpen}>
                 <DialogTrigger asChild>
                   <Button className="gap-2" data-testid="add-medication-btn">
