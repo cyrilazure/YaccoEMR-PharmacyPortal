@@ -114,6 +114,7 @@ export default function PatientChart() {
   useEffect(() => {
     fetchAllData();
     fetchLabPanels();
+    fetchRadiologyModalities();
   }, [id]);
 
   const fetchLabPanels = async () => {
@@ -122,6 +123,34 @@ export default function PatientChart() {
       setLabPanels(res.data.panels || []);
     } catch (err) {
       console.error('Failed to fetch lab panels', err);
+    }
+  };
+
+  const fetchRadiologyModalities = async () => {
+    try {
+      const res = await radiologyAPI.getModalities();
+      setRadiologyModalities(res.data.modalities || []);
+    } catch (err) {
+      console.error('Failed to fetch radiology modalities', err);
+    }
+  };
+
+  const fetchRadiologyData = async () => {
+    try {
+      const ordersRes = await radiologyAPI.getPatientOrders(id);
+      setRadiologyOrders(ordersRes.data.orders || []);
+    } catch (err) {
+      console.error('Failed to fetch radiology data', err);
+    }
+  };
+
+  const handleModalityChange = async (modality) => {
+    setNewRadiologyOrder({ ...newRadiologyOrder, modality, study_type: '', body_part: '' });
+    try {
+      const res = await radiologyAPI.getStudyTypes(modality);
+      setRadiologyStudyTypes(res.data.study_types || []);
+    } catch (err) {
+      console.error('Failed to fetch study types', err);
     }
   };
 
@@ -161,6 +190,7 @@ export default function PatientChart() {
       
       // Fetch lab data separately
       fetchLabData();
+      fetchRadiologyData();
     } catch (err) {
       toast.error('Failed to load patient data');
       navigate('/patients');
