@@ -232,6 +232,12 @@ def setup_routes(db, get_current_user):
         
         invoices = await db.invoices.find(query, {"_id": 0}).sort("created_at", -1).to_list(500)
         
+        # Clean up _id from nested payments array
+        for invoice in invoices:
+            if invoice.get("payments"):
+                for payment in invoice["payments"]:
+                    payment.pop("_id", None)
+        
         return {"invoices": invoices, "count": len(invoices)}
     
     @router.get("/invoices/{invoice_id}")
@@ -241,6 +247,11 @@ def setup_routes(db, get_current_user):
         
         if not invoice:
             raise HTTPException(status_code=404, detail="Invoice not found")
+        
+        # Clean up _id from nested payments array
+        if invoice.get("payments"):
+            for payment in invoice["payments"]:
+                payment.pop("_id", None)
         
         return invoice
     
