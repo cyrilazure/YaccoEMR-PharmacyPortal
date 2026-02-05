@@ -1759,5 +1759,5 @@ class YaccoEMRTester:
 
 if __name__ == "__main__":
     tester = YaccoEMRTester()
-    success = tester.run_review_request_tests()
+    success = tester.run_department_seeding_tests()
     sys.exit(0 if success else 1)
