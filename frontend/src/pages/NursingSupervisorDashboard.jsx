@@ -434,6 +434,73 @@ export default function NursingSupervisorDashboard() {
           </Card>
         </TabsContent>
 
+        {/* Handoff Notes Tab */}
+        <TabsContent value="handoff" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ClipboardList className="w-5 h-5 text-blue-600" />
+                Shift Handoff Notes (Last 24 Hours)
+              </CardTitle>
+              <CardDescription>Notes from nurses who have clocked out, including their assigned patients</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[500px]">
+                <div className="space-y-4">
+                  {handoffNotes.map((note) => (
+                    <Card key={note.id} className="border-l-4 border-l-blue-500">
+                      <CardContent className="pt-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <p className="font-semibold">{note.nurse_name}</p>
+                              <Badge className="bg-blue-100 text-blue-700">
+                                {note.shift_type?.toUpperCase()}
+                              </Badge>
+                              {note.forced_clock_out && (
+                                <Badge variant="destructive">Forced Out</Badge>
+                              )}
+                            </div>
+                            <p className="text-sm text-gray-500 mt-1">
+                              Clocked out: {new Date(note.clock_out_time).toLocaleString()}
+                            </p>
+                            
+                            {/* Patients handled during this shift */}
+                            {note.patients && note.patients.length > 0 && (
+                              <div className="mt-3 p-2 bg-slate-50 rounded">
+                                <p className="text-xs font-medium text-slate-600 mb-1">Patients Assigned:</p>
+                                <div className="flex flex-wrap gap-1">
+                                  {note.patients.map((p, idx) => (
+                                    <Badge key={idx} variant="outline" className="text-xs">
+                                      {p.patient_name} {p.room_bed && `(${p.room_bed})`}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Handoff Notes Content */}
+                            <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+                              <p className="text-xs font-medium text-blue-800 mb-1">Handoff Notes:</p>
+                              <p className="text-sm text-blue-900 whitespace-pre-wrap">{note.handoff_notes}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                  {handoffNotes.length === 0 && (
+                    <div className="text-center py-12 text-gray-500">
+                      <ClipboardList className="w-10 h-10 mx-auto mb-3 text-gray-300" />
+                      <p>No handoff notes in the last 24 hours</p>
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         {/* Reports Tab */}
         <TabsContent value="reports" className="mt-6">
           <Card>
