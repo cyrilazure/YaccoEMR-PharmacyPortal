@@ -526,6 +526,9 @@ def create_bed_management_endpoints(db, get_current_user):
         
         await db["admissions"].insert_one(admission_doc)
         
+        # Remove _id before returning
+        admission_doc.pop("_id", None)
+        
         # Update bed status
         bed_status = BedStatus.ISOLATION if data.isolation_required else BedStatus.OCCUPIED
         await db["beds"].update_one(
