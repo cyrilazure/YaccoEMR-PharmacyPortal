@@ -41,6 +41,60 @@ GHANA_REGIONS = [
     {"id": "savannah", "name": "Savannah Region", "capital": "Damongo", "code": "SV"},
 ]
 
+# ============ Default Hospital Departments ============
+
+DEFAULT_HOSPITAL_DEPARTMENTS = [
+    {"name": "Emergency Department", "code": "ED", "department_type": "clinical", "description": "24/7 emergency and trauma care"},
+    {"name": "Intensive Care Unit (ICU)", "code": "ICU", "department_type": "clinical", "description": "Critical care for severely ill patients"},
+    {"name": "Medical ICU (MICU)", "code": "MICU", "department_type": "clinical", "description": "Medical intensive care unit"},
+    {"name": "Coronary Care Unit (CCU)", "code": "CCU", "department_type": "clinical", "description": "Cardiac intensive care"},
+    {"name": "Neonatal ICU (NICU)", "code": "NICU", "department_type": "clinical", "description": "Intensive care for newborns"},
+    {"name": "Pediatric ICU (PICU)", "code": "PICU", "department_type": "clinical", "description": "Intensive care for children"},
+    {"name": "Surgical ICU (SICU)", "code": "SICU", "department_type": "clinical", "description": "Post-surgical intensive care"},
+    {"name": "Inpatient Ward", "code": "INP", "department_type": "clinical", "description": "General inpatient care"},
+    {"name": "Outpatient Department (OPD)", "code": "OPD", "department_type": "clinical", "description": "Outpatient consultations and follow-ups"},
+    {"name": "Surgery Department", "code": "SURG", "department_type": "clinical", "description": "Surgical procedures and operations"},
+    {"name": "Obstetrics & Gynecology", "code": "OBGYN", "department_type": "clinical", "description": "Women's health and maternity care"},
+    {"name": "Pediatrics", "code": "PED", "department_type": "clinical", "description": "Children's healthcare"},
+    {"name": "Internal Medicine", "code": "IM", "department_type": "clinical", "description": "Adult internal medicine"},
+    {"name": "Cardiology", "code": "CARD", "department_type": "clinical", "description": "Heart and cardiovascular care"},
+    {"name": "Neurology", "code": "NEURO", "department_type": "clinical", "description": "Brain and nervous system care"},
+    {"name": "Orthopedics", "code": "ORTHO", "department_type": "clinical", "description": "Bone and joint care"},
+    {"name": "Radiology", "code": "RAD", "department_type": "diagnostic", "description": "Medical imaging services"},
+    {"name": "Laboratory", "code": "LAB", "department_type": "diagnostic", "description": "Clinical laboratory services"},
+    {"name": "Pharmacy", "code": "PHARM", "department_type": "support", "description": "Medication dispensing and management"},
+    {"name": "Physiotherapy", "code": "PT", "department_type": "clinical", "description": "Physical rehabilitation services"},
+    {"name": "Dental", "code": "DENT", "department_type": "clinical", "description": "Dental care services"},
+    {"name": "Ophthalmology", "code": "OPH", "department_type": "clinical", "description": "Eye care services"},
+    {"name": "ENT (Ear, Nose, Throat)", "code": "ENT", "department_type": "clinical", "description": "Ear, nose, and throat care"},
+    {"name": "Psychiatry", "code": "PSY", "department_type": "clinical", "description": "Mental health services"},
+    {"name": "Administration", "code": "ADMIN", "department_type": "administrative", "description": "Hospital administration"},
+    {"name": "Medical Records", "code": "MR", "department_type": "administrative", "description": "Patient records management"},
+    {"name": "Billing & Finance", "code": "FIN", "department_type": "administrative", "description": "Financial services and billing"},
+]
+
+
+async def seed_hospital_departments(db, hospital_id: str) -> int:
+    """Auto-seed default departments for a new hospital"""
+    departments_created = 0
+    
+    for dept in DEFAULT_HOSPITAL_DEPARTMENTS:
+        dept_doc = {
+            "id": str(uuid.uuid4()),
+            "organization_id": hospital_id,
+            "name": dept["name"],
+            "code": dept["code"],
+            "department_type": dept["department_type"],
+            "description": dept["description"],
+            "is_active": True,
+            "staff_count": 0,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db["departments"].insert_one(dept_doc)
+        departments_created += 1
+    
+    return departments_created
+
 # ============ Enums ============
 
 class LocationType(str, Enum):
