@@ -916,6 +916,58 @@ def create_nurse_portal_endpoints(db, get_current_user):
     
     # ============ Medication Administration Record (MAR) Endpoints ============
     
+    # NOTE: /mar/due must come BEFORE /mar/{patient_id} to avoid route collision
+    @nurse_router.get("/mar/due")
+    async def get_medications_due(
+        window_minutes: int = 30,
+        current_user: dict = Depends(get_current_user)
+    ):
+        """Get medications due for administration within time window"""
+        require_nurse_role(current_user)
+        
+        now = datetime.now(timezone.utc)
+        window_end = now + timedelta(minutes=window_minutes)
+        
+        # Get assigned patient IDs
+        assignments = await db.nurse_assignments.find({
+            "nurse_id": current_user["id"],
+            "is_active": True
+        }, {"patient_id": 1}).to_list(100)
+        
+        patient_ids = [a["patient_id"] for a in assignments]
+        
+        if not patient_ids:
+            return {"overdue": [], "upcoming": [], "total": 0}
+        
+        # Find MAR entries due within window
+        mar_entries = await db.mar_entries.find({
+            "patient_id": {"$in": patient_ids},
+            "status": "scheduled",
+            "scheduled_time": {
+                "$lte": window_end.isoformat(),
+                "$gte": (now - timedelta(hours=2)).isoformat()  # Include 2 hours past due
+            }
+        }, {"_id": 0}).sort("scheduled_time", 1).to_list(100)
+        
+        # Separate overdue vs upcoming
+        overdue = []
+        upcoming = []
+        now_iso = now.isoformat()
+        
+        for entry in mar_entries:
+            if entry["scheduled_time"] < now_iso:
+                entry["is_overdue"] = True
+                overdue.append(entry)
+            else:
+                entry["is_overdue"] = False
+                upcoming.append(entry)
+        
+        return {
+            "overdue": overdue,
+            "upcoming": upcoming,
+            "total": len(mar_entries)
+        }
+    
     @nurse_router.get("/mar/{patient_id}")
     async def get_mar(
         patient_id: str,
