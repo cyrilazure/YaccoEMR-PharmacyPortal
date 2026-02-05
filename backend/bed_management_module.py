@@ -230,7 +230,7 @@ def create_bed_management_endpoints(db, get_current_user):
         if ward_type:
             query["ward_type"] = ward_type
         
-        wards = await db["wards"].find(query).sort("name", 1).to_list(100)
+        wards = await db["wards"].find(query, {"_id": 0}).sort("name", 1).to_list(100)
         return {"wards": wards, "total": len(wards)}
     
     # ============== Room Management ==============
@@ -281,7 +281,7 @@ def create_bed_management_endpoints(db, get_current_user):
         if ward_id:
             query["ward_id"] = ward_id
         
-        rooms = await db["rooms"].find(query).sort("room_number", 1).to_list(200)
+        rooms = await db["rooms"].find(query, {"_id": 0}).sort("room_number", 1).to_list(200)
         return {"rooms": rooms, "total": len(rooms)}
     
     # ============== Bed Management ==============
@@ -429,7 +429,7 @@ def create_bed_management_endpoints(db, get_current_user):
         if status:
             query["status"] = status
         
-        beds = await db["beds"].find(query).sort("bed_number", 1).to_list(500)
+        beds = await db["beds"].find(query, {"_id": 0}).sort("bed_number", 1).to_list(500)
         return {"beds": beds, "total": len(beds)}
     
     @bed_management_router.put("/beds/{bed_id}/status")
@@ -750,7 +750,7 @@ def create_bed_management_endpoints(db, get_current_user):
         if ward_id:
             query["ward_id"] = ward_id
         
-        admissions = await db["admissions"].find(query).sort("admitted_at", -1).to_list(200)
+        admissions = await db["admissions"].find(query, {"_id": 0}).sort("admitted_at", -1).to_list(200)
         return {"admissions": admissions, "total": len(admissions)}
     
     @bed_management_router.get("/admissions/patient/{patient_id}")
@@ -759,7 +759,7 @@ def create_bed_management_endpoints(db, get_current_user):
         user: dict = Depends(get_current_user)
     ):
         """Get admission history for a patient"""
-        admissions = await db["admissions"].find({"patient_id": patient_id}).sort("admitted_at", -1).to_list(50)
+        admissions = await db["admissions"].find({"patient_id": patient_id}, {"_id": 0}).sort("admitted_at", -1).to_list(50)
         return {"admissions": admissions, "total": len(admissions)}
     
     # ============== Census Dashboard ==============
