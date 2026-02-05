@@ -1116,6 +1116,8 @@ export default function PatientChart() {
               <CardTitle className="flex items-center gap-2">
                 <FlaskConical className="w-5 h-5" /> Lab Orders
               </CardTitle>
+              {/* Hide Order Lab for nurses - they can only view lab orders and results */}
+              {user?.role !== 'nurse' ? (
               <Dialog open={labOrderDialogOpen} onOpenChange={setLabOrderDialogOpen}>
                 <DialogTrigger asChild>
                   <Button size="sm" className="gap-2" data-testid="add-lab-order-btn">
