@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   Dialog,
   DialogContent,
@@ -34,7 +36,7 @@ import { toast } from 'sonner';
 import { calculateAge, formatDate } from '@/lib/utils';
 import { 
   Search, UserPlus, Users, ChevronRight, Phone, Mail, 
-  Calendar, IdCard, FileText
+  Calendar, IdCard, FileText, Hash, CreditCard, Banknote, AlertCircle
 } from 'lucide-react';
 
 export default function Patients() {
@@ -44,11 +46,15 @@ export default function Patients() {
   const [searchTerm, setSearchTerm] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [paymentType, setPaymentType] = useState('insurance'); // 'insurance' or 'cash'
   const [newPatient, setNewPatient] = useState({
     first_name: '', last_name: '', date_of_birth: '', gender: 'male',
+    mrn: '', // Added MRN field
     email: '', phone: '', address: '',
     emergency_contact_name: '', emergency_contact_phone: '',
-    insurance_provider: '', insurance_id: ''
+    insurance_provider: '', insurance_id: '', insurance_plan: '',
+    payment_type: 'insurance', // 'insurance' or 'cash'
+    adt_notification: true // ADT notification flag
   });
 
   useEffect(() => {
