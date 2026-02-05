@@ -150,6 +150,9 @@ class PatientResponse(BaseModel):
     emergency_contact_phone: Optional[str] = None
     insurance_provider: Optional[str] = None
     insurance_id: Optional[str] = None
+    insurance_plan: Optional[str] = None
+    payment_type: Optional[str] = None
+    adt_notification: Optional[bool] = True
     organization_id: Optional[str] = None
     created_at: str
     updated_at: str
