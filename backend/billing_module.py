@@ -22,14 +22,19 @@ class InvoiceStatus(str, Enum):
     PAID = "paid"
     PARTIALLY_PAID = "partially_paid"
     OVERDUE = "overdue"
+    REVERSED = "reversed"
+    VOIDED = "voided"
+    PENDING_INSURANCE = "pending_insurance"
     CANCELLED = "cancelled"
 
 class PaymentMethod(str, Enum):
     CASH = "cash"
-    CARD = "card"
-    PAYSTACK = "paystack"
-    INSURANCE = "insurance"
+    NHIS_INSURANCE = "nhis_insurance"
+    VISA = "visa"
+    MASTERCARD = "mastercard"
+    MOBILE_MONEY = "mobile_money"
     BANK_TRANSFER = "bank_transfer"
+    PAYSTACK = "paystack"  # Legacy
 
 class ClaimStatus(str, Enum):
     DRAFT = "draft"
