@@ -124,12 +124,13 @@ export default function NursingSupervisorDashboard() {
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const [dashRes, nursesRes, reportsRes, shiftsRes, unassignedRes] = await Promise.all([
+      const [dashRes, nursesRes, reportsRes, shiftsRes, unassignedRes, handoffRes] = await Promise.all([
         nursingSupervisorAPI.getDashboard(),
         nursingSupervisorAPI.listNurses({ on_shift_only: false }),
         nursingSupervisorAPI.listReports({ status: 'submitted', limit: 20 }),
         nursingSupervisorAPI.getCurrentShifts(),
-        nursingSupervisorAPI.getUnassignedPatients()
+        nursingSupervisorAPI.getUnassignedPatients(),
+        nursingSupervisorAPI.getHandoffNotes({ hours: 24 })
       ]);
       
       setDashboard(dashRes.data);
@@ -137,6 +138,7 @@ export default function NursingSupervisorDashboard() {
       setReports(reportsRes.data.reports || []);
       setCurrentShifts(shiftsRes.data.active_shifts || []);
       setUnassignedPatients(unassignedRes.data.patients || []);
+      setHandoffNotes(handoffRes.data.handoff_notes || []);
     } catch (err) {
       console.error('Dashboard fetch error:', err);
       toast.error('Failed to load dashboard');
