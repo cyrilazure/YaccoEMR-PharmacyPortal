@@ -292,7 +292,8 @@ def create_bed_management_endpoints(db, get_current_user):
         user: dict = Depends(get_current_user)
     ):
         """Create a new bed"""
-        allowed_roles = ["bed_manager", "hospital_admin", "super_admin"]
+        # Allow nurses and nursing supervisors to add beds
+        allowed_roles = ["bed_manager", "nurse", "nursing_supervisor", "floor_supervisor", "hospital_admin", "super_admin"]
         if user.get("role") not in allowed_roles:
             raise HTTPException(status_code=403, detail="Not authorized")
         
@@ -344,7 +345,8 @@ def create_bed_management_endpoints(db, get_current_user):
         user: dict = Depends(get_current_user)
     ):
         """Bulk create rooms and beds for a ward"""
-        allowed_roles = ["bed_manager", "hospital_admin", "super_admin"]
+        # Allow nurses and nursing supervisors to bulk add beds
+        allowed_roles = ["bed_manager", "nurse", "nursing_supervisor", "floor_supervisor", "hospital_admin", "super_admin"]
         if user.get("role") not in allowed_roles:
             raise HTTPException(status_code=403, detail="Not authorized")
         
@@ -472,7 +474,8 @@ def create_bed_management_endpoints(db, get_current_user):
         user: dict = Depends(get_current_user)
     ):
         """Admit a patient to a bed"""
-        allowed_roles = ["bed_manager", "nurse", "physician", "hospital_admin", "super_admin"]
+        # Allow nurses, nursing supervisors, and bed managers to admit patients
+        allowed_roles = ["bed_manager", "nurse", "nursing_supervisor", "floor_supervisor", "physician", "hospital_admin", "super_admin"]
         if user.get("role") not in allowed_roles:
             raise HTTPException(status_code=403, detail="Not authorized")
         
