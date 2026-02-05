@@ -204,11 +204,15 @@ def setup_routes(db, get_current_user):
         """Get available service/CPT codes"""
         codes = []
         for code, details in SERVICE_CODES.items():
-            codes.append({
+            code_data = {
                 "code": code,
                 "description": details["description"],
-                "price": details["price"]
-            })
+                "price": details["price"],
+                "category": details.get("category", "other")
+            }
+            if category and details.get("category") != category:
+                continue
+            codes.append(code_data)
         return {"service_codes": codes}
     
     # ============ INVOICES ============
