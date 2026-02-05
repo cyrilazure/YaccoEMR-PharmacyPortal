@@ -756,9 +756,12 @@ class BillingPhase1Tester:
         order_data = {
             "patient_id": self.patient_id,
             "modality": "xray",
-            "study_type": "chest_xray",
+            "study_type": "Chest PA/Lateral",
+            "body_part": "chest",
+            "laterality": "bilateral",
             "clinical_indication": "Suspected pneumonia",
-            "priority": "routine"
+            "priority": "routine",
+            "contrast_required": False
         }
         
         response, error = self.make_request('POST', 'radiology/orders/create', order_data)
@@ -771,7 +774,7 @@ class BillingPhase1Tester:
             order_id = data.get('order_id')
             
             success = bool(order_id)
-            details = f"Order ID: {order_id}, Modality: xray, Study: chest_xray"
+            details = f"Order ID: {order_id}, Modality: xray, Study: Chest PA/Lateral"
             self.log_test("Radiology Create Order", success, details)
             return success
         else:
