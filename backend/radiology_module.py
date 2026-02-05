@@ -358,6 +358,7 @@ def create_radiology_endpoints(db, get_current_user):
         }
         
         await db["radiology_results"].insert_one(result_doc)
+        result_doc.pop("_id", None)
         
         # Update order status and link result
         await db["radiology_orders"].update_one(
@@ -409,12 +410,12 @@ def create_radiology_endpoints(db, get_current_user):
         user: dict = Depends(get_current_user)
     ):
         """Get radiology result details"""
-        result = await db["radiology_results"].find_one({"id": result_id})
+        result = await db["radiology_results"].find_one({"id": result_id}, {"_id": 0})
         if not result:
             raise HTTPException(status_code=404, detail="Result not found")
         
         # Get associated order
-        order = await db["radiology_orders"].find_one({"id": result.get("order_id")})
+        order = await db["radiology_orders"].find_one({"id": result.get("order_id")}, {"_id": 0})
         result["order"] = order
         
         return result
