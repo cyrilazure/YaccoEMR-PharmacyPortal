@@ -52,6 +52,12 @@ export default function RadiologyPortal() {
   const [resultDialogOpen, setResultDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   
+  // Role-based permissions
+  const isRadiologist = user?.role === 'radiologist';
+  const isRadiologyStaff = user?.role === 'radiology_staff';
+  const canCreateReports = isRadiologist; // Only radiologists can create reports
+  const canViewFullDetails = isRadiologist; // Only radiologists can view full patient clinical details
+  
   // Schedule form
   const [scheduleForm, setScheduleForm] = useState({
     scheduled_date: '',
