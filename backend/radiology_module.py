@@ -425,7 +425,7 @@ def create_radiology_endpoints(db, get_current_user):
         user: dict = Depends(get_current_user)
     ):
         """Get all radiology results for a patient"""
-        results = await db["radiology_results"].find({"patient_id": patient_id}).sort("reported_at", -1).to_list(100)
+        results = await db["radiology_results"].find({"patient_id": patient_id}, {"_id": 0}).sort("reported_at", -1).to_list(100)
         return {"results": results, "total": len(results)}
     
     return radiology_router
