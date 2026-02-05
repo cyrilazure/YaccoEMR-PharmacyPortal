@@ -356,14 +356,29 @@ export default function NursingSupervisorDashboard() {
                           <Badge variant="secondary">{nurse.patient_count || 0}</Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => handleViewNurseWorkload(nurse)}
-                          >
-                            <Eye className="w-4 h-4 mr-1" />
-                            View
-                          </Button>
+                          <div className="flex gap-2 justify-end">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleViewNurseWorkload(nurse)}
+                            >
+                              <Eye className="w-4 h-4 mr-1" />
+                              View
+                            </Button>
+                            {nurse.active_shift && (
+                              <Button 
+                                size="sm" 
+                                variant="destructive"
+                                onClick={() => {
+                                  setSelectedNurse(nurse);
+                                  setForceClockOutOpen(true);
+                                }}
+                              >
+                                <Clock className="w-4 h-4 mr-1" />
+                                Clock Out
+                              </Button>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
