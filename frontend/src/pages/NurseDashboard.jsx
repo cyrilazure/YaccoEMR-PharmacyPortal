@@ -332,10 +332,11 @@ export default function NurseDashboard() {
       fetchReports();
     } catch (err) {
       console.error('Dashboard fetch error:', err);
-      // Don't show error on initial load, just log it
-      if (err.response?.status === 403) {
+      // Only show session expired for actual auth errors (401 Unauthorized)
+      if (err.response?.status === 401) {
         toast.error('Session expired. Please login again.');
       }
+      // 403 is often just access denied, not session expired
     } finally {
       setLoading(false);
     }
