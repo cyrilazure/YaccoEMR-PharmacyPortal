@@ -208,7 +208,7 @@ export default function DepartmentUnitPortal() {
       fetchPatients();
     } catch (err) {
       console.error('Error adding patient:', err);
-      toast.error(err.response?.data?.detail || 'Failed to register patient');
+      toast.error(getErrorMessage(err, 'Failed to register patient'));
     } finally {
       setSaving(false);
     }
