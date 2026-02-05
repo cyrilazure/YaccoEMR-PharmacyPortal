@@ -464,9 +464,13 @@ export default function NursingSupervisorDashboard() {
 
       {/* Tabs */}
       <Tabs defaultValue="nurses" className="w-full">
-        <TabsList className="grid w-full grid-cols-5 max-w-2xl">
+        <TabsList className="grid w-full grid-cols-6 max-w-3xl">
           <TabsTrigger value="nurses">Nurses</TabsTrigger>
           <TabsTrigger value="shifts">Current Shifts</TabsTrigger>
+          <TabsTrigger value="beds">
+            <Bed className="w-4 h-4 mr-1" />
+            Beds
+          </TabsTrigger>
           <TabsTrigger value="handoff">
             Handoff Notes
             {handoffNotes.length > 0 && (
