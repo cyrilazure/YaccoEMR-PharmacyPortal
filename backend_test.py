@@ -848,6 +848,205 @@ class YaccoEMRTester:
         
         return self.tests_passed == self.tests_run
 
+    def test_super_admin_auth_me(self):
+        """Test Super Admin Auth Me - GET /api/auth/me with super admin token"""
+        if not self.super_admin_token:
+            self.log_test("Super Admin Auth Me", False, "No super admin token")
+            return False
+        
+        # Switch to super admin token
+        original_token = self.token
+        self.token = self.super_admin_token
+        
+        response, error = self.make_request('GET', 'auth/me')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Super Admin Auth Me", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            # Verify user details
+            is_super_admin = data.get('role') == 'super_admin'
+            has_email = data.get('email') == 'ygtnetworks@gmail.com'
+            has_id = bool(data.get('id'))
+            
+            success = is_super_admin and has_email and has_id
+            details = f"Role: {data.get('role')}, Email: {data.get('email')}, ID: {data.get('id')}"
+            self.log_test("Super Admin Auth Me", success, details)
+            return success
+        else:
+            try:
+                error_data = response.json()
+                error_msg = error_data.get('detail', f'Status: {response.status_code}')
+            except:
+                error_msg = f'Status: {response.status_code}'
+            self.log_test("Super Admin Auth Me", False, error_msg)
+            return False
+
+    def test_super_admin_system_stats(self):
+        """Test Super Admin System Stats - GET /api/admin/system/stats"""
+        if not self.super_admin_token:
+            self.log_test("Super Admin System Stats", False, "No super admin token")
+            return False
+        
+        # Switch to super admin token
+        original_token = self.token
+        self.token = self.super_admin_token
+        
+        response, error = self.make_request('GET', 'admin/system/stats')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Super Admin System Stats", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            # Verify response structure
+            has_organizations = 'organizations' in data
+            has_users_by_role = 'users_by_role' in data
+            has_activity_trend = 'activity_trend' in data
+            has_timestamp = 'timestamp' in data
+            
+            success = has_organizations and has_users_by_role and has_activity_trend and has_timestamp
+            details = f"Organizations: {has_organizations}, Users by Role: {has_users_by_role}, Activity Trend: {has_activity_trend}"
+            self.log_test("Super Admin System Stats", success, details)
+            return success
+        else:
+            try:
+                error_data = response.json()
+                error_msg = error_data.get('detail', f'Status: {response.status_code}')
+            except:
+                error_msg = f'Status: {response.status_code}'
+            self.log_test("Super Admin System Stats", False, error_msg)
+            return False
+
+    def test_super_admin_system_health(self):
+        """Test Super Admin System Health - GET /api/admin/system/health"""
+        if not self.super_admin_token:
+            self.log_test("Super Admin System Health", False, "No super admin token")
+            return False
+        
+        # Switch to super admin token
+        original_token = self.token
+        self.token = self.super_admin_token
+        
+        response, error = self.make_request('GET', 'admin/system/health')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Super Admin System Health", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            # Verify response structure
+            has_status = 'status' in data
+            has_checks = 'checks' in data
+            has_stats = 'stats' in data
+            has_timestamp = 'timestamp' in data
+            
+            success = has_status and has_checks and has_stats and has_timestamp
+            details = f"Status: {data.get('status')}, Checks: {len(data.get('checks', []))}, Stats: {bool(data.get('stats'))}"
+            self.log_test("Super Admin System Health", success, details)
+            return success
+        else:
+            try:
+                error_data = response.json()
+                error_msg = error_data.get('detail', f'Status: {response.status_code}')
+            except:
+                error_msg = f'Status: {response.status_code}'
+            self.log_test("Super Admin System Health", False, error_msg)
+            return False
+
+    def test_super_admin_organizations_pending(self):
+        """Test Super Admin Organizations Pending - GET /api/organizations/pending"""
+        if not self.super_admin_token:
+            self.log_test("Super Admin Organizations Pending", False, "No super admin token")
+            return False
+        
+        # Switch to super admin token
+        original_token = self.token
+        self.token = self.super_admin_token
+        
+        response, error = self.make_request('GET', 'organizations/pending')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Super Admin Organizations Pending", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            # Should return a list (even if empty)
+            is_list = isinstance(data, list)
+            success = is_list
+            details = f"Returned list with {len(data) if is_list else 0} pending organizations"
+            self.log_test("Super Admin Organizations Pending", success, details)
+            return success
+        else:
+            try:
+                error_data = response.json()
+                error_msg = error_data.get('detail', f'Status: {response.status_code}')
+            except:
+                error_msg = f'Status: {response.status_code}'
+            self.log_test("Super Admin Organizations Pending", False, error_msg)
+            return False
+
+    def run_super_admin_review_tests(self):
+        """Run Super Admin tests for the review request"""
+        print("🧪 Starting Super Admin Backend Testing - Review Request")
+        print("=" * 60)
+        print("Testing Super Admin Login and Access to Platform Owner Endpoints")
+        print("=" * 60)
+        
+        # Test sequence for super admin review request
+        tests = [
+            self.test_health_check,
+            self.test_super_admin_login,
+            self.test_super_admin_auth_me,
+            self.test_super_admin_system_stats,
+            self.test_super_admin_system_health,
+            self.test_super_admin_organizations_pending
+        ]
+        
+        for test in tests:
+            try:
+                test()
+            except Exception as e:
+                self.log_test(test.__name__, False, f"Exception: {str(e)}")
+        
+        # Print summary
+        print("\n" + "=" * 60)
+        print(f"📊 SUPER ADMIN TEST SUMMARY")
+        print(f"Total Tests: {self.tests_run}")
+        print(f"Passed: {self.tests_passed}")
+        print(f"Failed: {self.tests_run - self.tests_passed}")
+        print(f"Success Rate: {(self.tests_passed/self.tests_run*100):.1f}%")
+        
+        # Print failed tests
+        failed_tests = [t for t in self.test_results if not t['success']]
+        if failed_tests:
+            print(f"\n❌ FAILED TESTS:")
+            for test in failed_tests:
+                print(f"  - {test['test']}: {test['details']}")
+        
+        return self.tests_passed == self.tests_run
+
     def run_review_tests(self):
         """Run all tests for the review request"""
         print("🧪 Starting Yacco EMR Backend Testing - Review Request")
