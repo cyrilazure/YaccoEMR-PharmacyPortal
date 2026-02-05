@@ -1189,70 +1189,145 @@ agent_communication:
       All critical organization management workflows are working correctly.
 
 user_problem_statement: |
-  Add two new features to Yacco EMR:
-  1. Telehealth Video Integration - WebRTC peer-to-peer video calls (no external API needed) + Dyte integration ready
-  2. Real Lab Result Feeds - Simulated demo mode + HL7 v2 ORU message parsing
+  Test the following:
+
+  1. **Super Admin Login**
+     POST /api/auth/login
+     - email: ygtnetworks@gmail.com
+     - password: test123
+     - Should return token with role: super_admin
+
+  2. **Patient Creation with MRN and Payment Type**
+     POST /api/patients (use super admin token)
+     - Create patient with:
+       - first_name: "Test"
+       - last_name: "Patient"
+       - date_of_birth: "1990-01-15"
+       - gender: "male"
+       - mrn: "MRN-CUSTOM-001" (custom MRN)
+       - payment_type: "insurance"
+       - insurance_provider: "NHIS"
+       - insurance_id: "NHIS-12345678"
+       - adt_notification: true
+     - Should succeed
+
+  3. **Patient Creation with Cash Payment**
+     POST /api/patients
+     - Create patient with payment_type: "cash"
+     - No insurance info
+     - Should succeed
+
+  4. **Nurse Shift Management**
+     - Login as nurse: testnurse@hospital.com / nurse123
+     - POST /api/nurse/shifts/clock-in with {"shift_type": "morning"}
+     - GET /api/nurse/current-shift - Should return active_shift
+     - POST /api/nurse/shifts/clock-out - Should succeed
 
 backend:
-  - task: "Lab Results Module - Lab Order CRUD"
+  - task: "Super Admin Login Functionality"
     implemented: true
-    working: "NA"
-    file: "lab_module.py"
+    working: true
+    file: "backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
-        agent: "main"
-        comment: "Created lab_module.py with lab order endpoints: POST /api/lab/orders, GET /api/lab/orders/{patient_id}, PUT /api/lab/orders/{order_id}/status"
+        agent: "user"
+        comment: "User requested testing of Super Admin login functionality with specific credentials: ygtnetworks@gmail.com / test123"
+      - working: true
+        agent: "testing"
+        comment: "✅ Super Admin Login - POST /api/auth/login with ygtnetworks@gmail.com / test123 successful. JWT token verified to contain role=super_admin. Email: ygtnetworks@gmail.com, Role: super_admin, Token Role: super_admin. Authentication working correctly."
 
-  - task: "Lab Results Module - Simulated Results Generation"
+  - task: "Patient Creation with MRN and Payment Type"
     implemented: true
-    working: "NA"
-    file: "lab_module.py"
+    working: true
+    file: "backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
-        agent: "main"
-        comment: "Implemented POST /api/lab/results/simulate/{order_id} to generate realistic lab results for CBC, CMP, Lipid Panel, Thyroid, etc."
+        agent: "user"
+        comment: "User requested testing of patient creation with custom MRN and insurance payment type"
+      - working: true
+        agent: "testing"
+        comment: "✅ Patient Creation with MRN and Payment - POST /api/patients successful. Created patient with ID: ce764a82-79c3-4f85-8fcd-1dac4da6bf59, MRN: MRN-CUSTOM-001, Payment: insurance, Insurance: NHIS. All required fields properly stored including custom MRN, payment_type=insurance, insurance_provider=NHIS, insurance_id=NHIS-12345678, and adt_notification=true."
 
-  - task: "Lab Results Module - HL7 v2 ORU Message Parsing"
+  - task: "Patient Creation with Cash Payment"
     implemented: true
-    working: "NA"
-    file: "lab_module.py"
+    working: true
+    file: "backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
-        agent: "main"
-        comment: "Implemented POST /api/lab/hl7/oru to parse HL7 v2 ORU^R01 lab result messages and store results"
+        agent: "user"
+        comment: "User requested testing of patient creation with cash payment type and no insurance information"
+      - working: true
+        agent: "testing"
+        comment: "✅ Patient Creation with Cash Payment - POST /api/patients successful. Created patient with ID: 5cb74df0-5f39-4e48-976e-0f12abd465ab, Payment: cash, No Insurance Info: True. Auto-generated MRN: MRN280D81A4. Properly handled cash payment with no insurance provider or insurance ID fields."
 
-  - task: "Telehealth Module - Session Management"
+  - task: "Nurse Login Authentication"
     implemented: true
-    working: "NA"
-    file: "telehealth_module.py"
+    working: true
+    file: "backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
-        agent: "main"
-        comment: "Created telehealth session CRUD: POST /api/telehealth/sessions, GET /api/telehealth/sessions/{id}, join/start/end endpoints"
+        agent: "user"
+        comment: "User requested testing of nurse login with testnurse@hospital.com credentials"
+      - working: true
+        agent: "testing"
+        comment: "✅ Nurse Login - POST /api/auth/login with testnurse@hospital.com / nurse123 successful. JWT token verified to contain role=nurse. User details: Email: testnurse@hospital.com, Role: nurse, Organization ID: e717ed11-7955-4884-8d6b-a529f918c34f. Authentication working correctly."
 
-  - task: "Telehealth Module - WebRTC Signaling WebSocket"
+  - task: "Nurse Shift Clock-In"
     implemented: true
-    working: "NA"
-    file: "telehealth_module.py"
+    working: true
+    file: "backend/nurse_portal_module.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
-        agent: "main"
-        comment: "Implemented WebSocket endpoint /api/telehealth/ws/{room_id}/{user_id} for WebRTC signaling (offer/answer/ICE candidates)"
+        agent: "user"
+        comment: "User requested testing of nurse shift clock-in functionality"
+      - working: true
+        agent: "testing"
+        comment: "✅ Nurse Shift Clock-In - POST /api/nurse/shifts/clock-in with shift_type=morning successful. Created shift with ID: 8f011a0d-8030-41a3-abf7-08d74bd66694, Nurse: Test Nurse, Organization: e717ed11-7955-4884-8d6b-a529f918c34f, Status: active. Clock-in time recorded correctly."
+
+  - task: "Nurse Current Shift Retrieval"
+    implemented: true
+    working: true
+    file: "backend/nurse_portal_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of current shift retrieval for nurse"
+      - working: true
+        agent: "testing"
+        comment: "✅ Get Current Shift - GET /api/nurse/current-shift successful. Returns active_shift with ID: 8f011a0d-8030-41a3-abf7-08d74bd66694, shift_type: morning, is_active: true. Also returns current_time_shift: night and shift_info with proper shift definitions. Active shift properly tracked."
+
+  - task: "Nurse Shift Clock-Out"
+    implemented: true
+    working: true
+    file: "backend/nurse_portal_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of nurse shift clock-out functionality"
+      - working: true
+        agent: "testing"
+        comment: "✅ Nurse Shift Clock-Out - POST /api/nurse/shifts/clock-out successful. Shift properly ended with message: Successfully clocked out, patient_count: 0. Shift status updated to completed and clock-out time recorded."
 
 frontend:
   - task: "Labs Tab in Patient Chart"
