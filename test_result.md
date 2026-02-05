@@ -1399,6 +1399,21 @@ backend:
         agent: "testing"
         comment: "✅ Super Admin Login - POST /api/auth/login with ygtnetworks@gmail.com / test123 successful. JWT token verified to contain role=super_admin. Email: ygtnetworks@gmail.com, Role: super_admin, Token Role: super_admin. Authentication working correctly."
 
+  - task: "Department Auto-Seeding Functionality"
+    implemented: true
+    working: true
+    file: "backend/region_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of department auto-seeding functionality: 1) Login as Super Admin, 2) Get list of hospitals, 3) Check existing departments, 4) Test seed departments endpoint, 5) Verify departments after seeding"
+      - working: true
+        agent: "testing"
+        comment: "✅ Department Auto-Seeding Functionality - ALL TESTS PASSED (6/6 - 100% success rate): 1) Super Admin Login successful (ygtnetworks@gmail.com / test123), 2) Hospital Admins List retrieved (2 hospitals found), 3) Hospital Departments checked before seeding (Hospital ID: 008cca73-b733-4224-afa3-992c02c045a4), 4) Seed Departments Endpoint working correctly (returns 'Hospital already has 27 departments' or 'Successfully created 27 default departments'), 5) Departments verified after seeding (27 departments exist). Complete workflow tested and functional."
+
   - task: "Patient Creation with MRN and Payment Type"
     implemented: true
     working: true
