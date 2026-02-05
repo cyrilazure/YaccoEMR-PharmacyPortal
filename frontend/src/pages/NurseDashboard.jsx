@@ -689,9 +689,10 @@ export default function NurseDashboard() {
       {isNurse && (
         <Alert className="border-sky-200 bg-sky-50">
           <Shield className="h-4 w-4 text-sky-600" />
-          <AlertTitle className="text-sky-800">Role-Based Access</AlertTitle>
+          <AlertTitle className="text-sky-800">Nursing Access (Read-Only for Orders)</AlertTitle>
           <AlertDescription className="text-sky-700">
-            You can view/administer medications and record vitals. Contact a physician for prescriptions.
+            You can: Record vitals, administer medications (MAR), create shift reports. 
+            <span className="font-medium"> Read-only: </span> Medications, Lab orders, Imaging orders (contact physician for prescriptions).
           </AlertDescription>
         </Alert>
       )}
