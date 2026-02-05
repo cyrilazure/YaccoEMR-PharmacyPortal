@@ -939,6 +939,39 @@ def create_region_endpoints(db, get_current_user, hash_password):
             "note": "User should change password on first login"
         }
     
+    @region_router.post("/admin/hospitals/{hospital_id}/seed-departments", response_model=dict)
+    async def seed_departments_for_hospital(
+        hospital_id: str,
+        user: dict = Depends(get_current_user)
+    ):
+        """Seed default departments for an existing hospital (Super Admin only)"""
+        if user.get("role") != "super_admin":
+            raise HTTPException(status_code=403, detail="Super Admin access required")
+        
+        # Get hospital
+        hospital = await db["hospitals"].find_one({"id": hospital_id})
+        if not hospital:
+            raise HTTPException(status_code=404, detail="Hospital not found")
+        
+        # Check if departments already exist
+        existing_count = await db["departments"].count_documents({"organization_id": hospital_id})
+        if existing_count > 0:
+            return {
+                "message": f"Hospital already has {existing_count} departments",
+                "existing_count": existing_count,
+                "skipped": True
+            }
+        
+        # Seed departments
+        departments_created = await seed_hospital_departments(db, hospital_id)
+        
+        return {
+            "message": f"Successfully created {departments_created} default departments",
+            "hospital_id": hospital_id,
+            "hospital_name": hospital.get("name"),
+            "departments_created": departments_created
+        }
+    
     @region_router.delete("/admin/hospitals/{hospital_id}", response_model=dict)
     async def delete_hospital(
         hospital_id: str,
