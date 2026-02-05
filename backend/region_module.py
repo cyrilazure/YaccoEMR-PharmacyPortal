@@ -124,6 +124,12 @@ ROLE_PORTAL_MAP = {
     "facility_admin": "/facility-admin",
     "biller": "/billing",
     "scheduler": "/scheduling",
+    "pharmacist": "/pharmacy",
+    "pharmacy_tech": "/pharmacy",
+    "radiologist": "/radiology",
+    "radiology_staff": "/radiology",
+    "bed_manager": "/bed-management",
+    "records_officer": "/records",
     "super_admin": "/platform/super-admin"
 }
 
