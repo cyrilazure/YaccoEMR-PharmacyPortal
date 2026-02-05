@@ -348,7 +348,7 @@ export default function RadiologyPortal() {
                   <TableHead>Modality</TableHead>
                   <TableHead>Priority</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Ordering Physician</TableHead>
+                  {!isRadiologyStaff && <TableHead>Ordering Physician</TableHead>}
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -382,19 +382,21 @@ export default function RadiologyPortal() {
                         {order.status?.replace(/_/g, ' ')}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-sm">{order.ordering_physician}</TableCell>
+                    {!isRadiologyStaff && <TableCell className="text-sm">{order.ordering_physician}</TableCell>}
                     <TableCell className="text-right">
                       <div className="flex gap-2 justify-end">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            setSelectedOrder(order);
-                            setViewDialogOpen(true);
-                          }}
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
+                        {canViewFullDetails && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedOrder(order);
+                              setViewDialogOpen(true);
+                            }}
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                        )}
                         
                         {order.status === 'ordered' && (
                           <Button
@@ -429,7 +431,7 @@ export default function RadiologyPortal() {
                           </Button>
                         )}
                         
-                        {order.status === 'completed' && (
+                        {order.status === 'completed' && canCreateReports && (
                           <Button
                             size="sm"
                             className="bg-emerald-600 hover:bg-emerald-700"
