@@ -771,7 +771,9 @@ class BillingPhase1Tester:
         
         if response.status_code == 200:
             data = response.json()
-            order_id = data.get('order_id')
+            # Response has 'order' object with 'id' field
+            order = data.get('order', {})
+            order_id = order.get('id')
             
             success = bool(order_id)
             details = f"Order ID: {order_id}, Modality: xray, Study: Chest PA/Lateral"
