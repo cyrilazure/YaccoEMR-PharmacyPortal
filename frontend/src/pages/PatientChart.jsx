@@ -1190,6 +1190,11 @@ export default function PatientChart() {
                   </form>
                 </DialogContent>
               </Dialog>
+              ) : (
+                <Badge variant="outline" className="text-amber-600 border-amber-300">
+                  View Only
+                </Badge>
+              )}
             </CardHeader>
             <CardContent>
               {labOrders.length === 0 ? (
