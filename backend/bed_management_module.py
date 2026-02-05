@@ -177,6 +177,7 @@ def create_bed_management_endpoints(db, get_current_user):
         }
         
         await db["wards"].insert_one(ward_doc)
+        ward_doc.pop("_id", None)
         return {"message": "Ward created", "ward": ward_doc}
     
     @bed_management_router.post("/wards/seed-defaults")
@@ -269,6 +270,7 @@ def create_bed_management_endpoints(db, get_current_user):
         }
         
         await db["rooms"].insert_one(room_doc)
+        room_doc.pop("_id", None)
         return {"message": "Room created", "room": room_doc}
     
     @bed_management_router.get("/rooms")
@@ -325,6 +327,7 @@ def create_bed_management_endpoints(db, get_current_user):
         }
         
         await db["beds"].insert_one(bed_doc)
+        bed_doc.pop("_id", None)
         
         # Update ward bed count
         await db["wards"].update_one(
