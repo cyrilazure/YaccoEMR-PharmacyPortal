@@ -704,3 +704,50 @@ export const departmentAPI = {
 };
 
 export default api;
+
+// Radiology APIs
+export const radiologyAPI = {
+  // Orders
+  createOrder: (data) => api.post('/radiology/orders/create', data),
+  getQueue: (params) => api.get('/radiology/orders/queue', { params }),
+  getPatientOrders: (patientId) => api.get(`/radiology/orders/patient/${patientId}`),
+  updateOrder: (orderId, data) => api.put(`/radiology/orders/${orderId}`, data),
+  
+  // Results
+  createResult: (data) => api.post('/radiology/results/create', data),
+  getPatientResults: (patientId) => api.get(`/radiology/results/patient/${patientId}`),
+  getResult: (resultId) => api.get(`/radiology/results/${resultId}`),
+  
+  // Reference data
+  getModalities: () => api.get('/radiology/modalities'),
+  getStudyTypes: (modality) => api.get('/radiology/study-types', { params: { modality } }),
+};
+
+// Bed Management APIs
+export const bedManagementAPI = {
+  // Census
+  getCensus: () => api.get('/beds/census'),
+  
+  // Wards
+  getWards: (params) => api.get('/beds/wards', { params }),
+  createWard: (data) => api.post('/beds/wards/create', data),
+  seedWards: () => api.post('/beds/wards/seed-defaults'),
+  
+  // Rooms
+  getRooms: (params) => api.get('/beds/rooms', { params }),
+  createRoom: (data) => api.post('/beds/rooms/create', data),
+  
+  // Beds
+  getBeds: (params) => api.get('/beds/beds', { params }),
+  createBed: (data) => api.post('/beds/beds/create', data),
+  bulkCreateBeds: (params) => api.post('/beds/beds/bulk-create', null, { params }),
+  updateBedStatus: (bedId, status, notes) => api.put(`/beds/beds/${bedId}/status`, null, { params: { status, notes } }),
+  
+  // Admissions
+  getAdmissions: (params) => api.get('/beds/admissions', { params }),
+  getPatientAdmissions: (patientId) => api.get(`/beds/admissions/patient/${patientId}`),
+  createAdmission: (data) => api.post('/beds/admissions/create', data),
+  transferPatient: (admissionId, data) => api.post(`/beds/admissions/${admissionId}/transfer`, data),
+  dischargePatient: (admissionId, data) => api.post(`/beds/admissions/${admissionId}/discharge`, data),
+};
+
