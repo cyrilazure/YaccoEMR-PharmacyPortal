@@ -1476,16 +1476,16 @@ class YaccoEMRTester:
         if response.status_code == 200:
             data = response.json()
             
-            # Should return a list or dict with hospitals
-            hospitals = data.get('hospitals', []) if isinstance(data, dict) else data
+            # Should return a dict with hospitals key
+            hospitals = data.get('hospitals', [])
             is_list = isinstance(hospitals, list)
             has_hospitals = len(hospitals) > 0 if is_list else False
             
-            # Store first hospital_id for department testing
+            # Store first hospital_id for department testing (nested under hospital.id)
             if has_hospitals:
-                self.test_hospital_id = hospitals[0].get('id')
+                self.test_hospital_id = hospitals[0].get('hospital', {}).get('id')
             
-            success = is_list
+            success = is_list and has_hospitals and bool(self.test_hospital_id)
             details = f"Hospitals count: {len(hospitals) if is_list else 'N/A'}, First Hospital ID: {getattr(self, 'test_hospital_id', 'None')}"
             self.log_test("Get Hospital Admins List", success, details)
             return success
