@@ -100,44 +100,95 @@ class InsuranceClaimCreate(BaseModel):
     procedure_codes: List[str]  # CPT codes
 
 # ============ SERVICE CODES ============
+# Comprehensive Ghana Hospital Service Code Library
 SERVICE_CODES = {
-    # Office Visits
-    "99201": {"description": "Office visit, new patient, minimal", "price": 50.00},
-    "99202": {"description": "Office visit, new patient, low", "price": 90.00},
-    "99203": {"description": "Office visit, new patient, moderate", "price": 130.00},
-    "99204": {"description": "Office visit, new patient, moderate-high", "price": 190.00},
-    "99205": {"description": "Office visit, new patient, high", "price": 250.00},
-    "99211": {"description": "Office visit, established, minimal", "price": 30.00},
-    "99212": {"description": "Office visit, established, low", "price": 60.00},
-    "99213": {"description": "Office visit, established, moderate", "price": 100.00},
-    "99214": {"description": "Office visit, established, moderate-high", "price": 150.00},
-    "99215": {"description": "Office visit, established, high", "price": 200.00},
+    # ===== CONSULTATIONS & VISITS =====
+    "99201": {"description": "Office visit, new patient, minimal", "price": 50.00, "category": "consultation"},
+    "99202": {"description": "Office visit, new patient, low", "price": 90.00, "category": "consultation"},
+    "99203": {"description": "Office visit, new patient, moderate", "price": 130.00, "category": "consultation"},
+    "99204": {"description": "Office visit, new patient, moderate-high", "price": 190.00, "category": "consultation"},
+    "99205": {"description": "Office visit, new patient, high", "price": 250.00, "category": "consultation"},
+    "99211": {"description": "Office visit, established, minimal", "price": 30.00, "category": "consultation"},
+    "99212": {"description": "Office visit, established, low", "price": 60.00, "category": "consultation"},
+    "99213": {"description": "Office visit, established, moderate", "price": 100.00, "category": "consultation"},
+    "99214": {"description": "Office visit, established, moderate-high", "price": 150.00, "category": "consultation"},
+    "99215": {"description": "Office visit, established, high", "price": 200.00, "category": "consultation"},
+    "CONS-SPEC": {"description": "Specialist consultation", "price": 200.00, "category": "consultation"},
+    "CONS-EMERG": {"description": "Emergency consultation", "price": 150.00, "category": "consultation"},
     
-    # Lab Tests
-    "80053": {"description": "Comprehensive metabolic panel", "price": 45.00},
-    "85025": {"description": "Complete blood count (CBC)", "price": 35.00},
-    "80061": {"description": "Lipid panel", "price": 40.00},
-    "84443": {"description": "TSH (thyroid)", "price": 55.00},
-    "82947": {"description": "Glucose, blood", "price": 20.00},
-    "81001": {"description": "Urinalysis", "price": 25.00},
+    # ===== LAB TESTS =====
+    "80053": {"description": "Comprehensive metabolic panel", "price": 45.00, "category": "lab"},
+    "85025": {"description": "Complete blood count (CBC)", "price": 35.00, "category": "lab"},
+    "80061": {"description": "Lipid panel", "price": 40.00, "category": "lab"},
+    "84443": {"description": "TSH (thyroid)", "price": 55.00, "category": "lab"},
+    "82947": {"description": "Glucose, blood", "price": 20.00, "category": "lab"},
+    "81001": {"description": "Urinalysis", "price": 25.00, "category": "lab"},
+    "LAB-MALARIA": {"description": "Malaria test (RDT)", "price": 15.00, "category": "lab"},
+    "LAB-HEP-B": {"description": "Hepatitis B surface antigen", "price": 50.00, "category": "lab"},
+    "LAB-HIV": {"description": "HIV rapid test", "price": 30.00, "category": "lab"},
+    "LAB-PREG": {"description": "Pregnancy test", "price": 20.00, "category": "lab"},
     
-    # Imaging
-    "71046": {"description": "Chest X-ray, 2 views", "price": 150.00},
-    "73030": {"description": "Shoulder X-ray", "price": 120.00},
-    "73600": {"description": "Ankle X-ray", "price": 110.00},
-    "70553": {"description": "MRI brain with contrast", "price": 1200.00},
-    "74177": {"description": "CT abdomen/pelvis with contrast", "price": 800.00},
+    # ===== IMAGING/RADIOLOGY =====
+    "71046": {"description": "Chest X-ray, 2 views", "price": 150.00, "category": "imaging"},
+    "73030": {"description": "Shoulder X-ray", "price": 120.00, "category": "imaging"},
+    "73600": {"description": "Ankle X-ray", "price": 110.00, "category": "imaging"},
+    "70553": {"description": "MRI brain with contrast", "price": 1200.00, "category": "imaging"},
+    "74177": {"description": "CT abdomen/pelvis with contrast", "price": 800.00, "category": "imaging"},
+    "RAD-US-ABD": {"description": "Ultrasound abdomen", "price": 180.00, "category": "imaging"},
+    "RAD-US-PREG": {"description": "Obstetric ultrasound", "price": 200.00, "category": "imaging"},
     
-    # Procedures
-    "12001": {"description": "Simple wound repair", "price": 180.00},
-    "69210": {"description": "Ear wax removal", "price": 75.00},
-    "17110": {"description": "Wart destruction", "price": 150.00},
-    "20610": {"description": "Joint injection, major", "price": 200.00},
+    # ===== PROCEDURES =====
+    "12001": {"description": "Simple wound repair", "price": 180.00, "category": "procedure"},
+    "69210": {"description": "Ear wax removal", "price": 75.00, "category": "procedure"},
+    "17110": {"description": "Wart destruction", "price": 150.00, "category": "procedure"},
+    "20610": {"description": "Joint injection, major", "price": 200.00, "category": "procedure"},
+    "PROC-SUTURE": {"description": "Suturing / Stitches", "price": 120.00, "category": "procedure"},
+    "PROC-DRESS": {"description": "Wound dressing change", "price": 50.00, "category": "procedure"},
+    "PROC-CATHETER": {"description": "Urinary catheterization", "price": 80.00, "category": "procedure"},
+    "PROC-IV-INSERT": {"description": "IV line insertion", "price": 60.00, "category": "procedure"},
     
-    # Telehealth
-    "99441": {"description": "Telehealth E/M, 5-10 min", "price": 45.00},
-    "99442": {"description": "Telehealth E/M, 11-20 min", "price": 75.00},
-    "99443": {"description": "Telehealth E/M, 21-30 min", "price": 110.00},
+    # ===== ADMISSIONS & ACCOMMODATION =====
+    "ADM-GENERAL": {"description": "General ward admission (per day)", "price": 150.00, "category": "admission"},
+    "ADM-PRIVATE": {"description": "Private room (per day)", "price": 350.00, "category": "admission"},
+    "ADM-ICU": {"description": "ICU admission (per day)", "price": 800.00, "category": "admission"},
+    "ADM-NICU": {"description": "NICU admission (per day)", "price": 900.00, "category": "admission"},
+    "ADM-MATERNITY": {"description": "Maternity ward (per day)", "price": 200.00, "category": "admission"},
+    
+    # ===== CONSUMABLES & SUPPLIES =====
+    "CONS-BANDAGE": {"description": "Bandage roll", "price": 5.00, "category": "consumable"},
+    "CONS-GAUZE": {"description": "Gauze pads (pack)", "price": 8.00, "category": "consumable"},
+    "CONS-PLASTER": {"description": "Adhesive plaster", "price": 3.00, "category": "consumable"},
+    "CONS-GLOVES": {"description": "Examination gloves (pair)", "price": 2.00, "category": "consumable"},
+    "CONS-SYRINGE-5": {"description": "Syringe 5ml", "price": 4.00, "category": "consumable"},
+    "CONS-SYRINGE-10": {"description": "Syringe 10ml", "price": 5.00, "category": "consumable"},
+    "CONS-NEEDLE": {"description": "Hypodermic needle", "price": 2.00, "category": "consumable"},
+    "CONS-IV-SET": {"description": "IV administration set", "price": 25.00, "category": "consumable"},
+    "CONS-IV-NS": {"description": "Normal saline 1L", "price": 15.00, "category": "consumable"},
+    "CONS-IV-D5": {"description": "Dextrose 5% 1L", "price": 18.00, "category": "consumable"},
+    "CONS-IV-RL": {"description": "Ringer's lactate 1L", "price": 16.00, "category": "consumable"},
+    "CONS-COTTON": {"description": "Cotton wool (pack)", "price": 6.00, "category": "consumable"},
+    "CONS-ALCOHOL": {"description": "Alcohol swabs (box)", "price": 10.00, "category": "consumable"},
+    "CONS-CATHETER": {"description": "Urinary catheter", "price": 35.00, "category": "consumable"},
+    "CONS-OXYGEN": {"description": "Oxygen therapy (per hour)", "price": 20.00, "category": "consumable"},
+    
+    # ===== SURGICAL PROCEDURES =====
+    "SURG-APPEND": {"description": "Appendectomy", "price": 3500.00, "category": "surgery"},
+    "SURG-CSECTION": {"description": "Caesarean section", "price": 4000.00, "category": "surgery"},
+    "SURG-HERNIA": {"description": "Hernia repair", "price": 2800.00, "category": "surgery"},
+    "SURG-MINOR": {"description": "Minor surgery", "price": 800.00, "category": "surgery"},
+    
+    # ===== MEDICATIONS (Common) =====
+    "MED-PARACETAMOL": {"description": "Paracetamol 500mg (tablet)", "price": 0.50, "category": "medication"},
+    "MED-AMOXICILLIN": {"description": "Amoxicillin 500mg (capsule)", "price": 2.00, "category": "medication"},
+    "MED-METFORMIN": {"description": "Metformin 500mg (tablet)", "price": 1.50, "category": "medication"},
+    "MED-AMLODIPINE": {"description": "Amlodipine 5mg (tablet)", "price": 1.80, "category": "medication"},
+    "MED-ARTEMETHER": {"description": "Artemether-Lumefantrine (tablet)", "price": 8.00, "category": "medication"},
+    "MED-INSULIN": {"description": "Insulin injection (unit)", "price": 15.00, "category": "medication"},
+    
+    # ===== TELEHEALTH =====
+    "99441": {"description": "Telehealth E/M, 5-10 min", "price": 45.00, "category": "telehealth"},
+    "99442": {"description": "Telehealth E/M, 11-20 min", "price": 75.00, "category": "telehealth"},
+    "99443": {"description": "Telehealth E/M, 21-30 min", "price": 110.00, "category": "telehealth"},
 }
 
 
