@@ -40,6 +40,11 @@ import DepartmentUnitPortal from "@/pages/DepartmentUnitPortal";
 import FacilityAdminPortal from "@/pages/FacilityAdminPortal";
 import NursingSupervisorDashboard from "@/pages/NursingSupervisorDashboard";
 
+// New Modules - e-Prescribing, Radiology, Bed Management
+import PharmacyPortal from "@/pages/PharmacyPortal";
+import RadiologyPortal from "@/pages/RadiologyPortal";
+import BedManagementPortal from "@/pages/BedManagementPortal";
+
 // Role-based redirect component
 function RoleBasedRedirect() {
   const { user } = useAuth();
