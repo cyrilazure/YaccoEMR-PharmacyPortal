@@ -52,7 +52,7 @@ export default function SuperAdminLogin() {
       }
       
       toast.success('Welcome back, Platform Owner');
-      navigate('/platform-admin');
+      navigate('/platform/super-admin');
     } catch (err) {
       toast.error('Invalid credentials');
     } finally {
