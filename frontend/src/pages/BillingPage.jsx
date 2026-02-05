@@ -410,7 +410,7 @@ export default function BillingPage() {
                         <td className="p-4 font-mono text-sm">{claim.claim_number}</td>
                         <td className="p-4">{claim.insurance_provider}</td>
                         <td className="p-4">{claim.patient_id}</td>
-                        <td className="p-4 text-right font-medium">${claim.total_charges?.toFixed(2)}</td>
+                        <td className="p-4 text-right font-medium">{formatCurrency(claim.total_charges)}</td>
                         <td className="p-4 text-center">{getStatusBadge(claim.status)}</td>
                         <td className="p-4 text-slate-500">{claim.submitted_at?.slice(0, 10) || '-'}</td>
                       </tr>
@@ -619,7 +619,7 @@ export default function BillingPage() {
               <div className="flex justify-end border-t pt-4">
                 <div className="text-right">
                   <p className="text-sm text-slate-500">Total</p>
-                  <p className="text-2xl font-bold">${calculateTotal().toFixed(2)}</p>
+                  <p className="text-2xl font-bold">{formatCurrency(calculateTotal())}</p>
                 </div>
               </div>
             </div>
@@ -689,8 +689,8 @@ export default function BillingPage() {
                       <tr key={i}>
                         <td className="p-3">{item.description}</td>
                         <td className="p-3 text-right">{item.quantity}</td>
-                        <td className="p-3 text-right">${item.unit_price?.toFixed(2)}</td>
-                        <td className="p-3 text-right">${(item.quantity * item.unit_price).toFixed(2)}</td>
+                        <td className="p-3 text-right">{formatCurrency(item.unit_price)}</td>
+                        <td className="p-3 text-right">{formatCurrency(item.quantity * item.unit_price)}</td>
                       </tr>
                     ))}
                   </tbody>
