@@ -203,6 +203,7 @@ def setup_routes(db, get_current_user):
         }
         
         await db.invoices.insert_one(invoice_doc)
+        invoice_doc.pop("_id", None)
         
         return {
             "message": "Invoice created",
