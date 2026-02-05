@@ -991,13 +991,15 @@ class YaccoEMRTester:
         
         if response.status_code == 200:
             data = response.json()
-            print(f"DEBUG: Response data: {data}, Type: {type(data)}")
             
-            # Should return a list (even if empty) - this is correct behavior
-            is_list = isinstance(data, list)
-            print(f"DEBUG: is_list = {is_list}")
-            success = is_list  # This should be True if data is a list
-            details = f"Successfully returned list with {len(data) if is_list else 0} pending organizations"
+            # Should return a dict with organizations key
+            has_organizations = 'organizations' in data
+            has_count = 'count' in data
+            organizations_list = data.get('organizations', [])
+            is_list = isinstance(organizations_list, list)
+            
+            success = has_organizations and has_count and is_list
+            details = f"Successfully returned {len(organizations_list)} pending organizations"
             self.log_test("Super Admin Organizations Pending", success, details)
             return success
         else:
