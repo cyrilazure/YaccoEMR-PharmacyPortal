@@ -550,9 +550,11 @@ async def get_user(user_id: str, current_user: dict = Depends(get_current_user))
 
 @api_router.post("/patients", response_model=PatientResponse)
 async def create_patient(patient_data: PatientCreate, current_user: dict = Depends(get_current_user)):
-    # Convert PatientCreate to dict and exclude None mrn
+    # Convert PatientCreate to dict
     patient_dict = patient_data.model_dump()
-    if patient_dict.get('mrn') is None:
+    
+    # Only remove mrn if it's None or empty string so Patient model can auto-generate
+    if not patient_dict.get('mrn') or patient_dict.get('mrn', '').strip() == '':
         patient_dict.pop('mrn', None)
     
     patient = Patient(**patient_dict)
