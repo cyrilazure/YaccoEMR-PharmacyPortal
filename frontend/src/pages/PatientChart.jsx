@@ -823,8 +823,8 @@ export default function PatientChart() {
                 <CardTitle>Medications</CardTitle>
                 <CardDescription>Current and past medications</CardDescription>
               </div>
-              {/* Hide Add Medication for nurses - they can only view medications */}
-              {user?.role !== 'nurse' && (
+              {/* Hide Add Medication for nurses, nursing supervisors, and floor supervisors - they can only view medications */}
+              {!['nurse', 'nursing_supervisor', 'floor_supervisor'].includes(user?.role) && (
               <Dialog open={medDialogOpen} onOpenChange={setMedDialogOpen}>
                 <DialogTrigger asChild>
                   <Button className="gap-2" data-testid="add-medication-btn">
@@ -883,7 +883,7 @@ export default function PatientChart() {
                 </DialogContent>
               </Dialog>
               )}
-              {user?.role === 'nurse' && (
+              {['nurse', 'nursing_supervisor', 'floor_supervisor'].includes(user?.role) && (
                 <Badge variant="outline" className="text-amber-600 border-amber-300">
                   View Only
                 </Badge>
