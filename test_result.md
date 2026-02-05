@@ -1252,6 +1252,66 @@ backend:
         comment: "✅ Super Admin Platform Endpoints Access - ALL TESTS PASSED (4/4 - 100% success rate): 1) System Stats - GET /api/admin/system/stats returns platform statistics with organizations, users by role, and activity trends. 2) System Health - GET /api/admin/system/health returns system health status with MongoDB and API checks. 3) Organizations Pending - GET /api/organizations/pending returns 8 pending organizations with proper structure. 4) All super admin specific endpoints are accessible and working correctly."
 
 backend:
+  - task: "MRN Auto-Generation"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of MRN auto-generation when creating patient with empty mrn field"
+      - working: true
+        agent: "testing"
+        comment: "✅ MRN Auto-Generation - POST /api/patients with empty mrn field successfully auto-generates MRN starting with 'MRN'. Generated MRN format verified and working correctly."
+
+  - task: "Force Clock-Out (Super Admin)"
+    implemented: true
+    working: true
+    file: "backend/nursing_supervisor_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of force clock-out functionality where super_admin can force clock out a nurse"
+      - working: true
+        agent: "testing"
+        comment: "✅ Force Clock-Out (Super Admin) - Successfully tested complete workflow: 1) Nurse login via region-based auth (testnurse@hospital.com), 2) Nurse clock-in with morning shift, 3) Super admin force clock-out via POST /api/nursing-supervisor/force-clock-out/{nurse_id}. All steps working correctly."
+
+  - task: "Handoff Notes API"
+    implemented: true
+    working: true
+    file: "backend/nursing_supervisor_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of handoff notes API with 24-hour window and patient info inclusion"
+      - working: true
+        agent: "testing"
+        comment: "✅ Handoff Notes API - GET /api/nursing-supervisor/handoff-notes?hours=24 returns proper structure with handoff_notes array, total count, and patient info for each shift. API working correctly."
+
+  - task: "Appointments Management"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of appointment creation and retrieval APIs"
+      - working: true
+        agent: "testing"
+        comment: "✅ Appointments Management - Both POST /api/appointments (create) and GET /api/appointments (retrieve) working correctly. Successfully created appointment with patient_id, provider_id, appointment_type=follow_up, date=2025-02-06, time=10:00-10:30. Appointment retrieval returns proper list format."
+
   - task: "Super Admin Login Functionality"
     implemented: true
     working: true
