@@ -81,17 +81,39 @@ export default function Patients() {
 
   const handleCreatePatient = async (e) => {
     e.preventDefault();
+    
+    // Validate insurance if payment type is insurance
+    if (paymentType === 'insurance' && (!newPatient.insurance_provider || !newPatient.insurance_id)) {
+      toast.error('Insurance information is required. Select "Pay Cash" to skip.');
+      return;
+    }
+    
     setSaving(true);
     try {
-      const res = await patientAPI.create(newPatient);
+      const patientData = {
+        ...newPatient,
+        payment_type: paymentType,
+        adt_notification: newPatient.adt_notification
+      };
+      const res = await patientAPI.create(patientData);
       toast.success('Patient created successfully');
+      
+      // Show ADT notification if enabled
+      if (newPatient.adt_notification) {
+        toast.info('ADT notification will be sent for this patient');
+      }
+      
       setDialogOpen(false);
       setNewPatient({
         first_name: '', last_name: '', date_of_birth: '', gender: 'male',
+        mrn: '',
         email: '', phone: '', address: '',
         emergency_contact_name: '', emergency_contact_phone: '',
-        insurance_provider: '', insurance_id: ''
+        insurance_provider: '', insurance_id: '', insurance_plan: '',
+        payment_type: 'insurance',
+        adt_notification: true
       });
+      setPaymentType('insurance');
       fetchPatients();
       navigate(`/patients/${res.data.id}`);
     } catch (err) {
