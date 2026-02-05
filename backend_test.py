@@ -994,7 +994,7 @@ class YaccoEMRTester:
             
             # Should return a list (even if empty) - this is correct behavior
             is_list = isinstance(data, list)
-            success = is_list
+            success = is_list  # This should be True if data is a list
             details = f"Successfully returned list with {len(data) if is_list else 0} pending organizations"
             self.log_test("Super Admin Organizations Pending", success, details)
             return success
