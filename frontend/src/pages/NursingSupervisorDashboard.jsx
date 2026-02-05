@@ -345,6 +345,10 @@ export default function NursingSupervisorDashboard() {
         </div>
         
         <div className="flex items-center gap-3">
+          <Button onClick={() => setAddPatientOpen(true)} className="bg-sky-600 hover:bg-sky-700">
+            <Plus className="w-4 h-4 mr-2" />
+            Add Patient
+          </Button>
           <Button onClick={() => setAssignPatientOpen(true)} className="bg-emerald-600 hover:bg-emerald-700">
             <UserPlus className="w-4 h-4 mr-2" />
             Assign Patient
@@ -358,6 +362,95 @@ export default function NursingSupervisorDashboard() {
           </Button>
         </div>
       </div>
+
+      {/* Patient Search Bar */}
+      <Card>
+        <CardContent className="pt-4">
+          <div className="flex items-center gap-4">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                placeholder="Search patients by name or MRN..."
+                value={patientSearchQuery}
+                onChange={(e) => handlePatientSearch(e.target.value)}
+                className="pl-10"
+              />
+              {searchingPatients && (
+                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-gray-400" />
+              )}
+            </div>
+            <Button variant="outline" onClick={() => navigate('/patients')}>
+              <Users className="w-4 h-4 mr-2" />
+              View All Patients
+            </Button>
+          </div>
+          
+          {/* Search Results */}
+          {patientSearchResults.length > 0 && (
+            <div className="mt-4 border rounded-lg">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Patient</TableHead>
+                    <TableHead>MRN</TableHead>
+                    <TableHead>DOB</TableHead>
+                    <TableHead>Gender</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {patientSearchResults.slice(0, 5).map((patient) => (
+                    <TableRow key={patient.id}>
+                      <TableCell className="font-medium">
+                        {patient.first_name} {patient.last_name}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{patient.mrn}</Badge>
+                      </TableCell>
+                      <TableCell>{patient.date_of_birth}</TableCell>
+                      <TableCell className="capitalize">{patient.gender}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex gap-2 justify-end">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => navigate(`/patients/${patient.id}`)}
+                          >
+                            <Eye className="w-4 h-4 mr-1" />
+                            View
+                          </Button>
+                          <Button 
+                            size="sm"
+                            onClick={() => {
+                              setAssignmentForm({ ...assignmentForm, patient_id: patient.id });
+                              setSelectedPatient(patient);
+                              setAssignPatientOpen(true);
+                            }}
+                          >
+                            <UserPlus className="w-4 h-4 mr-1" />
+                            Assign
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              {patientSearchResults.length > 5 && (
+                <div className="p-2 text-center text-sm text-gray-500 border-t">
+                  Showing 5 of {patientSearchResults.length} results
+                </div>
+              )}
+            </div>
+          )}
+          
+          {patientSearchQuery.length >= 2 && patientSearchResults.length === 0 && !searchingPatients && (
+            <div className="mt-4 text-center py-4 text-gray-500">
+              No patients found matching "{patientSearchQuery}"
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
