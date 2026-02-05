@@ -1069,6 +1069,26 @@ app.include_router(hospital_it_admin_router)
 from email_module import router as email_router
 app.include_router(email_router)
 
+# Include e-Prescribing Module
+from prescription_module import prescription_router, create_prescription_endpoints
+prescription_api_router = create_prescription_endpoints(db, get_current_user)
+app.include_router(prescription_router)
+
+# Include NHIS Claims & Billing Module
+from nhis_claims_module import nhis_router, create_nhis_endpoints
+nhis_api_router = create_nhis_endpoints(db, get_current_user)
+app.include_router(nhis_router)
+
+# Include Radiology Module
+from radiology_module import radiology_router, create_radiology_endpoints
+radiology_api_router = create_radiology_endpoints(db, get_current_user)
+app.include_router(radiology_router)
+
+# Include Bed Management Module
+from bed_management_module import bed_management_router, create_bed_management_endpoints
+bed_management_api_router = create_bed_management_endpoints(db, get_current_user)
+app.include_router(bed_management_router)
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
