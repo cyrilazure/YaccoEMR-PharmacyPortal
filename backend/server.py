@@ -1065,6 +1065,10 @@ from hospital_it_admin_module import hospital_it_admin_router, create_hospital_i
 hospital_it_admin_api_router = create_hospital_it_admin_endpoints(db, get_current_user, hash_password)
 app.include_router(hospital_it_admin_router)
 
+# Include Email Notification Module
+from email_module import router as email_router
+app.include_router(email_router)
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
