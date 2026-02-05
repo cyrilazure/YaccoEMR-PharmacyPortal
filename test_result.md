@@ -1230,21 +1230,22 @@ agent_communication:
       All critical organization management workflows are working correctly.
 
 user_problem_statement: |
-  Test the Super Admin (Platform Owner) login:
+  Test the following backend changes for the Yacco EMR system:
 
-  1. **Super Admin Login**
-     POST /api/auth/login
-     - email: ygtnetworks@gmail.com
-     - password: test123
-     - Should return token with role: "super_admin"
+  **1. Email Service Status Endpoint:**
+  - GET /api/email/status - Should return service status (inactive without API key is expected)
+  - Verify it returns: service, status, provider, sender_email, message fields
 
-  2. **Verify Token Works**
-     GET /api/auth/me (with the token)
-     - Should return user with role: super_admin
+  **2. Backend Health Check:**
+  - GET /api/health - Verify backend is running
 
-  3. **Test Access to Super Admin Endpoints**
-     GET /api/platform-owner/dashboard (or similar endpoint)
-     - Should work with super_admin token
+  **3. Super Admin Login:**
+  - POST /api/auth/login with email: ygtnetworks@gmail.com, password: test123
+  - Verify token is returned and role is super_admin
+
+  **Test Environment:**
+  - Backend URL: http://localhost:8001
+  - Super Admin: ygtnetworks@gmail.com / test123
 
 backend:
   - task: "Super Admin Login Test"
