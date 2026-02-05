@@ -6,11 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Globe, Shield, Lock, Eye, EyeOff } from 'lucide-react';
+import { Globe, Shield, Lock, Eye, EyeOff, LogOut } from 'lucide-react';
 
 export default function SuperAdminLogin() {
   const navigate = useNavigate();
-  const { user, login } = useAuth();
+  const { user, login, logout } = useAuth();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [credentials, setCredentials] = useState({
@@ -23,15 +23,29 @@ export default function SuperAdminLogin() {
     return <Navigate to="/platform/super-admin" replace />;
   }
 
-  // If logged in as other role, show access denied (no links to other portals)
+  // If logged in as other role, show access denied with logout option
   if (user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
         <Card className="w-full max-w-md text-center border-slate-700 bg-slate-800/50">
-          <CardContent className="pt-8">
+          <CardContent className="pt-8 pb-6">
             <Shield className="w-16 h-16 mx-auto mb-4 text-red-500" />
             <h2 className="text-xl font-bold mb-2 text-white">Access Denied</h2>
-            <p className="text-slate-400">This portal is restricted to Platform Owners only.</p>
+            <p className="text-slate-400 mb-6">This portal is restricted to Platform Owners only.</p>
+            <p className="text-slate-500 text-sm mb-4">
+              You are currently logged in as: <span className="text-slate-300">{user.email}</span>
+            </p>
+            <Button 
+              variant="outline" 
+              className="border-slate-600 text-slate-300 hover:bg-slate-700"
+              onClick={() => {
+                logout();
+                toast.success('Logged out successfully');
+              }}
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Logout & Login as Platform Owner
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -47,14 +61,16 @@ export default function SuperAdminLogin() {
       
       // Check if user is super_admin
       if (result.user.role !== 'super_admin') {
-        toast.error('Access denied. Invalid credentials for this portal.');
+        // Logout the user since they don't have access
+        logout();
+        toast.error('Access denied. This portal is for Platform Owners only.');
         return;
       }
       
       toast.success('Welcome back, Platform Owner');
       navigate('/platform/super-admin');
     } catch (err) {
-      toast.error('Invalid credentials');
+      toast.error(err.response?.data?.detail || 'Invalid credentials');
     } finally {
       setLoading(false);
     }
