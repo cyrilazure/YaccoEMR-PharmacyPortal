@@ -26,6 +26,8 @@ class YaccoEMRTester:
         self.nurse_user_id = None
         self.nurse_shift_id = None
         self.appointment_id = None
+        self.test_hospital_id = None
+        self.initial_department_count = 0
 
     def log_test(self, name, success, details=""):
         """Log test result"""
