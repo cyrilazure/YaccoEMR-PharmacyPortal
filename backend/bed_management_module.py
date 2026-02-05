@@ -106,14 +106,12 @@ class AdmissionCreate(BaseModel):
 
 
 class TransferCreate(BaseModel):
-    admission_id: str
     to_bed_id: str
     transfer_reason: str
     notes: Optional[str] = None
 
 
 class DischargeCreate(BaseModel):
-    admission_id: str
     discharge_disposition: str  # home, transfer, AMA, deceased, rehab, SNF
     discharge_diagnosis: str
     discharge_instructions: Optional[str] = None
