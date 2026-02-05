@@ -4672,3 +4672,113 @@ agent_communication:
       10. ✅ Error-Free: No console errors or UI issues detected
       
       **RECOMMENDATION:** The Bed Management Portal UI is production-ready and working perfectly. All requested UI components and features have been successfully tested and verified. The portal provides an intuitive interface for managing hospital bed capacity with real-time census tracking, admission management, and visual bed status indicators. The UI is fully functional, responsive, and error-free.
+
+user_problem_statement: |
+  Test the Radiology Portal UI fixes and role-based access control.
+  
+  **Fixes Implemented:**
+  1. SelectItem empty value error - changed from value="" to value="all"
+  2. Role-based UI restrictions for radiology_staff vs radiologist
+  
+  **Test Users:**
+  - Radiology Staff: radiology_staff@yacco.health / test123 (Limited Access)
+  - Radiologist: radiologist@yacco.health / test123 (Full Access)
+
+frontend:
+  - task: "Radiology Portal - SelectItem value='all' Fix"
+    implemented: true
+    working: true
+    file: "frontend/src/pages/RadiologyPortal.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Fixed SelectItem empty value error by changing from value='' to value='all' in Modality and Priority filter dropdowns (lines 304, 317)"
+      - working: true
+        agent: "testing"
+        comment: "✅ SelectItem value='all' Fix - WORKING: Both Modality and Priority filter dropdowns open without runtime errors. No 'SelectItem empty value' error observed. Dropdowns function correctly with value='all' for 'All Modalities' and 'All Priority' options."
+
+  - task: "Radiology Portal - Role-Based Access Control (Radiology Staff)"
+    implemented: true
+    working: true
+    file: "frontend/src/pages/RadiologyPortal.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented role-based UI restrictions for radiology_staff: Hide Ordering Physician column (line 351), Hide Eye button (lines 388-399), Hide Report button (lines 434-445)"
+      - working: true
+        agent: "testing"
+        comment: "✅ Radiology Staff (Limited Access) - WORKING: Successfully tested with radiology_staff@yacco.health. Verified: 1) 'Ordering Physician' column is HIDDEN ✓, 2) Eye (view details) button is HIDDEN ✓, 3) Schedule, Start, Complete buttons are VISIBLE ✓, 4) Report button is HIDDEN ✓. All role-based restrictions working correctly."
+
+  - task: "Radiology Portal - Role-Based Access Control (Radiologist)"
+    implemented: true
+    working: true
+    file: "frontend/src/pages/RadiologyPortal.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented role-based UI access for radiologist: Show Ordering Physician column, Show Eye button for viewing full patient clinical details (DOB, clinical indication, relevant history), Show Report button for completed orders"
+      - working: true
+        agent: "testing"
+        comment: "✅ Radiologist (Full Access) - WORKING: Successfully tested with radiologist@yacco.health. Verified: 1) 'Ordering Physician' column is VISIBLE (showing 'Super Admin') ✓, 2) Eye button is VISIBLE (found 4 buttons) ✓, 3) All action buttons VISIBLE (Schedule, Start, Complete) ✓, 4) Order details dialog shows full patient clinical details: Patient DOB (1980-01-14) ✓, Clinical Indication ('Severe headache with neurological symptoms') ✓, Relevant History ('No prior head trauma') ✓. All radiologist access features working correctly."
+
+metadata:
+  created_by: "testing_agent"
+  version: "1.0"
+  test_sequence: 1
+  run_ui: true
+
+test_plan:
+  current_focus: []
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "testing"
+    message: |
+      ✅ RADIOLOGY PORTAL UI FIXES AND ROLE-BASED ACCESS CONTROL - ALL TESTS PASSING (100% SUCCESS RATE)
+      
+      **🔧 FIXES VERIFIED:**
+      
+      **1. SelectItem value='all' Fix:**
+      - ✅ Modality filter dropdown opens without errors
+      - ✅ Priority filter dropdown opens without errors
+      - ✅ No "SelectItem empty value" runtime error observed
+      - ✅ Both dropdowns function correctly with value="all" for "All" options
+      
+      **2. Role-Based UI Restrictions:**
+      
+      **👥 RADIOLOGY STAFF (Limited Access) - radiology_staff@yacco.health:**
+      - ✅ PASS: "Ordering Physician" column is HIDDEN
+      - ✅ PASS: Eye (view details) button is HIDDEN
+      - ✅ PASS: Schedule, Start, Complete buttons are VISIBLE
+      - ✅ PASS: Report button is HIDDEN
+      - ✅ Cannot view patient clinical details (DOB, clinical indication, history)
+      
+      **👨‍⚕️ RADIOLOGIST (Full Access) - radiologist@yacco.health:**
+      - ✅ PASS: "Ordering Physician" column is VISIBLE (showing "Super Admin")
+      - ✅ PASS: Eye (view details) button is VISIBLE (4 buttons found)
+      - ✅ PASS: All action buttons VISIBLE (Schedule, Start, Complete, Report)
+      - ✅ PASS: Order details dialog shows full patient clinical details:
+        • Patient DOB: 1980-01-14 ✓
+        • Clinical Indication: "Severe headache with neurological symptoms" ✓
+        • Relevant History: "No prior head trauma" ✓
+      
+      **📊 TEST SUMMARY:**
+      - Total Tests: 3
+      - Passed: 3
+      - Failed: 0
+      - Success Rate: 100%
+      
+      **🎯 CONCLUSION:**
+      Both fixes are working correctly. The SelectItem value='all' fix prevents runtime errors, and role-based access control properly restricts UI elements based on user role (radiology_staff vs radiologist). The implementation correctly follows the requirements with radiology staff having limited access (no clinical details, no report creation) and radiologists having full access to all features and patient clinical information.
+
