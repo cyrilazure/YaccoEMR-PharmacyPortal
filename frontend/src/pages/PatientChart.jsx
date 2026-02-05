@@ -51,6 +51,9 @@ export default function PatientChart() {
   const [labOrders, setLabOrders] = useState([]);
   const [labResults, setLabResults] = useState([]);
   const [labPanels, setLabPanels] = useState([]);
+  const [radiologyOrders, setRadiologyOrders] = useState([]);
+  const [radiologyModalities, setRadiologyModalities] = useState([]);
+  const [radiologyStudyTypes, setRadiologyStudyTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   
@@ -63,6 +66,7 @@ export default function PatientChart() {
   const [orderDialogOpen, setOrderDialogOpen] = useState(false);
   const [aiDialogOpen, setAiDialogOpen] = useState(false);
   const [labOrderDialogOpen, setLabOrderDialogOpen] = useState(false);
+  const [radiologyOrderDialogOpen, setRadiologyOrderDialogOpen] = useState(false);
   
   // Form states
   const [newVitals, setNewVitals] = useState({
@@ -89,6 +93,16 @@ export default function PatientChart() {
   });
   const [newLabOrder, setNewLabOrder] = useState({
     panel_code: 'CBC', priority: 'routine', clinical_notes: '', diagnosis: '', fasting_required: false
+  });
+  const [newRadiologyOrder, setNewRadiologyOrder] = useState({
+    modality: 'xray',
+    study_type: '',
+    body_part: '',
+    laterality: 'bilateral',
+    clinical_indication: '',
+    priority: 'routine',
+    contrast_required: false,
+    special_instructions: ''
   });
   const [aiRequest, setAiRequest] = useState({
     note_type: 'progress_note', symptoms: '', findings: '', context: ''
