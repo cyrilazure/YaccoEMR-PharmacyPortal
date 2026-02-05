@@ -1051,21 +1051,362 @@ class YaccoEMRTester:
         
         return self.tests_passed == self.tests_run
 
+    def test_mrn_auto_generation(self):
+        """Test MRN Auto-Generation - POST /api/patients with empty mrn field"""
+        if not self.super_admin_token:
+            self.log_test("MRN Auto-Generation", False, "No super admin token")
+            return False
+        
+        # Switch to super admin token
+        original_token = self.token
+        self.token = self.super_admin_token
+        
+        patient_data = {
+            "first_name": "Auto",
+            "last_name": "MRN",
+            "date_of_birth": "1992-03-10",
+            "gender": "female",
+            "mrn": "",  # Empty MRN field to test auto-generation
+            "payment_type": "cash"
+        }
+        
+        response, error = self.make_request('POST', 'patients', patient_data)
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("MRN Auto-Generation", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            generated_mrn = data.get('mrn')
+            
+            # Verify MRN was auto-generated and starts with MRN-
+            has_mrn = bool(generated_mrn)
+            starts_with_mrn = generated_mrn.startswith('MRN') if generated_mrn else False
+            is_not_empty = generated_mrn != "" if generated_mrn else False
+            
+            success = has_mrn and starts_with_mrn and is_not_empty
+            details = f"Generated MRN: {generated_mrn}, Starts with MRN: {starts_with_mrn}"
+            self.log_test("MRN Auto-Generation", success, details)
+            return success
+        else:
+            try:
+                error_data = response.json()
+                error_msg = error_data.get('detail', f'Status: {response.status_code}')
+            except:
+                error_msg = f'Status: {response.status_code}'
+            self.log_test("MRN Auto-Generation", False, error_msg)
+            return False
+
+    def test_force_clock_out_setup(self):
+        """Setup for Force Clock-Out test - Login as nurse and clock in"""
+        # First login as nurse via region-based auth
+        login_data = {
+            "email": "testnurse@hospital.com",
+            "password": "test123",
+            "hospital_id": "e717ed11-7955-4884-8d6b-a529f918c34f",
+            "location_id": "b61d7896-b4ef-436b-868e-94a60b55c64c"
+        }
+        
+        response, error = self.make_request('POST', 'regions/auth/login', login_data)
+        if error:
+            self.log_test("Force Clock-Out Setup (Nurse Login)", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            self.nurse_token = data.get('token')
+            user = data.get('user', {})
+            self.nurse_user_id = user.get('id')
+            
+            # Now clock in as nurse
+            original_token = self.token
+            self.token = self.nurse_token
+            
+            clock_in_data = {
+                "shift_type": "morning"
+            }
+            
+            response, error = self.make_request('POST', 'nurse/shifts/clock-in', clock_in_data)
+            
+            # Restore original token
+            self.token = original_token
+            
+            if error:
+                self.log_test("Force Clock-Out Setup (Clock In)", False, error)
+                return False
+            
+            if response.status_code == 200:
+                data = response.json()
+                shift = data.get('shift', {})
+                self.nurse_shift_id = shift.get('id')
+                
+                success = bool(self.nurse_shift_id)
+                details = f"Nurse ID: {self.nurse_user_id}, Shift ID: {self.nurse_shift_id}"
+                self.log_test("Force Clock-Out Setup", success, details)
+                return success
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f'Status: {response.status_code}')
+                except:
+                    error_msg = f'Status: {response.status_code}'
+                self.log_test("Force Clock-Out Setup (Clock In)", False, error_msg)
+                return False
+        elif response.status_code == 401:
+            # Nurse user doesn't exist, create one first
+            return self.create_nurse_user_and_force_clock_out_setup()
+        else:
+            try:
+                error_data = response.json()
+                error_msg = error_data.get('detail', f'Status: {response.status_code}')
+            except:
+                error_msg = f'Status: {response.status_code}'
+            self.log_test("Force Clock-Out Setup (Nurse Login)", False, error_msg)
+            return False
+
+    def create_nurse_user_and_force_clock_out_setup(self):
+        """Create nurse user and setup for force clock-out test"""
+        # First register a nurse user with organization context
+        nurse_data = {
+            "email": "testnurse@hospital.com",
+            "password": "test123",
+            "first_name": "Test",
+            "last_name": "Nurse",
+            "role": "nurse",
+            "department": "Emergency Department",
+            "organization_id": "e717ed11-7955-4884-8d6b-a529f918c34f"
+        }
+        
+        response, error = self.make_request('POST', 'auth/register', nurse_data)
+        if error:
+            self.log_test("Create Nurse User for Force Clock-Out", False, error)
+            return False
+        
+        if response.status_code in [200, 201]:
+            # Registration successful, now setup force clock-out test
+            return self.test_force_clock_out_setup()
+        elif response.status_code == 400:
+            # User already exists, try setup again
+            return self.test_force_clock_out_setup()
+        else:
+            self.log_test("Create Nurse User for Force Clock-Out", False, f"Status: {response.status_code}")
+            return False
+
+    def test_force_clock_out_as_super_admin(self):
+        """Test Force Clock-Out as super_admin - POST /api/nursing-supervisor/force-clock-out/{nurse_id}"""
+        if not self.super_admin_token or not self.nurse_user_id:
+            self.log_test("Force Clock-Out (Super Admin)", False, "Missing super admin token or nurse user ID")
+            return False
+        
+        # Switch to super admin token
+        original_token = self.token
+        self.token = self.super_admin_token
+        
+        response, error = self.make_request('POST', f'nursing-supervisor/force-clock-out/{self.nurse_user_id}', 
+                                          params={"reason": "Test force clock-out"})
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Force Clock-Out (Super Admin)", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            message = data.get('message', '')
+            
+            success = 'clocked out' in message.lower()
+            details = f"Message: {message}"
+            self.log_test("Force Clock-Out (Super Admin)", success, details)
+            return success
+        else:
+            try:
+                error_data = response.json()
+                error_msg = error_data.get('detail', f'Status: {response.status_code}')
+            except:
+                error_msg = f'Status: {response.status_code}'
+            self.log_test("Force Clock-Out (Super Admin)", False, error_msg)
+            return False
+
+    def test_handoff_notes_api(self):
+        """Test Handoff Notes API - GET /api/nursing-supervisor/handoff-notes?hours=24"""
+        if not self.super_admin_token:
+            self.log_test("Handoff Notes API", False, "No super admin token")
+            return False
+        
+        # Switch to super admin token
+        original_token = self.token
+        self.token = self.super_admin_token
+        
+        response, error = self.make_request('GET', 'nursing-supervisor/handoff-notes', params={"hours": 24})
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Handoff Notes API", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            # Verify response structure
+            has_handoff_notes = 'handoff_notes' in data
+            has_total = 'total' in data
+            handoff_notes = data.get('handoff_notes', [])
+            is_list = isinstance(handoff_notes, list)
+            
+            # Check if handoff notes include patient info
+            has_patient_info = True
+            if handoff_notes:
+                for note in handoff_notes:
+                    if 'patients' not in note:
+                        has_patient_info = False
+                        break
+            
+            success = has_handoff_notes and has_total and is_list
+            details = f"Handoff notes count: {len(handoff_notes)}, Has patient info: {has_patient_info}"
+            self.log_test("Handoff Notes API", success, details)
+            return success
+        else:
+            try:
+                error_data = response.json()
+                error_msg = error_data.get('detail', f'Status: {response.status_code}')
+            except:
+                error_msg = f'Status: {response.status_code}'
+            self.log_test("Handoff Notes API", False, error_msg)
+            return False
+
+    def test_create_appointment(self):
+        """Test Create Appointment - POST /api/appointments"""
+        if not self.super_admin_token or not self.test_patient_id:
+            self.log_test("Create Appointment", False, "Missing super admin token or patient ID")
+            return False
+        
+        # Switch to super admin token
+        original_token = self.token
+        self.token = self.super_admin_token
+        
+        appointment_data = {
+            "patient_id": self.test_patient_id,
+            "provider_id": self.super_admin_id,
+            "appointment_type": "follow_up",
+            "date": "2025-02-06",
+            "start_time": "10:00",
+            "end_time": "10:30",
+            "reason": "Follow-up appointment"
+        }
+        
+        response, error = self.make_request('POST', 'appointments', appointment_data)
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Create Appointment", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            appointment_id = data.get('id')
+            
+            # Verify appointment fields
+            has_id = bool(appointment_id)
+            correct_patient = data.get('patient_id') == self.test_patient_id
+            correct_provider = data.get('provider_id') == self.super_admin_id
+            correct_type = data.get('appointment_type') == 'follow_up'
+            correct_date = data.get('date') == '2025-02-06'
+            
+            success = has_id and correct_patient and correct_provider and correct_type and correct_date
+            details = f"Appointment ID: {appointment_id}, Patient: {correct_patient}, Provider: {correct_provider}"
+            self.log_test("Create Appointment", success, details)
+            
+            # Store appointment ID for next test
+            self.appointment_id = appointment_id
+            return success
+        else:
+            try:
+                error_data = response.json()
+                error_msg = error_data.get('detail', f'Status: {response.status_code}')
+            except:
+                error_msg = f'Status: {response.status_code}'
+            self.log_test("Create Appointment", False, error_msg)
+            return False
+
+    def test_get_appointments(self):
+        """Test Get Appointments - GET /api/appointments"""
+        if not self.super_admin_token:
+            self.log_test("Get Appointments", False, "No super admin token")
+            return False
+        
+        # Switch to super admin token
+        original_token = self.token
+        self.token = self.super_admin_token
+        
+        response, error = self.make_request('GET', 'appointments')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Get Appointments", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            # Should return a list of appointments
+            is_list = isinstance(data, list)
+            has_appointments = len(data) > 0 if is_list else False
+            
+            # Check if our created appointment is in the list
+            found_appointment = False
+            if is_list and hasattr(self, 'appointment_id'):
+                for appt in data:
+                    if appt.get('id') == self.appointment_id:
+                        found_appointment = True
+                        break
+            
+            success = is_list and (has_appointments or not hasattr(self, 'appointment_id'))
+            details = f"Appointments count: {len(data) if is_list else 'N/A'}, Found created appointment: {found_appointment}"
+            self.log_test("Get Appointments", success, details)
+            return success
+        else:
+            try:
+                error_data = response.json()
+                error_msg = error_data.get('detail', f'Status: {response.status_code}')
+            except:
+                error_msg = f'Status: {response.status_code}'
+            self.log_test("Get Appointments", False, error_msg)
+            return False
+
     def run_review_tests(self):
         """Run all tests for the review request"""
         print("🧪 Starting Yacco EMR Backend Testing - Review Request")
+        print("=" * 60)
+        print("Testing specific fixes:")
+        print("1. MRN Auto-Generation")
+        print("2. Force Clock-Out (as super_admin)")
+        print("3. Handoff Notes API")
+        print("4. Appointments")
         print("=" * 60)
         
         # Test sequence for review request
         tests = [
             self.test_health_check,
             self.test_super_admin_login,
-            self.test_patient_creation_with_mrn_and_payment,
-            self.test_patient_creation_cash_payment,
-            self.test_nurse_login,
-            self.test_nurse_shift_clock_in,
-            self.test_nurse_current_shift,
-            self.test_nurse_shift_clock_out
+            self.test_mrn_auto_generation,
+            self.test_force_clock_out_setup,
+            self.test_force_clock_out_as_super_admin,
+            self.test_handoff_notes_api,
+            self.test_patient_creation_with_mrn_and_payment,  # Create patient for appointments
+            self.test_create_appointment,
+            self.test_get_appointments
         ]
         
         for test in tests:
