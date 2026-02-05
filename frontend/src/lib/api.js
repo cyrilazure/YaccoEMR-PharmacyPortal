@@ -549,6 +549,9 @@ export const regionAPI = {
   // Super Admin - Get Hospital Departments
   getHospitalDepartments: (hospitalId) => api.get(`/hospital/${hospitalId}/admin/departments`),
   
+  // Super Admin - Seed Departments for Existing Hospital
+  seedHospitalDepartments: (hospitalId) => api.post(`/regions/admin/hospitals/${hospitalId}/seed-departments`),
+  
   // Super Admin - Hospital Management (Delete/Status Change)
   deleteHospital: (hospitalId) => api.delete(`/regions/admin/hospitals/${hospitalId}`),
   updateHospitalStatus: (hospitalId, data) => api.put(`/regions/admin/hospitals/${hospitalId}/status`, data),
