@@ -1230,22 +1230,199 @@ agent_communication:
       All critical organization management workflows are working correctly.
 
 user_problem_statement: |
-  Test the following backend changes for the Yacco EMR system:
+  Test the new backend modules for Yacco EMR:
 
-  **1. Email Service Status Endpoint:**
-  - GET /api/email/status - Should return service status (inactive without API key is expected)
-  - Verify it returns: service, status, provider, sender_email, message fields
+  **1. Health Check**
+  - GET /api/health
 
-  **2. Backend Health Check:**
-  - GET /api/health - Verify backend is running
-
-  **3. Super Admin Login:**
+  **2. Login as Super Admin:**
   - POST /api/auth/login with email: ygtnetworks@gmail.com, password: test123
-  - Verify token is returned and role is super_admin
 
-  **Test Environment:**
-  - Backend URL: http://localhost:8001
-  - Super Admin: ygtnetworks@gmail.com / test123
+  **3. Test e-Prescribing Module:**
+  - GET /api/prescriptions/drugs/database - Get drug database
+  - GET /api/prescriptions/drugs/search?query=amox - Search drugs
+
+  **4. Test NHIS Claims Module:**
+  - GET /api/nhis/tariff-codes - Get NHIS tariff codes
+  - GET /api/nhis/diagnosis-codes - Get ICD-10 codes
+
+  **5. Test Radiology Module:**
+  - GET /api/radiology/modalities - Get imaging modalities
+  - GET /api/radiology/study-types - Get study types
+
+  **6. Test Bed Management Module:**
+  - GET /api/beds/wards - Get wards (should be empty initially)
+  - POST /api/beds/wards/seed-defaults - Seed default wards
+  - GET /api/beds/census - Get ward census
+
+  Backend URL: https://code-resume-25.preview.emergentagent.com
+  Super Admin: ygtnetworks@gmail.com / test123
+
+backend:
+  - task: "Health Check API"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of Health Check API - GET /api/health"
+      - working: true
+        agent: "testing"
+        comment: "✅ Health Check API - GET /api/health returns status='healthy' with timestamp. Backend is running and responding correctly."
+
+  - task: "Super Admin Authentication"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of Super Admin login with ygtnetworks@gmail.com / test123"
+      - working: true
+        agent: "testing"
+        comment: "✅ Super Admin Authentication - POST /api/auth/login with ygtnetworks@gmail.com / test123 successful. JWT token verified to contain role=super_admin. Email: ygtnetworks@gmail.com, Role: super_admin, Token Role: super_admin. Authentication working correctly."
+
+  - task: "e-Prescribing Drug Database"
+    implemented: true
+    working: true
+    file: "backend/prescription_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of e-Prescribing drug database - GET /api/prescriptions/drugs/database"
+      - working: true
+        agent: "testing"
+        comment: "✅ e-Prescribing Drug Database - GET /api/prescriptions/drugs/database returns comprehensive drug database with 20 drugs. Response includes drugs array and total count. Drug structure contains name, generic, class, forms, and strengths fields. All required fields present and working correctly."
+
+  - task: "e-Prescribing Drug Search"
+    implemented: true
+    working: true
+    file: "backend/prescription_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of e-Prescribing drug search - GET /api/prescriptions/drugs/search?query=amox"
+      - working: true
+        agent: "testing"
+        comment: "✅ e-Prescribing Drug Search - GET /api/prescriptions/drugs/search?query=amox returns filtered results. Successfully found Amoxicillin in search results. Search functionality working correctly with proper drug matching."
+
+  - task: "NHIS Tariff Codes"
+    implemented: true
+    working: true
+    file: "backend/nhis_claims_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of NHIS tariff codes - GET /api/nhis/tariff-codes"
+      - working: true
+        agent: "testing"
+        comment: "✅ NHIS Tariff Codes - GET /api/nhis/tariff-codes returns comprehensive Ghana NHIS tariff codes. Found 79 codes with proper structure (code, description, category, price). Includes Ghana-specific codes (OPD, LAB, IMG categories). All required fields present and working correctly."
+
+  - task: "NHIS ICD-10 Diagnosis Codes"
+    implemented: true
+    working: true
+    file: "backend/nhis_claims_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of NHIS ICD-10 diagnosis codes - GET /api/nhis/diagnosis-codes"
+      - working: true
+        agent: "testing"
+        comment: "✅ NHIS ICD-10 Diagnosis Codes - GET /api/nhis/diagnosis-codes returns ICD-10 codes common in Ghana. Found 12 codes with proper structure (code, description). Includes Ghana-relevant codes like B50 (Malaria), E11 (Diabetes), I10 (Hypertension). All required fields present and working correctly."
+
+  - task: "Radiology Imaging Modalities"
+    implemented: true
+    working: true
+    file: "backend/radiology_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of radiology imaging modalities - GET /api/radiology/modalities"
+      - working: true
+        agent: "testing"
+        comment: "✅ Radiology Imaging Modalities - GET /api/radiology/modalities returns comprehensive list of imaging modalities. Found 8 modalities with proper structure (value, name). Includes common modalities: xray, ct, mri, ultrasound, mammography, fluoroscopy, nuclear, pet. All required fields present and working correctly."
+
+  - task: "Radiology Study Types"
+    implemented: true
+    working: true
+    file: "backend/radiology_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of radiology study types - GET /api/radiology/study-types"
+      - working: true
+        agent: "testing"
+        comment: "✅ Radiology Study Types - GET /api/radiology/study-types returns comprehensive study types organized by modality. Found studies for xray (12 studies), ct (8 studies), mri (8 studies), ultrasound (8 studies), mammography (2 studies). Study structure includes code, name, body_part fields. All modalities and study types working correctly."
+
+  - task: "Bed Management Wards (Initial)"
+    implemented: true
+    working: true
+    file: "backend/bed_management_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of bed management wards - GET /api/beds/wards (should be empty initially)"
+      - working: true
+        agent: "testing"
+        comment: "✅ Bed Management Wards (Initial) - GET /api/beds/wards returns proper structure with wards array and total count. Initially empty as expected. Structure validation successful."
+
+  - task: "Bed Management Seed Defaults"
+    implemented: true
+    working: true
+    file: "backend/bed_management_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of bed management seed defaults - POST /api/beds/wards/seed-defaults"
+      - working: true
+        agent: "testing"
+        comment: "✅ Bed Management Seed Defaults - POST /api/beds/wards/seed-defaults successfully creates default ward templates. Message indicates wards were created or already exist. Seeding functionality working correctly."
+
+  - task: "Bed Management Census"
+    implemented: true
+    working: true
+    file: "backend/bed_management_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of bed management census - GET /api/beds/census"
+      - working: true
+        agent: "testing"
+        comment: "✅ Bed Management Census - GET /api/beds/census returns comprehensive ward census data. Includes summary (total_beds, occupied, available, overall_occupancy), wards array, critical_care section, and timestamp. All required fields present and census calculation working correctly."
 
 backend:
   - task: "Email Service Status Endpoint"
