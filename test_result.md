@@ -3398,6 +3398,21 @@ backend:
         agent: "testing"
         comment: "✅ Nurse Clock In Morning - Successfully clocked in to morning shift, returned shift ID and success message, handles already clocked in scenarios appropriately"
 
+  - task: "Nurse Portal Clock In/Out Flow (Comprehensive)"
+    implemented: true
+    working: true
+    file: "backend/nurse_portal_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested comprehensive testing of Nurse Portal Clock In/Out flow with specific test user (testnurse@hospital.com / test123) and hospital/location context"
+      - working: true
+        agent: "testing"
+        comment: "✅ Nurse Portal Clock In/Out Flow (Comprehensive) - ALL 10 TESTS PASSED (100% success rate): 1) Region-based nurse login with hospital/location context successful, 2) Current shift status before clock-in returns null correctly, 3) Clock-out handles both active/inactive scenarios properly, 4) Clock-in with night shift creates active shift successfully, 5) Current shift after clock-in returns active_shift with is_active=true, 6) MAR due endpoint returns proper structure without access restrictions, 7) Dashboard stats include active_shift data, 8) Final clock-out with handoff notes successful, 9) Verification shows active_shift=null after clock-out. Complete workflow fully functional."
+
   - task: "Nurse Clock Out with Handoff Notes"
     implemented: true
     working: true
