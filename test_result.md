@@ -4794,6 +4794,36 @@ frontend:
         agent: "testing"
         comment: "✅ Radiologist (Full Access) - WORKING: Successfully tested with radiologist@yacco.health. Verified: 1) 'Ordering Physician' column is VISIBLE (showing 'Super Admin') ✓, 2) Eye button is VISIBLE (found 4 buttons) ✓, 3) All action buttons VISIBLE (Schedule, Start, Complete) ✓, 4) Order details dialog shows full patient clinical details: Patient DOB (1980-01-14) ✓, Clinical Indication ('Severe headache with neurological symptoms') ✓, Relevant History ('No prior head trauma') ✓. All radiologist access features working correctly."
 
+  - task: "Physician Can Order Imaging Studies"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/pages/PatientChart.jsx"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of physician ability to order imaging studies from Patient Chart. Should verify: 1) Imaging tab exists (8 tabs total), 2) Order Imaging button visible, 3) Dialog opens with radiology order form, 4) All form fields present (Modality, Study Type, Body Part, Laterality, Clinical Indication, Priority, Contrast Required, Special Instructions), 5) Physicians CAN create radiology orders"
+      - working: "NA"
+        agent: "testing"
+        comment: "❌ UNABLE TO TEST: Critical test environment issue - Hospital data not loading after region selection. After selecting 'Greater Accra Region', the hospital list does not appear, preventing login flow completion. Cannot test physician imaging order functionality without successful login. ISSUE: The region-based login flow is broken - 'ygtworks Health Center' hospital does not appear in hospital selection step. This blocks all testing that requires physician login. CODE REVIEW: PatientChart.jsx lines 614, 1425-1567 show Imaging tab IS implemented with Order Imaging button and complete radiology order form with all required fields. Implementation appears correct but cannot verify functionality due to login flow issue."
+
+  - task: "Nursing Supervisor Bed Management Access"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/pages/NursingSupervisorDashboard.jsx"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of nursing supervisor bed management access. Should verify: 1) Login as nursing_supervisor, 2) Navigate to /nursing-supervisor dashboard, 3) Verify 'Beds' tab exists (6 tabs total), 4) Click Beds tab, 5) Verify 3 buttons (Open Full Bed Management, View All Patients, Appointments), 6) Click Open Full Bed Management → navigate to /bed-management, 7) Verify access to bed management portal"
+      - working: "NA"
+        agent: "testing"
+        comment: "❌ UNABLE TO TEST: Same critical test environment issue - Hospital data not loading after region selection. Cannot complete login flow for nursing_supervisor@yacco.health due to missing hospital list. This blocks all nursing supervisor dashboard testing. CODE REVIEW: NursingSupervisorDashboard.jsx lines 470-652 show Beds tab IS implemented with all 3 required buttons (Open Full Bed Management line 618, View All Patients line 623, Appointments line 630). Implementation appears correct but cannot verify functionality due to login flow issue."
+
 metadata:
   created_by: "testing_agent"
   version: "1.0"
