@@ -1023,6 +1023,8 @@ export default function PatientChart() {
                 <CardTitle>Orders</CardTitle>
                 <CardDescription>Labs, imaging, and medication orders</CardDescription>
               </div>
+              {/* Hide New Order for nurses, nursing supervisors, and floor supervisors */}
+              {!['nurse', 'nursing_supervisor', 'floor_supervisor'].includes(user?.role) ? (
               <Dialog open={orderDialogOpen} onOpenChange={setOrderDialogOpen}>
                 <DialogTrigger asChild>
                   <Button className="gap-2" data-testid="add-order-btn">
@@ -1078,6 +1080,11 @@ export default function PatientChart() {
                   </form>
                 </DialogContent>
               </Dialog>
+              ) : (
+                <Badge variant="outline" className="text-amber-600 border-amber-300">
+                  View Only
+                </Badge>
+              )}
             </CardHeader>
             <CardContent>
               {orders.length === 0 ? (
