@@ -546,6 +546,9 @@ export const regionAPI = {
   // Super Admin - Create Staff for any Hospital
   createHospitalStaff: (hospitalId, data) => api.post(`/regions/admin/hospitals/${hospitalId}/staff`, data),
   
+  // Super Admin - Get Hospital Departments
+  getHospitalDepartments: (hospitalId) => api.get(`/hospital/${hospitalId}/admin/departments`),
+  
   // Super Admin - Hospital Management (Delete/Status Change)
   deleteHospital: (hospitalId) => api.delete(`/regions/admin/hospitals/${hospitalId}`),
   updateHospitalStatus: (hospitalId, data) => api.put(`/regions/admin/hospitals/${hospitalId}/status`, data),
