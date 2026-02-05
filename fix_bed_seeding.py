@@ -19,6 +19,8 @@ with open('/app/backend/.env', 'r') as f:
     for line in f:
         if '=' in line and not line.startswith('#'):
             key, value = line.strip().split('=', 1)
+            # Remove quotes if present
+            value = value.strip('"').strip("'")
             env_vars[key] = value
 
 mongo_url = env_vars.get('MONGO_URL')
