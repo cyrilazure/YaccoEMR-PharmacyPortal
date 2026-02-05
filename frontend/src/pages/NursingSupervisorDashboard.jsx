@@ -1014,6 +1014,68 @@ export default function NursingSupervisorDashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Force Clock-Out Dialog */}
+      <Dialog open={forceClockOutOpen} onOpenChange={setForceClockOutOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <Clock className="w-5 h-5" />
+              Force Clock-Out
+            </DialogTitle>
+            <DialogDescription>
+              This will end the nurse's shift and notify them.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedNurse && (
+            <div className="space-y-4 py-4">
+              <div className="p-3 bg-slate-50 rounded-lg">
+                <p className="font-medium">{selectedNurse.first_name} {selectedNurse.last_name}</p>
+                <p className="text-sm text-gray-500">{selectedNurse.email}</p>
+                {selectedNurse.active_shift && (
+                  <p className="text-sm text-emerald-600 mt-1">
+                    On shift since: {new Date(selectedNurse.active_shift.clock_in_time).toLocaleString()}
+                  </p>
+                )}
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Reason for Force Clock-Out</Label>
+                <Select 
+                  value={forceClockOutReason} 
+                  onValueChange={setForceClockOutReason}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Forgot to clock out">Forgot to clock out</SelectItem>
+                    <SelectItem value="Shift ended - system correction">Shift ended - system correction</SelectItem>
+                    <SelectItem value="Emergency shift change">Emergency shift change</SelectItem>
+                    <SelectItem value="Administrative action">Administrative action</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setForceClockOutOpen(false);
+              setSelectedNurse(null);
+            }}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleForceClockOut}
+              disabled={saving}
+            >
+              {saving ? 'Processing...' : 'Confirm Clock-Out'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
