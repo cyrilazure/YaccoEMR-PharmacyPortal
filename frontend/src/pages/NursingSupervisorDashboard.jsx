@@ -104,6 +104,13 @@ export default function NursingSupervisorDashboard() {
   
   const [saving, setSaving] = useState(false);
   const [nurseWorkload, setNurseWorkload] = useState(null);
+  
+  // Handoff notes and force clock-out
+  const [handoffNotes, setHandoffNotes] = useState([]);
+  const [forceClockOutOpen, setForceClockOutOpen] = useState(false);
+  const [forceClockOutReason, setForceClockOutReason] = useState('Forgot to clock out');
+  const [viewHandoffOpen, setViewHandoffOpen] = useState(false);
+  const [selectedHandoff, setSelectedHandoff] = useState(null);
 
   // Access check
   useEffect(() => {
