@@ -609,6 +609,48 @@ export default function NursingSupervisorDashboard() {
                 )}
               </div>
             </CardContent>
+
+        {/* Bed Management Tab */}
+        <TabsContent value="beds" className="mt-6">
+          <div className="space-y-4">
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => navigate('/bed-management')}
+                className="gap-2 bg-sky-600 hover:bg-sky-700"
+              >
+                <Bed className="w-4 h-4" /> Open Full Bed Management
+              </Button>
+              <Button 
+                onClick={() => navigate('/patients')}
+                variant="outline"
+                className="gap-2"
+              >
+                <Users className="w-4 h-4" /> View All Patients
+              </Button>
+              <Button 
+                onClick={() => navigate('/scheduling')}
+                variant="outline"
+                className="gap-2"
+              >
+                <Calendar className="w-4 h-4" /> Appointments
+              </Button>
+            </div>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Quick Bed Census</CardTitle>
+                <CardDescription>Real-time bed availability overview</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-slate-500 text-center py-8">
+                  Use the "Open Full Bed Management" button above to access complete bed management features including:
+                  ward census, patient admissions, transfers, discharges, and bed assignments.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
           </Card>
         </TabsContent>
 
