@@ -73,6 +73,10 @@ export default function NursingSupervisorDashboard() {
   const [reports, setReports] = useState([]);
   const [currentShifts, setCurrentShifts] = useState([]);
   const [unassignedPatients, setUnassignedPatients] = useState([]);
+  const [bedCensus, setBedCensus] = useState({ summary: {}, wards: [] });
+  const [wards, setWards] = useState([]);
+  const [beds, setBeds] = useState([]);
+  const [admissions, setAdmissions] = useState([]);
   
   // Dialogs
   const [assignPatientOpen, setAssignPatientOpen] = useState(false);
