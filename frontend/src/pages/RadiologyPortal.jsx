@@ -218,14 +218,28 @@ export default function RadiologyPortal() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
             <Scan className="w-7 h-7 text-purple-600" />
-            Radiology Department
+            {isRadiologist ? 'Radiology - Physician Dashboard' : 'Radiology Department - Tech Station'}
           </h1>
-          <p className="text-slate-500 mt-1">Manage imaging orders and reports</p>
+          <p className="text-slate-500 mt-1">
+            {isRadiologist ? 'Review studies and create diagnostic reports' : 'Manage imaging orders and workflow'}
+          </p>
         </div>
-        <Button onClick={fetchOrders} variant="outline" className="gap-2">
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
+        <div className="flex gap-2">
+          {isRadiologist && (
+            <Badge variant="outline" className="text-emerald-600 border-emerald-300 px-3 py-1">
+              Radiologist
+            </Badge>
+          )}
+          {isRadiologyStaff && (
+            <Badge variant="outline" className="text-blue-600 border-blue-300 px-3 py-1">
+              Radiology Tech
+            </Badge>
+          )}
+          <Button onClick={fetchOrders} variant="outline" className="gap-2">
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
