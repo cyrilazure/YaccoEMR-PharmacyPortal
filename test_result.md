@@ -3599,7 +3599,9 @@ metadata:
 
 test_plan:
   current_focus:
-    - "All requested tests completed successfully"
+    - "Email Service Status"
+    - "Nurse Access Restrictions"
+    - "UI/UX Improvements"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
