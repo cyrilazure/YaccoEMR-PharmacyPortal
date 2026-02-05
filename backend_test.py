@@ -1452,6 +1452,222 @@ class YaccoEMRTester:
             self.log_test("Backend Health Check", False, error_msg)
             return False
 
+    def test_get_hospital_admins_list(self):
+        """Test Get Hospital Admins List - GET /api/regions/admin/hospital-admins"""
+        if not self.super_admin_token:
+            self.log_test("Get Hospital Admins List", False, "No super admin token")
+            return False
+        
+        # Switch to super admin token
+        original_token = self.token
+        self.token = self.super_admin_token
+        
+        response, error = self.make_request('GET', 'regions/admin/hospital-admins')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Get Hospital Admins List", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            # Should return a list or dict with hospitals
+            hospitals = data.get('hospitals', []) if isinstance(data, dict) else data
+            is_list = isinstance(hospitals, list)
+            has_hospitals = len(hospitals) > 0 if is_list else False
+            
+            # Store first hospital_id for department testing
+            if has_hospitals:
+                self.test_hospital_id = hospitals[0].get('id')
+            
+            success = is_list
+            details = f"Hospitals count: {len(hospitals) if is_list else 'N/A'}, First Hospital ID: {getattr(self, 'test_hospital_id', 'None')}"
+            self.log_test("Get Hospital Admins List", success, details)
+            return success
+        else:
+            try:
+                error_data = response.json()
+                error_msg = error_data.get('detail', f'Status: {response.status_code}')
+            except:
+                error_msg = f'Status: {response.status_code}'
+            self.log_test("Get Hospital Admins List", False, error_msg)
+            return False
+
+    def test_get_hospital_departments_before_seeding(self):
+        """Test Get Hospital Departments Before Seeding - GET /api/hospital/{hospital_id}/admin/departments"""
+        if not self.super_admin_token or not hasattr(self, 'test_hospital_id'):
+            self.log_test("Get Hospital Departments (Before Seeding)", False, "No super admin token or hospital ID")
+            return False
+        
+        # Switch to super admin token
+        original_token = self.token
+        self.token = self.super_admin_token
+        
+        response, error = self.make_request('GET', f'hospital/{self.test_hospital_id}/admin/departments')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Get Hospital Departments (Before Seeding)", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            # Should return departments list and total count
+            departments = data.get('departments', [])
+            total = data.get('total', 0)
+            is_list = isinstance(departments, list)
+            
+            # Store initial department count
+            self.initial_department_count = total
+            
+            success = is_list and 'total' in data
+            details = f"Initial departments count: {total}, Hospital ID: {self.test_hospital_id}"
+            self.log_test("Get Hospital Departments (Before Seeding)", success, details)
+            return success
+        else:
+            try:
+                error_data = response.json()
+                error_msg = error_data.get('detail', f'Status: {response.status_code}')
+            except:
+                error_msg = f'Status: {response.status_code}'
+            self.log_test("Get Hospital Departments (Before Seeding)", False, error_msg)
+            return False
+
+    def test_seed_departments_endpoint(self):
+        """Test Seed Departments Endpoint - POST /api/regions/admin/hospitals/{hospital_id}/seed-departments"""
+        if not self.super_admin_token or not hasattr(self, 'test_hospital_id'):
+            self.log_test("Seed Departments Endpoint", False, "No super admin token or hospital ID")
+            return False
+        
+        # Switch to super admin token
+        original_token = self.token
+        self.token = self.super_admin_token
+        
+        response, error = self.make_request('POST', f'regions/admin/hospitals/{self.test_hospital_id}/seed-departments')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Seed Departments Endpoint", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            message = data.get('message', '')
+            
+            # Should either seed departments or return "already has departments"
+            is_seeded = 'seeded' in message.lower()
+            already_has = 'already has departments' in message.lower()
+            
+            success = is_seeded or already_has
+            details = f"Message: {message}"
+            self.log_test("Seed Departments Endpoint", success, details)
+            return success
+        else:
+            try:
+                error_data = response.json()
+                error_msg = error_data.get('detail', f'Status: {response.status_code}')
+            except:
+                error_msg = f'Status: {response.status_code}'
+            self.log_test("Seed Departments Endpoint", False, error_msg)
+            return False
+
+    def test_get_hospital_departments_after_seeding(self):
+        """Test Get Hospital Departments After Seeding - GET /api/hospital/{hospital_id}/admin/departments"""
+        if not self.super_admin_token or not hasattr(self, 'test_hospital_id'):
+            self.log_test("Get Hospital Departments (After Seeding)", False, "No super admin token or hospital ID")
+            return False
+        
+        # Switch to super admin token
+        original_token = self.token
+        self.token = self.super_admin_token
+        
+        response, error = self.make_request('GET', f'hospital/{self.test_hospital_id}/admin/departments')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Get Hospital Departments (After Seeding)", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            # Should return departments list and total count
+            departments = data.get('departments', [])
+            total = data.get('total', 0)
+            is_list = isinstance(departments, list)
+            
+            # Compare with initial count
+            initial_count = getattr(self, 'initial_department_count', 0)
+            departments_exist = total > 0
+            
+            success = is_list and 'total' in data and departments_exist
+            details = f"Final departments count: {total}, Initial count: {initial_count}, Departments exist: {departments_exist}"
+            self.log_test("Get Hospital Departments (After Seeding)", success, details)
+            return success
+        else:
+            try:
+                error_data = response.json()
+                error_msg = error_data.get('detail', f'Status: {response.status_code}')
+            except:
+                error_msg = f'Status: {response.status_code}'
+            self.log_test("Get Hospital Departments (After Seeding)", False, error_msg)
+            return False
+
+    def run_department_seeding_tests(self):
+        """Run Department Auto-Seeding Tests as specified in review request"""
+        print("🧪 Starting Department Auto-Seeding Testing")
+        print("=" * 60)
+        print("Testing Department Auto-Seeding Functionality:")
+        print("1. Login as Super Admin (ygtnetworks@gmail.com / test123)")
+        print("2. Get list of hospitals")
+        print("3. Check existing departments for a hospital")
+        print("4. Test seed departments endpoint")
+        print("5. Verify departments after seeding")
+        print("=" * 60)
+        
+        # Test sequence for department seeding
+        tests = [
+            self.test_health_check,
+            self.test_super_admin_login,
+            self.test_get_hospital_admins_list,
+            self.test_get_hospital_departments_before_seeding,
+            self.test_seed_departments_endpoint,
+            self.test_get_hospital_departments_after_seeding
+        ]
+        
+        for test in tests:
+            try:
+                test()
+            except Exception as e:
+                self.log_test(test.__name__, False, f"Exception: {str(e)}")
+        
+        # Print summary
+        print("\n" + "=" * 60)
+        print(f"📊 DEPARTMENT AUTO-SEEDING TEST SUMMARY")
+        print(f"Total Tests: {self.tests_run}")
+        print(f"Passed: {self.tests_passed}")
+        print(f"Failed: {self.tests_run - self.tests_passed}")
+        print(f"Success Rate: {(self.tests_passed/self.tests_run*100):.1f}%")
+        
+        # Print failed tests
+        failed_tests = [t for t in self.test_results if not t['success']]
+        if failed_tests:
+            print(f"\n❌ FAILED TESTS:")
+            for test in failed_tests:
+                print(f"  - {test['test']}: {test['details']}")
+        
+        return self.tests_passed == self.tests_run
+
     def run_review_request_tests(self):
         """Run tests for the specific review request"""
         print("🧪 Starting Yacco EMR Backend Testing - Review Request")
