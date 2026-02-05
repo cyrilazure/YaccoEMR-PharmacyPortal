@@ -378,6 +378,28 @@ export default function PatientChart() {
     return flagStyles[flag] || { label: flag, className: 'bg-slate-100 text-slate-700' };
   };
 
+  const getStatusBadge = (status) => {
+    const colors = {
+      ordered: 'bg-yellow-100 text-yellow-800',
+      scheduled: 'bg-blue-100 text-blue-800',
+      in_progress: 'bg-purple-100 text-purple-800',
+      completed: 'bg-green-100 text-green-800',
+      reported: 'bg-emerald-100 text-emerald-800',
+      cancelled: 'bg-red-100 text-red-800'
+    };
+    return colors[status] || 'bg-gray-100 text-gray-800';
+  };
+
+  const getPriorityBadge = (priority) => {
+    const colors = {
+      routine: 'bg-gray-100 text-gray-600',
+      urgent: 'bg-amber-100 text-amber-700',
+      stat: 'bg-red-100 text-red-700',
+      emergency: 'bg-red-200 text-red-800'
+    };
+    return colors[priority] || 'bg-gray-100 text-gray-600';
+  };
+
   const handleGenerateAINote = async () => {
     setAiGenerating(true);
     try {
