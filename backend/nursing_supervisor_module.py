@@ -582,6 +582,97 @@ def create_nursing_supervisor_endpoints(db, get_current_user):
             "pages": (total + limit - 1) // limit
         }
     
+    # ============ Force Clock-Out (Supervisor Only) ============
+    
+    @nursing_supervisor_router.post("/force-clock-out/{nurse_id}")
+    async def force_clock_out_nurse(
+        nurse_id: str,
+        reason: str = "Supervisor forced clock-out",
+        current_user: dict = Depends(get_current_user)
+    ):
+        """Force clock out a nurse who forgot to clock out"""
+        require_supervisor_role(current_user)
+        
+        # Find active shift for this nurse
+        active_shift = await db.nurse_shifts.find_one({
+            "nurse_id": nurse_id,
+            "is_active": True
+        })
+        
+        if not active_shift:
+            raise HTTPException(status_code=404, detail="Nurse has no active shift")
+        
+        now = datetime.now(timezone.utc)
+        
+        await db.nurse_shifts.update_one(
+            {"id": active_shift["id"]},
+            {"$set": {
+                "is_active": False,
+                "clock_out_time": now.isoformat(),
+                "forced_clock_out": True,
+                "forced_by": current_user["id"],
+                "forced_by_name": f"{current_user['first_name']} {current_user['last_name']}",
+                "forced_reason": reason
+            }}
+        )
+        
+        # Notify nurse
+        notification = {
+            "id": str(uuid.uuid4()),
+            "user_id": nurse_id,
+            "type": "forced_clock_out",
+            "title": "Shift Ended by Supervisor",
+            "message": f"Your shift was ended by supervisor. Reason: {reason}",
+            "priority": "high",
+            "is_read": False,
+            "created_at": now.isoformat()
+        }
+        await db.notifications.insert_one(notification)
+        
+        return {"message": "Nurse clocked out successfully"}
+    
+    # ============ Handoff Notes ============
+    
+    @nursing_supervisor_router.get("/handoff-notes")
+    async def get_recent_handoff_notes(
+        department_id: Optional[str] = None,
+        hours: int = 24,
+        current_user: dict = Depends(get_current_user)
+    ):
+        """Get recent handoff notes from completed shifts"""
+        require_supervisor_role(current_user)
+        
+        org_id = current_user.get("organization_id")
+        start_time = datetime.now(timezone.utc) - timedelta(hours=hours)
+        
+        query = {
+            "is_active": False,
+            "clock_out_time": {"$gte": start_time.isoformat()},
+            "handoff_notes": {"$exists": True, "$ne": None, "$ne": ""}
+        }
+        if org_id:
+            query["organization_id"] = org_id
+        if department_id:
+            query["department_id"] = department_id
+        
+        shifts = await db.nurse_shifts.find(
+            query, {"_id": 0}
+        ).sort("clock_out_time", -1).to_list(50)
+        
+        # Enrich with patient info
+        for shift in shifts:
+            # Get patients assigned during this shift
+            assignments = await db.nurse_assignments.find({
+                "nurse_id": shift["nurse_id"],
+                "assigned_at": {"$lte": shift.get("clock_out_time", "")},
+            }, {"_id": 0, "patient_id": 1, "patient_name": 1, "room_bed": 1}).to_list(20)
+            shift["patients"] = assignments
+        
+        return {
+            "handoff_notes": shifts,
+            "total": len(shifts)
+        }
+    
     return nursing_supervisor_router
 
 
