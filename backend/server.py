@@ -48,6 +48,12 @@ class UserRole(str, Enum):
     HOSPITAL_IT_ADMIN = "hospital_it_admin"
     FACILITY_ADMIN = "facility_admin"
     BILLER = "biller"
+    PHARMACIST = "pharmacist"
+    PHARMACY_TECH = "pharmacy_tech"
+    RADIOLOGY_STAFF = "radiology_staff"
+    RADIOLOGIST = "radiologist"
+    BED_MANAGER = "bed_manager"
+    RECORDS_OFFICER = "records_officer"
     SUPER_ADMIN = "super_admin"
 
 class OrderType(str, Enum):
