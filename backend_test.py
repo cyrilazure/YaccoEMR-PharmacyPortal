@@ -1386,6 +1386,112 @@ class YaccoEMRTester:
             self.log_test("Get Appointments", False, error_msg)
             return False
 
+    def test_email_service_status(self):
+        """Test Email Service Status Endpoint - GET /api/email/status"""
+        response, error = self.make_request('GET', 'email/status')
+        if error:
+            self.log_test("Email Service Status", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            # Verify required fields are present
+            has_service = 'service' in data
+            has_status = 'status' in data
+            has_provider = 'provider' in data
+            has_sender_email = 'sender_email' in data
+            has_message = 'message' in data
+            
+            # Verify service field value
+            correct_service = data.get('service') == 'email'
+            
+            # Status should be either 'active' or 'inactive'
+            valid_status = data.get('status') in ['active', 'inactive']
+            
+            success = has_service and has_status and has_provider and has_sender_email and has_message and correct_service and valid_status
+            details = f"Service: {data.get('service')}, Status: {data.get('status')}, Provider: {data.get('provider')}, Sender: {data.get('sender_email')}"
+            self.log_test("Email Service Status", success, details)
+            return success
+        else:
+            try:
+                error_data = response.json()
+                error_msg = error_data.get('detail', f'Status: {response.status_code}')
+            except:
+                error_msg = f'Status: {response.status_code}'
+            self.log_test("Email Service Status", False, error_msg)
+            return False
+
+    def test_backend_health_check(self):
+        """Test Backend Health Check - GET /api/health"""
+        response, error = self.make_request('GET', 'health')
+        if error:
+            self.log_test("Backend Health Check", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            # Verify required fields are present
+            has_status = 'status' in data
+            has_timestamp = 'timestamp' in data
+            
+            # Verify status is healthy
+            is_healthy = data.get('status') == 'healthy'
+            
+            success = has_status and has_timestamp and is_healthy
+            details = f"Status: {data.get('status')}, Timestamp: {data.get('timestamp')}"
+            self.log_test("Backend Health Check", success, details)
+            return success
+        else:
+            try:
+                error_data = response.json()
+                error_msg = error_data.get('detail', f'Status: {response.status_code}')
+            except:
+                error_msg = f'Status: {response.status_code}'
+            self.log_test("Backend Health Check", False, error_msg)
+            return False
+
+    def run_review_request_tests(self):
+        """Run tests for the specific review request"""
+        print("🧪 Starting Yacco EMR Backend Testing - Review Request")
+        print("=" * 60)
+        print("Testing Review Request Items:")
+        print("1. Email Service Status Endpoint: GET /api/email/status")
+        print("2. Backend Health Check: GET /api/health")
+        print("3. Super Admin Login: POST /api/auth/login (ygtnetworks@gmail.com / test123)")
+        print("=" * 60)
+        
+        # Test sequence for review request
+        tests = [
+            self.test_email_service_status,
+            self.test_backend_health_check,
+            self.test_super_admin_login
+        ]
+        
+        for test in tests:
+            try:
+                test()
+            except Exception as e:
+                self.log_test(test.__name__, False, f"Exception: {str(e)}")
+        
+        # Print summary
+        print("\n" + "=" * 60)
+        print(f"📊 REVIEW REQUEST TEST SUMMARY")
+        print(f"Total Tests: {self.tests_run}")
+        print(f"Passed: {self.tests_passed}")
+        print(f"Failed: {self.tests_run - self.tests_passed}")
+        print(f"Success Rate: {(self.tests_passed/self.tests_run*100):.1f}%")
+        
+        # Print failed tests
+        failed_tests = [t for t in self.test_results if not t['success']]
+        if failed_tests:
+            print(f"\n❌ FAILED TESTS:")
+            for test in failed_tests:
+                print(f"  - {test['test']}: {test['details']}")
+        
+        return self.tests_passed == self.tests_run
+
     def run_review_tests(self):
         """Run all tests for the review request"""
         print("🧪 Starting Yacco EMR Backend Testing - Review Request")
