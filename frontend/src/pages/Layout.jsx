@@ -102,6 +102,30 @@ const navItems = [
     color: 'text-green-500'
   },
   { 
+    to: '/pharmacy', 
+    icon: Pill, 
+    label: 'Pharmacy', 
+    roles: ['pharmacist', 'pharmacy_tech', 'hospital_admin'],
+    description: 'e-Prescribing & dispensing',
+    color: 'text-emerald-500'
+  },
+  { 
+    to: '/radiology', 
+    icon: Scan, 
+    label: 'Radiology', 
+    roles: ['radiology_staff', 'radiologist', 'hospital_admin'],
+    description: 'Imaging orders & reports',
+    color: 'text-purple-500'
+  },
+  { 
+    to: '/bed-management', 
+    icon: Bed, 
+    label: 'Bed Management', 
+    roles: ['bed_manager', 'nurse', 'hospital_admin'],
+    description: 'Ward census & admissions',
+    color: 'text-sky-500'
+  },
+  { 
     to: '/department', 
     icon: Layers, 
     label: 'Department Portal', 
