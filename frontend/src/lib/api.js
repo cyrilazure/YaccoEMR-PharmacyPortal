@@ -459,6 +459,12 @@ export const nursingSupervisorAPI = {
   // Shifts
   getCurrentShifts: () => api.get('/nursing-supervisor/shifts/current'),
   getShiftHistory: (params) => api.get('/nursing-supervisor/shifts/history', { params }),
+  
+  // Force Clock-Out
+  forceClockOut: (nurseId, reason) => api.post(`/nursing-supervisor/force-clock-out/${nurseId}`, null, { params: { reason } }),
+  
+  // Handoff Notes
+  getHandoffNotes: (params) => api.get('/nursing-supervisor/handoff-notes', { params }),
 };
 
 // Admin Portal APIs
