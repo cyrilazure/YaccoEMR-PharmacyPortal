@@ -74,3 +74,42 @@ export const getStatusColor = (status) => {
   };
   return colorMap[status] || 'status-pending';
 };
+
+/**
+ * Extract error message from API error response
+ * Handles Pydantic validation errors (array of objects with 'msg' field)
+ * and regular error strings
+ */
+export const getErrorMessage = (err, fallback = 'An error occurred') => {
+  const errorDetail = err?.response?.data?.detail;
+  
+  if (!errorDetail) {
+    return err?.message || fallback;
+  }
+  
+  // String error message
+  if (typeof errorDetail === 'string') {
+    return errorDetail;
+  }
+  
+  // Pydantic validation errors (array of objects)
+  if (Array.isArray(errorDetail) && errorDetail.length > 0) {
+    return errorDetail.map(e => {
+      if (typeof e === 'string') return e;
+      // Pydantic v2 format
+      if (e.msg) return e.msg;
+      // Pydantic v1 format
+      if (e.message) return e.message;
+      // Fallback
+      return JSON.stringify(e);
+    }).join('. ');
+  }
+  
+  // Single error object
+  if (typeof errorDetail === 'object') {
+    if (errorDetail.msg) return errorDetail.msg;
+    if (errorDetail.message) return errorDetail.message;
+  }
+  
+  return fallback;
+};
