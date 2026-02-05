@@ -724,7 +724,11 @@ class BillingPhase1Tester:
         
         if response.status_code == 200:
             data = response.json()
-            modalities = data.get('modalities', [])
+            # Response is a list, not a dict with 'modalities' key
+            if isinstance(data, list):
+                modalities = data
+            else:
+                modalities = data.get('modalities', [])
             modalities_count = len(modalities)
             
             # Should have 8 modalities
