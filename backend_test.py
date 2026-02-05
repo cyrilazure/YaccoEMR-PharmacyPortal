@@ -2258,5 +2258,13 @@ class YaccoEMRTester:
 
 if __name__ == "__main__":
     tester = YaccoEMRTester()
-    success = tester.run_department_seeding_tests()
-    sys.exit(0 if success else 1)
+    
+    # Run the new Yacco EMR modules tests as specified in the review request
+    success = tester.run_yacco_emr_new_modules_tests()
+    
+    if success:
+        print("\n🎉 All tests passed!")
+        sys.exit(0)
+    else:
+        print("\n💥 Some tests failed!")
+        sys.exit(1)
