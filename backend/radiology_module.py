@@ -237,13 +237,13 @@ def create_radiology_endpoints(db, get_current_user):
         if priority:
             query["priority"] = priority
         
-        orders = await db["radiology_orders"].find(query).sort([
+        orders = await db["radiology_orders"].find(query, {"_id": 0}).sort([
             ("priority", -1),  # STAT first
             ("created_at", 1)  # Then by order time
         ]).to_list(200)
         
         # Stats
-        all_orders = await db["radiology_orders"].find({"organization_id": user.get("organization_id")}).to_list(500)
+        all_orders = await db["radiology_orders"].find({"organization_id": user.get("organization_id")}, {"_id": 0}).to_list(500)
         stats = {
             "total": len(all_orders),
             "ordered": len([o for o in all_orders if o["status"] == RadiologyOrderStatus.ORDERED]),
@@ -262,12 +262,12 @@ def create_radiology_endpoints(db, get_current_user):
         user: dict = Depends(get_current_user)
     ):
         """Get radiology orders for a patient"""
-        orders = await db["radiology_orders"].find({"patient_id": patient_id}).sort("created_at", -1).to_list(100)
+        orders = await db["radiology_orders"].find({"patient_id": patient_id}, {"_id": 0}).sort("created_at", -1).to_list(100)
         
         # Get results for completed orders
         for order in orders:
             if order.get("result_id"):
-                result = await db["radiology_results"].find_one({"id": order["result_id"]})
+                result = await db["radiology_results"].find_one({"id": order["result_id"]}, {"_id": 0})
                 order["result"] = result
         
         return {"orders": orders, "total": len(orders)}
