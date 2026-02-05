@@ -468,7 +468,9 @@ export default function RadiologyPortal() {
                   <h4 className="font-medium text-gray-700 mb-2">Patient</h4>
                   <p className="font-medium">{selectedOrder.patient_name}</p>
                   <p className="text-sm text-gray-500">MRN: {selectedOrder.patient_mrn}</p>
-                  <p className="text-sm text-gray-500">DOB: {selectedOrder.patient_dob}</p>
+                  {canViewFullDetails && (
+                    <p className="text-sm text-gray-500">DOB: {selectedOrder.patient_dob}</p>
+                  )}
                 </div>
                 <div className="bg-purple-50 rounded-lg p-4">
                   <h4 className="font-medium text-purple-700 mb-2">Study</h4>
@@ -478,37 +480,64 @@ export default function RadiologyPortal() {
                 </div>
               </div>
               
-              <div className="bg-blue-50 rounded-lg p-4">
-                <h4 className="font-medium text-blue-700 mb-2">Clinical Indication</h4>
-                <p className="text-sm">{selectedOrder.clinical_indication}</p>
-              </div>
-              
-              {selectedOrder.relevant_history && (
-                <div className="bg-yellow-50 rounded-lg p-4">
-                  <h4 className="font-medium text-yellow-700 mb-2">Relevant History</h4>
-                  <p className="text-sm">{selectedOrder.relevant_history}</p>
-                </div>
+              {canViewFullDetails && (
+                <>
+                  <div className="bg-blue-50 rounded-lg p-4">
+                    <h4 className="font-medium text-blue-700 mb-2">Clinical Indication</h4>
+                    <p className="text-sm">{selectedOrder.clinical_indication}</p>
+                  </div>
+                  
+                  {selectedOrder.relevant_history && (
+                    <div className="bg-yellow-50 rounded-lg p-4">
+                      <h4 className="font-medium text-yellow-700 mb-2">Relevant History</h4>
+                      <p className="text-sm">{selectedOrder.relevant_history}</p>
+                    </div>
+                  )}
+                  
+                  {selectedOrder.special_instructions && (
+                    <div className="bg-orange-50 rounded-lg p-4">
+                      <h4 className="font-medium text-orange-700 mb-2">Special Instructions</h4>
+                      <p className="text-sm">{selectedOrder.special_instructions}</p>
+                    </div>
+                  )}
+                  
+                  <div className="flex gap-4 text-sm">
+                    <div>
+                      <span className="text-gray-500">Contrast:</span>
+                      <Badge variant="outline" className="ml-2">
+                        {selectedOrder.contrast_required ? 'Required' : 'Not Required'}
+                      </Badge>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Laterality:</span>
+                      <span className="ml-2 capitalize">{selectedOrder.laterality}</span>
+                    </div>
+                  </div>
+                </>
               )}
               
-              {selectedOrder.special_instructions && (
-                <div className="bg-orange-50 rounded-lg p-4">
-                  <h4 className="font-medium text-orange-700 mb-2">Special Instructions</h4>
-                  <p className="text-sm">{selectedOrder.special_instructions}</p>
+              {!canViewFullDetails && (
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="flex gap-4 text-sm">
+                    <div>
+                      <span className="text-gray-500">Contrast:</span>
+                      <Badge variant="outline" className="ml-2">
+                        {selectedOrder.contrast_required ? 'Required' : 'Not Required'}
+                      </Badge>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Laterality:</span>
+                      <span className="ml-2 capitalize">{selectedOrder.laterality}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Priority:</span>
+                      <Badge className={`ml-2 ${getPriorityBadge(order.priority)}`}>
+                        {selectedOrder.priority?.toUpperCase()}
+                      </Badge>
+                    </div>
+                  </div>
                 </div>
               )}
-              
-              <div className="flex gap-4 text-sm">
-                <div>
-                  <span className="text-gray-500">Contrast:</span>
-                  <Badge variant="outline" className="ml-2">
-                    {selectedOrder.contrast_required ? 'Required' : 'Not Required'}
-                  </Badge>
-                </div>
-                <div>
-                  <span className="text-gray-500">Laterality:</span>
-                  <span className="ml-2 capitalize">{selectedOrder.laterality}</span>
-                </div>
-              </div>
             </div>
           )}
         </DialogContent>
