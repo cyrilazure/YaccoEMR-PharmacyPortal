@@ -416,6 +416,438 @@ class YaccoEMRTester:
             self.log_test("Nurse Shift Clock-Out", False, error_msg)
             return False
 
+    def test_nurse_region_login(self):
+        """Test Nurse Login via Region-Based Auth - POST /api/regions/auth/login"""
+        login_data = {
+            "email": "testnurse@hospital.com",
+            "password": "test123",
+            "hospital_id": "e717ed11-7955-4884-8d6b-a529f918c34f",
+            "location_id": "b61d7896-b4ef-436b-868e-94a60b55c64c"
+        }
+        
+        response, error = self.make_request('POST', 'regions/auth/login', login_data)
+        if error:
+            self.log_test("Nurse Region-Based Login", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            self.nurse_token = data.get('token')
+            user = data.get('user', {})
+            self.nurse_user_id = user.get('id')
+            
+            # Verify user role is nurse
+            is_nurse = user.get('role') == 'nurse'
+            has_token = bool(self.nurse_token)
+            
+            success = is_nurse and has_token
+            details = f"Email: {user.get('email')}, Role: {user.get('role')}, Hospital: {login_data['hospital_id']}"
+            self.log_test("Nurse Region-Based Login", success, details)
+            return success
+        elif response.status_code == 401:
+            # Nurse user doesn't exist, let's create one first
+            return self.create_nurse_user_and_region_login()
+        else:
+            try:
+                error_data = response.json()
+                error_msg = error_data.get('detail', f'Status: {response.status_code}')
+            except:
+                error_msg = f'Status: {response.status_code}'
+            self.log_test("Nurse Region-Based Login", False, error_msg)
+            return False
+
+    def create_nurse_user_and_region_login(self):
+        """Create nurse user with organization context and login via region auth"""
+        # First register a nurse user with organization_id
+        nurse_data = {
+            "email": "testnurse@hospital.com",
+            "password": "test123",
+            "first_name": "Test",
+            "last_name": "Nurse",
+            "role": "nurse",
+            "department": "Emergency Department",
+            "organization_id": "e717ed11-7955-4884-8d6b-a529f918c34f"
+        }
+        
+        response, error = self.make_request('POST', 'auth/register', nurse_data)
+        if error:
+            self.log_test("Create Nurse User for Region Auth", False, error)
+            return False
+        
+        if response.status_code in [200, 201]:
+            # Registration successful, now login via region auth
+            return self.test_nurse_region_login()
+        elif response.status_code == 400:
+            # User already exists, try region login again
+            return self.test_nurse_region_login()
+        else:
+            self.log_test("Create Nurse User for Region Auth", False, f"Status: {response.status_code}")
+            return False
+
+    def test_nurse_current_shift_before_clock_in(self):
+        """Test Get Current Shift before clock-in - should be null"""
+        if not self.nurse_token:
+            self.log_test("Get Current Shift (Before Clock-In)", False, "No nurse token")
+            return False
+        
+        # Switch to nurse token
+        original_token = self.token
+        self.token = self.nurse_token
+        
+        response, error = self.make_request('GET', 'nurse/current-shift')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Get Current Shift (Before Clock-In)", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            active_shift = data.get('active_shift')
+            
+            # Should be null if not clocked in
+            success = active_shift is None
+            details = f"Active Shift: {active_shift}"
+            self.log_test("Get Current Shift (Before Clock-In)", success, details)
+            return success
+        else:
+            try:
+                error_data = response.json()
+                error_msg = error_data.get('detail', f'Status: {response.status_code}')
+            except:
+                error_msg = f'Status: {response.status_code}'
+            self.log_test("Get Current Shift (Before Clock-In)", False, error_msg)
+            return False
+
+    def test_nurse_clock_out_if_active(self):
+        """Test Clock Out if already clocked in - POST /api/nurse/shifts/clock-out"""
+        if not self.nurse_token:
+            self.log_test("Clock Out (If Active)", False, "No nurse token")
+            return False
+        
+        # Switch to nurse token
+        original_token = self.token
+        self.token = self.nurse_token
+        
+        response, error = self.make_request('POST', 'nurse/shifts/clock-out', params={"handoff_notes": "Test"})
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Clock Out (If Active)", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            message = data.get('message', '')
+            success = 'clocked out' in message.lower()
+            details = f"Message: {message}"
+            self.log_test("Clock Out (If Active)", success, details)
+            return success
+        elif response.status_code == 400:
+            # Expected if no active shift
+            details = "No active shift found (expected)"
+            self.log_test("Clock Out (If Active)", True, details)
+            return True
+        else:
+            try:
+                error_data = response.json()
+                error_msg = error_data.get('detail', f'Status: {response.status_code}')
+            except:
+                error_msg = f'Status: {response.status_code}'
+            self.log_test("Clock Out (If Active)", False, error_msg)
+            return False
+
+    def test_nurse_clock_in_night_shift(self):
+        """Test Clock In with night shift - POST /api/nurse/shifts/clock-in"""
+        if not self.nurse_token:
+            self.log_test("Nurse Clock In (Night Shift)", False, "No nurse token")
+            return False
+        
+        # Switch to nurse token
+        original_token = self.token
+        self.token = self.nurse_token
+        
+        clock_in_data = {
+            "shift_type": "night"
+        }
+        
+        response, error = self.make_request('POST', 'nurse/shifts/clock-in', clock_in_data)
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Nurse Clock In (Night Shift)", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            shift = data.get('shift', {})
+            self.nurse_shift_id = shift.get('id')
+            
+            has_shift_id = bool(self.nurse_shift_id)
+            correct_shift_type = shift.get('shift_type') == 'night'
+            is_active = shift.get('is_active') == True
+            
+            success = has_shift_id and correct_shift_type and is_active
+            details = f"Shift ID: {self.nurse_shift_id}, Type: {shift.get('shift_type')}, Active: {shift.get('is_active')}"
+            self.log_test("Nurse Clock In (Night Shift)", success, details)
+            return success
+        else:
+            try:
+                error_data = response.json()
+                error_msg = error_data.get('detail', f'Status: {response.status_code}')
+            except:
+                error_msg = f'Status: {response.status_code}'
+            self.log_test("Nurse Clock In (Night Shift)", False, error_msg)
+            return False
+
+    def test_nurse_current_shift_after_clock_in(self):
+        """Test Get Current Shift after clock-in - should have active_shift"""
+        if not self.nurse_token:
+            self.log_test("Get Current Shift (After Clock-In)", False, "No nurse token")
+            return False
+        
+        # Switch to nurse token
+        original_token = self.token
+        self.token = self.nurse_token
+        
+        response, error = self.make_request('GET', 'nurse/current-shift')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Get Current Shift (After Clock-In)", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            active_shift = data.get('active_shift')
+            
+            if active_shift:
+                has_shift_id = bool(active_shift.get('id'))
+                is_active = active_shift.get('is_active') == True
+                has_shift_type = bool(active_shift.get('shift_type'))
+                
+                success = has_shift_id and is_active and has_shift_type
+                details = f"Active Shift: {active_shift.get('id')}, Type: {active_shift.get('shift_type')}, Active: {active_shift.get('is_active')}"
+                self.log_test("Get Current Shift (After Clock-In)", success, details)
+                return success
+            else:
+                self.log_test("Get Current Shift (After Clock-In)", False, "No active shift found after clock-in")
+                return False
+        else:
+            try:
+                error_data = response.json()
+                error_msg = error_data.get('detail', f'Status: {response.status_code}')
+            except:
+                error_msg = f'Status: {response.status_code}'
+            self.log_test("Get Current Shift (After Clock-In)", False, error_msg)
+            return False
+
+    def test_nurse_mar_due_endpoint(self):
+        """Test MAR Due Endpoint - GET /api/nurse/mar/due?window_minutes=60"""
+        if not self.nurse_token:
+            self.log_test("MAR Due Endpoint", False, "No nurse token")
+            return False
+        
+        # Switch to nurse token
+        original_token = self.token
+        self.token = self.nurse_token
+        
+        response, error = self.make_request('GET', 'nurse/mar/due', params={"window_minutes": 60})
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("MAR Due Endpoint", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_overdue = 'overdue' in data
+            has_upcoming = 'upcoming' in data
+            has_total = 'total' in data
+            no_access_error = 'Access restricted' not in str(data)
+            
+            success = has_overdue and has_upcoming and has_total and no_access_error
+            details = f"Response: {data}"
+            self.log_test("MAR Due Endpoint", success, details)
+            return success
+        else:
+            try:
+                error_data = response.json()
+                error_msg = error_data.get('detail', f'Status: {response.status_code}')
+                # Check if it's an access restriction error
+                if 'Access restricted' in error_msg:
+                    self.log_test("MAR Due Endpoint", False, f"Access restricted error: {error_msg}")
+                else:
+                    self.log_test("MAR Due Endpoint", False, error_msg)
+            except:
+                error_msg = f'Status: {response.status_code}'
+                self.log_test("MAR Due Endpoint", False, error_msg)
+            return False
+
+    def test_nurse_dashboard_stats(self):
+        """Test Dashboard Stats - GET /api/nurse/dashboard/stats"""
+        if not self.nurse_token:
+            self.log_test("Nurse Dashboard Stats", False, "No nurse token")
+            return False
+        
+        # Switch to nurse token
+        original_token = self.token
+        self.token = self.nurse_token
+        
+        response, error = self.make_request('GET', 'nurse/dashboard/stats')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Nurse Dashboard Stats", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            has_active_shift = 'active_shift' in data
+            
+            success = has_active_shift
+            details = f"Has active_shift data: {has_active_shift}"
+            self.log_test("Nurse Dashboard Stats", success, details)
+            return success
+        else:
+            try:
+                error_data = response.json()
+                error_msg = error_data.get('detail', f'Status: {response.status_code}')
+            except:
+                error_msg = f'Status: {response.status_code}'
+            self.log_test("Nurse Dashboard Stats", False, error_msg)
+            return False
+
+    def test_nurse_final_clock_out(self):
+        """Test Final Clock Out - POST /api/nurse/shifts/clock-out"""
+        if not self.nurse_token:
+            self.log_test("Final Clock Out", False, "No nurse token")
+            return False
+        
+        # Switch to nurse token
+        original_token = self.token
+        self.token = self.nurse_token
+        
+        response, error = self.make_request('POST', 'nurse/shifts/clock-out', params={"handoff_notes": "Handoff"})
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Final Clock Out", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            message = data.get('message', '')
+            success = 'clocked out' in message.lower()
+            details = f"Message: {message}"
+            self.log_test("Final Clock Out", success, details)
+            return success
+        else:
+            try:
+                error_data = response.json()
+                error_msg = error_data.get('detail', f'Status: {response.status_code}')
+            except:
+                error_msg = f'Status: {response.status_code}'
+            self.log_test("Final Clock Out", False, error_msg)
+            return False
+
+    def test_verify_final_clock_out(self):
+        """Test Verify Clock Out - GET /api/nurse/current-shift should be null"""
+        if not self.nurse_token:
+            self.log_test("Verify Final Clock Out", False, "No nurse token")
+            return False
+        
+        # Switch to nurse token
+        original_token = self.token
+        self.token = self.nurse_token
+        
+        response, error = self.make_request('GET', 'nurse/current-shift')
+        
+        # Restore original token
+        self.token = original_token
+        
+        if error:
+            self.log_test("Verify Final Clock Out", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            active_shift = data.get('active_shift')
+            
+            # Should be null after clock out
+            success = active_shift is None
+            details = f"Active Shift after clock out: {active_shift}"
+            self.log_test("Verify Final Clock Out", success, details)
+            return success
+        else:
+            try:
+                error_data = response.json()
+                error_msg = error_data.get('detail', f'Status: {response.status_code}')
+            except:
+                error_msg = f'Status: {response.status_code}'
+            self.log_test("Verify Final Clock Out", False, error_msg)
+            return False
+
+    def run_nurse_portal_clock_flow_tests(self):
+        """Run Nurse Portal Clock In/Out Flow Tests as specified in review request"""
+        print("🧪 Starting Nurse Portal Clock In/Out Flow Testing")
+        print("=" * 60)
+        print("Test User: testnurse@hospital.com / test123")
+        print("Hospital ID: e717ed11-7955-4884-8d6b-a529f918c34f")
+        print("Location ID: b61d7896-b4ef-436b-868e-94a60b55c64c")
+        print("=" * 60)
+        
+        # Test sequence for nurse portal clock in/out flow
+        tests = [
+            self.test_health_check,
+            self.test_nurse_region_login,
+            self.test_nurse_current_shift_before_clock_in,
+            self.test_nurse_clock_out_if_active,
+            self.test_nurse_clock_in_night_shift,
+            self.test_nurse_current_shift_after_clock_in,
+            self.test_nurse_mar_due_endpoint,
+            self.test_nurse_dashboard_stats,
+            self.test_nurse_final_clock_out,
+            self.test_verify_final_clock_out
+        ]
+        
+        for test in tests:
+            try:
+                test()
+            except Exception as e:
+                self.log_test(test.__name__, False, f"Exception: {str(e)}")
+        
+        # Print summary
+        print("\n" + "=" * 60)
+        print(f"📊 NURSE PORTAL CLOCK IN/OUT FLOW TEST SUMMARY")
+        print(f"Total Tests: {self.tests_run}")
+        print(f"Passed: {self.tests_passed}")
+        print(f"Failed: {self.tests_run - self.tests_passed}")
+        print(f"Success Rate: {(self.tests_passed/self.tests_run*100):.1f}%")
+        
+        # Print failed tests
+        failed_tests = [t for t in self.test_results if not t['success']]
+        if failed_tests:
+            print(f"\n❌ FAILED TESTS:")
+            for test in failed_tests:
+                print(f"  - {test['test']}: {test['details']}")
+        
+        return self.tests_passed == self.tests_run
+
     def run_review_tests(self):
         """Run all tests for the review request"""
         print("🧪 Starting Yacco EMR Backend Testing - Review Request")
