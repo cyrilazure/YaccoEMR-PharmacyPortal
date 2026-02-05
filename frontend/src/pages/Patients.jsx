@@ -118,20 +118,7 @@ export default function Patients() {
       fetchPatients();
       navigate(`/patients/${res.data.id}`);
     } catch (err) {
-      // Handle Pydantic validation errors (array of objects) and regular errors
-      const errorDetail = err.response?.data?.detail;
-      let errorMessage = 'Failed to create patient';
-      
-      if (typeof errorDetail === 'string') {
-        errorMessage = errorDetail;
-      } else if (Array.isArray(errorDetail) && errorDetail.length > 0) {
-        // Pydantic validation errors come as array of objects with 'msg' field
-        errorMessage = errorDetail.map(e => e.msg || e.message || JSON.stringify(e)).join(', ');
-      } else if (errorDetail && typeof errorDetail === 'object' && errorDetail.msg) {
-        errorMessage = errorDetail.msg;
-      }
-      
-      toast.error(errorMessage);
+      toast.error(getErrorMessage(err, 'Failed to create patient'));
     } finally {
       setSaving(false);
     }
