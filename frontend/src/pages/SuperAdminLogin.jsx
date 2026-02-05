@@ -57,10 +57,10 @@ export default function SuperAdminLogin() {
     setLoading(true);
     
     try {
-      const result = await login(credentials.email, credentials.password);
+      const userData = await login(credentials.email, credentials.password);
       
       // Check if user is super_admin
-      if (result.user.role !== 'super_admin') {
+      if (userData.role !== 'super_admin') {
         // Logout the user since they don't have access
         logout();
         toast.error('Access denied. This portal is for Platform Owners only.');
