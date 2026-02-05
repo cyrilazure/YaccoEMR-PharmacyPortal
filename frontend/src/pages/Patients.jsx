@@ -283,29 +283,115 @@ export default function Patients() {
                 </div>
               </div>
 
-              {/* Insurance Info */}
+              {/* Payment Type & Insurance Info */}
               <div className="space-y-4">
                 <h3 className="font-semibold text-slate-900 flex items-center gap-2">
-                  <IdCard className="w-4 h-4" /> Insurance Information
+                  <CreditCard className="w-4 h-4" /> Payment & Insurance
                 </h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="insurance_provider">Insurance Provider</Label>
-                    <Input 
-                      id="insurance_provider"
-                      data-testid="patient-insurance-provider"
-                      value={newPatient.insurance_provider}
-                      onChange={(e) => setNewPatient({ ...newPatient, insurance_provider: e.target.value })}
-                    />
+                
+                {/* Payment Type Selection */}
+                <div className="flex gap-4 p-3 bg-slate-50 rounded-lg">
+                  <Button
+                    type="button"
+                    variant={paymentType === 'insurance' ? 'default' : 'outline'}
+                    className={paymentType === 'insurance' ? 'bg-sky-600 hover:bg-sky-700' : ''}
+                    onClick={() => setPaymentType('insurance')}
+                  >
+                    <IdCard className="w-4 h-4 mr-2" />
+                    Insurance
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={paymentType === 'cash' ? 'default' : 'outline'}
+                    className={paymentType === 'cash' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}
+                    onClick={() => setPaymentType('cash')}
+                  >
+                    <Banknote className="w-4 h-4 mr-2" />
+                    Cash / Self-Pay
+                  </Button>
+                </div>
+                
+                {paymentType === 'insurance' ? (
+                  <div className="space-y-4">
+                    <Alert className="bg-sky-50 border-sky-200">
+                      <IdCard className="h-4 w-4 text-sky-600" />
+                      <AlertTitle className="text-sky-800">Insurance Required</AlertTitle>
+                      <AlertDescription className="text-sky-700">
+                        Please provide insurance details. Select "Cash / Self-Pay" if patient will pay out of pocket.
+                      </AlertDescription>
+                    </Alert>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="insurance_provider">Insurance Provider *</Label>
+                        <Select 
+                          value={newPatient.insurance_provider} 
+                          onValueChange={(value) => setNewPatient({ ...newPatient, insurance_provider: value })}
+                        >
+                          <SelectTrigger data-testid="patient-insurance-provider">
+                            <SelectValue placeholder="Select provider" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="NHIS">NHIS (National Health Insurance)</SelectItem>
+                            <SelectItem value="Acacia Health">Acacia Health</SelectItem>
+                            <SelectItem value="Glico Healthcare">Glico Healthcare</SelectItem>
+                            <SelectItem value="Nationwide Medical">Nationwide Medical</SelectItem>
+                            <SelectItem value="Star Assurance">Star Assurance</SelectItem>
+                            <SelectItem value="Enterprise Life">Enterprise Life</SelectItem>
+                            <SelectItem value="Metropolitan Insurance">Metropolitan Insurance</SelectItem>
+                            <SelectItem value="Other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="insurance_id">Insurance ID / Policy Number *</Label>
+                        <Input 
+                          id="insurance_id"
+                          data-testid="patient-insurance-id"
+                          placeholder="e.g., NHIS-12345678"
+                          value={newPatient.insurance_id}
+                          onChange={(e) => setNewPatient({ ...newPatient, insurance_id: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="insurance_plan">Insurance Plan (Optional)</Label>
+                      <Input 
+                        id="insurance_plan"
+                        placeholder="e.g., Premium, Basic"
+                        value={newPatient.insurance_plan}
+                        onChange={(e) => setNewPatient({ ...newPatient, insurance_plan: e.target.value })}
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="insurance_id">Insurance ID</Label>
-                    <Input 
-                      id="insurance_id"
-                      data-testid="patient-insurance-id"
-                      value={newPatient.insurance_id}
-                      onChange={(e) => setNewPatient({ ...newPatient, insurance_id: e.target.value })}
-                    />
+                ) : (
+                  <Alert className="bg-emerald-50 border-emerald-200">
+                    <Banknote className="h-4 w-4 text-emerald-600" />
+                    <AlertTitle className="text-emerald-800">Cash / Self-Pay Selected</AlertTitle>
+                    <AlertDescription className="text-emerald-700">
+                      Patient will pay for services out of pocket. Insurance information is optional.
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+
+              {/* ADT Notification Settings */}
+              <div className="space-y-4">
+                <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4" /> ADT Notifications
+                </h3>
+                <div className="flex items-center space-x-3 p-3 bg-slate-50 rounded-lg">
+                  <Checkbox 
+                    id="adt_notification"
+                    checked={newPatient.adt_notification}
+                    onCheckedChange={(checked) => setNewPatient({ ...newPatient, adt_notification: checked })}
+                  />
+                  <div>
+                    <Label htmlFor="adt_notification" className="cursor-pointer font-medium">
+                      Enable ADT Notifications
+                    </Label>
+                    <p className="text-sm text-slate-500">
+                      Send alerts for Admission, Discharge, and Transfer events
+                    </p>
                   </div>
                 </div>
               </div>
