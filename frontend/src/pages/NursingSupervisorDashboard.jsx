@@ -112,6 +112,28 @@ export default function NursingSupervisorDashboard() {
   const [forceClockOutReason, setForceClockOutReason] = useState('Forgot to clock out');
   const [viewHandoffOpen, setViewHandoffOpen] = useState(false);
   const [selectedHandoff, setSelectedHandoff] = useState(null);
+  
+  // Patient Search and Add Patient
+  const [allPatients, setAllPatients] = useState([]);
+  const [patientSearchQuery, setPatientSearchQuery] = useState('');
+  const [patientSearchResults, setPatientSearchResults] = useState([]);
+  const [searchingPatients, setSearchingPatients] = useState(false);
+  const [addPatientOpen, setAddPatientOpen] = useState(false);
+  const [newPatient, setNewPatient] = useState({
+    first_name: '',
+    last_name: '',
+    date_of_birth: '',
+    gender: 'male',
+    email: '',
+    phone: '',
+    address: '',
+    emergency_contact_name: '',
+    emergency_contact_phone: '',
+    insurance_provider: '',
+    insurance_id: '',
+    payment_type: 'insurance'
+  });
+  const [paymentType, setPaymentType] = useState('insurance');
 
   // Access check
   useEffect(() => {
