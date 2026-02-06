@@ -6050,11 +6050,11 @@ frontend:
 
   - task: "Add Bank Account Dialog - 8 Fields"
     implemented: true
-    working: false
+    working: true
     file: "frontend/src/pages/HospitalSuperAdminIT.jsx"
-    stuck_count: 1
+    stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "user"
@@ -6062,6 +6062,9 @@ frontend:
       - working: false
         agent: "testing"
         comment: "❌ Add Bank Account Dialog - ISSUE: Dialog did not open when clicking 'Add Bank Account' button. Tested multiple times with different approaches (force click, scroll into view, wait for visibility). Button is visible and clickable but dialog does not appear. This prevents testing of the 8 form fields. Possible causes: JavaScript event handler not attached, dialog component not rendering, or timing issue with React state."
+      - working: true
+        agent: "testing"
+        comment: "✅ Add Bank Account Dialog - FIXED AND WORKING: Found root cause - Bank Account and Mobile Money dialogs were defined OUTSIDE the component's return statement (after closing </div> and );). Moved dialogs inside the return statement before closing </div>. Dialog now opens successfully. All 8 fields verified: 1) Bank Name *, 2) Account Name *, 3) Account Number *, 4) Branch, 5) Account Type (dropdown: Current/Savings), 6) Currency (dropdown: GHS/USD/EUR), 7) SWIFT Code (Optional), 8) Set as primary checkbox (with green highlight background). Form submission working - successfully created 'Test Bank Ghana' account with Primary badge."
 
   - task: "Mobile Money Section"
     implemented: true
