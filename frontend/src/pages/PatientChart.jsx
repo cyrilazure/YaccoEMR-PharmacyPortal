@@ -1244,7 +1244,7 @@ export default function PatientChart() {
                     <Plus className="w-4 h-4" /> New Order
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="max-w-lg">
                   <DialogHeader>
                     <DialogTitle>Place Order</DialogTitle>
                   </DialogHeader>
@@ -1262,34 +1262,73 @@ export default function PatientChart() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-2">
-                      <Label>Description *</Label>
-                      <Input value={newOrder.description} onChange={(e) => setNewOrder({ ...newOrder, description: e.target.value })} placeholder="e.g., CBC with Differential" required data-testid="order-description" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Priority</Label>
-                      <Select value={newOrder.priority} onValueChange={(v) => setNewOrder({ ...newOrder, priority: v })}>
-                        <SelectTrigger data-testid="order-priority">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="routine">Routine</SelectItem>
-                          <SelectItem value="urgent">Urgent</SelectItem>
-                          <SelectItem value="stat">STAT</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Diagnosis / Indication</Label>
-                      <Input value={newOrder.diagnosis} onChange={(e) => setNewOrder({ ...newOrder, diagnosis: e.target.value })} data-testid="order-diagnosis" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Instructions</Label>
-                      <Textarea value={newOrder.instructions} onChange={(e) => setNewOrder({ ...newOrder, instructions: e.target.value })} data-testid="order-instructions" />
-                    </div>
-                    <Button type="submit" className="w-full" disabled={saving} data-testid="save-order-btn">
-                      {saving ? 'Placing Order...' : 'Place Order'}
-                    </Button>
+                    
+                    {/* Show medication-specific notice and redirect */}
+                    {newOrder.order_type === 'medication' && (
+                      <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-3">
+                        <div className="flex items-start gap-3">
+                          <Pill className="w-5 h-5 text-blue-600 mt-0.5" />
+                          <div>
+                            <p className="font-medium text-blue-800">Use e-Prescription for Medications</p>
+                            <p className="text-sm text-blue-600 mt-1">
+                              For medication orders, please use the e-Prescription system in the Pharmacy tab. 
+                              This allows you to:
+                            </p>
+                            <ul className="text-sm text-blue-600 mt-2 ml-4 list-disc">
+                              <li>Add detailed medication information (dosage, frequency, duration)</li>
+                              <li>Select from Ghana FDA registered drugs</li>
+                              <li>Send directly to patient&apos;s preferred pharmacy</li>
+                              <li>Track prescription status in real-time</li>
+                            </ul>
+                          </div>
+                        </div>
+                        <Button 
+                          type="button"
+                          className="w-full bg-blue-600 hover:bg-blue-700 gap-2"
+                          onClick={() => {
+                            setOrderDialogOpen(false);
+                            setActiveTab('pharmacy');
+                            setPrescriptionDialogOpen(true);
+                          }}
+                        >
+                          <Send className="w-4 h-4" /> Go to e-Prescription
+                        </Button>
+                      </div>
+                    )}
+                    
+                    {/* Show standard fields for lab/imaging */}
+                    {newOrder.order_type !== 'medication' && (
+                      <>
+                        <div className="space-y-2">
+                          <Label>Description *</Label>
+                          <Input value={newOrder.description} onChange={(e) => setNewOrder({ ...newOrder, description: e.target.value })} placeholder="e.g., CBC with Differential" required data-testid="order-description" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Priority</Label>
+                          <Select value={newOrder.priority} onValueChange={(v) => setNewOrder({ ...newOrder, priority: v })}>
+                            <SelectTrigger data-testid="order-priority">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="routine">Routine</SelectItem>
+                              <SelectItem value="urgent">Urgent</SelectItem>
+                              <SelectItem value="stat">STAT</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Diagnosis / Indication</Label>
+                          <Input value={newOrder.diagnosis} onChange={(e) => setNewOrder({ ...newOrder, diagnosis: e.target.value })} data-testid="order-diagnosis" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Instructions</Label>
+                          <Textarea value={newOrder.instructions} onChange={(e) => setNewOrder({ ...newOrder, instructions: e.target.value })} data-testid="order-instructions" />
+                        </div>
+                        <Button type="submit" className="w-full" disabled={saving} data-testid="save-order-btn">
+                          {saving ? 'Placing Order...' : 'Place Order'}
+                        </Button>
+                      </>
+                    )}
                   </form>
                 </DialogContent>
               </Dialog>
