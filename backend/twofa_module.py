@@ -188,15 +188,24 @@ def create_2fa_endpoints(db, get_current_user, verify_password_func, create_toke
     @twofa_router.post("/setup", response_model=TwoFASetupResponse)
     async def setup_2fa(current_user: dict = Depends(get_current_user)):
         """Initialize 2FA setup - generates secret and QR code"""
-        # Check if already set up
+        # Check if already set up and enabled
         existing = await db.user_2fa.find_one({"user_id": current_user["id"]})
         if existing and existing.get("enabled"):
             raise HTTPException(status_code=400, detail="2FA is already enabled. Disable it first to reconfigure.")
         
-        # Generate new secret and backup codes
-        secret = generate_secret()
-        backup_codes = generate_backup_codes(10)
         email = current_user.get("email", "user@yacco.com")
+        
+        # If there's an existing pending setup (not yet verified), reuse the secret
+        # This prevents the issue where re-calling setup generates a new secret
+        if existing and not existing.get("verified") and existing.get("secret"):
+            secret = existing["secret"]
+            backup_codes = [c["code"] for c in existing.get("backup_codes", [])]
+            if not backup_codes:
+                backup_codes = generate_backup_codes(10)
+        else:
+            # Generate new secret and backup codes
+            secret = generate_secret()
+            backup_codes = generate_backup_codes(10)
         
         # Generate QR code
         qr_code = generate_qr_code(secret, email, "Yacco EMR")
