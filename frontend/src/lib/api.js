@@ -246,6 +246,9 @@ export const billingAPI = {
   getInvoice: (invoiceId) => api.get(`/billing/invoices/${invoiceId}`),
   sendInvoice: (invoiceId) => api.put(`/billing/invoices/${invoiceId}/send`),
   cancelInvoice: (invoiceId) => api.delete(`/billing/invoices/${invoiceId}`),
+  reverseInvoice: (invoiceId, reason) => api.put(`/billing/invoices/${invoiceId}/reverse`, null, { params: { reason } }),
+  voidInvoice: (invoiceId, reason) => api.put(`/billing/invoices/${invoiceId}/void`, null, { params: { reason } }),
+  changePaymentMethod: (invoiceId, newMethod, reason) => api.put(`/billing/invoices/${invoiceId}/change-payment-method`, null, { params: { new_method: newMethod, reason } }),
   
   // Payments
   recordPayment: (data) => api.post('/billing/payments', data),
