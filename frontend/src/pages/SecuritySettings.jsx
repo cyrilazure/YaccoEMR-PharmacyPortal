@@ -508,6 +508,30 @@ export default function SecuritySettings() {
                   {saving ? 'Verifying...' : 'Verify & Enable'}
                 </Button>
               </div>
+              
+              {/* Reset option if code keeps failing */}
+              <div className="pt-4 border-t">
+                <p className="text-sm text-gray-500 mb-2">Code not working? The authenticator might be out of sync.</p>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={async () => {
+                    try {
+                      await api.post('/2fa/reset-setup');
+                      setSetupStep(0);
+                      setSetupData(null);
+                      setVerifyCode('');
+                      toast.info('Setup reset. Click "Enable" to start fresh with a new QR code.');
+                      setSetupDialogOpen(false);
+                    } catch (err) {
+                      toast.error('Failed to reset setup');
+                    }
+                  }}
+                  className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" /> Reset and Start Over
+                </Button>
+              </div>
             </div>
           )}
           
