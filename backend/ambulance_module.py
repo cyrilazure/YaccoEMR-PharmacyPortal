@@ -439,16 +439,18 @@ def create_ambulance_endpoints(db, get_current_user):
         # Request stats
         all_requests = await db.ambulance_requests.find({"organization_id": org_id}, {"_id": 0}).to_list(1000)
         
-        active_requests = len([r for r in all_requests if r["status"] in [
-            RequestStatus.REQUESTED, RequestStatus.APPROVED, RequestStatus.DISPATCHED,
-            RequestStatus.EN_ROUTE, RequestStatus.TRANSPORTING
-        ]])
+        active_statuses = [
+            RequestStatus.REQUESTED.value, RequestStatus.APPROVED.value, RequestStatus.DISPATCHED.value,
+            RequestStatus.EN_ROUTE.value, RequestStatus.TRANSPORTING.value,
+            "requested", "approved", "dispatched", "en_route", "transporting"
+        ]
+        active_requests = len([r for r in all_requests if r.get("status") in active_statuses])
         
         completed_today = len([r for r in all_requests 
             if (r.get("completed_at") or "").startswith(datetime.now().strftime("%Y-%m-%d"))])
         
-        emergency_trips = len([r for r in all_requests if r["trip_type"] == TripType.EMERGENCY])
-        scheduled_trips = len([r for r in all_requests if r["trip_type"] == TripType.SCHEDULED])
+        emergency_trips = len([r for r in all_requests if r.get("trip_type") in [TripType.EMERGENCY.value, "emergency"]])
+        scheduled_trips = len([r for r in all_requests if r.get("trip_type") in [TripType.SCHEDULED.value, "scheduled"]])
         
         # Active shifts
         active_shifts = await db.ambulance_shifts.count_documents(
