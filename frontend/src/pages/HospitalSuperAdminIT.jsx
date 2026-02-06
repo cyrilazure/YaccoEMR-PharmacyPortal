@@ -1839,8 +1839,8 @@ export default function HospitalSuperAdminIT() {
 
       {/* Manage Permissions Dialog */}
       <Dialog open={permissionsDialogOpen} onOpenChange={setPermissionsDialogOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
+        <DialogContent className="max-w-lg max-h-[85vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <Shield className="w-5 h-5 text-blue-600" />
               Manage User Permissions
@@ -1851,7 +1851,7 @@ export default function HospitalSuperAdminIT() {
           </DialogHeader>
           
           {staffPermissions && (
-            <div className="space-y-4 py-4">
+            <div className="flex-1 overflow-y-auto space-y-4 py-4 pr-2">
               <Alert className="bg-blue-50 border-blue-200">
                 <Shield className="h-4 w-4 text-blue-600" />
                 <AlertDescription className="text-blue-700">
