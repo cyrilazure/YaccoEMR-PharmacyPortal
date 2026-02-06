@@ -517,7 +517,7 @@ export default function SecuritySettings() {
                   size="sm"
                   onClick={async () => {
                     try {
-                      await api.post('/2fa/reset-setup');
+                      await twoFactorAPI.resetSetup();
                       setSetupStep(0);
                       setSetupData(null);
                       setVerifyCode('');
