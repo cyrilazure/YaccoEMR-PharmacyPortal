@@ -5842,3 +5842,140 @@ agent_communication:
       
       **✅ ALL PHASE 2 FEATURES FULLY FUNCTIONAL AND PRODUCTION-READY**
 
+
+user_problem_statement: |
+  Verify Hospital IT Admin Finance Settings Tab is Accessible and Functional
+  
+  Test the Finance Settings tab in the IT Admin portal (/it-admin) to ensure:
+  1. Finance Settings tab exists with 4 total tabs
+  2. Bank Accounts section with Add Bank Account button (green)
+  3. Add Bank Account dialog with ALL 8 fields (Bank Name, Account Name, Account Number, Branch, Account Type, Currency, SWIFT Code, Set as primary checkbox)
+  4. Bank account form submission works
+  5. Mobile Money section with Add Mobile Money button (blue)
+  6. Add Mobile Money dialog with required fields
+  
+  Test User: IT Admin (kofiabedu2019@gmail.com / 2I6ZRBkjVn2ZQg7O or it_admin@yacco.health / test123)
+  Hospital: ygtworks Health Center (Greater Accra Region)
+
+frontend:
+  - task: "IT Admin Finance Settings Tab"
+    implemented: true
+    working: false
+    file: "frontend/src/pages/HospitalSuperAdminIT.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of Finance Settings tab in IT Admin portal with bank accounts and mobile money management"
+      - working: false
+        agent: "testing"
+        comment: "❌ CRITICAL ISSUE: IT Admin user credentials do not exist in the system. Attempted login with both kofiabedu2019@gmail.com / 2I6ZRBkjVn2ZQg7O and it_admin@yacco.health / test123 - both returned 401 Unauthorized. Hospital ID: 008cca73-b733-4224-afa3-992c02c045a4, Location ID: 67a711dc-90c2-4ba5-b499-85a485060e5f. CODE REVIEW: Finance Settings tab IS implemented correctly in HospitalSuperAdminIT.jsx with: (1) Finance Settings tab with Landmark icon (line 492-494), (2) Bank Accounts section with table and Add button (lines 803-871), (3) Add Bank Account dialog with ALL 8 fields: Bank Name, Account Name, Account Number, Branch, Account Type dropdown, Currency dropdown, SWIFT Code, Set as primary checkbox (lines 1343-1454), (4) Mobile Money section with Add button (lines 873-922), (5) Add Mobile Money dialog with Provider, Account Name, Mobile Number, Wallet ID, Set as primary fields (lines 1457-1527). SYNTAX ERROR FIXED: Removed duplicate closing tags at lines 936-938 that were causing frontend compilation failure. Frontend now compiles successfully. CANNOT TEST UI: No valid IT Admin user exists to login and access /it-admin portal."
+
+backend:
+  - task: "Finance API Endpoints"
+    implemented: true
+    working: "NA"
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Finance API endpoints (/api/finance/bank-accounts, /api/finance/mobile-money-accounts) are referenced in frontend code but not tested due to authentication issues. Backend logs show successful GET requests to /api/finance/bank-accounts returning 200 OK, indicating endpoints exist and are functional."
+
+metadata:
+  created_by: "testing_agent"
+  version: "1.0"
+  test_sequence: 1
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "IT Admin Finance Settings Tab"
+    - "Finance API Endpoints"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "testing"
+    message: |
+      ❌ TESTING BLOCKED - IT ADMIN USER DOES NOT EXIST
+      
+      **CRITICAL FINDING:**
+      Cannot test Finance Settings tab because IT Admin user credentials provided in test request do not exist in the system.
+      
+      **Login Attempts Failed:**
+      1. kofiabedu2019@gmail.com / 2I6ZRBkjVn2ZQg7O → 401 Unauthorized
+      2. it_admin@yacco.health / test123 → 401 Unauthorized
+      
+      **Hospital Details (Verified):**
+      - Hospital: ygtworks Health Center
+      - Hospital ID: 008cca73-b733-4224-afa3-992c02c045a4
+      - Location: ygtworks Health Center - Main
+      - Location ID: 67a711dc-90c2-4ba5-b499-85a485060e5f
+      - Region: Greater Accra Region
+      
+      **CODE REVIEW RESULTS - FINANCE SETTINGS TAB FULLY IMPLEMENTED:**
+      
+      ✅ **1. Finance Settings Tab Structure:**
+      - Tab exists with Landmark icon (line 492-494 in HospitalSuperAdminIT.jsx)
+      - Part of 4-tab layout: Staff Accounts, Departments & Locations, Finance Settings, IT Activity Log
+      
+      ✅ **2. Bank Accounts Section (lines 803-871):**
+      - Card with "Bank Accounts" title and Building2 icon
+      - "Add Bank Account" button with emerald/green color (bg-emerald-600 hover:bg-emerald-700)
+      - Table with columns: Bank Name, Account Name, Account Number, Branch, Type, Status (Primary/Secondary badges), Actions (Delete button)
+      - Empty state: "No bank accounts configured" with prompt to add first account
+      
+      ✅ **3. Add Bank Account Dialog (lines 1343-1454) - ALL 8 FIELDS PRESENT:**
+      - Bank Name input (required, placeholder: "e.g., GCB Bank, Ecobank Ghana")
+      - Account Name input (required, placeholder: "Hospital account name")
+      - Account Number input (required, placeholder: "Account number")
+      - Branch input (optional, placeholder: "e.g., Accra Main")
+      - Account Type dropdown (Current Account / Savings Account)
+      - Currency dropdown (GHS / USD / EUR)
+      - SWIFT Code input (optional, placeholder: "For international transfers")
+      - "Set as primary account" checkbox with green background (emerald-50)
+      - Cancel and "Add Bank Account" submit buttons
+      
+      ✅ **4. Mobile Money Section (lines 873-922):**
+      - Card with "Mobile Money Accounts" title and Activity icon
+      - "Add Mobile Money" button with blue color (bg-blue-600 hover:bg-blue-700)
+      - Grid display for mobile money accounts
+      - Empty state: "No mobile money accounts configured"
+      
+      ✅ **5. Add Mobile Money Dialog (lines 1457-1527):**
+      - Provider dropdown (MTN Mobile Money / Vodafone Cash / AirtelTigo Money)
+      - Account Name input (required)
+      - Mobile Number input (required, placeholder: "e.g., 0244123456")
+      - Wallet ID input (optional, placeholder: "Merchant/Wallet ID if applicable")
+      - "Set as primary" checkbox
+      - Cancel and submit buttons
+      
+      ✅ **6. Finance API Integration:**
+      - fetchFinanceData() function calls /api/finance/bank-accounts and /api/finance/mobile-money-accounts
+      - handleAddBankAccount() posts to /api/finance/bank-accounts
+      - handleAddMoMoAccount() posts to /api/finance/mobile-money-accounts
+      - handleDeleteBankAccount() deletes from /api/finance/bank-accounts/{id}
+      - Backend logs confirm /api/finance/bank-accounts returns 200 OK
+      
+      **SYNTAX ERROR FIXED:**
+      - Removed duplicate closing tags (</CardContent>, </Card>, </TabsContent>) at lines 936-938
+      - Frontend now compiles successfully without errors
+      
+      **WHAT NEEDS TO BE DONE:**
+      Main agent must create an IT Admin user account for ygtworks Health Center before Finance Settings tab can be tested via UI.
+      
+      **Recommended Actions:**
+      1. Create IT Admin user with role "hospital_it_admin" for hospital ID 008cca73-b733-4224-afa3-992c02c045a4
+      2. Use either email: kofiabedu2019@gmail.com or it_admin@yacco.health
+      3. Set password and provide credentials for testing
+      4. Alternatively, modify HospitalSuperAdminIT.jsx access control (line 132) to allow super_admin role to access IT Admin portal for testing purposes
+      
+      **IMPLEMENTATION STATUS: COMPLETE**
+      All Finance Settings tab features are fully implemented and ready for testing once authentication is resolved.
+
