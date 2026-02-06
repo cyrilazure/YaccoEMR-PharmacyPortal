@@ -287,6 +287,22 @@ def create_bed_management_endpoints(db, get_current_user):
             await db["wards"].insert_one(ward_doc)
             created += 1
         
+
+    
+    @bed_management_router.get("/hospital-prefix")
+    async def get_hospital_prefix(user: dict = Depends(get_current_user)):
+        """Get hospital ward naming prefix"""
+        org_id = user.get("organization_id")
+        if not org_id:
+            return {"prefix": None, "hospital_name": None}
+        
+        hospital = await db["hospitals"].find_one({"id": org_id}, {"_id": 0, "name": 1})
+        if not hospital:
+            return {"prefix": None, "hospital_name": None}
+        
+        prefix = generate_hospital_ward_prefix(hospital["name"])
+        return {"prefix": prefix, "hospital_name": hospital["name"]}
+
         return {
             "message": f"Created {created} default wards" + (f" with prefix {hospital_prefix}" if hospital_prefix else ""),
             "count": created,
