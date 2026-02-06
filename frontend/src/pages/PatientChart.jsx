@@ -306,16 +306,14 @@ export default function PatientChart() {
   };
 
   const searchPharmacies = async (query) => {
+    setPharmacySearchQuery(query);
+    // The actual filtering is now handled by applyPharmacyFilters via useEffect
+    // This function is kept for backward compatibility
     if (query.length < 2) {
-      setPharmacySearchResults([]);
+      applyPharmacyFilters();
       return;
     }
-    try {
-      const res = await pharmacyNetworkAPI.search(query, null, 20);
-      setPharmacySearchResults(res.data.pharmacies || []);
-    } catch (err) {
-      console.error('Failed to search pharmacies', err);
-    }
+    applyPharmacyFilters();
   };
 
   const fetchLabPanels = async () => {
