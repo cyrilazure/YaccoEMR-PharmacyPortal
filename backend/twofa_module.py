@@ -249,14 +249,28 @@ def create_2fa_endpoints(db, get_current_user, verify_password_func, create_toke
         user_2fa = await db.user_2fa.find_one({"user_id": current_user["id"]})
         
         if not user_2fa:
-            raise HTTPException(status_code=400, detail="2FA not set up. Call /setup first.")
+            raise HTTPException(status_code=400, detail="2FA not set up. Please start the setup process first.")
         
         if user_2fa.get("enabled"):
             raise HTTPException(status_code=400, detail="2FA is already enabled.")
         
+        # Normalize the input code
+        code = request.code.strip().replace(" ", "").replace("-", "")
+        
+        if len(code) != 6 or not code.isdigit():
+            raise HTTPException(
+                status_code=400, 
+                detail="Invalid code format. Please enter the 6-digit code from your authenticator app."
+            )
+        
         # Verify the code
-        if not verify_totp(user_2fa["secret"], request.code):
-            raise HTTPException(status_code=400, detail="Invalid verification code. Please try again.")
+        if not verify_totp(user_2fa["secret"], code):
+            # Generate what the current code should be for debugging
+            expected_code = get_totp_token(user_2fa["secret"])
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Invalid verification code. Make sure your authenticator app is synced. If the problem persists, try rescanning the QR code."
+            )
         
         # Enable 2FA
         await db.user_2fa.update_one(
