@@ -83,6 +83,14 @@ const navItems = [
     description: 'Nursing care portal',
     color: 'text-rose-500'
   },
+  { 
+    to: '/nursing-supervisor', 
+    icon: Heart, 
+    label: 'Nursing Supervisor', 
+    roles: ['nursing_supervisor', 'floor_supervisor'],
+    description: 'Nursing supervision',
+    color: 'text-rose-600'
+  },
   
   // ========== OPERATIONAL PORTALS ==========
   { 
@@ -104,18 +112,10 @@ const navItems = [
   { 
     to: '/pharmacy', 
     icon: Pill, 
-    label: 'Pharmacy', 
+    label: 'Pharmacy Portal', 
     roles: ['pharmacist', 'pharmacy_tech', 'hospital_admin'],
-    description: 'e-Prescribing & dispensing',
+    description: 'Dispensing, inventory & NHIS claims',
     color: 'text-emerald-500'
-  },
-  { 
-    to: '/pharmacy-directory', 
-    icon: Building2, 
-    label: 'Pharmacy Directory', 
-    roles: ['physician', 'nurse', 'pharmacist', 'pharmacy_tech', 'hospital_admin', 'super_admin'],
-    description: 'National pharmacy database',
-    color: 'text-cyan-500'
   },
   { 
     to: '/radiology', 
@@ -145,25 +145,9 @@ const navItems = [
     to: '/ambulance', 
     icon: Ambulance, 
     label: 'Ambulance', 
-    roles: ['hospital_admin', 'hospital_it_admin', 'super_admin', 'physician', 'nurse'],
+    roles: ['nurse', 'nursing_supervisor', 'floor_supervisor', 'hospital_admin'],
     description: 'Emergency transport',
     color: 'text-red-500'
-  },
-  { 
-    to: '/nhis-claims', 
-    icon: CreditCard, 
-    label: 'NHIS Claims', 
-    roles: ['pharmacist', 'pharmacy_tech', 'biller', 'hospital_admin', 'super_admin'],
-    description: 'NHIS pharmacy claims',
-    color: 'text-green-500'
-  },
-  { 
-    to: '/supply-chain', 
-    icon: Package, 
-    label: 'Supply Chain', 
-    roles: ['pharmacist', 'pharmacy_tech', 'hospital_admin', 'super_admin'],
-    description: 'Inventory management',
-    color: 'text-indigo-500'
   },
   
   // ========== SHARED CLINICAL PAGES (Based on Permissions) ==========
