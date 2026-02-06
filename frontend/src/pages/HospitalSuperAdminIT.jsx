@@ -1836,6 +1836,92 @@ export default function HospitalSuperAdminIT() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Manage Permissions Dialog */}
+      <Dialog open={permissionsDialogOpen} onOpenChange={setPermissionsDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Shield className="w-5 h-5 text-blue-600" />
+              Manage User Permissions
+            </DialogTitle>
+            <DialogDescription>
+              {staffPermissions && `${staffPermissions.staff_name} (${staffPermissions.role})`}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {staffPermissions && (
+            <div className="space-y-4 py-4">
+              <Alert className="bg-blue-50 border-blue-200">
+                <Shield className="h-4 w-4 text-blue-600" />
+                <AlertDescription className="text-blue-700">
+                  Toggle permissions to grant or revoke access to specific modules.
+                  Changes take effect immediately.
+                </AlertDescription>
+              </Alert>
+              
+              <div className="space-y-3">
+                {staffPermissions.available_permissions?.map((perm) => {
+                  const isGranted = staffPermissions.current_permissions?.includes(perm.code);
+                  return (
+                    <div 
+                      key={perm.code} 
+                      className={`flex items-center justify-between p-4 rounded-lg border ${
+                        isGranted ? 'border-emerald-200 bg-emerald-50' : 'border-gray-200 bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-gray-900">{perm.name}</p>
+                          {isGranted && (
+                            <Badge className="bg-emerald-100 text-emerald-700">Active</Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-500">{perm.description}</p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant={isGranted ? "destructive" : "default"}
+                        onClick={() => handleTogglePermission(perm.code, isGranted)}
+                        className={isGranted ? "" : "bg-emerald-600 hover:bg-emerald-700"}
+                      >
+                        {isGranted ? (
+                          <>
+                            <XCircle className="w-4 h-4 mr-1" /> Revoke
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle className="w-4 h-4 mr-1" /> Grant
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+              
+              {staffPermissions.current_permissions?.length > 0 && (
+                <div className="pt-4 border-t">
+                  <p className="text-sm font-medium text-gray-700 mb-2">Currently Granted:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {staffPermissions.current_permissions.map((p) => (
+                      <Badge key={p} variant="outline" className="text-xs">
+                        {p}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPermissionsDialogOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
