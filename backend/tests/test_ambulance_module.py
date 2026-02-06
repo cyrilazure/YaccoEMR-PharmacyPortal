@@ -734,7 +734,7 @@ class AmbulanceModuleTester:
         else:
             try:
                 error_data = response.json()
-                error_msg = error_data.get('detail', f'Status: {response.status_code}')
+                error_msg = str(error_data.get('detail', f'Status: {response.status_code}'))
             except:
                 error_msg = f'Status: {response.status_code}'
             self.log_test("Staff Clock In", False, error_msg)
