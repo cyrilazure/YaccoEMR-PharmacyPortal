@@ -65,6 +65,8 @@ export default function HospitalSuperAdminIT() {
   const [departments, setDepartments] = useState([]);
   const [locations, setLocations] = useState([]);
   const [activityLog, setActivityLog] = useState([]);
+  const [bankAccounts, setBankAccounts] = useState([]);
+  const [mobileMoneyAccounts, setMobileMoneyAccounts] = useState([]);
   
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -77,6 +79,8 @@ export default function HospitalSuperAdminIT() {
   const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
   const [assignmentOpen, setAssignmentOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [addBankDialogOpen, setAddBankDialogOpen] = useState(false);
+  const [addMoMoDialogOpen, setAddMoMoDialogOpen] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState(null);
   const [createdCredentials, setCreatedCredentials] = useState(null);
   
@@ -94,6 +98,23 @@ export default function HospitalSuperAdminIT() {
   const [assignmentData, setAssignmentData] = useState({
     type: 'department',
     value: ''
+  });
+  const [bankForm, setBankForm] = useState({
+    bank_name: '',
+    account_name: '',
+    account_number: '',
+    branch: '',
+    swift_code: '',
+    account_type: 'current',
+    currency: 'GHS',
+    is_primary: false
+  });
+  const [momoForm, setMomoForm] = useState({
+    provider: 'MTN',
+    account_name: '',
+    mobile_number: '',
+    wallet_id: '',
+    is_primary: false
   });
   const [saving, setSaving] = useState(false);
   const [copiedPassword, setCopiedPassword] = useState(false);
