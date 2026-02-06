@@ -165,18 +165,6 @@ def create_prescription_endpoints(db, get_current_user):
     async def search_drugs(query: str = "", limit: int = 20):
         """Search drug database"""
         if not query:
-
-    
-    @prescription_router.get("/pharmacies/ghana")
-    async def get_ghana_pharmacies(region: Optional[str] = None):
-        """Get list of pharmacies in Ghana"""
-        if region:
-            pharmacies = [p for p in GHANA_PHARMACIES if p["region"] == region]
-        else:
-            pharmacies = GHANA_PHARMACIES
-        
-        return {"pharmacies": pharmacies, "total": len(pharmacies)}
-
             return DRUG_DATABASE[:limit]
         
         query_lower = query.lower()
@@ -190,6 +178,16 @@ def create_prescription_endpoints(db, get_current_user):
     async def get_drug_database():
         """Get full drug database"""
         return {"drugs": DRUG_DATABASE, "total": len(DRUG_DATABASE)}
+    
+    @prescription_router.get("/pharmacies/ghana")
+    async def get_ghana_pharmacies(region: Optional[str] = None):
+        """Get list of pharmacies in Ghana"""
+        if region:
+            pharmacies = [p for p in GHANA_PHARMACIES if p["region"] == region]
+        else:
+            pharmacies = GHANA_PHARMACIES
+        
+        return {"pharmacies": pharmacies, "total": len(pharmacies)}
     
     @prescription_router.post("/check-interactions")
     async def check_drug_interactions(
