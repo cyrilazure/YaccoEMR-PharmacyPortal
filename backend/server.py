@@ -1099,6 +1099,13 @@ app.include_router(bed_management_router)
 # Include Finance Settings Module
 from finance_settings_module import router as finance_router, create_finance_endpoints
 finance_api_router = create_finance_endpoints(db, get_current_user)
+
+
+# Include Ambulance Module
+from ambulance_module import ambulance_router, create_ambulance_endpoints
+ambulance_api_router = create_ambulance_endpoints(db, get_current_user)
+app.include_router(ambulance_router)
+
 app.include_router(finance_router)
 
 
