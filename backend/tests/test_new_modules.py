@@ -486,6 +486,7 @@ class TestAmbulanceModule(TestSetup):
     def test_ambulance_create_request(self, auth_headers):
         """Test creating ambulance request"""
         test_request = {
+            "patient_id": "test-patient-001",  # Required field
             "patient_name": "TEST_Patient",
             "patient_mrn": "MRN-TEST-001",
             "pickup_location": "Emergency Ward, Test Hospital",
