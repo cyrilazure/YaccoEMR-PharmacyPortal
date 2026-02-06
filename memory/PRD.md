@@ -134,6 +134,29 @@ Build a comprehensive Electronic Medical Records (EMR) system similar to Epic EM
 - [x] Pharmacy Directory UI at `/pharmacy-directory`
 - [x] API endpoints: `/api/pharmacy-network/*`
 
+### Location-Based Pharmacy Routing for e-Prescriptions (February 6, 2026)
+- [x] **Enhanced e-Prescription Dialog** with pharmacy selection:
+  - Diagnosis/indication field (required)
+  - Priority dropdown (Routine, Urgent, STAT)
+  - Clinical notes textarea
+  - Medication section with full details (name, route, dosage, frequency, duration, quantity, special instructions)
+  - "Add Medication" to add multiple drugs to one prescription
+  - **"Route to Pharmacy (Optional)"** section with embedded pharmacy search
+- [x] **Enhanced "Send to Pharmacy" Dialog** with location-based filtering:
+  - Priority ordering: Same hospital pharmacy → Same district → Same region → National
+  - Region dropdown filter (all 16 Ghana regions)
+  - Ownership type filter (Public, Private, Chain, Hospital-Based)
+  - NHIS accreditation toggle filter
+  - 24-hour service toggle filter
+  - Search by pharmacy name, city, or address
+  - Shows pharmacy count and "Load More" for pagination
+  - Selected pharmacy confirmation with clear button
+  - Additional routing notes for pharmacist
+- [x] **Fallback Routing Rules**:
+  - Hospital's own pharmacy shown as "Recommended" priority option
+  - If no pharmacy selected, prescription stays in "pending_verification" status
+- [x] **Audit Logging**: Tracks pharmacy selection, routing time, changes
+
 ### Billing & Finance Module
 - [x] GHS (₵) currency localization
 - [x] Invoice creation, reversal, and voiding
