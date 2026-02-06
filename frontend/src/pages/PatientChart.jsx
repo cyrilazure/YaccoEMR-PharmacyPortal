@@ -442,6 +442,52 @@ export default function PatientChart() {
     }
   };
 
+  const handleSendToPharmacy = async () => {
+    if (!selectedPrescriptionForRouting || !selectedPharmacyForRouting) {
+      toast.error('Please select a prescription and pharmacy');
+      return;
+    }
+    setSaving(true);
+    try {
+      await prescriptionRoutingAPI.sendToPharmacy(
+        selectedPrescriptionForRouting.id,
+        selectedPharmacyForRouting.id,
+        routingNotes
+      );
+      toast.success(`Prescription sent to ${selectedPharmacyForRouting.name}`);
+      setSendToPharmacyDialogOpen(false);
+      setSelectedPrescriptionForRouting(null);
+      setSelectedPharmacyForRouting(null);
+      setRoutingNotes('');
+      setPharmacySearchResults([]);
+      setPharmacySearchQuery('');
+      fetchRoutedPrescriptions();
+      // Refresh prescriptions to update status
+      const rxRes = await prescriptionAPI.getPatientPrescriptions(id);
+      setPrescriptions(rxRes.data.prescriptions || []);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to send prescription');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const openSendToPharmacyDialog = (prescription) => {
+    setSelectedPrescriptionForRouting(prescription);
+    setSendToPharmacyDialogOpen(true);
+  };
+
+  const getRoutingStatusBadge = (status) => {
+    const styles = {
+      sent: { bg: 'bg-blue-100 text-blue-700', icon: Send },
+      received: { bg: 'bg-yellow-100 text-yellow-700', icon: Package },
+      accepted: { bg: 'bg-green-100 text-green-700', icon: CheckCircle },
+      rejected: { bg: 'bg-red-100 text-red-700', icon: XCircle },
+      filled: { bg: 'bg-emerald-100 text-emerald-800', icon: CheckCircle }
+    };
+    return styles[status] || { bg: 'bg-gray-100 text-gray-600', icon: Clock };
+  };
+
   const getLabResultFlag = (flag) => {
     const flagStyles = {
       'N': { label: 'Normal', className: 'bg-green-100 text-green-700' },
