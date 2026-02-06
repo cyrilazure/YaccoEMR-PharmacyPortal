@@ -2215,6 +2215,305 @@ export default function PatientChart() {
 
       </Tabs>
 
+      {/* New e-Prescription Dialog */}
+      <Dialog open={prescriptionDialogOpen} onOpenChange={setPrescriptionDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle className="flex items-center gap-2">
+              <Pill className="w-5 h-5 text-blue-600" />
+              Create New e-Prescription
+            </DialogTitle>
+            <DialogDescription>
+              Create a prescription and optionally route it directly to a pharmacy
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleCreatePrescription} className="flex-1 overflow-y-auto space-y-4 py-4 pr-2">
+            {/* Diagnosis & Clinical Info */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Diagnosis / Indication *</Label>
+                <Input
+                  value={newPrescription.diagnosis}
+                  onChange={(e) => setNewPrescription({...newPrescription, diagnosis: e.target.value})}
+                  placeholder="e.g., Hypertension, Type 2 Diabetes"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Priority</Label>
+                <Select 
+                  value={newPrescription.priority} 
+                  onValueChange={(v) => setNewPrescription({...newPrescription, priority: v})}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="routine">Routine</SelectItem>
+                    <SelectItem value="urgent">Urgent</SelectItem>
+                    <SelectItem value="stat">STAT</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Clinical Notes</Label>
+              <Textarea
+                value={newPrescription.clinical_notes}
+                onChange={(e) => setNewPrescription({...newPrescription, clinical_notes: e.target.value})}
+                placeholder="Additional clinical notes for the pharmacist..."
+                rows={2}
+              />
+            </div>
+            
+            {/* Medications Section */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-base font-medium">Medications</Label>
+                <Button type="button" variant="outline" size="sm" onClick={addMedicationToRx}>
+                  <Plus className="w-4 h-4 mr-1" /> Add Medication
+                </Button>
+              </div>
+              
+              {newPrescription.medications.map((med, idx) => (
+                <div key={idx} className="p-4 border rounded-lg bg-slate-50 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-slate-700">Medication {idx + 1}</span>
+                    {newPrescription.medications.length > 1 && (
+                      <Button 
+                        type="button" 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => removeMedicationFromRx(idx)}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div className="md:col-span-2 space-y-1">
+                      <Label className="text-sm">Medication Name *</Label>
+                      <Input
+                        value={med.medication_name}
+                        onChange={(e) => updateMedicationInRx(idx, 'medication_name', e.target.value)}
+                        placeholder="e.g., Metformin 500mg"
+                        list={`drug-suggestions-${idx}`}
+                      />
+                      <datalist id={`drug-suggestions-${idx}`}>
+                        {fdaDrugs.slice(0, 20).map(d => (
+                          <option key={d.id || d.registration_number} value={d.name || d.trade_name} />
+                        ))}
+                      </datalist>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-sm">Route</Label>
+                      <Select value={med.route} onValueChange={(v) => updateMedicationInRx(idx, 'route', v)}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="oral">Oral</SelectItem>
+                          <SelectItem value="iv">IV</SelectItem>
+                          <SelectItem value="im">IM</SelectItem>
+                          <SelectItem value="sc">Subcutaneous</SelectItem>
+                          <SelectItem value="topical">Topical</SelectItem>
+                          <SelectItem value="inhaled">Inhaled</SelectItem>
+                          <SelectItem value="rectal">Rectal</SelectItem>
+                          <SelectItem value="sublingual">Sublingual</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-sm">Dosage</Label>
+                      <div className="flex gap-1">
+                        <Input
+                          value={med.dosage}
+                          onChange={(e) => updateMedicationInRx(idx, 'dosage', e.target.value)}
+                          placeholder="500"
+                          className="w-20"
+                        />
+                        <Select value={med.dosage_unit} onValueChange={(v) => updateMedicationInRx(idx, 'dosage_unit', v)}>
+                          <SelectTrigger className="w-20">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="mg">mg</SelectItem>
+                            <SelectItem value="g">g</SelectItem>
+                            <SelectItem value="ml">ml</SelectItem>
+                            <SelectItem value="units">units</SelectItem>
+                            <SelectItem value="mcg">mcg</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-sm">Frequency</Label>
+                      <Select value={med.frequency} onValueChange={(v) => updateMedicationInRx(idx, 'frequency', v)}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="OD">Once daily (OD)</SelectItem>
+                          <SelectItem value="BID">Twice daily (BID)</SelectItem>
+                          <SelectItem value="TID">3x daily (TID)</SelectItem>
+                          <SelectItem value="QID">4x daily (QID)</SelectItem>
+                          <SelectItem value="PRN">As needed (PRN)</SelectItem>
+                          <SelectItem value="STAT">Immediately (STAT)</SelectItem>
+                          <SelectItem value="weekly">Weekly</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-sm">Duration</Label>
+                      <div className="flex gap-1">
+                        <Input
+                          type="number"
+                          value={med.duration_value}
+                          onChange={(e) => updateMedicationInRx(idx, 'duration_value', e.target.value)}
+                          className="w-16"
+                          min="1"
+                        />
+                        <Select value={med.duration_unit} onValueChange={(v) => updateMedicationInRx(idx, 'duration_unit', v)}>
+                          <SelectTrigger className="flex-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="days">Days</SelectItem>
+                            <SelectItem value="weeks">Weeks</SelectItem>
+                            <SelectItem value="months">Months</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-sm">Quantity</Label>
+                      <Input
+                        type="number"
+                        value={med.quantity}
+                        onChange={(e) => updateMedicationInRx(idx, 'quantity', e.target.value)}
+                        min="1"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <Label className="text-sm">Special Instructions</Label>
+                    <Input
+                      value={med.special_instructions}
+                      onChange={(e) => updateMedicationInRx(idx, 'special_instructions', e.target.value)}
+                      placeholder="e.g., Take with food, avoid alcohol"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            {/* Pharmacy Selection (Optional) */}
+            <div className="space-y-3 p-4 bg-emerald-50 rounded-lg border border-emerald-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-base font-medium text-emerald-800">Route to Pharmacy (Optional)</Label>
+                  <p className="text-sm text-emerald-600">Select a pharmacy to send this prescription directly</p>
+                </div>
+                {newPrescription.pharmacy_id && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setNewPrescription({...newPrescription, pharmacy_id: ''})}
+                    className="text-slate-500"
+                  >
+                    Clear Selection
+                  </Button>
+                )}
+              </div>
+              
+              {/* Quick pharmacy search */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Input
+                  placeholder="Search pharmacies by name or location..."
+                  className="pl-10"
+                  onChange={(e) => {
+                    const query = e.target.value.toLowerCase();
+                    if (query.length >= 2) {
+                      const filtered = allPharmacies.filter(p => 
+                        p.name?.toLowerCase().includes(query) ||
+                        p.city?.toLowerCase().includes(query)
+                      ).slice(0, 10);
+                      setPharmacySearchResults(filtered);
+                    } else {
+                      setPharmacySearchResults(filteredPharmacies.slice(0, 10));
+                    }
+                  }}
+                  onFocus={() => setPharmacySearchResults(filteredPharmacies.slice(0, 10))}
+                />
+              </div>
+              
+              {/* Pharmacy options */}
+              {pharmacySearchResults.length > 0 && (
+                <div className="max-h-40 overflow-y-auto border rounded bg-white">
+                  {pharmacySearchResults.map(pharmacy => (
+                    <div
+                      key={pharmacy.id}
+                      className={`p-2 cursor-pointer flex items-center justify-between ${
+                        newPrescription.pharmacy_id === pharmacy.id 
+                          ? 'bg-emerald-100' 
+                          : 'hover:bg-slate-50'
+                      }`}
+                      onClick={() => setNewPrescription({...newPrescription, pharmacy_id: pharmacy.id})}
+                    >
+                      <div>
+                        <p className="font-medium text-sm">{pharmacy.name}</p>
+                        <p className="text-xs text-slate-500">{pharmacy.city}, {pharmacy.region?.replace(/_/g, ' ')}</p>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {pharmacy.has_nhis && (
+                          <Badge className="bg-green-100 text-green-700 text-xs">NHIS</Badge>
+                        )}
+                        {newPrescription.pharmacy_id === pharmacy.id && (
+                          <CheckCircle className="w-4 h-4 text-emerald-600" />
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {newPrescription.pharmacy_id && (
+                <div className="p-2 bg-emerald-100 rounded flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-emerald-600" />
+                  <span className="text-sm text-emerald-800">
+                    Will be sent to: {allPharmacies.find(p => p.id === newPrescription.pharmacy_id)?.name || 'Selected pharmacy'}
+                  </span>
+                </div>
+              )}
+            </div>
+          </form>
+          
+          <DialogFooter className="flex-shrink-0 border-t pt-4">
+            <Button type="button" variant="outline" onClick={() => setPrescriptionDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleCreatePrescription}
+              disabled={saving}
+              className="gap-2 bg-blue-600 hover:bg-blue-700"
+            >
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              Create Prescription
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Send to Pharmacy Dialog - Enhanced with Location-Based Filtering */}
       <Dialog open={sendToPharmacyDialogOpen} onOpenChange={(open) => {
         setSendToPharmacyDialogOpen(open);
