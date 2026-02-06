@@ -84,9 +84,11 @@ export default function HospitalSuperAdminIT() {
   const [addBankDialogOpen, setAddBankDialogOpen] = useState(false);
   const [editBankDialogOpen, setEditBankDialogOpen] = useState(false);
   const [addMoMoDialogOpen, setAddMoMoDialogOpen] = useState(false);
+  const [permissionsDialogOpen, setPermissionsDialogOpen] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState(null);
   const [selectedBankAccount, setSelectedBankAccount] = useState(null);
   const [createdCredentials, setCreatedCredentials] = useState(null);
+  const [staffPermissions, setStaffPermissions] = useState(null);
   
   // Forms
   const [newStaff, setNewStaff] = useState({
