@@ -294,6 +294,29 @@ def create_2fa_endpoints(db, get_current_user, verify_password_func, create_toke
             "backup_codes_count": len(user_2fa.get("backup_codes", []))
         }
     
+    @twofa_router.post("/reset-setup")
+    async def reset_2fa_setup(current_user: dict = Depends(get_current_user)):
+        """
+        Reset pending 2FA setup - generates a fresh secret.
+        Use this if the user's authenticator app got out of sync.
+        Only works if 2FA is NOT yet enabled.
+        """
+        existing = await db.user_2fa.find_one({"user_id": current_user["id"]})
+        
+        if existing and existing.get("enabled"):
+            raise HTTPException(
+                status_code=400, 
+                detail="2FA is already enabled. You must disable it first before resetting."
+            )
+        
+        # Delete any pending setup
+        await db.user_2fa.delete_one({"user_id": current_user["id"]})
+        
+        return {
+            "success": True,
+            "message": "2FA setup has been reset. Please call /setup again to get a new QR code."
+        }
+    
     @twofa_router.post("/disable")
     async def disable_2fa(
         request: TwoFAVerifyRequest,
