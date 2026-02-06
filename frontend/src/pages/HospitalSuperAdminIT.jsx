@@ -1344,12 +1344,49 @@ export default function HospitalSuperAdminIT() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Bank Name *</Label>
-                <Input
-                  value={bankForm.bank_name}
-                  onChange={(e) => setBankForm({...bankForm, bank_name: e.target.value})}
-                  placeholder="e.g., GCB Bank, Ecobank Ghana"
-                  required
-                />
+                <Select 
+                  value={bankForm.bank_name} 
+                  onValueChange={(v) => {
+                    const bankMap = {
+                      'GCB Bank': '040',
+                      'Ecobank Ghana': '050',
+                      'Stanbic Bank': '030',
+                      'Fidelity Bank': '070',
+                      'GTBank Ghana': '080',
+                      'Absa Bank Ghana': '090',
+                      'Standard Chartered': '061',
+                      'ADB Bank': '011',
+                      'Zenith Bank': '012',
+                      'Cal Bank': '013',
+                      'Access Bank': '014',
+                      'UBA Ghana': '016',
+                      'Prudential Bank': '018'
+                    };
+                    setBankForm({...bankForm, bank_name: v, bank_code: bankMap[v] || ''});
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select bank" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="GCB Bank">GCB Bank</SelectItem>
+                    <SelectItem value="Ecobank Ghana">Ecobank Ghana</SelectItem>
+                    <SelectItem value="Absa Bank Ghana">Absa Bank Ghana</SelectItem>
+                    <SelectItem value="Stanbic Bank">Stanbic Bank</SelectItem>
+                    <SelectItem value="Fidelity Bank">Fidelity Bank</SelectItem>
+                    <SelectItem value="GTBank Ghana">GTBank Ghana</SelectItem>
+                    <SelectItem value="Standard Chartered">Standard Chartered</SelectItem>
+                    <SelectItem value="Cal Bank">Cal Bank</SelectItem>
+                    <SelectItem value="Access Bank">Access Bank</SelectItem>
+                    <SelectItem value="Zenith Bank">Zenith Bank</SelectItem>
+                    <SelectItem value="ADB Bank">ADB Bank</SelectItem>
+                    <SelectItem value="Prudential Bank">Prudential Bank</SelectItem>
+                    <SelectItem value="UBA Ghana">UBA Ghana</SelectItem>
+                  </SelectContent>
+                </Select>
+                {bankForm.bank_code && (
+                  <p className="text-xs text-gray-500">Bank Code: {bankForm.bank_code}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label>Account Name *</Label>
