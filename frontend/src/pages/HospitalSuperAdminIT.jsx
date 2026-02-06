@@ -172,6 +172,7 @@ export default function HospitalSuperAdminIT() {
 
   useEffect(() => {
     fetchData();
+    fetchFinanceData();
   }, [fetchData]);
 
   // Create Staff
