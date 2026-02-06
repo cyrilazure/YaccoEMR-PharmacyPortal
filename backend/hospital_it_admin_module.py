@@ -982,6 +982,161 @@ def create_hospital_it_admin_endpoints(db, get_current_user, hash_password):
         
         return {"message": "Department created", "department": {"id": dept_doc["id"], "code": code, "name": name}}
     
+    # ============ User Permission Management ============
+    
+    @hospital_it_admin_router.get("/{hospital_id}/super-admin/staff/{staff_id}/permissions")
+    async def get_staff_permissions(
+        hospital_id: str,
+        staff_id: str,
+        user: dict = Depends(get_current_user)
+    ):
+        """Get staff member's current permissions"""
+        verify_it_admin(user, hospital_id)
+        
+        staff = await db["users"].find_one(
+            {"id": staff_id, "organization_id": hospital_id},
+            {"_id": 0, "id": 1, "email": 1, "first_name": 1, "last_name": 1, "role": 1, 
+             "permissions": 1, "custom_permissions": 1, "groups": 1}
+        )
+        if not staff:
+            raise HTTPException(status_code=404, detail="Staff not found")
+        
+        # Define available module permissions
+        available_permissions = [
+            {"code": "supply_chain:manage", "name": "Supply Chain Management", "description": "Full access to inventory, stock receiving, and supplier management"},
+            {"code": "supply_chain:view", "name": "View Inventory", "description": "View-only access to inventory and stock levels"},
+            {"code": "billing:manage", "name": "Billing Management", "description": "Full access to billing and financial operations"},
+            {"code": "lab:manage", "name": "Lab Management", "description": "Full access to laboratory operations"},
+            {"code": "radiology:manage", "name": "Radiology Management", "description": "Full access to radiology/imaging"},
+            {"code": "nhis:claims", "name": "NHIS Claims", "description": "Submit and manage NHIS insurance claims"},
+        ]
+        
+        current_permissions = staff.get("permissions", []) + staff.get("custom_permissions", [])
+        
+        return {
+            "staff_id": staff_id,
+            "staff_name": f"{staff.get('first_name', '')} {staff.get('last_name', '')}",
+            "staff_email": staff.get("email"),
+            "role": staff.get("role"),
+            "current_permissions": current_permissions,
+            "available_permissions": available_permissions
+        }
+    
+    @hospital_it_admin_router.post("/{hospital_id}/super-admin/staff/{staff_id}/permissions")
+    async def update_staff_permissions(
+        hospital_id: str,
+        staff_id: str,
+        permissions: List[str],
+        user: dict = Depends(get_current_user)
+    ):
+        """Update staff member's custom permissions"""
+        verify_it_admin(user, hospital_id)
+        
+        staff = await db["users"].find_one({
+            "id": staff_id, "organization_id": hospital_id
+        })
+        if not staff:
+            raise HTTPException(status_code=404, detail="Staff not found")
+        
+        # Validate permissions
+        valid_permissions = [
+            "supply_chain:manage", "supply_chain:view",
+            "billing:manage", "lab:manage", "radiology:manage", "nhis:claims"
+        ]
+        invalid = [p for p in permissions if p not in valid_permissions]
+        if invalid:
+            raise HTTPException(status_code=400, detail=f"Invalid permissions: {invalid}")
+        
+        await db["users"].update_one(
+            {"id": staff_id},
+            {"$set": {
+                "custom_permissions": permissions,
+                "permissions_updated_at": datetime.now(timezone.utc).isoformat(),
+                "permissions_updated_by": user["id"]
+            }}
+        )
+        
+        await log_it_action(
+            user, hospital_id, "update_permissions", "user", staff_id,
+            {"email": staff["email"], "permissions": permissions}
+        )
+        
+        return {
+            "message": "Permissions updated successfully",
+            "staff_id": staff_id,
+            "permissions": permissions
+        }
+    
+    @hospital_it_admin_router.post("/{hospital_id}/super-admin/staff/{staff_id}/permissions/grant")
+    async def grant_permission(
+        hospital_id: str,
+        staff_id: str,
+        permission: str,
+        user: dict = Depends(get_current_user)
+    ):
+        """Grant a single permission to staff member"""
+        verify_it_admin(user, hospital_id)
+        
+        staff = await db["users"].find_one({
+            "id": staff_id, "organization_id": hospital_id
+        })
+        if not staff:
+            raise HTTPException(status_code=404, detail="Staff not found")
+        
+        current_perms = staff.get("custom_permissions", [])
+        if permission not in current_perms:
+            current_perms.append(permission)
+        
+        await db["users"].update_one(
+            {"id": staff_id},
+            {"$set": {
+                "custom_permissions": current_perms,
+                "permissions_updated_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+        
+        await log_it_action(
+            user, hospital_id, "grant_permission", "user", staff_id,
+            {"email": staff["email"], "permission": permission}
+        )
+        
+        return {"message": f"Permission '{permission}' granted", "permissions": current_perms}
+    
+    @hospital_it_admin_router.post("/{hospital_id}/super-admin/staff/{staff_id}/permissions/revoke")
+    async def revoke_permission(
+        hospital_id: str,
+        staff_id: str,
+        permission: str,
+        user: dict = Depends(get_current_user)
+    ):
+        """Revoke a permission from staff member"""
+        verify_it_admin(user, hospital_id)
+        
+        staff = await db["users"].find_one({
+            "id": staff_id, "organization_id": hospital_id
+        })
+        if not staff:
+            raise HTTPException(status_code=404, detail="Staff not found")
+        
+        current_perms = staff.get("custom_permissions", [])
+        if permission in current_perms:
+            current_perms.remove(permission)
+        
+        await db["users"].update_one(
+            {"id": staff_id},
+            {"$set": {
+                "custom_permissions": current_perms,
+                "permissions_updated_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+        
+        await log_it_action(
+            user, hospital_id, "revoke_permission", "user", staff_id,
+            {"email": staff["email"], "permission": permission}
+        )
+        
+        return {"message": f"Permission '{permission}' revoked", "permissions": current_perms}
+    
     return hospital_it_admin_router
 
 
