@@ -516,6 +516,10 @@ def create_prescription_endpoints(db, get_current_user):
         
         await db["prescription_routings"].insert_one(routing_record)
         
+        # Remove _id if added
+        if "_id" in routing_record:
+            del routing_record["_id"]
+        
         # Update prescription with routing info
         await db["prescriptions"].update_one(
             {"id": prescription_id},
@@ -525,7 +529,7 @@ def create_prescription_endpoints(db, get_current_user):
                 "send_to_external": True,
                 "routing_id": routing_id,
                 "routing_status": "sent",
-                "status": PrescriptionStatus.APPROVED,
+                "status": PrescriptionStatus.APPROVED.value,
                 "updated_at": datetime.now(timezone.utc).isoformat()
             }}
         )
