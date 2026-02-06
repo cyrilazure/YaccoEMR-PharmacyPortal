@@ -25,14 +25,14 @@ class TestAuthentication:
     """Test authentication for different user types"""
     
     def test_super_admin_login(self):
-        """Test super admin can login via direct-login"""
-        response = requests.post(f"{BASE_URL}/api/direct-login", json={
+        """Test super admin can login via /api/auth/login"""
+        response = requests.post(f"{BASE_URL}/api/auth/login", json={
             "email": SUPER_ADMIN_EMAIL,
             "password": SUPER_ADMIN_PASSWORD
         })
         assert response.status_code == 200, f"Super admin login failed: {response.text}"
         data = response.json()
-        assert "access_token" in data
+        assert "token" in data, "Token not in response"
         assert data.get("user", {}).get("role") == "super_admin"
         print(f"✅ Super admin login successful: {data['user']['email']}")
     
@@ -43,13 +43,11 @@ class TestAuthentication:
             "password": IT_ADMIN_PASSWORD,
             "hospital_id": HOSPITAL_ID
         })
-        # IT admin may not exist yet, so we check for 200 or 401
-        if response.status_code == 200:
-            data = response.json()
-            assert "access_token" in data
-            print(f"✅ IT admin login successful")
-        else:
-            print(f"⚠️ IT admin login returned {response.status_code} - user may not exist")
+        assert response.status_code == 200, f"IT admin login failed: {response.text}"
+        data = response.json()
+        assert "token" in data, "Token not in response"
+        assert data.get("user", {}).get("role") == "hospital_it_admin"
+        print(f"✅ IT admin login successful: {data['user']['email']}")
     
     def test_pharmacist_login(self):
         """Test pharmacist can login via regions auth"""
@@ -58,31 +56,42 @@ class TestAuthentication:
             "password": PHARMACIST_PASSWORD,
             "hospital_id": HOSPITAL_ID
         })
-        if response.status_code == 200:
-            data = response.json()
-            assert "access_token" in data
-            print(f"✅ Pharmacist login successful")
-        else:
-            print(f"⚠️ Pharmacist login returned {response.status_code} - user may not exist")
+        assert response.status_code == 200, f"Pharmacist login failed: {response.text}"
+        data = response.json()
+        assert "token" in data, "Token not in response"
+        assert data.get("user", {}).get("role") == "pharmacist"
+        print(f"✅ Pharmacist login successful: {data['user']['email']}")
 
 
 class TestITAdminPermissions:
     """Test IT Admin permission management endpoints"""
     
     @pytest.fixture
-    def auth_token(self):
+    def super_admin_token(self):
         """Get super admin auth token"""
-        response = requests.post(f"{BASE_URL}/api/direct-login", json={
+        response = requests.post(f"{BASE_URL}/api/auth/login", json={
             "email": SUPER_ADMIN_EMAIL,
             "password": SUPER_ADMIN_PASSWORD
         })
         if response.status_code == 200:
-            return response.json().get("access_token")
+            return response.json().get("token")
         pytest.skip("Could not authenticate super admin")
     
-    def test_get_staff_list(self, auth_token):
+    @pytest.fixture
+    def it_admin_token(self):
+        """Get IT admin auth token"""
+        response = requests.post(f"{BASE_URL}/api/regions/auth/login", json={
+            "email": IT_ADMIN_EMAIL,
+            "password": IT_ADMIN_PASSWORD,
+            "hospital_id": HOSPITAL_ID
+        })
+        if response.status_code == 200:
+            return response.json().get("token")
+        pytest.skip("Could not authenticate IT admin")
+    
+    def test_get_staff_list(self, super_admin_token):
         """Test getting staff list for hospital"""
-        headers = {"Authorization": f"Bearer {auth_token}"}
+        headers = {"Authorization": f"Bearer {super_admin_token}"}
         response = requests.get(
             f"{BASE_URL}/api/hospital/{HOSPITAL_ID}/super-admin/staff",
             headers=headers
@@ -93,9 +102,9 @@ class TestITAdminPermissions:
         print(f"✅ Staff list retrieved: {len(data['staff'])} staff members")
         return data['staff']
     
-    def test_get_staff_permissions_endpoint_exists(self, auth_token):
+    def test_get_staff_permissions_endpoint_exists(self, super_admin_token):
         """Test that the permissions endpoint exists and returns proper structure"""
-        headers = {"Authorization": f"Bearer {auth_token}"}
+        headers = {"Authorization": f"Bearer {super_admin_token}"}
         
         # First get staff list to find a staff member
         staff_response = requests.get(
@@ -128,9 +137,9 @@ class TestITAdminPermissions:
         print(f"✅ Permissions endpoint working. Available permissions: {perm_codes}")
         return data
     
-    def test_grant_permission_endpoint(self, auth_token):
+    def test_grant_permission_endpoint(self, super_admin_token):
         """Test granting a permission to a staff member"""
-        headers = {"Authorization": f"Bearer {auth_token}"}
+        headers = {"Authorization": f"Bearer {super_admin_token}"}
         
         # Get staff list
         staff_response = requests.get(
@@ -156,11 +165,11 @@ class TestITAdminPermissions:
         data = response.json()
         assert "permissions" in data
         assert "supply_chain:manage" in data['permissions']
-        print(f"✅ Permission granted successfully: {data}")
+        print(f"✅ Permission granted successfully to {pharmacist.get('email', staff_id)}")
     
-    def test_revoke_permission_endpoint(self, auth_token):
+    def test_revoke_permission_endpoint(self, super_admin_token):
         """Test revoking a permission from a staff member"""
-        headers = {"Authorization": f"Bearer {auth_token}"}
+        headers = {"Authorization": f"Bearer {super_admin_token}"}
         
         # Get staff list
         staff_response = requests.get(
@@ -190,7 +199,31 @@ class TestITAdminPermissions:
         data = response.json()
         assert "permissions" in data
         assert "supply_chain:view" not in data['permissions']
-        print(f"✅ Permission revoked successfully: {data}")
+        print(f"✅ Permission revoked successfully")
+    
+    def test_it_admin_can_manage_permissions(self, it_admin_token):
+        """Test IT admin can manage permissions for staff"""
+        headers = {"Authorization": f"Bearer {it_admin_token}"}
+        
+        # Get staff list
+        staff_response = requests.get(
+            f"{BASE_URL}/api/hospital/{HOSPITAL_ID}/super-admin/staff",
+            headers=headers
+        )
+        assert response.status_code == 200, f"IT admin cannot access staff list: {staff_response.text}"
+        
+        if not staff_response.json().get('staff'):
+            pytest.skip("No staff members found")
+        
+        staff_id = staff_response.json()['staff'][0]['id']
+        
+        # Test permissions endpoint
+        response = requests.get(
+            f"{BASE_URL}/api/hospital/{HOSPITAL_ID}/super-admin/staff/{staff_id}/permissions",
+            headers=headers
+        )
+        assert response.status_code == 200, f"IT admin cannot access permissions: {response.text}"
+        print(f"✅ IT admin can access permission management")
 
 
 class TestFDABarcodeLookup:
@@ -199,12 +232,12 @@ class TestFDABarcodeLookup:
     @pytest.fixture
     def auth_token(self):
         """Get auth token"""
-        response = requests.post(f"{BASE_URL}/api/direct-login", json={
+        response = requests.post(f"{BASE_URL}/api/auth/login", json={
             "email": SUPER_ADMIN_EMAIL,
             "password": SUPER_ADMIN_PASSWORD
         })
         if response.status_code == 200:
-            return response.json().get("access_token")
+            return response.json().get("token")
         pytest.skip("Could not authenticate")
     
     def test_barcode_lookup_known_barcode(self, auth_token):
@@ -276,12 +309,12 @@ class TestTwoFactorAuth:
     @pytest.fixture
     def auth_token(self):
         """Get auth token"""
-        response = requests.post(f"{BASE_URL}/api/direct-login", json={
+        response = requests.post(f"{BASE_URL}/api/auth/login", json={
             "email": SUPER_ADMIN_EMAIL,
             "password": SUPER_ADMIN_PASSWORD
         })
         if response.status_code == 200:
-            return response.json().get("access_token")
+            return response.json().get("token")
         pytest.skip("Could not authenticate")
     
     def test_2fa_status_endpoint(self, auth_token):
@@ -350,12 +383,12 @@ class TestPharmacyPortalIntegration:
     @pytest.fixture
     def auth_token(self):
         """Get auth token"""
-        response = requests.post(f"{BASE_URL}/api/direct-login", json={
+        response = requests.post(f"{BASE_URL}/api/auth/login", json={
             "email": SUPER_ADMIN_EMAIL,
             "password": SUPER_ADMIN_PASSWORD
         })
         if response.status_code == 200:
-            return response.json().get("access_token")
+            return response.json().get("token")
         pytest.skip("Could not authenticate")
     
     def test_inventory_endpoint(self, auth_token):
