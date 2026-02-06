@@ -28,44 +28,31 @@ Build a comprehensive Electronic Medical Records (EMR) system similar to Epic EM
 
 ## What's Been Implemented
 
-### NHIS Pharmacy Claims Integration (NEW - February 6, 2026)
-- [x] NHIS member verification (MOCKED - sample data)
-- [x] Ghana NHIS drug tariff database (30+ drugs with approved prices)
-- [x] Pharmacy claim creation with drug selection
-- [x] Claim status workflow: draft → submitted → approved/rejected → paid
-- [x] Claims dashboard with financial summaries
-- [x] Drug tariff search and coverage status
-- [x] NHIS Claims Portal UI at `/nhis-claims`
-- [x] API endpoints: `/api/nhis/verify-member`, `/api/nhis/tariff`, `/api/nhis/claims/*`
+### Consolidated Pharmacy Portal (UPDATED - February 6, 2026)
+- [x] **Dispensing Tab**: Prescription verification, approval, and dispensing workflow
+- [x] **Inventory Tab**: Stock management with Supply Chain integration
+  - Add inventory items, receive stock, track batches
+  - Low stock and expiring alerts
+  - Ghana pharmaceutical suppliers database
+- [x] **NHIS Claims Tab**: Integrated NHIS pharmacy claims
+  - Member verification (MOCKED)
+  - Drug tariff search
+  - Claim creation and submission workflow
+- [x] **Directory Tab**: National pharmacy network search
+  - 133 pharmacies across 16 regions
+  - Filter by region, NHIS accreditation, 24-hour service
+- Accessible to: `pharmacist`, `pharmacy_tech`, `hospital_admin`
 
-### Supply Chain & Inventory Module (NEW - February 6, 2026)
-- [x] Inventory item catalog management
-- [x] Stock batch tracking with expiry dates
-- [x] Stock receiving workflow
-- [x] Stock movement history
-- [x] Purchase order management
-- [x] Supplier database with Ghana pharmaceutical suppliers
-- [x] Low stock and expiring items alerts
-- [x] Stock valuation reports
-- [x] Supply Chain Portal UI at `/supply-chain`
-- [x] API endpoints: `/api/supply-chain/inventory`, `/api/supply-chain/stock/*`, `/api/supply-chain/suppliers`
+### Ambulance Portal - Role Access Updated (February 6, 2026)
+- [x] Moved from IT Admin to clinical roles
+- [x] Now accessible to: `nurse`, `nursing_supervisor`, `floor_supervisor`, `hospital_admin`
+- [x] Removed from: `super_admin`, `hospital_it_admin`
+- [x] Fleet management, request workflow, dispatch tracking
 
-### Notifications Module (NEW - February 6, 2026)
-- [x] Real-time notification creation
-- [x] Notification types: prescription updates, alerts, messages
-- [x] Unread count tracking
-- [x] Mark as read functionality
-- [x] Broadcast notifications for admin
-- [x] API endpoints: `/api/notifications`, `/api/notifications/unread-count`
-
-### Ambulance Portal (UPDATED - February 6, 2026)
-- [x] Fleet management with vehicle registration
-- [x] Ambulance request workflow
-- [x] Dispatch management
-- [x] Trip status tracking (requested → approved → dispatched → completed)
-- [x] Dashboard with fleet and request statistics
-- [x] Ambulance Portal UI at `/ambulance`
-- [x] API endpoints: `/api/ambulance/vehicles`, `/api/ambulance/requests`, `/api/ambulance/dashboard`
+### Navigation Cleanup (February 6, 2026)
+- [x] Removed standalone "Pharmacy Directory", "NHIS Claims", "Supply Chain" from sidebar
+- [x] These are now integrated tabs within "Pharmacy Portal"
+- [x] Cleaner navigation for all roles
 
 ### E-Prescription Routing (February 6, 2026)
 - [x] E-prescription routing from Patient Chart to external pharmacies
