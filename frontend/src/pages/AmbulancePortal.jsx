@@ -495,6 +495,166 @@ export default function AmbulancePortal() {
       </Tabs>
 
       {/* Add Vehicle Dialog - Continued in next message due to length */}
+      
+      {/* Add Vehicle Dialog */}
+      <Dialog open={addVehicleOpen} onOpenChange={setAddVehicleOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Register Ambulance Vehicle</DialogTitle>
+            <DialogDescription>Add vehicle to fleet</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleAddVehicle} className="space-y-4 mt-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Vehicle Number/Plate *</Label>
+                <Input value={vehicleForm.vehicle_number} onChange={(e) => setVehicleForm({...vehicleForm, vehicle_number: e.target.value})} placeholder="GW-1234-21" required />
+              </div>
+              <div className="space-y-2">
+                <Label>Make & Model</Label>
+                <Input value={vehicleForm.make_model} onChange={(e) => setVehicleForm({...vehicleForm, make_model: e.target.value})} placeholder="Toyota Land Cruiser" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Vehicle Type</Label>
+                <Select value={vehicleForm.vehicle_type} onValueChange={(v) => setVehicleForm({...vehicleForm, vehicle_type: v})}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="basic_ambulance">Basic Ambulance</SelectItem>
+                    <SelectItem value="advanced_ambulance">Advanced Ambulance</SelectItem>
+                    <SelectItem value="patient_transport">Patient Transport</SelectItem>
+                    <SelectItem value="emergency_response">Emergency Response</SelectItem>
+                    <SelectItem value="icu_ambulance">ICU Ambulance</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Equipment Level</Label>
+                <Select value={vehicleForm.equipment_level} onValueChange={(v) => setVehicleForm({...vehicleForm, equipment_level: v})}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="basic">Basic</SelectItem>
+                    <SelectItem value="intermediate">Intermediate</SelectItem>
+                    <SelectItem value="advanced">Advanced</SelectItem>
+                    <SelectItem value="critical">Critical/ICU</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-4 gap-2">
+              <Label className="flex items-center gap-2"><input type="checkbox" checked={vehicleForm.has_oxygen} onChange={(e) => setVehicleForm({...vehicleForm, has_oxygen: e.target.checked})} /> Oxygen</Label>
+              <Label className="flex items-center gap-2"><input type="checkbox" checked={vehicleForm.has_defibrillator} onChange={(e) => setVehicleForm({...vehicleForm, has_defibrillator: e.target.checked})} /> Defibrillator</Label>
+              <Label className="flex items-center gap-2"><input type="checkbox" checked={vehicleForm.has_ventilator} onChange={(e) => setVehicleForm({...vehicleForm, has_ventilator: e.target.checked})} /> Ventilator</Label>
+              <Label className="flex items-center gap-2"><input type="checkbox" checked={vehicleForm.has_stretcher} onChange={(e) => setVehicleForm({...vehicleForm, has_stretcher: e.target.checked})} /> Stretcher</Label>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setAddVehicleOpen(false)}>Cancel</Button>
+              <Button type="submit" disabled={saving}>{saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Register Vehicle</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Request Ambulance Dialog */}
+      <Dialog open={requestAmbulanceOpen} onOpenChange={setRequestAmbulanceOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Request Ambulance/Patient Transfer</DialogTitle>
+            <DialogDescription>Submit request for emergency transport or inter-facility transfer</DialogDescription>
+          </DialogHeader>
+          <div className="overflow-y-auto pr-2" style={{ maxHeight: 'calc(85vh - 160px)' }}>
+          <form onSubmit={handleRequestAmbulance} className="space-y-4 mt-2">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Patient Name *</Label>
+                <Input value={requestForm.patient_name} onChange={(e) => setRequestForm({...requestForm, patient_name: e.target.value})} required />
+              </div>
+              <div className="space-y-2">
+                <Label>MRN Number *</Label>
+                <Input value={requestForm.patient_mrn} onChange={(e) => setRequestForm({...requestForm, patient_mrn: e.target.value})} placeholder="Medical record number" required />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Pickup Location *</Label>
+              <Input value={requestForm.pickup_location} onChange={(e) => setRequestForm({...requestForm, pickup_location: e.target.value})} placeholder="Ward, department, or address" required />
+            </div>
+            <div className="space-y-2">
+              <Label>Destination Facility *</Label>
+              <Input value={requestForm.destination_facility} onChange={(e) => setRequestForm({...requestForm, destination_facility: e.target.value})} placeholder="Hospital name" required />
+            </div>
+            <div className="space-y-2">
+              <Label>Referral Reason *</Label>
+              <Textarea value={requestForm.referral_reason} onChange={(e) => setRequestForm({...requestForm, referral_reason: e.target.value})} placeholder="Reason for transfer..." required />
+            </div>
+            <div className="space-y-2">
+              <Label>Diagnosis Summary</Label>
+              <Textarea value={requestForm.diagnosis_summary} onChange={(e) => setRequestForm({...requestForm, diagnosis_summary: e.target.value})} placeholder="Brief clinical summary..." />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Trip Type</Label>
+                <Select value={requestForm.trip_type} onValueChange={(v) => setRequestForm({...requestForm, trip_type: v})}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="emergency">Emergency</SelectItem>
+                    <SelectItem value="scheduled">Scheduled Transfer</SelectItem>
+                    <SelectItem value="inter_facility">Inter-Facility</SelectItem>
+                    <SelectItem value="discharge">Discharge Transport</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Priority</Label>
+                <Select value={requestForm.priority_level} onValueChange={(v) => setRequestForm({...requestForm, priority_level: v})}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="routine">Routine</SelectItem>
+                    <SelectItem value="urgent">Urgent</SelectItem>
+                    <SelectItem value="emergency">Emergency</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter className="mt-4">
+              <Button type="button" variant="outline" onClick={() => setRequestAmbulanceOpen(false)}>Cancel</Button>
+              <Button type="submit" disabled={saving} className="bg-red-600 hover:bg-red-700">{saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Submit Request</Button>
+            </DialogFooter>
+          </form>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dispatch Dialog */}
+      <Dialog open={dispatchOpen} onOpenChange={setDispatchOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Dispatch Ambulance</DialogTitle>
+            <DialogDescription>Assign vehicle to {selectedRequest?.patient_name}</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleDispatch} className="space-y-4 mt-4">
+            <div className="space-y-2">
+              <Label>Select Vehicle *</Label>
+              <Select value={dispatchForm.vehicle_id} onValueChange={(v) => setDispatchForm({...dispatchForm, vehicle_id: v})}>
+                <SelectTrigger><SelectValue placeholder="Choose vehicle" /></SelectTrigger>
+                <SelectContent>
+                  {vehicles.filter(v => v.status === 'available').map(v => (
+                    <SelectItem key={v.id} value={v.id}>{v.vehicle_number} - {v.vehicle_type?.replace('_', ' ')}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Estimated Arrival</Label>
+              <Input type="time" value={dispatchForm.estimated_arrival} onChange={(e) => setDispatchForm({...dispatchForm, estimated_arrival: e.target.value})} />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setDispatchOpen(false)}>Cancel</Button>
+              <Button type="submit" disabled={saving} className="bg-red-600">{saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Dispatch</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+
