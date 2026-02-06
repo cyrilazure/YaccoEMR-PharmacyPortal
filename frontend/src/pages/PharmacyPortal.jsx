@@ -339,6 +339,36 @@ export default function PharmacyPortal() {
     setReceiveStockOpen(true);
   };
 
+  // Barcode Scanner Handler
+  const handleBarcodeDetected = async (barcode) => {
+    setScannerActive(false);
+    toast.info(`Barcode detected: ${barcode}`);
+    
+    try {
+      // Lookup drug info from FDA API
+      const res = await fdaAPI.lookupByBarcode(barcode);
+      if (res.data.found) {
+        const drug = res.data.drug;
+        setItemForm({
+          ...itemForm,
+          barcode: barcode,
+          drug_name: drug.name || drug.generic_name || '',
+          drug_code: drug.registration_number || '',
+          fda_registration: drug.registration_number || '',
+          manufacturer: drug.manufacturer || '',
+          category: drug.category || '',
+        });
+        toast.success(`Drug found: ${drug.name || drug.generic_name}`);
+      } else {
+        setItemForm({ ...itemForm, barcode: barcode });
+        toast.warning('Drug not found in FDA database. Please enter details manually.');
+      }
+    } catch (err) {
+      setItemForm({ ...itemForm, barcode: barcode });
+      toast.warning('Could not lookup drug info. Please enter details manually.');
+    }
+  };
+
   // ========== HELPERS ==========
   const getStatusBadge = (status) => {
     const colors = {
