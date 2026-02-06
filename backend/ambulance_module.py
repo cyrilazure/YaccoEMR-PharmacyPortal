@@ -445,7 +445,7 @@ def create_ambulance_endpoints(db, get_current_user):
         ]])
         
         completed_today = len([r for r in all_requests 
-            if r.get("completed_at", "").startswith(datetime.now().strftime("%Y-%m-%d"))])
+            if (r.get("completed_at") or "").startswith(datetime.now().strftime("%Y-%m-%d"))])
         
         emergency_trips = len([r for r in all_requests if r["trip_type"] == TripType.EMERGENCY])
         scheduled_trips = len([r for r in all_requests if r["trip_type"] == TripType.SCHEDULED])
