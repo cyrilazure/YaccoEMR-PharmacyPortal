@@ -237,8 +237,9 @@ GET  /api/finance/bank-accounts          - Manage hospital bank accounts
 ### P1 (High Priority)
 - [ ] Real Ghana FDA API integration (replace mock data)
 - [ ] Real NHIS API integration (replace mock data)
+- [ ] Complete PatientChart refactoring (remaining tabs: Overview, Notes, Orders, Imaging, Pharmacy)
 - [x] ~~Notifications for prescription updates~~ ✅ DONE
-- [ ] Lab results integration
+- [x] ~~Stock alerts for pharmacists~~ ✅ DONE
 
 ### P2 (Medium Priority)
 - [ ] Integration with other payment gateways (Flutterwave, Hubtel)
