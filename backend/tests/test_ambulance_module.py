@@ -276,13 +276,24 @@ class AmbulanceModuleTester:
 
     def test_create_physician_user(self):
         """Create a physician user for testing request creation"""
+        # Get organization_id from IT admin
+        org_id = None
+        if self.it_admin_token:
+            original_token = self.token
+            self.token = self.it_admin_token
+            response, error = self.make_request('GET', 'auth/me')
+            if response and response.status_code == 200:
+                org_id = response.json().get('organization_id')
+            self.token = original_token
+        
         physician_data = {
             "email": "test.physician@yacco.health",
             "password": "test123",
             "first_name": "Test",
             "last_name": "Physician",
             "role": "physician",
-            "department": "Emergency Medicine"
+            "department": "Emergency Medicine",
+            "organization_id": org_id
         }
         
         response, error = self.make_request('POST', 'auth/register', physician_data)
