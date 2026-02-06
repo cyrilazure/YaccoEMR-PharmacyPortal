@@ -2108,10 +2108,21 @@ export default function PatientChart() {
 
       </Tabs>
 
-      {/* Send to Pharmacy Dialog */}
-      <Dialog open={sendToPharmacyDialogOpen} onOpenChange={setSendToPharmacyDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
+      {/* Send to Pharmacy Dialog - Enhanced with Location-Based Filtering */}
+      <Dialog open={sendToPharmacyDialogOpen} onOpenChange={(open) => {
+        setSendToPharmacyDialogOpen(open);
+        if (!open) {
+          setSelectedPharmacyForRouting(null);
+          setPharmacySearchQuery('');
+          setRoutingNotes('');
+          setPharmacyRegionFilter('');
+          setPharmacyOwnershipFilter('');
+          setPharmacyNhisFilter(false);
+          setPharmacy24hrFilter(false);
+        }
+      }}>
+        <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <Building2 className="w-5 h-5 text-emerald-600" />
               Send Prescription to Pharmacy
@@ -2122,7 +2133,7 @@ export default function PatientChart() {
           </DialogHeader>
 
           {selectedPrescriptionForRouting && (
-            <div className="space-y-4 py-4">
+            <div className="flex-1 overflow-y-auto space-y-4 py-4 pr-2">
               {/* Prescription Summary */}
               <div className="p-4 bg-blue-50 rounded-lg">
                 <p className="font-medium text-blue-800">Prescription: {selectedPrescriptionForRouting.rx_number}</p>
@@ -2133,81 +2144,209 @@ export default function PatientChart() {
                 </ul>
               </div>
 
-              {/* Pharmacy Search */}
-              <div className="space-y-2">
-                <Label>Search Pharmacy</Label>
+              {/* Hospital's Own Pharmacy - Priority Option */}
+              {hospitalPharmacy && (
+                <div 
+                  className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                    selectedPharmacyForRouting?.id === hospitalPharmacy.id 
+                      ? 'border-emerald-500 bg-emerald-50' 
+                      : 'border-amber-200 bg-amber-50 hover:border-amber-300'
+                  }`}
+                  onClick={() => setSelectedPharmacyForRouting(hospitalPharmacy)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Building2 className="w-5 h-5 text-amber-600" />
+                      <div>
+                        <p className="font-semibold text-amber-800">Hospital Pharmacy (Recommended)</p>
+                        <p className="text-sm text-amber-700">{hospitalPharmacy.name}</p>
+                      </div>
+                    </div>
+                    {selectedPharmacyForRouting?.id === hospitalPharmacy.id && (
+                      <CheckCircle className="w-5 h-5 text-emerald-600" />
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Pharmacy Search & Filters */}
+              <div className="space-y-3 p-4 bg-slate-50 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <Label className="text-base font-medium">Find External Pharmacy</Label>
+                  <span className="text-sm text-slate-500">{filteredPharmacies.length} pharmacies available</span>
+                </div>
+                
+                {/* Search Input */}
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <Input
-                    placeholder="Search by name, city, or region..."
+                    placeholder="Search by name, city, or address..."
                     value={pharmacySearchQuery}
-                    onChange={(e) => {
-                      setPharmacySearchQuery(e.target.value);
-                      searchPharmacies(e.target.value);
-                    }}
+                    onChange={(e) => setPharmacySearchQuery(e.target.value)}
                     className="pl-10"
                     data-testid="pharmacy-search-input"
                   />
                 </div>
+                
+                {/* Filter Row */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  {/* Region Filter */}
+                  <Select value={pharmacyRegionFilter} onValueChange={setPharmacyRegionFilter}>
+                    <SelectTrigger className="h-9">
+                      <SelectValue placeholder="All Regions" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All Regions</SelectItem>
+                      {ghanaRegions.map((r) => (
+                        <SelectItem key={r.id || r.name} value={r.id || r.name}>
+                          {r.name?.replace(/_/g, ' ')}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  
+                  {/* Ownership Type Filter */}
+                  <Select value={pharmacyOwnershipFilter} onValueChange={setPharmacyOwnershipFilter}>
+                    <SelectTrigger className="h-9">
+                      <SelectValue placeholder="All Types" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All Types</SelectItem>
+                      <SelectItem value="public">Public/Government</SelectItem>
+                      <SelectItem value="private">Private</SelectItem>
+                      <SelectItem value="chain">Chain Pharmacy</SelectItem>
+                      <SelectItem value="hospital">Hospital-Based</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  {/* NHIS Filter */}
+                  <Button
+                    type="button"
+                    variant={pharmacyNhisFilter ? "default" : "outline"}
+                    size="sm"
+                    className={`h-9 ${pharmacyNhisFilter ? 'bg-green-600 hover:bg-green-700' : ''}`}
+                    onClick={() => setPharmacyNhisFilter(!pharmacyNhisFilter)}
+                  >
+                    <Shield className="w-4 h-4 mr-1" /> NHIS Only
+                  </Button>
+                  
+                  {/* 24hr Filter */}
+                  <Button
+                    type="button"
+                    variant={pharmacy24hrFilter ? "default" : "outline"}
+                    size="sm"
+                    className={`h-9 ${pharmacy24hrFilter ? 'bg-purple-600 hover:bg-purple-700' : ''}`}
+                    onClick={() => setPharmacy24hrFilter(!pharmacy24hrFilter)}
+                  >
+                    <Clock className="w-4 h-4 mr-1" /> 24 Hours
+                  </Button>
+                </div>
               </div>
 
-              {/* Search Results */}
-              {pharmacySearchResults.length > 0 && (
-                <div className="border rounded-lg max-h-60 overflow-y-auto">
-                  {pharmacySearchResults.map((pharmacy) => (
-                    <div
-                      key={pharmacy.id}
-                      className={`p-3 border-b cursor-pointer transition-colors ${
-                        selectedPharmacyForRouting?.id === pharmacy.id 
-                          ? 'bg-emerald-50 border-emerald-200' 
-                          : 'hover:bg-slate-50'
-                      }`}
-                      onClick={() => setSelectedPharmacyForRouting(pharmacy)}
-                      data-testid={`pharmacy-option-${pharmacy.id}`}
+              {/* Pharmacy Results */}
+              <div className="border rounded-lg">
+                <div className="p-2 bg-slate-100 border-b flex items-center justify-between">
+                  <span className="text-sm font-medium text-slate-600">
+                    {pharmacySearchResults.length > 0 
+                      ? `Showing ${pharmacySearchResults.length} of ${filteredPharmacies.length} pharmacies`
+                      : 'No pharmacies match your filters'}
+                  </span>
+                  {pharmacySearchResults.length < filteredPharmacies.length && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setPharmacySearchResults(filteredPharmacies.slice(0, pharmacySearchResults.length + 20))}
                     >
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <p className="font-medium">{pharmacy.name}</p>
-                          <p className="text-sm text-slate-500">{pharmacy.address}, {pharmacy.city}</p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Phone className="w-3 h-3 text-slate-400" />
-                            <span className="text-sm">{pharmacy.phone}</span>
+                      Load More
+                    </Button>
+                  )}
+                </div>
+                <div className="max-h-64 overflow-y-auto">
+                  {pharmacySearchResults.length > 0 ? (
+                    pharmacySearchResults.map((pharmacy) => (
+                      <div
+                        key={pharmacy.id}
+                        className={`p-3 border-b cursor-pointer transition-colors ${
+                          selectedPharmacyForRouting?.id === pharmacy.id 
+                            ? 'bg-emerald-50 border-l-4 border-l-emerald-500' 
+                            : 'hover:bg-slate-50'
+                        }`}
+                        onClick={() => setSelectedPharmacyForRouting(pharmacy)}
+                        data-testid={`pharmacy-option-${pharmacy.id}`}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium">{pharmacy.name}</p>
+                              {selectedPharmacyForRouting?.id === pharmacy.id && (
+                                <CheckCircle className="w-4 h-4 text-emerald-600" />
+                              )}
+                            </div>
+                            <p className="text-sm text-slate-500">{pharmacy.address}, {pharmacy.city}</p>
+                            <div className="flex items-center gap-4 mt-1 text-sm text-slate-500">
+                              <span className="flex items-center gap-1">
+                                <MapPin className="w-3 h-3" /> {pharmacy.region?.replace(/_/g, ' ')}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Phone className="w-3 h-3" /> {pharmacy.phone}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex flex-col items-end gap-1">
+                            {pharmacy.has_nhis && (
+                              <Badge className="bg-green-100 text-green-700 text-xs">
+                                <Shield className="w-3 h-3 mr-1" /> NHIS
+                              </Badge>
+                            )}
+                            {pharmacy.has_24hr_service && (
+                              <Badge className="bg-purple-100 text-purple-700 text-xs">
+                                <Clock className="w-3 h-3 mr-1" /> 24hr
+                              </Badge>
+                            )}
+                            <Badge variant="outline" className="text-xs capitalize">
+                              {pharmacy.ownership_type}
+                            </Badge>
                           </div>
                         </div>
-                        <div className="flex flex-col items-end gap-1">
-                          {pharmacy.has_nhis && (
-                            <Badge className="bg-green-100 text-green-700 text-xs">
-                              <Shield className="w-3 h-3 mr-1" /> NHIS
-                            </Badge>
-                          )}
-                          {pharmacy.has_24hr_service && (
-                            <Badge className="bg-purple-100 text-purple-700 text-xs">
-                              <Clock className="w-3 h-3 mr-1" /> 24hr
-                            </Badge>
-                          )}
-                        </div>
                       </div>
+                    ))
+                  ) : (
+                    <div className="p-8 text-center text-slate-500">
+                      <Building2 className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                      <p>No pharmacies found matching your criteria</p>
+                      <p className="text-sm">Try adjusting your filters or search terms</p>
                     </div>
-                  ))}
+                  )}
                 </div>
-              )}
+              </div>
 
-              {/* Selected Pharmacy */}
+              {/* Selected Pharmacy Confirmation */}
               {selectedPharmacyForRouting && (
                 <div className="p-4 bg-emerald-50 rounded-lg border border-emerald-200">
-                  <p className="font-medium text-emerald-800 mb-2">Selected Pharmacy:</p>
-                  <p className="font-semibold">{selectedPharmacyForRouting.name}</p>
-                  <p className="text-sm text-emerald-700">{selectedPharmacyForRouting.address}, {selectedPharmacyForRouting.city}</p>
-                  <p className="text-sm text-emerald-700">Region: {selectedPharmacyForRouting.region}</p>
-                  <p className="text-sm text-emerald-700">Phone: {selectedPharmacyForRouting.phone}</p>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-emerald-700 mb-1">Selected Pharmacy:</p>
+                      <p className="font-semibold text-emerald-900">{selectedPharmacyForRouting.name}</p>
+                      <p className="text-sm text-emerald-700">{selectedPharmacyForRouting.address}, {selectedPharmacyForRouting.city}</p>
+                      <p className="text-sm text-emerald-600">Region: {selectedPharmacyForRouting.region?.replace(/_/g, ' ')} | Phone: {selectedPharmacyForRouting.phone}</p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSelectedPharmacyForRouting(null)}
+                      className="text-slate-500 hover:text-slate-700"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
               )}
 
-              {/* Notes */}
+              {/* Routing Notes */}
               <div className="space-y-2">
-                <Label>Additional Notes (Optional)</Label>
+                <Label>Additional Notes for Pharmacy (Optional)</Label>
                 <Textarea
-                  placeholder="Any special instructions for the pharmacy..."
+                  placeholder="Any special instructions, delivery preferences, or patient notes..."
                   value={routingNotes}
                   onChange={(e) => setRoutingNotes(e.target.value)}
                   rows={2}
@@ -2216,14 +2355,8 @@ export default function PatientChart() {
             </div>
           )}
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setSendToPharmacyDialogOpen(false);
-              setSelectedPharmacyForRouting(null);
-              setPharmacySearchResults([]);
-              setPharmacySearchQuery('');
-              setRoutingNotes('');
-            }}>
+          <DialogFooter className="flex-shrink-0 border-t pt-4">
+            <Button variant="outline" onClick={() => setSendToPharmacyDialogOpen(false)}>
               Cancel
             </Button>
             <Button 
