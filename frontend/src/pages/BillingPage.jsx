@@ -852,51 +852,124 @@ export default function BillingPage() {
                       {hospitalBankAccount ? (
                         <Alert className="bg-white border-emerald-300">
                           <Building2 className="w-4 h-4 text-emerald-600" />
-                          <AlertTitle className="text-emerald-800">Hospital Bank Account Details</AlertTitle>
-                          <AlertDescription className="space-y-2 mt-2">
-                            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                              <div>
-                                <span className="text-gray-600">Bank:</span>
-                                <span className="font-medium ml-2">{hospitalBankAccount.bank_name}</span>
-                              </div>
-                              <div>
-                                <span className="text-gray-600">Branch:</span>
-                                <span className="font-medium ml-2">{hospitalBankAccount.branch || 'Main'}</span>
-                              </div>
-                              <div className="col-span-2">
-                                <span className="text-gray-600">Account Name:</span>
-                                <span className="font-medium ml-2">{hospitalBankAccount.account_name}</span>
-                              </div>
-                              <div>
-                                <span className="text-gray-600">Account Number:</span>
-                                <span className="font-mono font-bold ml-2 text-lg">{hospitalBankAccount.account_number}</span>
-                              </div>
-                              <div>
-                                <span className="text-gray-600">Currency:</span>
-                                <span className="font-medium ml-2">{hospitalBankAccount.currency}</span>
-                              </div>
-                              <div className="col-span-2">
-                                <span className="text-gray-600">Amount to Pay:</span>
-                                <span className="font-bold text-emerald-700 ml-2 text-lg">{formatCurrency(viewInvoice.balance_due)}</span>
-                              </div>
-                              <div className="col-span-2">
-                                <span className="text-gray-600">Payment Reference:</span>
-                                <span className="font-mono ml-2 bg-emerald-100 px-2 py-1 rounded">{viewInvoice.invoice_number}</span>
+                          <AlertTitle className="text-emerald-800 font-bold">Hospital Bank Account Details</AlertTitle>
+                          <AlertDescription className="space-y-4 mt-3">
+                            {/* Domestic Bank Transfer (Ghana) */}
+                            <div className="border-l-4 border-emerald-500 pl-4 bg-emerald-50 p-3 rounded">
+                              <h5 className="font-bold text-emerald-900 mb-2">🇬🇭 For Transfers Within Ghana</h5>
+                              <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                                <div>
+                                  <span className="text-gray-600">Bank Name:</span>
+                                  <span className="font-bold ml-2 block">{hospitalBankAccount.bank_name}</span>
+                                </div>
+                                <div>
+                                  <span className="text-gray-600">Account Number:</span>
+                                  <span className="font-mono font-bold ml-2 text-lg block">{hospitalBankAccount.account_number}</span>
+                                </div>
+                                <div>
+                                  <span className="text-gray-600">Account Name:</span>
+                                  <span className="font-medium ml-2 block">{hospitalBankAccount.account_name}</span>
+                                </div>
+                                <div>
+                                  <span className="text-gray-600">Branch:</span>
+                                  <span className="font-medium ml-2 block">{hospitalBankAccount.branch || 'Main Branch'}</span>
+                                </div>
+                                <div>
+                                  <span className="text-gray-600">Account Type:</span>
+                                  <span className="font-medium ml-2 block capitalize">{hospitalBankAccount.account_type}</span>
+                                </div>
+                                <div>
+                                  <span className="text-gray-600">Currency:</span>
+                                  <span className="font-bold ml-2 block">{hospitalBankAccount.currency}</span>
+                                </div>
+                                {hospitalBankAccount.bank_code && (
+                                  <div>
+                                    <span className="text-gray-600">Bank Code:</span>
+                                    <span className="font-mono ml-2 block">{hospitalBankAccount.bank_code}</span>
+                                  </div>
+                                )}
+                                <div className="col-span-2 border-t pt-2 mt-2">
+                                  <span className="text-gray-600">Amount to Pay:</span>
+                                  <span className="font-bold text-emerald-700 ml-2 text-xl">{formatCurrency(viewInvoice.balance_due)}</span>
+                                </div>
+                                <div className="col-span-2">
+                                  <span className="text-gray-600">Payment Reference:</span>
+                                  <span className="font-mono ml-2 bg-emerald-200 px-2 py-1 rounded font-bold">{viewInvoice.invoice_number}</span>
+                                </div>
                               </div>
                             </div>
+
+                            {/* International Transfer Option */}
+                            {hospitalBankAccount.swift_code && (
+                              <div className="border-l-4 border-blue-500 pl-4 bg-blue-50 p-3 rounded">
+                                <h5 className="font-bold text-blue-900 mb-2">🌍 For International Transfers</h5>
+                                <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                                  <div>
+                                    <span className="text-gray-600">SWIFT Code:</span>
+                                    <span className="font-mono font-bold ml-2 block">{hospitalBankAccount.swift_code}</span>
+                                  </div>
+                                  <div>
+                                    <span className="text-gray-600">Bank Name:</span>
+                                    <span className="font-medium ml-2 block">{hospitalBankAccount.bank_name}</span>
+                                  </div>
+                                  <div className="col-span-2">
+                                    <span className="text-gray-600">Beneficiary Name:</span>
+                                    <span className="font-medium ml-2 block">{hospitalBankAccount.account_name}</span>
+                                  </div>
+                                  <div className="col-span-2">
+                                    <span className="text-gray-600">Account Number:</span>
+                                    <span className="font-mono font-bold ml-2 text-lg block">{hospitalBankAccount.account_number}</span>
+                                  </div>
+                                  <div>
+                                    <span className="text-gray-600">Country:</span>
+                                    <span className="font-medium ml-2 block">Ghana</span>
+                                  </div>
+                                  <div>
+                                    <span className="text-gray-600">Currency:</span>
+                                    <span className="font-bold ml-2 block">{hospitalBankAccount.currency}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Transfer Instructions */}
                             <div className="mt-3 p-3 bg-emerald-100 rounded text-sm text-emerald-800">
-                              <strong>💡 How to Pay via Direct Bank Transfer:</strong>
-                              <ol className="list-decimal ml-5 mt-2 space-y-1">
-                                <li>Use your mobile banking app (GCB Mobile, Ecobank Mobile, etc.)</li>
-                                <li>Select "Transfer" and choose "To Other Banks" or "Same Bank"</li>
-                                <li>Enter the account number: <strong>{hospitalBankAccount.account_number}</strong></li>
-                                <li>Enter amount: <strong>{formatCurrency(viewInvoice.balance_due)}</strong></li>
-                                <li>Use reference: <strong>{viewInvoice.invoice_number}</strong></li>
-                                <li>Confirm transfer and save receipt</li>
-                                <li>Contact billing office to confirm payment received</li>
-                              </ol>
-                              <p className="mt-2 text-xs">
-                                ⏱️ Bank transfers typically complete within 1-2 business days. No gateway fees apply.
+                              <strong>💡 How to Make Bank Transfer:</strong>
+                              <div className="grid md:grid-cols-2 gap-4 mt-2">
+                                <div>
+                                  <p className="font-semibold mb-1">📱 Mobile Banking:</p>
+                                  <ol className="list-decimal ml-5 space-y-1 text-xs">
+                                    <li>Open your bank app (GCB Mobile, Ecobank Mobile, etc.)</li>
+                                    <li>Select "Transfer Money"</li>
+                                    <li>Choose "To Other Bank" or "Same Bank"</li>
+                                    <li>Enter Account: <strong>{hospitalBankAccount.account_number}</strong></li>
+                                    <li>Amount: <strong>{formatCurrency(viewInvoice.balance_due)}</strong></li>
+                                    <li>Reference: <strong>{viewInvoice.invoice_number}</strong></li>
+                                    <li>Confirm and save receipt</li>
+                                  </ol>
+                                </div>
+                                <div>
+                                  <p className="font-semibold mb-1">🏦 Bank Branch:</p>
+                                  <ol className="list-decimal ml-5 space-y-1 text-xs">
+                                    <li>Visit any {hospitalBankAccount.bank_name} branch or any bank</li>
+                                    <li>Fill deposit/transfer slip with:
+                                      <ul className="ml-4 mt-1">
+                                        <li>• Account: {hospitalBankAccount.account_number}</li>
+                                        <li>• Name: {hospitalBankAccount.account_name}</li>
+                                        <li>• Amount: {formatCurrency(viewInvoice.balance_due)}</li>
+                                      </ul>
+                                    </li>
+                                    <li>Complete transfer and get receipt</li>
+                                    <li>Keep receipt for verification</li>
+                                  </ol>
+                                </div>
+                              </div>
+                              <p className="mt-3 text-xs bg-white p-2 rounded border border-emerald-300">
+                                <strong>⏱️ Processing Time:</strong> Local transfers: Same day to 1 business day | International: 3-5 business days
+                                <br/>
+                                <strong>💵 Fees:</strong> No fees from hospital. Your bank may charge transfer fees.
+                                <br/>
+                                <strong>📞 After Payment:</strong> Contact billing office at hospital with your receipt to confirm payment.
                               </p>
                             </div>
                           </AlertDescription>
