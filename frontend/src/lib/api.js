@@ -764,3 +764,23 @@ export const bedManagementAPI = {
   dischargePatient: (admissionId, data) => api.post(`/beds/admissions/${admissionId}/discharge`, data),
 };
 
+// Ghana Pharmacy Network APIs
+export const pharmacyNetworkAPI = {
+  // Pharmacy Directory
+  listAll: (params) => api.get('/pharmacy-network/pharmacies', { params }),
+  search: (q, region, limit) => api.get('/pharmacy-network/pharmacies/search', { params: { q, region, limit } }),
+  getById: (pharmacyId) => api.get(`/pharmacy-network/pharmacies/${pharmacyId}`),
+  
+  // Regions
+  getRegions: () => api.get('/pharmacy-network/regions'),
+  getByRegion: (region, ownershipType, limit) => api.get(`/pharmacy-network/regions/${region}/pharmacies`, { params: { ownership_type: ownershipType, limit } }),
+  
+  // Reference Data
+  getOwnershipTypes: () => api.get('/pharmacy-network/ownership-types'),
+  getStats: () => api.get('/pharmacy-network/stats'),
+  getChains: () => api.get('/pharmacy-network/chains'),
+  
+  // Location Search
+  findNearby: (region, city, has24hrService, limit) => api.get('/pharmacy-network/nearby', { params: { region, city, has_24hr_service: has24hrService, limit } }),
+};
+
