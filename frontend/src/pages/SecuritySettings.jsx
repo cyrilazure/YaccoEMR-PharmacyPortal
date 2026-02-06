@@ -418,20 +418,32 @@ export default function SecuritySettings() {
           
           {setupStep === 1 && setupData && (
             <div className="space-y-4">
+              {/* Important Instructions */}
+              <Alert className="bg-blue-50 border-blue-200">
+                <AlertDescription className="text-blue-800">
+                  <p className="font-semibold mb-1">Important: Open your authenticator app and SCAN this QR code</p>
+                  <p className="text-sm text-blue-700">Do NOT copy the URL - use your app&apos;s camera to scan the image below</p>
+                </AlertDescription>
+              </Alert>
+              
               {/* QR Code Display - Improved */}
               <div className="flex flex-col items-center justify-center p-6 bg-white border-2 border-gray-200 rounded-lg">
                 {setupData.qr_code ? (
                   <img 
                     src={setupData.qr_code} 
-                    alt="QR Code for 2FA Setup" 
+                    alt="QR Code for 2FA Setup - Scan this image with your authenticator app" 
                     className="w-52 h-52 rounded"
                     style={{ imageRendering: 'pixelated' }}
+                    data-testid="2fa-qr-code"
                   />
                 ) : (
                   <div className="w-52 h-52 bg-gray-100 flex items-center justify-center rounded">
                     <QrCode className="w-16 h-16 text-gray-400" />
                   </div>
                 )}
+                <p className="text-sm text-gray-600 mt-3 text-center">
+                  Point your authenticator app&apos;s camera at this image
+                </p>
               </div>
               
               {/* App Recommendations */}
@@ -443,7 +455,7 @@ export default function SecuritySettings() {
               {/* Manual Entry Key */}
               <Alert className="bg-slate-50">
                 <AlertDescription>
-                  <p className="font-medium mb-2 text-slate-700">Can&apos;t scan? Enter this key manually:</p>
+                  <p className="font-medium mb-2 text-slate-700">Can&apos;t scan? Enter this key manually in your app:</p>
                   <div className="flex items-center gap-2 p-3 bg-white rounded border font-mono text-sm tracking-wider">
                     <code className="flex-1 text-center select-all">{setupData.manual_entry_key || setupData.secret}</code>
                     <Button size="sm" variant="ghost" onClick={() => copyToClipboard(setupData.secret)} title="Copy secret key">
