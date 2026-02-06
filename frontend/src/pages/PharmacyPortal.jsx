@@ -238,10 +238,15 @@ export default function PharmacyPortal() {
     }
     setSaving(true);
     try {
-      await supplyAPI.receiveStock(receiveForm);
-      toast.success('Stock received');
+      const payload = {
+        ...receiveForm,
+        quantity: parseInt(receiveForm.quantity) || 0,
+        unit_cost: receiveForm.unit_cost ? parseFloat(receiveForm.unit_cost) : 0
+      };
+      await supplyAPI.receiveStock(payload);
+      toast.success('Stock received and logged');
       setReceiveStockOpen(false);
-      setReceiveForm({ inventory_item_id: '', quantity: 0, batch_number: '', expiry_date: '', supplier_name: '', unit_cost: 0 });
+      setReceiveForm({ inventory_item_id: '', quantity: '', batch_number: '', expiry_date: '', supplier_name: '', unit_cost: '' });
       setSelectedItem(null);
       fetchInventoryData();
     } catch (err) {
