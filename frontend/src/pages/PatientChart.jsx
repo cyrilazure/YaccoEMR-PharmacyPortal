@@ -166,12 +166,126 @@ export default function PatientChart() {
 
   const fetchPharmacyNetworkData = async () => {
     try {
-      const res = await pharmacyNetworkAPI.listAll({ limit: 100 });
-      setGhanaPharmacies(res.data.pharmacies || []);
+      // Fetch all pharmacies
+      const res = await pharmacyNetworkAPI.listAll({ limit: 500 });
+      const pharmacies = res.data.pharmacies || [];
+      setAllPharmacies(pharmacies);
+      setGhanaPharmacies(pharmacies);
+      
+      // Fetch regions for filtering
+      const regionsRes = await pharmacyNetworkAPI.getRegions();
+      setGhanaRegions(regionsRes.data.regions || []);
+      
+      // Get user's hospital info from localStorage
+      const hospitalData = localStorage.getItem('yacco_hospital');
+      const userHospital = hospitalData ? JSON.parse(hospitalData) : null;
+      
+      // If user has a hospital, filter pharmacies by location
+      if (userHospital) {
+        const hospitalRegion = userHospital.region_id || userHospital.region;
+        const hospitalCity = userHospital.city;
+        
+        // Set default region filter to hospital's region
+        if (hospitalRegion) {
+          setPharmacyRegionFilter(hospitalRegion);
+        }
+        
+        // Find hospital's own pharmacy (if any)
+        const ownPharmacy = pharmacies.find(p => 
+          p.hospital_id === userHospital.id || 
+          p.name?.toLowerCase().includes(userHospital.name?.toLowerCase())
+        );
+        if (ownPharmacy) {
+          setHospitalPharmacy(ownPharmacy);
+        }
+        
+        // Sort pharmacies by proximity (same region first, then others)
+        const sortedPharmacies = sortPharmaciesByLocation(pharmacies, hospitalRegion, hospitalCity);
+        setFilteredPharmacies(sortedPharmacies);
+      } else {
+        setFilteredPharmacies(pharmacies);
+      }
     } catch (err) {
       console.error('Failed to fetch pharmacy network data', err);
     }
   };
+  
+  // Sort pharmacies by proximity to user's hospital location
+  const sortPharmaciesByLocation = (pharmacies, userRegion, userCity) => {
+    return [...pharmacies].sort((a, b) => {
+      // Priority 1: Same city
+      const aInCity = a.city?.toLowerCase() === userCity?.toLowerCase();
+      const bInCity = b.city?.toLowerCase() === userCity?.toLowerCase();
+      if (aInCity && !bInCity) return -1;
+      if (!aInCity && bInCity) return 1;
+      
+      // Priority 2: Same region
+      const aInRegion = a.region?.toLowerCase().replace(/_/g, '-') === userRegion?.toLowerCase().replace(/_/g, '-');
+      const bInRegion = b.region?.toLowerCase().replace(/_/g, '-') === userRegion?.toLowerCase().replace(/_/g, '-');
+      if (aInRegion && !bInRegion) return -1;
+      if (!aInRegion && bInRegion) return 1;
+      
+      // Priority 3: NHIS accredited
+      if (a.has_nhis && !b.has_nhis) return -1;
+      if (!a.has_nhis && b.has_nhis) return 1;
+      
+      // Priority 4: Alphabetical
+      return (a.name || '').localeCompare(b.name || '');
+    });
+  };
+  
+  // Filter pharmacies based on selected filters
+  const applyPharmacyFilters = useCallback(() => {
+    let filtered = [...allPharmacies];
+    
+    // Search query filter
+    if (pharmacySearchQuery.length >= 2) {
+      const query = pharmacySearchQuery.toLowerCase();
+      filtered = filtered.filter(p => 
+        p.name?.toLowerCase().includes(query) ||
+        p.city?.toLowerCase().includes(query) ||
+        p.address?.toLowerCase().includes(query)
+      );
+    }
+    
+    // Region filter
+    if (pharmacyRegionFilter) {
+      filtered = filtered.filter(p => 
+        p.region?.toLowerCase().replace(/_/g, '-') === pharmacyRegionFilter.toLowerCase().replace(/_/g, '-')
+      );
+    }
+    
+    // Ownership type filter
+    if (pharmacyOwnershipFilter) {
+      filtered = filtered.filter(p => p.ownership_type === pharmacyOwnershipFilter);
+    }
+    
+    // NHIS filter
+    if (pharmacyNhisFilter) {
+      filtered = filtered.filter(p => p.has_nhis);
+    }
+    
+    // 24-hour filter
+    if (pharmacy24hrFilter) {
+      filtered = filtered.filter(p => p.is_24hr);
+    }
+    
+    // Get hospital info for location sorting
+    const hospitalData = localStorage.getItem('yacco_hospital');
+    const userHospital = hospitalData ? JSON.parse(hospitalData) : null;
+    
+    if (userHospital) {
+      filtered = sortPharmaciesByLocation(filtered, userHospital.region_id || userHospital.region, userHospital.city);
+    }
+    
+    setFilteredPharmacies(filtered);
+    setPharmacySearchResults(filtered.slice(0, 20));
+  }, [allPharmacies, pharmacySearchQuery, pharmacyRegionFilter, pharmacyOwnershipFilter, pharmacyNhisFilter, pharmacy24hrFilter]);
+  
+  // Apply filters when any filter changes
+  useEffect(() => {
+    applyPharmacyFilters();
+  }, [applyPharmacyFilters]);
 
   const fetchFDAData = async () => {
     try {
