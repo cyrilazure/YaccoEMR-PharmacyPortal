@@ -1019,18 +1019,19 @@ export default function BillingPage() {
 
       {/* Payment Verification Dialog */}
       <Dialog open={paymentVerificationOpen} onOpenChange={setPaymentVerificationOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[85vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <CheckCircle className="w-5 h-5 text-emerald-600" />
               Verify {selectedPaymentMethod?.toUpperCase().replace('_', ' ')} Payment
             </DialogTitle>
             <DialogDescription>
-              Confirm payment receipt before recording - Amount: {formatCurrency(paymentVerification.amount)}
+              Confirm payment receipt - Amount: {formatCurrency(paymentVerification.amount)}
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4 py-4">
+          <div className="overflow-y-auto pr-2" style={{ maxHeight: 'calc(85vh - 160px)' }}>
+          <div className="space-y-4 py-2">
             <Alert className="bg-amber-50 border-amber-300">
               <AlertCircle className="w-4 h-4 text-amber-600" />
               <AlertTitle className="text-amber-800">Payment Verification Required</AlertTitle>
@@ -1137,8 +1138,9 @@ export default function BillingPage() {
               </Label>
             </div>
           </div>
+          </div>
           
-          <div className="flex justify-end gap-2">
+          <DialogFooter className="mt-4">
             <Button 
               variant="outline" 
               onClick={() => setPaymentVerificationOpen(false)}
@@ -1154,7 +1156,7 @@ export default function BillingPage() {
               <CheckCircle className="w-4 h-4 mr-2" />
               Record Verified Payment
             </Button>
-          </div>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
