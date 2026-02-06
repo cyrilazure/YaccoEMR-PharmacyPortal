@@ -225,6 +225,30 @@ def create_supply_chain_endpoints(db, get_current_user):
         if "_id" in item_doc:
             del item_doc["_id"]
         
+        # Create activity log
+        activity_log = {
+            "id": str(uuid.uuid4()),
+            "action": "inventory_item_created",
+            "module": "pharmacy_inventory",
+            "entity_type": "inventory_item",
+            "entity_id": item_id,
+            "description": f"Added new inventory item: {data.drug_name}",
+            "details": {
+                "drug_name": data.drug_name,
+                "drug_code": drug_code,
+                "category": data.category,
+                "unit_cost": data.unit_cost,
+                "selling_price": data.selling_price
+            },
+            "user_id": user.get("id"),
+            "user_email": user.get("email"),
+            "user_name": f"{user.get('first_name', '')} {user.get('last_name', '')}",
+            "user_role": user.get("role"),
+            "organization_id": user.get("organization_id"),
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+        await db["pharmacy_activity_logs"].insert_one(activity_log)
+        
         return {"message": "Inventory item created", "item": item_doc}
     
     @supply_chain_router.get("/inventory/{item_id}")
