@@ -363,16 +363,17 @@ def create_prescription_endpoints(db, get_current_user):
         user: dict = Depends(get_current_user)
     ):
         """Update prescription status (pharmacy workflow)"""
-        prescription = await db["prescriptions"].find_one({"id": prescription_id})
+        prescription = await db["prescriptions"].find_one({"id": prescription_id}, {"_id": 0})
         if not prescription:
             raise HTTPException(status_code=404, detail="Prescription not found")
         
         update_data = {"updated_at": datetime.now(timezone.utc).isoformat()}
         
         if data.status:
-            update_data["status"] = data.status
+            status_value = data.status.value if hasattr(data.status, 'value') else data.status
+            update_data["status"] = status_value
             
-            if data.status == PrescriptionStatus.DISPENSED:
+            if data.status == PrescriptionStatus.DISPENSED or status_value == "dispensed":
                 update_data["dispensed_at"] = datetime.now(timezone.utc).isoformat()
                 update_data["dispensed_by"] = f"{user.get('first_name', '')} {user.get('last_name', '')}"
         
@@ -393,11 +394,11 @@ def create_prescription_endpoints(db, get_current_user):
             "user_id": user.get("id"),
             "user_name": f"{user.get('first_name', '')} {user.get('last_name', '')}",
             "organization_id": user.get("organization_id"),
-            "details": {"new_status": data.status, "rx_number": prescription.get("rx_number")},
+            "details": {"new_status": str(data.status), "rx_number": prescription.get("rx_number")},
             "timestamp": datetime.now(timezone.utc).isoformat()
         })
         
-        return {"message": "Prescription updated", "status": data.status}
+        return {"message": "Prescription updated", "status": str(data.status)}
     
     @prescription_router.post("/{prescription_id}/renew")
     async def renew_prescription(
