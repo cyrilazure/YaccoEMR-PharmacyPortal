@@ -1458,6 +1458,15 @@ export default function HospitalSuperAdminIT() {
               />
             </div>
             
+            <Alert className="bg-blue-50 border-blue-200">
+              <CreditCard className="w-4 h-4 text-blue-600" />
+              <AlertTitle className="text-blue-800">Paystack Direct Settlement</AlertTitle>
+              <AlertDescription className="text-blue-700 text-sm">
+                When patients pay via Paystack (card payments), the money will be sent DIRECTLY to this bank account automatically. 
+                No manual transfers needed. Settlement takes 1-2 business days.
+              </AlertDescription>
+            </Alert>
+            
             <div className="flex items-center gap-2 p-3 bg-emerald-50 rounded-lg">
               <input
                 type="checkbox"
