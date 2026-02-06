@@ -47,6 +47,8 @@ import RadiologyPortal from "@/pages/RadiologyPortal";
 import BedManagementPortal from "@/pages/BedManagementPortal";
 import FinanceSettings from "@/pages/FinanceSettings";
 import AmbulancePortal from "@/pages/AmbulancePortal";
+import NHISClaimsPortal from "@/pages/NHISClaimsPortal";
+import SupplyChainPortal from "@/pages/SupplyChainPortal";
 
 // Role-based redirect component
 function RoleBasedRedirect() {
