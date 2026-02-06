@@ -141,6 +141,30 @@ const navItems = [
     description: 'Department operations',
     color: 'text-teal-500'
   },
+  { 
+    to: '/ambulance', 
+    icon: Ambulance, 
+    label: 'Ambulance', 
+    roles: ['hospital_admin', 'hospital_it_admin', 'super_admin', 'physician', 'nurse'],
+    description: 'Emergency transport',
+    color: 'text-red-500'
+  },
+  { 
+    to: '/nhis-claims', 
+    icon: CreditCard, 
+    label: 'NHIS Claims', 
+    roles: ['pharmacist', 'pharmacy_tech', 'biller', 'hospital_admin', 'super_admin'],
+    description: 'NHIS pharmacy claims',
+    color: 'text-green-500'
+  },
+  { 
+    to: '/supply-chain', 
+    icon: Package, 
+    label: 'Supply Chain', 
+    roles: ['pharmacist', 'pharmacy_tech', 'hospital_admin', 'super_admin'],
+    description: 'Inventory management',
+    color: 'text-indigo-500'
+  },
   
   // ========== SHARED CLINICAL PAGES (Based on Permissions) ==========
   { 
