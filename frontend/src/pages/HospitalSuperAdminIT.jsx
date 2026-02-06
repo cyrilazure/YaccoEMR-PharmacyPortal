@@ -390,6 +390,9 @@ export default function HospitalSuperAdminIT() {
           <TabsTrigger value="assignments" className="gap-2">
             <FolderTree className="w-4 h-4" /> Departments & Locations
           </TabsTrigger>
+          <TabsTrigger value="finance" className="gap-2">
+            <Landmark className="w-4 h-4" /> Finance Settings
+          </TabsTrigger>
           <TabsTrigger value="activity" className="gap-2">
             <Activity className="w-4 h-4" /> IT Activity Log
           </TabsTrigger>
