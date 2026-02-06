@@ -211,7 +211,8 @@ export default function PatientChart() {
   };
   
   // Sort pharmacies by proximity to user's hospital location
-  const sortPharmaciesByLocation = (pharmacies, userRegion, userCity) => {
+  const sortPharmaciesByLocation = useCallback((pharmacies, userRegion, userCity) => {
+    if (!pharmacies || pharmacies.length === 0) return [];
     return [...pharmacies].sort((a, b) => {
       // Priority 1: Same city
       const aInCity = a.city?.toLowerCase() === userCity?.toLowerCase();
@@ -232,14 +233,20 @@ export default function PatientChart() {
       // Priority 4: Alphabetical
       return (a.name || '').localeCompare(b.name || '');
     });
-  };
+  }, []);
   
   // Filter pharmacies based on selected filters
   const applyPharmacyFilters = useCallback(() => {
+    if (!allPharmacies || allPharmacies.length === 0) {
+      setFilteredPharmacies([]);
+      setPharmacySearchResults([]);
+      return;
+    }
+    
     let filtered = [...allPharmacies];
     
     // Search query filter
-    if (pharmacySearchQuery.length >= 2) {
+    if (pharmacySearchQuery && pharmacySearchQuery.length >= 2) {
       const query = pharmacySearchQuery.toLowerCase();
       filtered = filtered.filter(p => 
         p.name?.toLowerCase().includes(query) ||
@@ -267,7 +274,7 @@ export default function PatientChart() {
     
     // 24-hour filter
     if (pharmacy24hrFilter) {
-      filtered = filtered.filter(p => p.is_24hr);
+      filtered = filtered.filter(p => p.is_24hr || p.has_24hr_service);
     }
     
     // Get hospital info for location sorting
@@ -280,7 +287,7 @@ export default function PatientChart() {
     
     setFilteredPharmacies(filtered);
     setPharmacySearchResults(filtered.slice(0, 20));
-  }, [allPharmacies, pharmacySearchQuery, pharmacyRegionFilter, pharmacyOwnershipFilter, pharmacyNhisFilter, pharmacy24hrFilter]);
+  }, [allPharmacies, pharmacySearchQuery, pharmacyRegionFilter, pharmacyOwnershipFilter, pharmacyNhisFilter, pharmacy24hrFilter, sortPharmaciesByLocation]);
   
   // Apply filters when any filter changes
   useEffect(() => {
