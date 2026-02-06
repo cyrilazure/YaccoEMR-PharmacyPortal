@@ -254,23 +254,6 @@ export default function BillingPage() {
     const config = statusConfig[status] || { label: status, className: 'bg-gray-100 text-gray-700' };
     return <Badge className={config.className}>{config.label}</Badge>;
   };
-      draft: { color: 'bg-slate-100 text-slate-700', icon: FileText },
-      sent: { color: 'bg-blue-100 text-blue-700', icon: Send },
-      paid: { color: 'bg-green-100 text-green-700', icon: CheckCircle },
-      partially_paid: { color: 'bg-amber-100 text-amber-700', icon: Clock },
-      overdue: { color: 'bg-red-100 text-red-700', icon: AlertCircle },
-      cancelled: { color: 'bg-slate-100 text-slate-500', icon: XCircle },
-    };
-    const config = statusConfig[status] || statusConfig.draft;
-    const Icon = config.icon;
-    
-    return (
-      <Badge className={`${config.color} gap-1`}>
-        <Icon className="w-3 h-3" />
-        {status.replace('_', ' ').toUpperCase()}
-      </Badge>
-    );
-  };
 
   if (loading) {
     return (
