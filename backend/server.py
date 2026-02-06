@@ -1116,6 +1116,16 @@ from fda_module import fda_router, create_fda_endpoints
 fda_api_router = create_fda_endpoints(db, get_current_user)
 app.include_router(fda_router)
 
+# Include Notifications Module (Real-time alerts)
+from notifications_module import notifications_router, create_notification_endpoints as create_realtime_notifications
+notifications_api_router = create_realtime_notifications(db, get_current_user)
+app.include_router(notifications_router)
+
+# Include Supply Chain & Inventory Module
+from supply_chain_module import supply_chain_router, create_supply_chain_endpoints
+supply_chain_api_router = create_supply_chain_endpoints(db, get_current_user)
+app.include_router(supply_chain_router)
+
 app.include_router(finance_router)
 
 
