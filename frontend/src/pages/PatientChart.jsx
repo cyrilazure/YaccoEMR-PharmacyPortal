@@ -78,6 +78,10 @@ export default function PatientChart() {
   const [labOrderDialogOpen, setLabOrderDialogOpen] = useState(false);
   const [radiologyOrderDialogOpen, setRadiologyOrderDialogOpen] = useState(false);
   const [prescriptionDialogOpen, setPrescriptionDialogOpen] = useState(false);
+  const [sendToPharmacyDialogOpen, setSendToPharmacyDialogOpen] = useState(false);
+  const [selectedPrescriptionForRouting, setSelectedPrescriptionForRouting] = useState(null);
+  const [selectedPharmacyForRouting, setSelectedPharmacyForRouting] = useState(null);
+  const [routingNotes, setRoutingNotes] = useState('');
   
   // Form states
   const [newVitals, setNewVitals] = useState({
