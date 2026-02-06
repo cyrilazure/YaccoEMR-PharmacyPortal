@@ -172,7 +172,7 @@ class ComprehensiveEMRTester:
                 continue
             
             data = response.json()
-            codes = data.get('codes', [])
+            codes = data.get('service_codes', [])
             actual_count = len(codes)
             success = actual_count >= expected_count
             self.log_test(f"Service Codes - {category.title()}", success, 
