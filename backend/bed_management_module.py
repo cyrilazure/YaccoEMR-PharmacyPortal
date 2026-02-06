@@ -140,6 +140,59 @@ DEFAULT_WARD_TEMPLATES = [
 ]
 
 
+
+def generate_hospital_ward_prefix(hospital_name: str) -> str:
+    """Generate ward prefix from hospital name initials
+    Examples:
+    - 'Korle-Bu Teaching Hospital' → 'KBT'
+    - 'Ridge Hospital' → 'RID'
+    - 'Tamale Teaching Hospital' → 'TTH'
+    """
+    # Split by spaces and hyphens, take first letter of each significant word
+    words = hospital_name.replace('-', ' ').replace('  ', ' ').split()
+    # Filter out common words
+    significant_words = [w for w in words if w.lower() not in ['the', 'and', 'of', 'hospital', 'health', 'center', 'centre']]
+    
+    if len(significant_words) >= 3:
+        # Take first letter of first 3 words
+        prefix = ''.join([w[0].upper() for w in significant_words[:3]])
+    elif len(significant_words) == 2:
+        # Take first letter of each word
+        prefix = ''.join([w[0].upper() for w in significant_words])
+    else:
+        # Take first 3 letters of hospital name
+        prefix = hospital_name[:3].upper().replace(' ', '').replace('-', '')
+    
+    return prefix
+
+
+def generate_auto_ward_name(hospital_prefix: str, ward_type: str) -> str:
+    """Generate auto ward name using hospital prefix
+    Example: KBT + ICU → 'KBT-ICU'
+    """
+    ward_type_map = {
+        "emergency": "ER",
+        "general": "GEN",
+        "icu": "ICU",
+        "ccu": "CCU",
+        "micu": "MICU",
+        "sicu": "SICU",
+        "nicu": "NICU",
+        "picu": "PICU",
+        "pediatric": "PED",
+        "maternity": "MAT",
+        "surgical": "SUR",
+        "orthopedic": "ORT",
+        "oncology": "ONC",
+        "psychiatric": "PSY",
+        "isolation": "ISO",
+        "private": "PVT"
+    }
+    
+    ward_code = ward_type_map.get(ward_type, ward_type[:3].upper())
+    return f"{hospital_prefix}-{ward_code}"
+
+
 def create_bed_management_endpoints(db, get_current_user):
     """Create bed management API endpoints"""
     
