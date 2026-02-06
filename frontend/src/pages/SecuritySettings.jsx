@@ -541,6 +541,7 @@ export default function SecuritySettings() {
               </Button>
             </div>
           )}
+          </div>
         </DialogContent>
       </Dialog>
 
