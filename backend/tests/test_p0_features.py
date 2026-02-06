@@ -210,7 +210,7 @@ class TestITAdminPermissions:
             f"{BASE_URL}/api/hospital/{HOSPITAL_ID}/super-admin/staff",
             headers=headers
         )
-        assert response.status_code == 200, f"IT admin cannot access staff list: {staff_response.text}"
+        assert staff_response.status_code == 200, f"IT admin cannot access staff list: {staff_response.text}"
         
         if not staff_response.json().get('staff'):
             pytest.skip("No staff members found")
