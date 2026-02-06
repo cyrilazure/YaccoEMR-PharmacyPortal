@@ -109,6 +109,8 @@ export default function HospitalSuperAdminIT() {
     swift_code: '',
     account_type: 'current',
     currency: 'GHS',
+    bank_code: '',
+    enable_paystack_settlement: true,
     is_primary: false
   });
   const [momoForm, setMomoForm] = useState({
@@ -346,7 +348,7 @@ export default function HospitalSuperAdminIT() {
       setBankForm({
         bank_name: '', account_name: '', account_number: '',
         branch: '', swift_code: '', account_type: 'current',
-        currency: 'GHS', is_primary: false
+        currency: 'GHS', bank_code: '', enable_paystack_settlement: true, is_primary: false
       });
       fetchFinanceData();
     } catch (err) {
