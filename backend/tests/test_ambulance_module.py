@@ -815,13 +815,24 @@ class AmbulanceModuleTester:
 
     def test_create_nurse_user(self):
         """Create a nurse user for access control testing"""
+        # Get organization_id from IT admin
+        org_id = None
+        if self.it_admin_token:
+            original_token = self.token
+            self.token = self.it_admin_token
+            response, error = self.make_request('GET', 'auth/me')
+            if response and response.status_code == 200:
+                org_id = response.json().get('organization_id')
+            self.token = original_token
+        
         nurse_data = {
             "email": "test.nurse@yacco.health",
             "password": "test123",
             "first_name": "Test",
             "last_name": "Nurse",
             "role": "nurse",
-            "department": "Emergency Department"
+            "department": "Emergency Department",
+            "organization_id": org_id
         }
         
         response, error = self.make_request('POST', 'auth/register', nurse_data)
