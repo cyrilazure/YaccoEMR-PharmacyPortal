@@ -30,7 +30,7 @@ import { formatDateTime } from '@/lib/utils';
 import {
   Building2, Users, Settings, Plus, Mail, Phone, MapPin,
   UserPlus, Send, Copy, CheckCircle2, XCircle, Clock,
-  Shield, Edit, Trash2, RefreshCw, Key, Activity
+  Shield, Edit, Trash2, RefreshCw, Key, Activity, Landmark
 } from 'lucide-react';
 
 export default function HospitalSettings() {
@@ -255,6 +255,10 @@ export default function HospitalSettings() {
           <TabsTrigger value="organization">Organization</TabsTrigger>
           <TabsTrigger value="staff">Staff Management</TabsTrigger>
           <TabsTrigger value="invitations">Invitations</TabsTrigger>
+          <TabsTrigger value="finance">
+            <Landmark className="w-4 h-4 mr-2" />
+            Finance Settings
+          </TabsTrigger>
         </TabsList>
 
         {/* Organization Tab */}
