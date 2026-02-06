@@ -363,6 +363,83 @@ export default function HospitalSuperAdminIT() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">Total Staff</p>
+
+
+  // Finance Settings Handlers
+  const fetchFinanceData = async () => {
+    try {
+      const [bankRes, momoRes] = await Promise.all([
+        api.get('/finance/bank-accounts'),
+        api.get('/finance/mobile-money-accounts')
+      ]);
+      setBankAccounts(bankRes.data.accounts || []);
+      setMobileMoneyAccounts(momoRes.data.accounts || []);
+    } catch (err) {
+      console.error('Failed to load finance data:', err);
+    }
+  };
+
+  const handleAddBankAccount = async (e) => {
+    e.preventDefault();
+    if (!bankForm.bank_name || !bankForm.account_number) {
+      toast.error('Bank name and account number are required');
+      return;
+    }
+    
+    setSaving(true);
+    try {
+      await api.post('/finance/bank-accounts', bankForm);
+      toast.success('Bank account added successfully');
+      setAddBankDialogOpen(false);
+      setBankForm({
+        bank_name: '', account_name: '', account_number: '',
+        branch: '', swift_code: '', account_type: 'current',
+        currency: 'GHS', is_primary: false
+      });
+      fetchFinanceData();
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Failed to add bank account'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleAddMoMoAccount = async (e) => {
+    e.preventDefault();
+    if (!momoForm.account_name || !momoForm.mobile_number) {
+      toast.error('Account name and mobile number are required');
+      return;
+    }
+    
+    setSaving(true);
+    try {
+      await api.post('/finance/mobile-money-accounts', momoForm);
+      toast.success('Mobile money account added');
+      setAddMoMoDialogOpen(false);
+      setMomoForm({
+        provider: 'MTN', account_name: '', mobile_number: '',
+        wallet_id: '', is_primary: false
+      });
+      fetchFinanceData();
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Failed to add mobile money account'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteBankAccount = async (accountId) => {
+    if (!confirm('Are you sure you want to remove this bank account?')) return;
+    
+    try {
+      await api.delete(`/finance/bank-accounts/${accountId}`);
+      toast.success('Bank account removed');
+      fetchFinanceData();
+    } catch (err) {
+      toast.error('Failed to remove account');
+    }
+  };
+
                 <p className="text-2xl font-bold">{dashboard?.staff_stats?.total || 0}</p>
               </div>
               <Users className="w-8 h-8 text-slate-300" />
