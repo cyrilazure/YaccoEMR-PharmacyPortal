@@ -784,3 +784,44 @@ export const pharmacyNetworkAPI = {
   findNearby: (region, city, has24hrService, limit) => api.get('/pharmacy-network/nearby', { params: { region, city, has_24hr_service: has24hrService, limit } }),
 };
 
+// Ghana FDA APIs
+export const fdaAPI = {
+  // Drug Registry
+  listDrugs: (params) => api.get('/fda/drugs', { params }),
+  searchDrugs: (q, limit) => api.get('/fda/drugs/search', { params: { q, limit } }),
+  getDrugDetails: (registrationNumber) => api.get(`/fda/drugs/${encodeURIComponent(registrationNumber)}`),
+  
+  // Drug Verification
+  verifyDrug: (data) => api.post('/fda/verify', data),
+  
+  // Reference Data
+  getSchedules: () => api.get('/fda/schedules'),
+  getCategories: () => api.get('/fda/categories'),
+  getStats: () => api.get('/fda/stats'),
+  getManufacturers: () => api.get('/fda/manufacturers'),
+  
+  // Safety Alerts
+  getAlerts: () => api.get('/fda/alerts'),
+};
+
+// Prescription Routing APIs
+export const prescriptionRoutingAPI = {
+  // Send to pharmacy
+  sendToPharmacy: (prescriptionId, pharmacyId, notes) => 
+    api.post(`/prescriptions/${prescriptionId}/send-to-pharmacy`, null, { params: { pharmacy_id: pharmacyId, notes } }),
+  
+  // Get routing status
+  getRoutingStatus: (routingId) => api.get(`/prescriptions/routing/${routingId}/status`),
+  
+  // Get patient routed prescriptions
+  getPatientRouted: (patientId) => api.get(`/prescriptions/patient/${patientId}/routed`),
+  
+  // Pharmacy actions
+  acceptRouting: (routingId) => api.put(`/prescriptions/routing/${routingId}/accept`),
+  rejectRouting: (routingId, reason) => api.put(`/prescriptions/routing/${routingId}/reject`, null, { params: { reason } }),
+  markFilled: (routingId) => api.put(`/prescriptions/routing/${routingId}/fill`),
+  
+  // Track prescription
+  trackPrescription: (rxNumber) => api.get(`/prescriptions/tracking/${rxNumber}`),
+};
+
