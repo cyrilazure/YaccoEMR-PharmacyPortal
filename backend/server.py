@@ -1111,6 +1111,11 @@ from pharmacy_network_module import pharmacy_network_router, create_pharmacy_net
 pharmacy_network_api_router = create_pharmacy_network_endpoints(db, get_current_user)
 app.include_router(pharmacy_network_router)
 
+# Include Ghana FDA Module
+from fda_module import fda_router, create_fda_endpoints
+fda_api_router = create_fda_endpoints(db, get_current_user)
+app.include_router(fda_router)
+
 app.include_router(finance_router)
 
 
