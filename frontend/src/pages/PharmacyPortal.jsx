@@ -7,79 +7,195 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
-import { Separator } from '@/components/ui/separator';
-import {
-  Dialog, DialogContent, DialogDescription,
-  DialogHeader, DialogTitle, DialogFooter
-} from '@/components/ui/dialog';
-import {
-  Select, SelectContent, SelectItem,
-  SelectTrigger, SelectValue
-} from '@/components/ui/select';
-import {
-  Table, TableBody, TableCell,
-  TableHead, TableHeader, TableRow
-} from '@/components/ui/table';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from 'sonner';
 import {
-  Pill, RefreshCw, Search, CheckCircle, AlertCircle,
-  Clock, User, Package, FileText, Eye, Check, X,
-  AlertTriangle, Loader2, ChevronRight
+  Pill, RefreshCw, Search, CheckCircle, AlertCircle, Clock, User, Package, FileText, Eye, Check, X,
+  AlertTriangle, Loader2, CreditCard, DollarSign, TrendingUp, Send, Plus, ArrowDownCircle,
+  Building, Verified, ArrowUpCircle, BarChart3, Truck, MapPin, Phone
 } from 'lucide-react';
 import api from '@/lib/api';
 
+// ========== API DEFINITIONS ==========
 const prescriptionAPI = {
   getQueue: (status) => api.get('/prescriptions/pharmacy/queue', { params: { status } }),
   updateStatus: (id, data) => api.put(`/prescriptions/${id}/status`, data),
-  getPatientPrescriptions: (patientId) => api.get(`/prescriptions/patient/${patientId}`),
+};
+
+const supplyAPI = {
+  getInventory: (params) => api.get('/supply-chain/inventory', { params }),
+  createInventoryItem: (data) => api.post('/supply-chain/inventory', data),
+  receiveStock: (data) => api.post('/supply-chain/stock/receive', data),
+  getBatches: (params) => api.get('/supply-chain/stock/batches', { params }),
+  getSuppliers: (params) => api.get('/supply-chain/suppliers', { params }),
+  seedSuppliers: () => api.post('/supply-chain/suppliers/seed'),
+  getDashboard: () => api.get('/supply-chain/dashboard'),
+};
+
+const nhisAPI = {
+  verifyMember: (data) => api.post('/nhis/verify-member', data),
+  getDrugTariff: (params) => api.get('/nhis/tariff', { params }),
+  createClaim: (data) => api.post('/nhis/claims/pharmacy', data),
+  getClaims: (params) => api.get('/nhis/claims', { params }),
+  submitClaim: (id) => api.post(`/nhis/claims/${id}/submit`),
+  getDashboard: () => api.get('/nhis/dashboard'),
+};
+
+const pharmacyNetworkAPI = {
+  getPharmacies: (params) => api.get('/pharmacy-network/pharmacies', { params }),
+  getStats: () => api.get('/pharmacy-network/stats'),
+  getRegions: () => api.get('/pharmacy-network/regions'),
 };
 
 export default function PharmacyPortal() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [activeModule, setActiveModule] = useState('dispensing');
+  
+  // Dispensing State
   const [prescriptions, setPrescriptions] = useState([]);
-  const [stats, setStats] = useState({});
-  const [activeTab, setActiveTab] = useState('pending');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [rxStats, setRxStats] = useState({});
+  const [rxTab, setRxTab] = useState('pending');
+  const [rxSearch, setRxSearch] = useState('');
   const [selectedRx, setSelectedRx] = useState(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [dispenseDialogOpen, setDispenseDialogOpen] = useState(false);
   const [pharmacistNotes, setPharmacistNotes] = useState('');
+  
+  // Supply Chain State
+  const [inventory, setInventory] = useState([]);
+  const [inventoryDashboard, setInventoryDashboard] = useState(null);
+  const [batches, setBatches] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
+  const [inventorySearch, setInventorySearch] = useState('');
+  const [addItemOpen, setAddItemOpen] = useState(false);
+  const [receiveStockOpen, setReceiveStockOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  
+  // NHIS State
+  const [nhisDashboard, setNhisDashboard] = useState(null);
+  const [nhisClaims, setNhisClaims] = useState([]);
+  const [drugTariff, setDrugTariff] = useState([]);
+  const [verifiedMember, setVerifiedMember] = useState(null);
+  const [membershipId, setMembershipId] = useState('');
+  const [verifying, setVerifying] = useState(false);
+  const [createClaimOpen, setCreateClaimOpen] = useState(false);
+  const [claimItems, setClaimItems] = useState([]);
+  const [drugSearch, setDrugSearch] = useState('');
+  
+  // Pharmacy Directory State
+  const [pharmacies, setPharmacies] = useState([]);
+  const [directoryStats, setDirectoryStats] = useState(null);
+  const [directorySearch, setDirectorySearch] = useState('');
+  const [selectedRegion, setSelectedRegion] = useState('');
+  const [regions, setRegions] = useState([]);
+  
+  // Forms
+  const [itemForm, setItemForm] = useState({
+    drug_name: '', drug_code: '', manufacturer: '', category: '',
+    unit_of_measure: 'tablet', unit_cost: 0, selling_price: 0,
+    reorder_level: 10, max_stock_level: 1000
+  });
+  
+  const [receiveForm, setReceiveForm] = useState({
+    inventory_item_id: '', quantity: 0, batch_number: '',
+    expiry_date: '', supplier_name: '', unit_cost: 0
+  });
+  
+  const [claimForm, setClaimForm] = useState({
+    patient_name: '', membership_id: '', diagnosis_codes: '',
+    prescription_date: new Date().toISOString().split('T')[0],
+    dispensing_date: new Date().toISOString().split('T')[0],
+    prescriber_name: '', notes: ''
+  });
+  
   const [saving, setSaving] = useState(false);
 
-  const fetchPrescriptions = useCallback(async () => {
-    setLoading(true);
+  // ========== DATA FETCHING ==========
+  const fetchDispensingData = useCallback(async () => {
     try {
       const response = await prescriptionAPI.getQueue();
       setPrescriptions(response.data.prescriptions || []);
-      setStats(response.data.stats || {});
+      setRxStats(response.data.stats || {});
     } catch (err) {
       toast.error(getErrorMessage(err, 'Failed to load prescriptions'));
-    } finally {
-      setLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    fetchPrescriptions();
-    const interval = setInterval(fetchPrescriptions, 30000); // Refresh every 30 seconds
-    return () => clearInterval(interval);
-  }, [fetchPrescriptions]);
+  const fetchInventoryData = useCallback(async () => {
+    try {
+      const [dashRes, invRes, batchRes, supplierRes] = await Promise.all([
+        supplyAPI.getDashboard(),
+        supplyAPI.getInventory({ search: inventorySearch || undefined }),
+        supplyAPI.getBatches({}),
+        supplyAPI.getSuppliers({})
+      ]);
+      setInventoryDashboard(dashRes.data);
+      setInventory(invRes.data.items || []);
+      setBatches(batchRes.data.batches || []);
+      setSuppliers(supplierRes.data.suppliers || []);
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Failed to load inventory'));
+    }
+  }, [inventorySearch]);
 
-  const handleUpdateStatus = async (rxId, newStatus) => {
+  const fetchNHISData = useCallback(async () => {
+    try {
+      const [dashRes, claimsRes, tariffRes] = await Promise.all([
+        nhisAPI.getDashboard(),
+        nhisAPI.getClaims({}),
+        nhisAPI.getDrugTariff({ covered_only: true })
+      ]);
+      setNhisDashboard(dashRes.data);
+      setNhisClaims(claimsRes.data.claims || []);
+      setDrugTariff(tariffRes.data.drugs || []);
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Failed to load NHIS data'));
+    }
+  }, []);
+
+  const fetchDirectoryData = useCallback(async () => {
+    try {
+      const [pharmRes, statsRes, regionsRes] = await Promise.all([
+        pharmacyNetworkAPI.getPharmacies({ search: directorySearch || undefined, region: selectedRegion || undefined, limit: 50 }),
+        pharmacyNetworkAPI.getStats(),
+        pharmacyNetworkAPI.getRegions()
+      ]);
+      setPharmacies(pharmRes.data.pharmacies || []);
+      setDirectoryStats(statsRes.data);
+      setRegions(regionsRes.data.regions || []);
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Failed to load pharmacy directory'));
+    }
+  }, [directorySearch, selectedRegion]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      await Promise.all([
+        fetchDispensingData(),
+        fetchInventoryData(),
+        fetchNHISData(),
+        fetchDirectoryData()
+      ]);
+      setLoading(false);
+    };
+    loadData();
+  }, [fetchDispensingData, fetchInventoryData, fetchNHISData, fetchDirectoryData]);
+
+  // ========== HANDLERS ==========
+  const handleUpdateRxStatus = async (rxId, newStatus) => {
     setSaving(true);
     try {
-      await prescriptionAPI.updateStatus(rxId, {
-        status: newStatus,
-        pharmacist_notes: pharmacistNotes
-      });
+      await prescriptionAPI.updateStatus(rxId, { status: newStatus, pharmacist_notes: pharmacistNotes });
       toast.success(`Prescription ${newStatus.replace('_', ' ')}`);
       setDispenseDialogOpen(false);
       setViewDialogOpen(false);
       setPharmacistNotes('');
-      fetchPrescriptions();
+      fetchDispensingData();
     } catch (err) {
       toast.error(getErrorMessage(err, 'Failed to update prescription'));
     } finally {
@@ -87,226 +203,396 @@ export default function PharmacyPortal() {
     }
   };
 
+  const handleAddInventoryItem = async (e) => {
+    e.preventDefault();
+    if (!itemForm.drug_name) { toast.error('Drug name is required'); return; }
+    setSaving(true);
+    try {
+      await supplyAPI.createInventoryItem(itemForm);
+      toast.success('Item added to inventory');
+      setAddItemOpen(false);
+      setItemForm({ drug_name: '', drug_code: '', manufacturer: '', category: '', unit_of_measure: 'tablet', unit_cost: 0, selling_price: 0, reorder_level: 10, max_stock_level: 1000 });
+      fetchInventoryData();
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Failed to add item'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleReceiveStock = async (e) => {
+    e.preventDefault();
+    if (!receiveForm.inventory_item_id || !receiveForm.quantity || !receiveForm.batch_number || !receiveForm.expiry_date) {
+      toast.error('Fill all required fields'); return;
+    }
+    setSaving(true);
+    try {
+      await supplyAPI.receiveStock(receiveForm);
+      toast.success('Stock received');
+      setReceiveStockOpen(false);
+      setReceiveForm({ inventory_item_id: '', quantity: 0, batch_number: '', expiry_date: '', supplier_name: '', unit_cost: 0 });
+      setSelectedItem(null);
+      fetchInventoryData();
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Failed to receive stock'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleVerifyMember = async () => {
+    if (!membershipId.trim()) { toast.error('Enter NHIS membership ID'); return; }
+    setVerifying(true);
+    try {
+      const res = await nhisAPI.verifyMember({ membership_id: membershipId });
+      setVerifiedMember(res.data);
+      if (res.data.verified) {
+        toast.success('Member verified');
+        setClaimForm(prev => ({ ...prev, membership_id: res.data.membership_id, patient_name: res.data.full_name }));
+      } else {
+        toast.warning(res.data.message);
+      }
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Verification failed'));
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const handleAddDrugToClaim = (drug) => {
+    if (claimItems.find(i => i.item_code === drug.code)) { toast.warning('Drug already added'); return; }
+    setClaimItems(prev => [...prev, {
+      item_code: drug.code, item_name: drug.name, quantity: 1,
+      unit_price: drug.nhis_price || 0, total_price: drug.nhis_price || 0
+    }]);
+  };
+
+  const handleCreateClaim = async (e) => {
+    e.preventDefault();
+    if (!claimForm.membership_id || claimItems.length === 0) { toast.error('Verify member and add items'); return; }
+    setSaving(true);
+    try {
+      await nhisAPI.createClaim({
+        ...claimForm,
+        diagnosis_codes: claimForm.diagnosis_codes.split(',').map(c => c.trim()).filter(Boolean),
+        claim_items: claimItems
+      });
+      toast.success('Claim created');
+      setCreateClaimOpen(false);
+      setClaimForm({ patient_name: '', membership_id: '', diagnosis_codes: '', prescription_date: new Date().toISOString().split('T')[0], dispensing_date: new Date().toISOString().split('T')[0], prescriber_name: '', notes: '' });
+      setClaimItems([]);
+      setVerifiedMember(null);
+      setMembershipId('');
+      fetchNHISData();
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Failed to create claim'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSubmitClaim = async (claimId) => {
+    try {
+      await nhisAPI.submitClaim(claimId);
+      toast.success('Claim submitted to NHIS');
+      fetchNHISData();
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Failed to submit claim'));
+    }
+  };
+
+  const handleSeedSuppliers = async () => {
+    try {
+      const res = await supplyAPI.seedSuppliers();
+      toast.success(res.data.message);
+      fetchInventoryData();
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Failed to seed suppliers'));
+    }
+  };
+
+  const openReceiveStock = (item) => {
+    setSelectedItem(item);
+    setReceiveForm({ ...receiveForm, inventory_item_id: item.id, unit_cost: item.unit_cost || 0 });
+    setReceiveStockOpen(true);
+  };
+
+  // ========== HELPERS ==========
   const getStatusBadge = (status) => {
     const colors = {
       pending_verification: 'bg-yellow-100 text-yellow-800',
       approved: 'bg-blue-100 text-blue-800',
       dispensed: 'bg-green-100 text-green-800',
-      partially_dispensed: 'bg-orange-100 text-orange-800',
       ready_for_pickup: 'bg-purple-100 text-purple-800',
-      picked_up: 'bg-gray-100 text-gray-800',
-      cancelled: 'bg-red-100 text-red-800'
+      cancelled: 'bg-red-100 text-red-800',
+      draft: 'bg-gray-100 text-gray-700',
+      submitted: 'bg-blue-100 text-blue-700',
+      paid: 'bg-emerald-100 text-emerald-700',
+      rejected: 'bg-red-100 text-red-700',
+      in_stock: 'bg-green-100 text-green-700',
+      low_stock: 'bg-amber-100 text-amber-700',
+      out_of_stock: 'bg-red-100 text-red-700'
     };
     return colors[status] || 'bg-gray-100 text-gray-800';
   };
 
-  const getPriorityBadge = (priority) => {
-    const colors = {
-      routine: 'bg-gray-100 text-gray-600',
-      urgent: 'bg-amber-100 text-amber-700',
-      stat: 'bg-red-100 text-red-700'
-    };
-    return colors[priority] || 'bg-gray-100 text-gray-600';
-  };
-
   const filteredPrescriptions = prescriptions.filter(rx => {
-    const matchesSearch = !searchQuery || 
-      rx.patient_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      rx.rx_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      rx.patient_mrn?.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    if (activeTab === 'pending') {
-      return matchesSearch && rx.status === 'pending_verification';
-    } else if (activeTab === 'approved') {
-      return matchesSearch && rx.status === 'approved';
-    } else if (activeTab === 'dispensed') {
-      return matchesSearch && ['dispensed', 'ready_for_pickup', 'picked_up'].includes(rx.status);
-    }
+    const matchesSearch = !rxSearch || rx.patient_name?.toLowerCase().includes(rxSearch.toLowerCase()) || rx.rx_number?.toLowerCase().includes(rxSearch.toLowerCase());
+    if (rxTab === 'pending') return matchesSearch && rx.status === 'pending_verification';
+    if (rxTab === 'approved') return matchesSearch && rx.status === 'approved';
+    if (rxTab === 'dispensed') return matchesSearch && ['dispensed', 'ready_for_pickup', 'picked_up'].includes(rx.status);
     return matchesSearch;
   });
 
+  const filteredTariff = drugTariff.filter(d => !drugSearch || d.name.toLowerCase().includes(drugSearch.toLowerCase()) || d.code.toLowerCase().includes(drugSearch.toLowerCase()));
+  const claimTotal = claimItems.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="w-10 h-10 animate-spin text-emerald-600" />
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in" data-testid="pharmacy-portal">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
             <Pill className="w-7 h-7 text-emerald-600" />
             Pharmacy Portal
           </h1>
-          <p className="text-slate-500 mt-1">Manage and dispense electronic prescriptions</p>
+          <p className="text-slate-500 mt-1">Dispensing, Inventory, NHIS Claims & Network Directory</p>
         </div>
-        <Button onClick={fetchPrescriptions} variant="outline" className="gap-2">
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          Refresh
+        <Button onClick={() => { fetchDispensingData(); fetchInventoryData(); fetchNHISData(); fetchDirectoryData(); }} variant="outline" className="gap-2" data-testid="refresh-all-btn">
+          <RefreshCw className="w-4 h-4" /> Refresh All
         </Button>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-200">
-          <CardContent className="pt-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-yellow-700">Pending Verification</p>
-                <p className="text-3xl font-bold text-yellow-800">{stats.pending || 0}</p>
-              </div>
-              <Clock className="w-10 h-10 text-yellow-500 opacity-50" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-          <CardContent className="pt-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-blue-700">Approved</p>
-                <p className="text-3xl font-bold text-blue-800">{stats.approved || 0}</p>
-              </div>
-              <CheckCircle className="w-10 h-10 text-blue-500 opacity-50" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-          <CardContent className="pt-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-green-700">Dispensed</p>
-                <p className="text-3xl font-bold text-green-800">{stats.dispensed || 0}</p>
-              </div>
-              <Package className="w-10 h-10 text-green-500 opacity-50" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
-          <CardContent className="pt-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-purple-700">Ready for Pickup</p>
-                <p className="text-3xl font-bold text-purple-800">{stats.ready || 0}</p>
-              </div>
-              <User className="w-10 h-10 text-purple-500 opacity-50" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Search Bar */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-        <Input
-          placeholder="Search by patient name, MRN, or Rx number..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10"
-        />
-      </div>
-
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-3 w-full max-w-md">
-          <TabsTrigger value="pending" className="gap-2">
-            <Clock className="w-4 h-4" /> Pending
-            {stats.pending > 0 && <Badge className="ml-1 bg-yellow-500">{stats.pending}</Badge>}
+      {/* Main Module Tabs */}
+      <Tabs value={activeModule} onValueChange={setActiveModule}>
+        <TabsList className="grid grid-cols-4 w-full max-w-2xl">
+          <TabsTrigger value="dispensing" className="gap-2" data-testid="tab-dispensing">
+            <Pill className="w-4 h-4" /> Dispensing
+            {rxStats.pending > 0 && <Badge className="ml-1 bg-yellow-500">{rxStats.pending}</Badge>}
           </TabsTrigger>
-          <TabsTrigger value="approved" className="gap-2">
-            <CheckCircle className="w-4 h-4" /> Approved
-            {stats.approved > 0 && <Badge className="ml-1 bg-blue-500">{stats.approved}</Badge>}
+          <TabsTrigger value="inventory" className="gap-2" data-testid="tab-inventory">
+            <Package className="w-4 h-4" /> Inventory
+            {inventoryDashboard?.inventory?.low_stock > 0 && <Badge className="ml-1 bg-amber-500">{inventoryDashboard.inventory.low_stock}</Badge>}
           </TabsTrigger>
-          <TabsTrigger value="dispensed" className="gap-2">
-            <Package className="w-4 h-4" /> Dispensed
+          <TabsTrigger value="nhis" className="gap-2" data-testid="tab-nhis">
+            <CreditCard className="w-4 h-4" /> NHIS Claims
+          </TabsTrigger>
+          <TabsTrigger value="directory" className="gap-2" data-testid="tab-directory">
+            <Building className="w-4 h-4" /> Directory
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value={activeTab} className="mt-4">
-          <Card>
-            <CardContent className="p-0">
-              {loading ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+        {/* ==================== DISPENSING TAB ==================== */}
+        <TabsContent value="dispensing" className="mt-4 space-y-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card className="bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-200">
+              <CardContent className="pt-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-yellow-700">Pending</p>
+                    <p className="text-3xl font-bold text-yellow-800">{rxStats.pending || 0}</p>
+                  </div>
+                  <Clock className="w-10 h-10 text-yellow-500 opacity-50" />
                 </div>
-              ) : filteredPrescriptions.length === 0 ? (
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+              <CardContent className="pt-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-blue-700">Approved</p>
+                    <p className="text-3xl font-bold text-blue-800">{rxStats.approved || 0}</p>
+                  </div>
+                  <CheckCircle className="w-10 h-10 text-blue-500 opacity-50" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+              <CardContent className="pt-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-green-700">Dispensed</p>
+                    <p className="text-3xl font-bold text-green-800">{rxStats.dispensed || 0}</p>
+                  </div>
+                  <Package className="w-10 h-10 text-green-500 opacity-50" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+              <CardContent className="pt-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-purple-700">Ready Pickup</p>
+                    <p className="text-3xl font-bold text-purple-800">{rxStats.ready || 0}</p>
+                  </div>
+                  <User className="w-10 h-10 text-purple-500 opacity-50" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Input placeholder="Search by patient name or Rx number..." value={rxSearch} onChange={(e) => setRxSearch(e.target.value)} className="pl-10" data-testid="rx-search" />
+          </div>
+
+          <Tabs value={rxTab} onValueChange={setRxTab}>
+            <TabsList className="grid grid-cols-3 w-full max-w-md">
+              <TabsTrigger value="pending"><Clock className="w-4 h-4 mr-1" /> Pending</TabsTrigger>
+              <TabsTrigger value="approved"><CheckCircle className="w-4 h-4 mr-1" /> Approved</TabsTrigger>
+              <TabsTrigger value="dispensed"><Package className="w-4 h-4 mr-1" /> Dispensed</TabsTrigger>
+            </TabsList>
+            <TabsContent value={rxTab} className="mt-4">
+              <Card>
+                <CardContent className="p-0">
+                  {filteredPrescriptions.length === 0 ? (
+                    <div className="text-center py-12 text-gray-500">
+                      <Pill className="w-12 h-12 mx-auto mb-4 opacity-30" />
+                      <p>No prescriptions found</p>
+                    </div>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Rx Number</TableHead>
+                          <TableHead>Patient</TableHead>
+                          <TableHead>Prescriber</TableHead>
+                          <TableHead>Meds</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Date</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredPrescriptions.map((rx) => (
+                          <TableRow key={rx.id}>
+                            <TableCell className="font-mono font-medium">{rx.rx_number}</TableCell>
+                            <TableCell>
+                              <p className="font-medium">{rx.patient_name}</p>
+                              <p className="text-sm text-gray-500">{rx.patient_mrn}</p>
+                            </TableCell>
+                            <TableCell>{rx.prescriber_name}</TableCell>
+                            <TableCell><Badge variant="outline">{rx.medications?.length || 0}</Badge></TableCell>
+                            <TableCell><Badge className={getStatusBadge(rx.status)}>{rx.status?.replace(/_/g, ' ')}</Badge></TableCell>
+                            <TableCell className="text-sm text-gray-500">{new Date(rx.created_at).toLocaleDateString()}</TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex gap-2 justify-end">
+                                <Button size="sm" variant="outline" onClick={() => { setSelectedRx(rx); setViewDialogOpen(true); }}><Eye className="w-4 h-4" /></Button>
+                                {rx.status === 'pending_verification' && <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" onClick={() => handleUpdateRxStatus(rx.id, 'approved')}><Check className="w-4 h-4" /></Button>}
+                                {rx.status === 'approved' && <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={() => { setSelectedRx(rx); setDispenseDialogOpen(true); }}>Dispense</Button>}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </TabsContent>
+
+        {/* ==================== INVENTORY TAB ==================== */}
+        <TabsContent value="inventory" className="mt-4 space-y-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <Card>
+              <CardContent className="pt-4 text-center">
+                <Package className="w-8 h-8 mx-auto mb-2 text-slate-400" />
+                <p className="text-sm text-slate-600">Total Items</p>
+                <p className="text-2xl font-bold">{inventoryDashboard?.inventory?.total_items || 0}</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-red-50 border-red-200">
+              <CardContent className="pt-4 text-center">
+                <AlertCircle className="w-8 h-8 mx-auto mb-2 text-red-600" />
+                <p className="text-sm text-red-700">Out of Stock</p>
+                <p className="text-2xl font-bold text-red-800">{inventoryDashboard?.inventory?.out_of_stock || 0}</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-amber-50 border-amber-200">
+              <CardContent className="pt-4 text-center">
+                <AlertTriangle className="w-8 h-8 mx-auto mb-2 text-amber-600" />
+                <p className="text-sm text-amber-700">Low Stock</p>
+                <p className="text-2xl font-bold text-amber-800">{inventoryDashboard?.inventory?.low_stock || 0}</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-orange-50 border-orange-200">
+              <CardContent className="pt-4 text-center">
+                <Clock className="w-8 h-8 mx-auto mb-2 text-orange-600" />
+                <p className="text-sm text-orange-700">Expiring Soon</p>
+                <p className="text-2xl font-bold text-orange-800">{inventoryDashboard?.alerts?.expiring_soon || 0}</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-green-50 border-green-200">
+              <CardContent className="pt-4 text-center">
+                <DollarSign className="w-8 h-8 mx-auto mb-2 text-green-600" />
+                <p className="text-sm text-green-700">Stock Value</p>
+                <p className="text-xl font-bold text-green-800">₵{inventoryDashboard?.inventory?.total_value?.toLocaleString() || '0'}</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="flex gap-4 items-center">
+            <div className="flex-1 relative max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input placeholder="Search inventory..." value={inventorySearch} onChange={(e) => setInventorySearch(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchInventoryData()} className="pl-10" data-testid="inventory-search" />
+            </div>
+            <Button onClick={() => setAddItemOpen(true)} className="gap-2" data-testid="add-item-btn"><Plus className="w-4 h-4" /> Add Item</Button>
+            {suppliers.length === 0 && <Button onClick={handleSeedSuppliers} variant="outline" className="gap-2"><Truck className="w-4 h-4" /> Load Suppliers</Button>}
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Inventory Items</CardTitle>
+              <CardDescription>{inventory.length} items in catalog</CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              {inventory.length === 0 ? (
                 <div className="text-center py-12 text-gray-500">
-                  <Pill className="w-12 h-12 mx-auto mb-4 opacity-30" />
-                  <p>No prescriptions found</p>
+                  <Package className="w-12 h-12 mx-auto mb-4 opacity-30" />
+                  <p>No inventory items</p>
+                  <Button onClick={() => setAddItemOpen(true)} className="mt-4" variant="outline">Add First Item</Button>
                 </div>
               ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Rx Number</TableHead>
-                      <TableHead>Patient</TableHead>
-                      <TableHead>Prescriber</TableHead>
-                      <TableHead>Medications</TableHead>
-                      <TableHead>Priority</TableHead>
+                      <TableHead>Drug Name</TableHead>
+                      <TableHead>Code</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Stock</TableHead>
+                      <TableHead>Reorder Lvl</TableHead>
+                      <TableHead>Unit Cost</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Date</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredPrescriptions.map((rx) => (
-                      <TableRow key={rx.id} className="hover:bg-gray-50">
-                        <TableCell className="font-mono font-medium">{rx.rx_number}</TableCell>
+                    {inventory.slice(0, 20).map((item) => (
+                      <TableRow key={item.id}>
                         <TableCell>
-                          <div>
-                            <p className="font-medium">{rx.patient_name}</p>
-                            <p className="text-sm text-gray-500">{rx.patient_mrn}</p>
-                          </div>
+                          <p className="font-medium">{item.drug_name}</p>
+                          {item.manufacturer && <p className="text-xs text-gray-500">{item.manufacturer}</p>}
                         </TableCell>
-                        <TableCell>{rx.prescriber_name}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{rx.medications?.length || 0} items</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={getPriorityBadge(rx.priority)}>
-                            {rx.priority?.toUpperCase()}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={getStatusBadge(rx.status)}>
-                            {rx.status?.replace(/_/g, ' ')}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-sm text-gray-500">
-                          {new Date(rx.created_at).toLocaleDateString()}
-                        </TableCell>
+                        <TableCell className="font-mono text-sm">{item.drug_code}</TableCell>
+                        <TableCell>{item.category || '-'}</TableCell>
+                        <TableCell className="font-semibold">{item.current_stock || 0}</TableCell>
+                        <TableCell>{item.reorder_level}</TableCell>
+                        <TableCell>₵{item.unit_cost?.toFixed(2) || '0.00'}</TableCell>
+                        <TableCell><Badge className={getStatusBadge(item.stock_status)}>{item.stock_status?.replace('_', ' ')}</Badge></TableCell>
                         <TableCell className="text-right">
-                          <div className="flex gap-2 justify-end">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                setSelectedRx(rx);
-                                setViewDialogOpen(true);
-                              }}
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                            {rx.status === 'pending_verification' && (
-                              <Button
-                                size="sm"
-                                className="bg-emerald-600 hover:bg-emerald-700"
-                                onClick={() => handleUpdateStatus(rx.id, 'approved')}
-                              >
-                                <Check className="w-4 h-4" />
-                              </Button>
-                            )}
-                            {rx.status === 'approved' && (
-                              <Button
-                                size="sm"
-                                className="bg-blue-600 hover:bg-blue-700"
-                                onClick={() => {
-                                  setSelectedRx(rx);
-                                  setDispenseDialogOpen(true);
-                                }}
-                              >
-                                Dispense
-                              </Button>
-                            )}
-                          </div>
+                          <Button size="sm" variant="outline" onClick={() => openReceiveStock(item)} className="gap-1" data-testid={`receive-${item.id}`}>
+                            <ArrowDownCircle className="w-3 h-3" /> Receive
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -316,114 +602,217 @@ export default function PharmacyPortal() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* ==================== NHIS CLAIMS TAB ==================== */}
+        <TabsContent value="nhis" className="mt-4 space-y-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <Card>
+              <CardContent className="pt-4 text-center">
+                <FileText className="w-8 h-8 mx-auto mb-2 text-slate-400" />
+                <p className="text-sm text-slate-600">Total Claims</p>
+                <p className="text-2xl font-bold">{nhisDashboard?.summary?.total_claims || 0}</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-blue-50 border-blue-200">
+              <CardContent className="pt-4 text-center">
+                <Send className="w-8 h-8 mx-auto mb-2 text-blue-600" />
+                <p className="text-sm text-blue-700">Submitted</p>
+                <p className="text-2xl font-bold text-blue-800">{nhisDashboard?.summary?.by_status?.submitted || 0}</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-green-50 border-green-200">
+              <CardContent className="pt-4 text-center">
+                <CheckCircle className="w-8 h-8 mx-auto mb-2 text-green-600" />
+                <p className="text-sm text-green-700">Approved</p>
+                <p className="text-2xl font-bold text-green-800">{nhisDashboard?.summary?.by_status?.approved || 0}</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-emerald-50 border-emerald-200">
+              <CardContent className="pt-4 text-center">
+                <DollarSign className="w-8 h-8 mx-auto mb-2 text-emerald-600" />
+                <p className="text-sm text-emerald-700">Total Claimed</p>
+                <p className="text-xl font-bold text-emerald-800">₵{nhisDashboard?.financials?.total_claimed?.toFixed(2) || '0.00'}</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-purple-50 border-purple-200">
+              <CardContent className="pt-4 text-center">
+                <TrendingUp className="w-8 h-8 mx-auto mb-2 text-purple-600" />
+                <p className="text-sm text-purple-700">Total Paid</p>
+                <p className="text-xl font-bold text-purple-800">₵{nhisDashboard?.financials?.total_paid?.toFixed(2) || '0.00'}</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="flex gap-4">
+            <Button onClick={() => setCreateClaimOpen(true)} className="gap-2 bg-green-600 hover:bg-green-700" data-testid="new-claim-btn"><Plus className="w-4 h-4" /> New Claim</Button>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Pharmacy Claims</CardTitle>
+              <CardDescription>NHIS claim submissions</CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              {nhisClaims.length === 0 ? (
+                <div className="text-center py-12 text-gray-500">
+                  <FileText className="w-12 h-12 mx-auto mb-4 opacity-30" />
+                  <p>No claims found</p>
+                  <Button onClick={() => setCreateClaimOpen(true)} className="mt-4" variant="outline">Create First Claim</Button>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Claim #</TableHead>
+                      <TableHead>Patient</TableHead>
+                      <TableHead>NHIS ID</TableHead>
+                      <TableHead>Items</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {nhisClaims.map((claim) => (
+                      <TableRow key={claim.id}>
+                        <TableCell className="font-mono text-sm">{claim.claim_number}</TableCell>
+                        <TableCell><p className="font-medium">{claim.patient_name}</p></TableCell>
+                        <TableCell className="font-mono text-xs">{claim.membership_id}</TableCell>
+                        <TableCell>{claim.claim_items?.length || 0} items</TableCell>
+                        <TableCell className="font-semibold">₵{claim.total_claimed?.toFixed(2)}</TableCell>
+                        <TableCell><Badge className={getStatusBadge(claim.status)}>{claim.status?.replace('_', ' ')}</Badge></TableCell>
+                        <TableCell className="text-sm text-gray-500">{new Date(claim.created_at).toLocaleDateString()}</TableCell>
+                        <TableCell className="text-right">
+                          {claim.status === 'draft' && (
+                            <Button size="sm" onClick={() => handleSubmitClaim(claim.id)} className="bg-blue-600 hover:bg-blue-700" data-testid={`submit-claim-${claim.id}`}>
+                              <Send className="w-3 h-3 mr-1" /> Submit
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ==================== DIRECTORY TAB ==================== */}
+        <TabsContent value="directory" className="mt-4 space-y-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card className="bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200">
+              <CardContent className="pt-4 text-center">
+                <Building className="w-8 h-8 mx-auto mb-2 text-emerald-600" />
+                <p className="text-sm text-emerald-700">Total Pharmacies</p>
+                <p className="text-2xl font-bold text-emerald-800">{directoryStats?.total_pharmacies || 0}</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+              <CardContent className="pt-4 text-center">
+                <MapPin className="w-8 h-8 mx-auto mb-2 text-blue-600" />
+                <p className="text-sm text-blue-700">Regions Covered</p>
+                <p className="text-2xl font-bold text-blue-800">{directoryStats?.regions_covered || 0}</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+              <CardContent className="pt-4 text-center">
+                <Verified className="w-8 h-8 mx-auto mb-2 text-green-600" />
+                <p className="text-sm text-green-700">NHIS Accredited</p>
+                <p className="text-2xl font-bold text-green-800">{directoryStats?.nhis_accredited || 0}</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200">
+              <CardContent className="pt-4 text-center">
+                <Clock className="w-8 h-8 mx-auto mb-2 text-amber-600" />
+                <p className="text-sm text-amber-700">24/7 Service</p>
+                <p className="text-2xl font-bold text-amber-800">{directoryStats?.['24_hour_count'] || 0}</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="flex gap-4 items-center">
+            <div className="flex-1 relative max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input placeholder="Search pharmacies..." value={directorySearch} onChange={(e) => setDirectorySearch(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchDirectoryData()} className="pl-10" data-testid="directory-search" />
+            </div>
+            <Select value={selectedRegion} onValueChange={(v) => { setSelectedRegion(v); }}>
+              <SelectTrigger className="w-48"><SelectValue placeholder="Filter by region" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">All Regions</SelectItem>
+                {regions.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Button onClick={fetchDirectoryData} variant="outline">Search</Button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {pharmacies.slice(0, 12).map((pharmacy) => (
+              <Card key={pharmacy.id} className="hover:shadow-md transition-shadow">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Building className="w-4 h-4 text-emerald-600" />
+                    {pharmacy.name}
+                  </CardTitle>
+                  <CardDescription>{pharmacy.ownership_type}</CardDescription>
+                </CardHeader>
+                <CardContent className="text-sm space-y-1">
+                  <p className="flex items-center gap-2 text-gray-600"><MapPin className="w-3 h-3" /> {pharmacy.city}, {pharmacy.region}</p>
+                  {pharmacy.phone && <p className="flex items-center gap-2 text-gray-600"><Phone className="w-3 h-3" /> {pharmacy.phone}</p>}
+                  <div className="flex gap-2 mt-2 flex-wrap">
+                    {pharmacy.is_nhis_accredited && <Badge className="bg-green-100 text-green-700 text-xs">NHIS</Badge>}
+                    {pharmacy.is_24_hours && <Badge className="bg-amber-100 text-amber-700 text-xs">24/7</Badge>}
+                    {pharmacy.has_delivery && <Badge className="bg-blue-100 text-blue-700 text-xs">Delivery</Badge>}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          {pharmacies.length > 12 && <p className="text-center text-gray-500 text-sm">Showing 12 of {pharmacies.length} pharmacies</p>}
+        </TabsContent>
       </Tabs>
 
-      {/* View Prescription Dialog */}
+      {/* ==================== DIALOGS ==================== */}
+      
+      {/* View Rx Dialog */}
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5" />
-              Prescription Details
-            </DialogTitle>
-            <DialogDescription>
-              {selectedRx?.rx_number}
-            </DialogDescription>
+            <DialogTitle className="flex items-center gap-2"><FileText className="w-5 h-5" /> Prescription Details</DialogTitle>
+            <DialogDescription>{selectedRx?.rx_number}</DialogDescription>
           </DialogHeader>
-          
           {selectedRx && (
             <div className="space-y-4 py-4">
-              {/* Patient Info */}
               <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="font-medium text-gray-700 mb-2">Patient Information</h4>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-500">Name:</span>
-                    <span className="ml-2 font-medium">{selectedRx.patient_name}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-500">MRN:</span>
-                    <span className="ml-2 font-mono">{selectedRx.patient_mrn}</span>
-                  </div>
-                </div>
+                <h4 className="font-medium text-gray-700 mb-2">Patient</h4>
+                <p className="font-medium">{selectedRx.patient_name}</p>
+                <p className="text-sm text-gray-500">MRN: {selectedRx.patient_mrn}</p>
               </div>
-
-              {/* Prescriber Info */}
               <div className="bg-blue-50 rounded-lg p-4">
-                <h4 className="font-medium text-blue-700 mb-2">Prescriber Information</h4>
-                <div className="text-sm">
-                  <span className="text-blue-600">Prescriber:</span>
-                  <span className="ml-2 font-medium">{selectedRx.prescriber_name}</span>
-                </div>
+                <h4 className="font-medium text-blue-700 mb-2">Prescriber</h4>
+                <p className="font-medium">{selectedRx.prescriber_name}</p>
               </div>
-
-              {/* Medications */}
               <div>
-                <h4 className="font-medium text-gray-700 mb-2">Medications</h4>
+                <h4 className="font-medium text-gray-700 mb-2">Medications ({selectedRx.medications?.length || 0})</h4>
                 <div className="space-y-2">
                   {selectedRx.medications?.map((med, idx) => (
                     <div key={idx} className="border rounded-lg p-3 bg-white">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <p className="font-medium text-gray-900">{med.medication_name}</p>
-                          <p className="text-sm text-gray-500">
-                            {med.dosage} {med.dosage_unit} • {med.frequency} • {med.route}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            Duration: {med.duration_value} {med.duration_unit} • Qty: {med.quantity}
-                          </p>
-                          {med.special_instructions && (
-                            <p className="text-sm text-amber-600 mt-1">
-                              <AlertTriangle className="w-3 h-3 inline mr-1" />
-                              {med.special_instructions}
-                            </p>
-                          )}
-                        </div>
-                        <Badge variant="outline">#{idx + 1}</Badge>
-                      </div>
+                      <p className="font-medium">{med.medication_name}</p>
+                      <p className="text-sm text-gray-500">{med.dosage} {med.dosage_unit} • {med.frequency} • {med.route}</p>
+                      <p className="text-sm text-gray-500">Duration: {med.duration_value} {med.duration_unit} • Qty: {med.quantity}</p>
                     </div>
                   ))}
                 </div>
               </div>
-
-              {/* Clinical Notes */}
-              {selectedRx.clinical_notes && (
-                <div className="bg-yellow-50 rounded-lg p-4">
-                  <h4 className="font-medium text-yellow-700 mb-2">Clinical Notes</h4>
-                  <p className="text-sm text-gray-700">{selectedRx.clinical_notes}</p>
-                </div>
-              )}
-
-              {/* Diagnosis */}
-              {selectedRx.diagnosis && (
-                <div>
-                  <span className="text-sm text-gray-500">Diagnosis:</span>
-                  <span className="ml-2 text-sm font-medium">{selectedRx.diagnosis}</span>
-                </div>
-              )}
             </div>
           )}
-
           <DialogFooter>
-            <Button variant="outline" onClick={() => setViewDialogOpen(false)}>
-              Close
-            </Button>
+            <Button variant="outline" onClick={() => setViewDialogOpen(false)}>Close</Button>
             {selectedRx?.status === 'pending_verification' && (
               <>
-                <Button
-                  variant="destructive"
-                  onClick={() => handleUpdateStatus(selectedRx.id, 'cancelled')}
-                  disabled={saving}
-                >
-                  <X className="w-4 h-4 mr-2" /> Reject
-                </Button>
-                <Button
-                  className="bg-emerald-600 hover:bg-emerald-700"
-                  onClick={() => handleUpdateStatus(selectedRx.id, 'approved')}
-                  disabled={saving}
-                >
-                  <Check className="w-4 h-4 mr-2" /> Approve
-                </Button>
+                <Button variant="destructive" onClick={() => handleUpdateRxStatus(selectedRx.id, 'cancelled')} disabled={saving}><X className="w-4 h-4 mr-2" /> Reject</Button>
+                <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => handleUpdateRxStatus(selectedRx.id, 'approved')} disabled={saving}><Check className="w-4 h-4 mr-2" /> Approve</Button>
               </>
             )}
           </DialogFooter>
@@ -434,56 +823,241 @@ export default function PharmacyPortal() {
       <Dialog open={dispenseDialogOpen} onOpenChange={setDispenseDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Package className="w-5 h-5 text-blue-600" />
-              Dispense Prescription
-            </DialogTitle>
-            <DialogDescription>
-              {selectedRx?.rx_number} - {selectedRx?.patient_name}
-            </DialogDescription>
+            <DialogTitle className="flex items-center gap-2"><Package className="w-5 h-5 text-blue-600" /> Dispense Prescription</DialogTitle>
+            <DialogDescription>{selectedRx?.rx_number} - {selectedRx?.patient_name}</DialogDescription>
           </DialogHeader>
-          
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Pharmacist Notes (Optional)</Label>
-              <Textarea
-                value={pharmacistNotes}
-                onChange={(e) => setPharmacistNotes(e.target.value)}
-                placeholder="Add any notes about dispensing..."
-                rows={3}
-              />
-            </div>
-
-            <div className="bg-blue-50 rounded-lg p-4">
-              <h4 className="font-medium text-blue-700 mb-2">Medications to Dispense</h4>
-              <ul className="text-sm space-y-1">
-                {selectedRx?.medications?.map((med, idx) => (
-                  <li key={idx} className="flex items-center gap-2">
-                    <Pill className="w-4 h-4 text-blue-500" />
-                    {med.medication_name} - {med.dosage} {med.dosage_unit} x {med.quantity}
-                  </li>
-                ))}
-              </ul>
+              <Label>Pharmacist Notes</Label>
+              <Textarea value={pharmacistNotes} onChange={(e) => setPharmacistNotes(e.target.value)} placeholder="Optional notes..." />
             </div>
           </div>
-
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDispenseDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              className="bg-green-600 hover:bg-green-700"
-              onClick={() => handleUpdateStatus(selectedRx?.id, 'dispensed')}
-              disabled={saving}
-            >
-              {saving ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <Check className="w-4 h-4 mr-2" />
-              )}
-              Confirm Dispense
+            <Button variant="outline" onClick={() => setDispenseDialogOpen(false)}>Cancel</Button>
+            <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => handleUpdateRxStatus(selectedRx.id, 'dispensed')} disabled={saving}>
+              {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />} Dispense
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Inventory Item Dialog */}
+      <Dialog open={addItemOpen} onOpenChange={setAddItemOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Add Inventory Item</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleAddInventoryItem} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Drug Name *</Label>
+                <Input value={itemForm.drug_name} onChange={(e) => setItemForm({...itemForm, drug_name: e.target.value})} placeholder="e.g., Paracetamol 500mg" required />
+              </div>
+              <div className="space-y-2">
+                <Label>Drug Code</Label>
+                <Input value={itemForm.drug_code} onChange={(e) => setItemForm({...itemForm, drug_code: e.target.value})} placeholder="Auto-generated" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Manufacturer</Label>
+                <Input value={itemForm.manufacturer} onChange={(e) => setItemForm({...itemForm, manufacturer: e.target.value})} />
+              </div>
+              <div className="space-y-2">
+                <Label>Category</Label>
+                <Select value={itemForm.category} onValueChange={(v) => setItemForm({...itemForm, category: v})}>
+                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Antimalarials">Antimalarials</SelectItem>
+                    <SelectItem value="Antibiotics">Antibiotics</SelectItem>
+                    <SelectItem value="Analgesics">Analgesics</SelectItem>
+                    <SelectItem value="Cardiovascular">Cardiovascular</SelectItem>
+                    <SelectItem value="Diabetes">Diabetes</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Unit Cost (₵)</Label>
+                <Input type="number" step="0.01" value={itemForm.unit_cost} onChange={(e) => setItemForm({...itemForm, unit_cost: parseFloat(e.target.value) || 0})} />
+              </div>
+              <div className="space-y-2">
+                <Label>Selling Price (₵)</Label>
+                <Input type="number" step="0.01" value={itemForm.selling_price} onChange={(e) => setItemForm({...itemForm, selling_price: parseFloat(e.target.value) || 0})} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Reorder Level</Label>
+                <Input type="number" value={itemForm.reorder_level} onChange={(e) => setItemForm({...itemForm, reorder_level: parseInt(e.target.value) || 10})} />
+              </div>
+              <div className="space-y-2">
+                <Label>Max Stock</Label>
+                <Input type="number" value={itemForm.max_stock_level} onChange={(e) => setItemForm({...itemForm, max_stock_level: parseInt(e.target.value) || 1000})} />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setAddItemOpen(false)}>Cancel</Button>
+              <Button type="submit" disabled={saving}>{saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />} Add Item</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Receive Stock Dialog */}
+      <Dialog open={receiveStockOpen} onOpenChange={setReceiveStockOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Receive Stock</DialogTitle>
+            <DialogDescription>{selectedItem ? `Receiving: ${selectedItem.drug_name}` : ''}</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleReceiveStock} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Quantity *</Label>
+                <Input type="number" min="1" value={receiveForm.quantity} onChange={(e) => setReceiveForm({...receiveForm, quantity: parseInt(e.target.value) || 0})} required />
+              </div>
+              <div className="space-y-2">
+                <Label>Batch Number *</Label>
+                <Input value={receiveForm.batch_number} onChange={(e) => setReceiveForm({...receiveForm, batch_number: e.target.value})} placeholder="BTH-2026-001" required />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Expiry Date *</Label>
+                <Input type="date" value={receiveForm.expiry_date} onChange={(e) => setReceiveForm({...receiveForm, expiry_date: e.target.value})} required />
+              </div>
+              <div className="space-y-2">
+                <Label>Unit Cost (₵)</Label>
+                <Input type="number" step="0.01" value={receiveForm.unit_cost} onChange={(e) => setReceiveForm({...receiveForm, unit_cost: parseFloat(e.target.value) || 0})} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Supplier</Label>
+              <Select value={receiveForm.supplier_name} onValueChange={(v) => setReceiveForm({...receiveForm, supplier_name: v})}>
+                <SelectTrigger><SelectValue placeholder="Select supplier" /></SelectTrigger>
+                <SelectContent>
+                  {suppliers.map(s => <SelectItem key={s.id} value={s.name}>{s.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => { setReceiveStockOpen(false); setSelectedItem(null); }}>Cancel</Button>
+              <Button type="submit" disabled={saving} className="bg-green-600 hover:bg-green-700">
+                {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}<ArrowDownCircle className="w-4 h-4 mr-2" /> Receive
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create NHIS Claim Dialog */}
+      <Dialog open={createClaimOpen} onOpenChange={setCreateClaimOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Create NHIS Pharmacy Claim</DialogTitle>
+          </DialogHeader>
+          <div className="overflow-y-auto flex-1 pr-2">
+            <form onSubmit={handleCreateClaim} className="space-y-4">
+              {/* Member Verification */}
+              <Card>
+                <CardHeader className="pb-2"><CardTitle className="text-sm">Member Verification</CardTitle></CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex gap-3 items-end">
+                    <div className="flex-1 space-y-1">
+                      <Label>NHIS Membership ID *</Label>
+                      <Input value={membershipId} onChange={(e) => setMembershipId(e.target.value)} placeholder="NHIS-2024-001234" />
+                    </div>
+                    <Button type="button" onClick={handleVerifyMember} disabled={verifying}>{verifying && <Loader2 className="w-4 h-4 mr-2 animate-spin" />} Verify</Button>
+                  </div>
+                  {verifiedMember?.verified && (
+                    <div className="p-2 bg-green-50 border border-green-200 rounded text-sm text-green-700">
+                      <CheckCircle className="w-4 h-4 inline mr-1" /> Verified: {verifiedMember.full_name} - {verifiedMember.coverage_type}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Claim Details */}
+              <Card>
+                <CardHeader className="pb-2"><CardTitle className="text-sm">Claim Details</CardTitle></CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label>Patient Name</Label>
+                      <Input value={claimForm.patient_name} onChange={(e) => setClaimForm({...claimForm, patient_name: e.target.value})} />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Diagnosis Codes</Label>
+                      <Input value={claimForm.diagnosis_codes} onChange={(e) => setClaimForm({...claimForm, diagnosis_codes: e.target.value})} placeholder="B50.9, J06.9" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Prescription Date</Label>
+                      <Input type="date" value={claimForm.prescription_date} onChange={(e) => setClaimForm({...claimForm, prescription_date: e.target.value})} />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Dispensing Date</Label>
+                      <Input type="date" value={claimForm.dispensing_date} onChange={(e) => setClaimForm({...claimForm, dispensing_date: e.target.value})} />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Drug Selection */}
+              <Card>
+                <CardHeader className="pb-2"><CardTitle className="text-sm">Medications</CardTitle></CardHeader>
+                <CardContent className="space-y-3">
+                  <Input value={drugSearch} onChange={(e) => setDrugSearch(e.target.value)} placeholder="Search NHIS drug tariff..." />
+                  {drugSearch && (
+                    <div className="max-h-32 overflow-y-auto border rounded">
+                      {filteredTariff.slice(0, 8).map(drug => (
+                        <div key={drug.code} className="p-2 hover:bg-gray-50 cursor-pointer flex justify-between items-center border-b last:border-b-0" onClick={() => handleAddDrugToClaim(drug)}>
+                          <div><p className="text-sm font-medium">{drug.name}</p><p className="text-xs text-gray-500">{drug.code}</p></div>
+                          <p className="text-sm font-semibold text-green-600">₵{drug.nhis_price?.toFixed(2)}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {claimItems.length > 0 && (
+                    <Table>
+                      <TableHeader>
+                        <TableRow><TableHead>Drug</TableHead><TableHead>Qty</TableHead><TableHead>Price</TableHead><TableHead>Total</TableHead><TableHead></TableHead></TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {claimItems.map(item => (
+                          <TableRow key={item.item_code}>
+                            <TableCell className="text-sm">{item.item_name}</TableCell>
+                            <TableCell>
+                              <Input type="number" min="1" value={item.quantity} onChange={(e) => {
+                                const qty = parseInt(e.target.value) || 1;
+                                setClaimItems(prev => prev.map(i => i.item_code === item.item_code ? {...i, quantity: qty, total_price: qty * i.unit_price} : i));
+                              }} className="w-16" />
+                            </TableCell>
+                            <TableCell>₵{item.unit_price.toFixed(2)}</TableCell>
+                            <TableCell className="font-semibold">₵{(item.quantity * item.unit_price).toFixed(2)}</TableCell>
+                            <TableCell><Button type="button" size="sm" variant="ghost" onClick={() => setClaimItems(prev => prev.filter(i => i.item_code !== item.item_code))} className="text-red-500"><X className="w-4 h-4" /></Button></TableCell>
+                          </TableRow>
+                        ))}
+                        <TableRow className="bg-gray-50">
+                          <TableCell colSpan={3} className="text-right font-semibold">Total:</TableCell>
+                          <TableCell colSpan={2} className="font-bold text-green-600">₵{claimTotal.toFixed(2)}</TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
+
+              <DialogFooter className="sticky bottom-0 bg-white pt-3 border-t">
+                <Button type="button" variant="outline" onClick={() => { setCreateClaimOpen(false); setClaimItems([]); setVerifiedMember(null); setMembershipId(''); }}>Cancel</Button>
+                <Button type="submit" disabled={saving || !verifiedMember?.verified || claimItems.length === 0} className="bg-green-600 hover:bg-green-700">
+                  {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />} Create Claim (₵{claimTotal.toFixed(2)})
+                </Button>
+              </DialogFooter>
+            </form>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
