@@ -60,6 +60,10 @@ export default function PatientChart() {
   const [prescriptions, setPrescriptions] = useState([]);
   const [ghanaPharmacies, setGhanaPharmacies] = useState([]);
   const [drugDatabase, setDrugDatabase] = useState([]);
+  const [routedPrescriptions, setRoutedPrescriptions] = useState([]);
+  const [fdaDrugs, setFdaDrugs] = useState([]);
+  const [pharmacySearchResults, setPharmacySearchResults] = useState([]);
+  const [pharmacySearchQuery, setPharmacySearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   
