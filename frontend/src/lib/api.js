@@ -678,6 +678,12 @@ export const hospitalITAdminAPI = {
   listDepartments: (hospitalId) => api.get(`/hospital/${hospitalId}/super-admin/departments`),
   seedDepartments: (hospitalId) => api.post(`/hospital/${hospitalId}/super-admin/departments/seed`),
   createDepartment: (hospitalId, code, name, description) => api.post(`/hospital/${hospitalId}/super-admin/departments`, null, { params: { code, name, description } }),
+  
+  // Permission Management
+  getStaffPermissions: (hospitalId, staffId) => api.get(`/hospital/${hospitalId}/super-admin/staff/${staffId}/permissions`),
+  updateStaffPermissions: (hospitalId, staffId, permissions) => api.post(`/hospital/${hospitalId}/super-admin/staff/${staffId}/permissions`, permissions),
+  grantPermission: (hospitalId, staffId, permission) => api.post(`/hospital/${hospitalId}/super-admin/staff/${staffId}/permissions/grant`, null, { params: { permission } }),
+  revokePermission: (hospitalId, staffId, permission) => api.post(`/hospital/${hospitalId}/super-admin/staff/${staffId}/permissions/revoke`, null, { params: { permission } }),
 };
 
 // Department Portal API
