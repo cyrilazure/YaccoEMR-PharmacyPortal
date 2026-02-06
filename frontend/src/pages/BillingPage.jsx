@@ -40,6 +40,15 @@ export default function BillingPage() {
   // View invoice state
   const [viewInvoice, setViewInvoice] = useState(null);
   const [paymentEmail, setPaymentEmail] = useState('');
+  const [paymentVerificationOpen, setPaymentVerificationOpen] = useState(false);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null);
+  const [paymentVerification, setPaymentVerification] = useState({
+    amount: 0,
+    reference_number: '',
+    transaction_id: '',
+    notes: '',
+    verified: false
+  });
   
   // NHIS Insurance state
   const [nhisSearch, setNhisSearch] = useState('');
@@ -172,14 +181,39 @@ export default function BillingPage() {
   };
 
   const handleRecordPayment = async (invoice, method) => {
+    // Open verification dialog instead of recording immediately
+    setSelectedPaymentMethod(method);
+    setPaymentVerification({
+      amount: invoice.balance_due,
+      reference_number: '',
+      transaction_id: '',
+      notes: '',
+      verified: false
+    });
+    setPaymentVerificationOpen(true);
+  };
+
+  const handleConfirmPayment = async () => {
+    if (!paymentVerification.verified) {
+      toast.error('Please confirm you have verified the payment');
+      return;
+    }
+    
+    if (!paymentVerification.reference_number && selectedPaymentMethod !== 'cash') {
+      toast.error('Please enter transaction reference/ID');
+      return;
+    }
+    
     try {
       await billingAPI.recordPayment({
-        invoice_id: invoice.id,
-        amount: invoice.balance_due,
-        payment_method: method,
-        notes: `${method} payment recorded`
+        invoice_id: viewInvoice.id,
+        amount: paymentVerification.amount,
+        payment_method: selectedPaymentMethod,
+        reference: paymentVerification.reference_number || paymentVerification.transaction_id,
+        notes: `${selectedPaymentMethod} payment - ${paymentVerification.notes}`
       });
-      toast.success('Payment recorded');
+      toast.success('Payment recorded successfully');
+      setPaymentVerificationOpen(false);
       loadData();
       setViewInvoice(null);
     } catch (err) {
