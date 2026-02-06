@@ -737,10 +737,10 @@ export default function PharmacyPortal() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <Input placeholder="Search pharmacies..." value={directorySearch} onChange={(e) => setDirectorySearch(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchDirectoryData()} className="pl-10" data-testid="directory-search" />
             </div>
-            <Select value={selectedRegion} onValueChange={(v) => { setSelectedRegion(v); }}>
+            <Select value={selectedRegion} onValueChange={(v) => { setSelectedRegion(v === 'all' ? '' : v); }}>
               <SelectTrigger className="w-48"><SelectValue placeholder="Filter by region" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Regions</SelectItem>
+                <SelectItem value="all">All Regions</SelectItem>
                 {regions.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
               </SelectContent>
             </Select>
