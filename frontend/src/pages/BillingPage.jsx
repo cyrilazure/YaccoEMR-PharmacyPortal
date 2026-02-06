@@ -752,7 +752,58 @@ export default function BillingPage() {
 
               {viewInvoice.balance_due > 0 && (
                 <div className="space-y-4 border-t pt-4">
-                  <h4 className="font-medium">Record Payment</h4>
+                  <h4 className="font-medium">Payment Options</h4>
+                  
+                  {/* Hospital Bank Details for Direct Deposit */}
+                  <Card className="border-emerald-200 bg-emerald-50">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base flex items-center gap-2 text-emerald-800">
+                        <Building2 className="w-5 h-5" />
+                        Direct Bank Deposit (No Gateway Fees)
+                      </CardTitle>
+                      <CardDescription className="text-emerald-700">
+                        Transfer {formatCurrency(viewInvoice.balance_due)} directly to hospital account
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <Alert className="bg-white border-emerald-300">
+                        <Building2 className="w-4 h-4 text-emerald-600" />
+                        <AlertTitle className="text-emerald-800">Hospital Bank Account Details</AlertTitle>
+                        <AlertDescription className="space-y-2 mt-2">
+                          <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                            <div>
+                              <span className="text-gray-600">Bank:</span>
+                              <span className="font-medium ml-2">GCB Bank Limited</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-600">Branch:</span>
+                              <span className="font-medium ml-2">Accra Main</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-600">Account Name:</span>
+                              <span className="font-medium ml-2">ygtworks Health Center</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-600">Account Number:</span>
+                              <span className="font-mono font-bold ml-2">1020304050</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-600">Amount to Pay:</span>
+                              <span className="font-bold text-emerald-700 ml-2">{formatCurrency(viewInvoice.balance_due)}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-600">Reference:</span>
+                              <span className="font-mono ml-2">{viewInvoice.invoice_number}</span>
+                            </div>
+                          </div>
+                          <div className="mt-3 p-2 bg-emerald-100 rounded text-xs text-emerald-800">
+                            💡 <strong>Instructions:</strong> Use mobile banking app, USSD, or visit any bank branch to transfer. 
+                            Include invoice number as reference. Contact billing after transfer to confirm.
+                          </div>
+                        </AlertDescription>
+                      </Alert>
+                    </CardContent>
+                  </Card>
                   
                   {paystackConfig?.enabled && (
                     <div className="flex gap-2 items-end">
@@ -772,7 +823,9 @@ export default function BillingPage() {
                     </div>
                   )}
                   
-                  <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <Label className="mb-2 block text-sm font-medium">Or Record Manual Payment</Label>
+                    <div className="grid grid-cols-3 gap-2">
                     <Button
                       variant="outline"
                       onClick={() => handleRecordPayment(viewInvoice, 'cash')}
