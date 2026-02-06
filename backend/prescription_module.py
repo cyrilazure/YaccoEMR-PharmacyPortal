@@ -165,6 +165,18 @@ def create_prescription_endpoints(db, get_current_user):
     async def search_drugs(query: str = "", limit: int = 20):
         """Search drug database"""
         if not query:
+
+    
+    @prescription_router.get("/pharmacies/ghana")
+    async def get_ghana_pharmacies(region: Optional[str] = None):
+        """Get list of pharmacies in Ghana"""
+        if region:
+            pharmacies = [p for p in GHANA_PHARMACIES if p["region"] == region]
+        else:
+            pharmacies = GHANA_PHARMACIES
+        
+        return {"pharmacies": pharmacies, "total": len(pharmacies)}
+
             return DRUG_DATABASE[:limit]
         
         query_lower = query.lower()
