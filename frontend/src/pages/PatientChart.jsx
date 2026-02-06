@@ -2699,11 +2699,11 @@ export default function PatientChart() {
               <div className="border rounded-lg">
                 <div className="p-2 bg-slate-100 border-b flex items-center justify-between">
                   <span className="text-sm font-medium text-slate-600">
-                    {pharmacySearchResults.length > 0 
-                      ? `Showing ${pharmacySearchResults.length} of ${filteredPharmacies.length} pharmacies`
-                      : 'No pharmacies match your filters'}
+                    {allPharmacies.length > 0 
+                      ? `Showing ${Math.min(pharmacySearchResults.length || allPharmacies.length, 20)} of ${filteredPharmacies.length || allPharmacies.length} pharmacies`
+                      : 'Loading pharmacies...'}
                   </span>
-                  {pharmacySearchResults.length < filteredPharmacies.length && (
+                  {pharmacySearchResults.length > 0 && pharmacySearchResults.length < filteredPharmacies.length && (
                     <Button
                       variant="ghost"
                       size="sm"
@@ -2714,8 +2714,8 @@ export default function PatientChart() {
                   )}
                 </div>
                 <div className="max-h-64 overflow-y-auto">
-                  {pharmacySearchResults.length > 0 ? (
-                    pharmacySearchResults.map((pharmacy) => (
+                  {allPharmacies.length > 0 ? (
+                    (pharmacySearchResults.length > 0 ? pharmacySearchResults : allPharmacies.slice(0, 20)).map((pharmacy) => (
                       <div
                         key={pharmacy.id}
                         className={`p-3 border-b cursor-pointer transition-colors ${
