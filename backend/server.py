@@ -1095,6 +1095,13 @@ from bed_management_module import bed_management_router, create_bed_management_e
 bed_management_api_router = create_bed_management_endpoints(db, get_current_user)
 app.include_router(bed_management_router)
 
+
+# Include Finance Settings Module
+from finance_settings_module import router as finance_router, create_finance_endpoints
+finance_api_router = create_finance_endpoints(db, get_current_user)
+app.include_router(finance_router)
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
