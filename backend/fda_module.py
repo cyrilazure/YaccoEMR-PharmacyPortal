@@ -760,7 +760,7 @@ def create_fda_endpoints(db, get_current_user):
         
         return {"drugs": results, "total": len(results), "query": q}
     
-    @fda_router.get("/drugs/{registration_number}")
+    @fda_router.get("/drugs/{registration_number:path}")
     async def get_drug_details(registration_number: str):
         """Get detailed information about a registered drug"""
         for d in FDA_REGISTERED_DRUGS:
