@@ -776,42 +776,67 @@ export default function BillingPage() {
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-3">
-                      <Alert className="bg-white border-emerald-300">
-                        <Building2 className="w-4 h-4 text-emerald-600" />
-                        <AlertTitle className="text-emerald-800">Hospital Bank Account Details</AlertTitle>
-                        <AlertDescription className="space-y-2 mt-2">
-                          <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                            <div>
-                              <span className="text-gray-600">Bank:</span>
-                              <span className="font-medium ml-2">GCB Bank Limited</span>
+                      {hospitalBankAccount ? (
+                        <Alert className="bg-white border-emerald-300">
+                          <Building2 className="w-4 h-4 text-emerald-600" />
+                          <AlertTitle className="text-emerald-800">Hospital Bank Account Details</AlertTitle>
+                          <AlertDescription className="space-y-2 mt-2">
+                            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                              <div>
+                                <span className="text-gray-600">Bank:</span>
+                                <span className="font-medium ml-2">{hospitalBankAccount.bank_name}</span>
+                              </div>
+                              <div>
+                                <span className="text-gray-600">Branch:</span>
+                                <span className="font-medium ml-2">{hospitalBankAccount.branch || 'Main'}</span>
+                              </div>
+                              <div className="col-span-2">
+                                <span className="text-gray-600">Account Name:</span>
+                                <span className="font-medium ml-2">{hospitalBankAccount.account_name}</span>
+                              </div>
+                              <div>
+                                <span className="text-gray-600">Account Number:</span>
+                                <span className="font-mono font-bold ml-2 text-lg">{hospitalBankAccount.account_number}</span>
+                              </div>
+                              <div>
+                                <span className="text-gray-600">Currency:</span>
+                                <span className="font-medium ml-2">{hospitalBankAccount.currency}</span>
+                              </div>
+                              <div className="col-span-2">
+                                <span className="text-gray-600">Amount to Pay:</span>
+                                <span className="font-bold text-emerald-700 ml-2 text-lg">{formatCurrency(viewInvoice.balance_due)}</span>
+                              </div>
+                              <div className="col-span-2">
+                                <span className="text-gray-600">Payment Reference:</span>
+                                <span className="font-mono ml-2 bg-emerald-100 px-2 py-1 rounded">{viewInvoice.invoice_number}</span>
+                              </div>
                             </div>
-                            <div>
-                              <span className="text-gray-600">Branch:</span>
-                              <span className="font-medium ml-2">Accra Main</span>
+                            <div className="mt-3 p-3 bg-emerald-100 rounded text-sm text-emerald-800">
+                              <strong>💡 How to Pay via Direct Bank Transfer:</strong>
+                              <ol className="list-decimal ml-5 mt-2 space-y-1">
+                                <li>Use your mobile banking app (GCB Mobile, Ecobank Mobile, etc.)</li>
+                                <li>Select "Transfer" and choose "To Other Banks" or "Same Bank"</li>
+                                <li>Enter the account number: <strong>{hospitalBankAccount.account_number}</strong></li>
+                                <li>Enter amount: <strong>{formatCurrency(viewInvoice.balance_due)}</strong></li>
+                                <li>Use reference: <strong>{viewInvoice.invoice_number}</strong></li>
+                                <li>Confirm transfer and save receipt</li>
+                                <li>Contact billing office to confirm payment received</li>
+                              </ol>
+                              <p className="mt-2 text-xs">
+                                ⏱️ Bank transfers typically complete within 1-2 business days. No gateway fees apply.
+                              </p>
                             </div>
-                            <div>
-                              <span className="text-gray-600">Account Name:</span>
-                              <span className="font-medium ml-2">ygtworks Health Center</span>
-                            </div>
-                            <div>
-                              <span className="text-gray-600">Account Number:</span>
-                              <span className="font-mono font-bold ml-2">1020304050</span>
-                            </div>
-                            <div>
-                              <span className="text-gray-600">Amount to Pay:</span>
-                              <span className="font-bold text-emerald-700 ml-2">{formatCurrency(viewInvoice.balance_due)}</span>
-                            </div>
-                            <div>
-                              <span className="text-gray-600">Reference:</span>
-                              <span className="font-mono ml-2">{viewInvoice.invoice_number}</span>
-                            </div>
-                          </div>
-                          <div className="mt-3 p-2 bg-emerald-100 rounded text-xs text-emerald-800">
-                            💡 <strong>Instructions:</strong> Use mobile banking app, USSD, or visit any bank branch to transfer. 
-                            Include invoice number as reference. Contact billing after transfer to confirm.
-                          </div>
-                        </AlertDescription>
-                      </Alert>
+                          </AlertDescription>
+                        </Alert>
+                      ) : (
+                        <Alert>
+                          <AlertCircle className="w-4 h-4" />
+                          <AlertTitle>Bank Account Not Configured</AlertTitle>
+                          <AlertDescription>
+                            Contact hospital IT Admin to set up bank account details for direct deposits.
+                          </AlertDescription>
+                        </Alert>
+                      )}
                     </CardContent>
                   </Card>
                   
