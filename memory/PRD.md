@@ -2,19 +2,19 @@
 
 ## Project Overview
 **Name:** Yacco EMR - Electronic Medical Records System  
-**Version:** 1.2.0  
+**Version:** 1.3.0  
 **Created:** February 3, 2026  
 **Last Updated:** February 6, 2026
 
 ## Problem Statement
-Build a comprehensive Electronic Medical Records (EMR) system similar to Epic EMR with core clinical modules, multi-role support, scheduling, AI-assisted documentation, and healthcare interoperability (FHIR). Extended with Ghana-specific features including NHIS integration, regional pharmacy network, and Paystack payment processing.
+Build a comprehensive Electronic Medical Records (EMR) system similar to Epic EMR with core clinical modules, multi-role support, scheduling, AI-assisted documentation, and healthcare interoperability (FHIR). Extended with Ghana-specific features including NHIS integration, regional pharmacy network, Ghana FDA drug verification, and Paystack payment processing.
 
 ## User Personas
 1. **Physicians** - Primary clinical users who document patient encounters, place orders, review results
 2. **Nurses** - Execute orders, administer medications, document care, monitor patients (MAR workflow)
 3. **Schedulers** - Manage appointments, patient registration, capacity
 4. **Administrators** - Oversee system, manage users, view analytics, monitor system health
-5. **Pharmacists** - Manage e-prescriptions, dispense medications
+5. **Pharmacists** - Manage e-prescriptions, dispense medications, verify FDA registration
 6. **Billers** - Create invoices, process payments, manage claims
 
 ## Tech Stack
@@ -28,13 +28,30 @@ Build a comprehensive Electronic Medical Records (EMR) system similar to Epic EM
 
 ## What's Been Implemented
 
-### Ghana Pharmacy Network (NEW - February 6, 2026)
+### E-Prescription Routing (NEW - February 6, 2026)
+- [x] E-prescription routing from Patient Chart to external pharmacies
+- [x] Pharmacy selection with search from Ghana Pharmacy Network (133 pharmacies)
+- [x] Prescription status tracking: sent → accepted/rejected → filled
+- [x] Prescription tracking by RX number with timeline
+- [x] Pharmacy accept/reject/fill workflow
+- [x] Patient Chart "Pharmacy" tab with active prescriptions and routing status
+- [x] API endpoints: `/api/prescriptions/{id}/send-to-pharmacy`, `/api/prescriptions/tracking/{rx}`
+
+### Ghana FDA Integration (NEW - February 6, 2026)
+- [x] Drug registration database with 29 FDA-registered drugs (MOCKED - seed data)
+- [x] Drug verification by trade name or registration number
+- [x] Drug schedules: OTC, POM (Prescription Only), CD (Controlled Drug)
+- [x] Drug categories: Human Medicine, Herbal, Veterinary, etc.
+- [x] Manufacturer database with product counts
+- [x] Safety alerts (mock data for demonstration)
+- [x] API endpoints: `/api/fda/drugs/*`, `/api/fda/verify`, `/api/fda/schedules`
+
+### Ghana Pharmacy Network (February 6, 2026)
 - [x] Comprehensive national pharmacy database (133 pharmacies across all 16 regions)
 - [x] Pharmacy types: GHS, Private Hospital, Retail, Wholesale, Chain, Mission, Quasi-Government
 - [x] Major chains: Ernest Chemist (17 locations), mPharma (7 locations), Kinapharma (5 locations)
 - [x] Search and filter by region, city, ownership type
 - [x] Filter by NHIS accreditation (129 pharmacies), 24-hour service (26), delivery available (26)
-- [x] Pharmacy details view with contact info, operating hours, parent facility
 - [x] Pharmacy Directory UI at `/pharmacy-directory`
 - [x] API endpoints: `/api/pharmacy-network/*`
 
@@ -84,35 +101,46 @@ Build a comprehensive Electronic Medical Records (EMR) system similar to Epic EM
 
 ## Key API Endpoints
 
-### Pharmacy Network (NEW)
+### E-Prescription Routing (NEW)
+```
+POST /api/prescriptions/{id}/send-to-pharmacy - Route prescription to external pharmacy
+GET  /api/prescriptions/tracking/{rx_number}  - Track prescription by RX number
+GET  /api/prescriptions/patient/{id}/routed   - Get patient's routed prescriptions
+GET  /api/prescriptions/routing/{id}/status   - Get routing status
+PUT  /api/prescriptions/routing/{id}/accept   - Pharmacy accepts prescription
+PUT  /api/prescriptions/routing/{id}/reject   - Pharmacy rejects prescription
+PUT  /api/prescriptions/routing/{id}/fill     - Pharmacy marks as filled
+```
+
+### Ghana FDA Integration (NEW)
+```
+GET  /api/fda/drugs                      - List all registered drugs (29)
+GET  /api/fda/drugs/search?q={query}     - Search drugs by name
+GET  /api/fda/drugs/{registration_number} - Get drug details
+POST /api/fda/verify                     - Verify drug registration
+GET  /api/fda/schedules                  - Get drug schedules (OTC, POM, CD)
+GET  /api/fda/categories                 - Get drug categories
+GET  /api/fda/stats                      - Get registration statistics
+GET  /api/fda/manufacturers              - List manufacturers
+GET  /api/fda/alerts                     - Get safety alerts
+```
+
+### Pharmacy Network
 ```
 GET  /api/pharmacy-network/pharmacies     - List all pharmacies (paginated)
 GET  /api/pharmacy-network/pharmacies/search?q=<query> - Search pharmacies
 GET  /api/pharmacy-network/pharmacies/{id} - Get pharmacy details
 GET  /api/pharmacy-network/regions        - List all 16 Ghana regions
-GET  /api/pharmacy-network/regions/{region}/pharmacies - Get pharmacies by region
-GET  /api/pharmacy-network/ownership-types - Get ownership type options
 GET  /api/pharmacy-network/chains         - Get pharmacy chains
 GET  /api/pharmacy-network/stats          - Get network statistics
-GET  /api/pharmacy-network/nearby         - Find nearby pharmacies
 ```
 
 ### Billing & Finance
 ```
 POST /api/billing/invoices               - Create invoice
 PUT  /api/billing/invoices/{id}/reverse  - Reverse invoice
-PUT  /api/billing/invoices/{id}/change-payment-method - Change payment type
 POST /api/billing/paystack/initialize    - Initialize Paystack payment
 GET  /api/finance/bank-accounts          - Manage hospital bank accounts
-```
-
-### Bed Management
-```
-GET  /api/beds/census                    - Get bed census
-POST /api/beds/wards/create              - Create ward
-POST /api/beds/admissions/create         - Admit patient
-POST /api/beds/admissions/{id}/transfer  - Transfer patient
-POST /api/beds/admissions/{id}/discharge - Discharge patient
 ```
 
 ## Prioritized Backlog
@@ -122,9 +150,9 @@ POST /api/beds/admissions/{id}/discharge - Discharge patient
 - [ ] NHIS Pharmacy Claims Integration
 
 ### P1 (High Priority)
-- [ ] E-prescription routing to external pharmacies
-- [ ] Prescription status tracking for physicians
+- [ ] Real Ghana FDA API integration (replace mock data)
 - [ ] Notifications for prescription updates
+- [ ] Lab results integration
 
 ### P2 (Medium Priority)
 - [ ] Integration with other payment gateways (Flutterwave, Hubtel)
@@ -132,7 +160,6 @@ POST /api/beds/admissions/{id}/discharge - Discharge patient
 
 ### P3 (Future)
 - [ ] National e-Pharmacy platform integration
-- [ ] FDA APIs integration
 - [ ] Mobile apps
 
 ## Test Credentials
@@ -143,6 +170,10 @@ POST /api/beds/admissions/{id}/discharge - Discharge patient
 - **Radiologist**: radiologist@yacco.health / test123
 - **Radiology Staff**: radiology_staff@yacco.health / test123
 - **Nurse**: test_nurse@yacco.health / test123
+
+## Mocked/Simulated APIs
+- **Ghana FDA API**: Using seed data in `fda_module.py` (29 registered drugs) - NOT actual Ghana FDA API
+- **Paystack**: Using test keys for payment processing
 
 ## Environment Variables
 ```
