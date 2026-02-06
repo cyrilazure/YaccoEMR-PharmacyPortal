@@ -34,9 +34,8 @@ export default function SecuritySettings() {
   const [twoFAStatus, setTwoFAStatus] = useState(null);
   const [permissions, setPermissions] = useState(null);
   
-  // Roles that should NOT see permissions tab
-  const hidePermissionsForRoles = ['nurse', 'physician', 'nursing_supervisor', 'floor_supervisor'];
-  const showPermissions = !hidePermissionsForRoles.includes(user?.role);
+  // Roles that should NOT see permissions tab - HIDE FOR ALL USERS NOW
+  const showPermissions = false; // Permissions tab disabled as per user request
   
   // 2FA Setup state
   const [setupDialogOpen, setSetupDialogOpen] = useState(false);
