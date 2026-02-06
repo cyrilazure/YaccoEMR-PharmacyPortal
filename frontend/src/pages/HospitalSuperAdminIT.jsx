@@ -792,7 +792,9 @@ export default function HospitalSuperAdminIT() {
                   )}
                 </div>
               </ScrollArea>
-
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         {/* Finance Settings Tab */}
         <TabsContent value="finance" className="mt-6">
