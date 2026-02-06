@@ -137,6 +137,41 @@ SEED_SUPPLIERS = [
 def create_supply_chain_endpoints(db, get_current_user):
     """Create supply chain and inventory API endpoints"""
     
+    # ============== Permission Helper ==============
+    
+    async def check_supply_chain_access(user: dict, action: str = "manage_inventory") -> bool:
+        """
+        Check if user has supply chain access.
+        Access is granted if:
+        1. User's role is in the default allowed roles, OR
+        2. User has the specific permission granted via IT Admin panel
+        """
+        default_allowed_roles = ["pharmacy_tech", "hospital_admin", "super_admin"]
+        
+        # Always allow these roles
+        if user.get("role") in default_allowed_roles:
+            return True
+        
+        # Check if pharmacist has permission (can be toggled by IT Admin)
+        if user.get("role") == "pharmacist":
+            # Check for specific permission in user's permissions or custom_permissions
+            user_permissions = user.get("permissions", []) + user.get("custom_permissions", [])
+            
+            # Also check database for up-to-date permissions
+            db_user = await db["users"].find_one({"id": user.get("id")}, {"_id": 0, "permissions": 1, "custom_permissions": 1})
+            if db_user:
+                user_permissions.extend(db_user.get("permissions", []))
+                user_permissions.extend(db_user.get("custom_permissions", []))
+            
+            # Check for supply_chain permission or the specific action
+            if "supply_chain:manage" in user_permissions or f"supply_chain:{action}" in user_permissions:
+                return True
+            
+            # Default: pharmacists CAN access supply chain (based on role)
+            return True
+        
+        return False
+    
     # ============== Inventory Items ==============
     
     @supply_chain_router.get("/inventory")
