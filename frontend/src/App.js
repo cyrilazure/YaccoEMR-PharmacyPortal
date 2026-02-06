@@ -211,6 +211,7 @@ function App() {
             
             {/* New Module Portals (Legacy routes without hospitalId) */}
             <Route path="pharmacy" element={<PharmacyPortal />} />
+            <Route path="pharmacy-directory" element={<PharmacyDirectory />} />
             <Route path="radiology" element={<RadiologyPortal />} />
             <Route path="bed-management" element={<BedManagementPortal />} />
             
