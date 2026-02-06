@@ -1749,7 +1749,333 @@ export default function PatientChart() {
           </Card>
         </TabsContent>
 
+        {/* Pharmacy Tab - e-Prescription Routing */}
+        <TabsContent value="pharmacy" className="mt-6 space-y-6">
+          {/* Quick Actions */}
+          <div className="flex justify-between items-center">
+            <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+              <Building2 className="w-5 h-5 text-emerald-600" />
+              e-Prescription & Pharmacy
+            </h2>
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => setPrescriptionDialogOpen(true)} 
+                className="gap-2"
+                data-testid="create-prescription-btn"
+              >
+                <Plus className="w-4 h-4" /> New Prescription
+              </Button>
+            </div>
+          </div>
+
+          {/* Active Prescriptions - Ready for Routing */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Pill className="w-5 h-5 text-blue-600" />
+                Active Prescriptions
+              </CardTitle>
+              <CardDescription>
+                Prescriptions that can be sent to external pharmacies
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {prescriptions.filter(p => ['pending_verification', 'approved'].includes(p.status) && !p.pharmacy_id).length === 0 ? (
+                <div className="text-center py-8 text-slate-500">
+                  <Pill className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                  <p>No active prescriptions available for routing</p>
+                  <Button variant="outline" onClick={() => setPrescriptionDialogOpen(true)} className="mt-4 gap-2">
+                    <Plus className="w-4 h-4" /> Create Prescription
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {prescriptions.filter(p => ['pending_verification', 'approved'].includes(p.status) && !p.pharmacy_id).map((rx) => (
+                    <div key={rx.id} className="p-4 border rounded-lg hover:bg-slate-50 transition-colors">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-sm text-blue-600">{rx.rx_number}</span>
+                            <Badge className={getPriorityBadge(rx.priority)}>{rx.priority}</Badge>
+                            <Badge className="bg-slate-100 text-slate-700">{rx.status?.replace(/_/g, ' ')}</Badge>
+                          </div>
+                          <div className="mt-2 text-sm text-slate-600">
+                            <p className="font-medium">Medications:</p>
+                            <ul className="list-disc list-inside ml-2 mt-1">
+                              {rx.medications?.map((med, idx) => (
+                                <li key={idx}>{med.medication_name} {med.dosage}{med.dosage_unit} - {med.frequency}</li>
+                              ))}
+                            </ul>
+                          </div>
+                          <p className="text-xs text-slate-500 mt-2">
+                            Created: {formatDateTime(rx.created_at)} by {rx.prescriber_name}
+                          </p>
+                        </div>
+                        <Button 
+                          onClick={() => openSendToPharmacyDialog(rx)}
+                          className="gap-2 bg-emerald-600 hover:bg-emerald-700"
+                          data-testid={`send-rx-${rx.id}`}
+                        >
+                          <Send className="w-4 h-4" /> Send to Pharmacy
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Routed Prescriptions - Status Tracking */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ExternalLink className="w-5 h-5 text-purple-600" />
+                Routed Prescriptions
+              </CardTitle>
+              <CardDescription>
+                Track prescriptions sent to external pharmacies
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {routedPrescriptions.length === 0 ? (
+                <div className="text-center py-8 text-slate-500">
+                  <Send className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                  <p>No prescriptions have been routed yet</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {routedPrescriptions.map((routing) => {
+                    const statusStyle = getRoutingStatusBadge(routing.status);
+                    const StatusIcon = statusStyle.icon;
+                    return (
+                      <div key={routing.id} className="p-4 border rounded-lg">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono text-sm text-blue-600">{routing.rx_number}</span>
+                              <Badge className={statusStyle.bg}>
+                                <StatusIcon className="w-3 h-3 mr-1" />
+                                {routing.status}
+                              </Badge>
+                            </div>
+                            <div className="mt-2 flex items-center gap-2 text-sm">
+                              <Building2 className="w-4 h-4 text-slate-400" />
+                              <span className="font-medium">{routing.pharmacy_name}</span>
+                            </div>
+                            <div className="mt-1 flex items-center gap-2 text-sm text-slate-500">
+                              <MapPin className="w-4 h-4" />
+                              <span>{routing.pharmacy_address}, {routing.pharmacy_city}</span>
+                            </div>
+                            <div className="mt-1 flex items-center gap-2 text-sm text-slate-500">
+                              <Phone className="w-4 h-4" />
+                              <span>{routing.pharmacy_phone}</span>
+                            </div>
+                            <p className="text-xs text-slate-500 mt-2">
+                              Sent: {formatDateTime(routing.sent_at)} by {routing.sent_by_name}
+                            </p>
+                            {routing.rejection_reason && (
+                              <div className="mt-2 p-2 bg-red-50 rounded text-sm text-red-700">
+                                <strong>Rejection Reason:</strong> {routing.rejection_reason}
+                              </div>
+                            )}
+                          </div>
+                          {routing.status === 'filled' && (
+                            <Badge className="bg-emerald-100 text-emerald-800">
+                              <CheckCircle className="w-3 h-3 mr-1" /> Ready for Pickup
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* All Prescriptions History */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-slate-600" />
+                Prescription History
+              </CardTitle>
+              <CardDescription>
+                All prescriptions for this patient
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {prescriptions.length === 0 ? (
+                <p className="text-center py-4 text-slate-500">No prescription history</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left py-2 px-2">RX Number</th>
+                        <th className="text-left py-2 px-2">Medications</th>
+                        <th className="text-left py-2 px-2">Pharmacy</th>
+                        <th className="text-left py-2 px-2">Status</th>
+                        <th className="text-left py-2 px-2">Date</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {prescriptions.map((rx) => (
+                        <tr key={rx.id} className="border-b hover:bg-slate-50">
+                          <td className="py-2 px-2 font-mono text-blue-600">{rx.rx_number}</td>
+                          <td className="py-2 px-2">
+                            {rx.medications?.map(m => m.medication_name).join(', ')}
+                          </td>
+                          <td className="py-2 px-2">
+                            {rx.pharmacy_name || <span className="text-slate-400">Not assigned</span>}
+                          </td>
+                          <td className="py-2 px-2">
+                            <Badge className={getStatusBadge(rx.status)}>{rx.status?.replace(/_/g, ' ')}</Badge>
+                          </td>
+                          <td className="py-2 px-2 text-slate-500">{formatDate(rx.created_at)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
       </Tabs>
+
+      {/* Send to Pharmacy Dialog */}
+      <Dialog open={sendToPharmacyDialogOpen} onOpenChange={setSendToPharmacyDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Building2 className="w-5 h-5 text-emerald-600" />
+              Send Prescription to Pharmacy
+            </DialogTitle>
+            <DialogDescription>
+              Select a pharmacy from the Ghana Pharmacy Network to route this prescription
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedPrescriptionForRouting && (
+            <div className="space-y-4 py-4">
+              {/* Prescription Summary */}
+              <div className="p-4 bg-blue-50 rounded-lg">
+                <p className="font-medium text-blue-800">Prescription: {selectedPrescriptionForRouting.rx_number}</p>
+                <ul className="mt-2 text-sm text-blue-700">
+                  {selectedPrescriptionForRouting.medications?.map((med, idx) => (
+                    <li key={idx}>• {med.medication_name} {med.dosage}{med.dosage_unit} - {med.frequency} x {med.quantity}</li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Pharmacy Search */}
+              <div className="space-y-2">
+                <Label>Search Pharmacy</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Input
+                    placeholder="Search by name, city, or region..."
+                    value={pharmacySearchQuery}
+                    onChange={(e) => {
+                      setPharmacySearchQuery(e.target.value);
+                      searchPharmacies(e.target.value);
+                    }}
+                    className="pl-10"
+                    data-testid="pharmacy-search-input"
+                  />
+                </div>
+              </div>
+
+              {/* Search Results */}
+              {pharmacySearchResults.length > 0 && (
+                <div className="border rounded-lg max-h-60 overflow-y-auto">
+                  {pharmacySearchResults.map((pharmacy) => (
+                    <div
+                      key={pharmacy.id}
+                      className={`p-3 border-b cursor-pointer transition-colors ${
+                        selectedPharmacyForRouting?.id === pharmacy.id 
+                          ? 'bg-emerald-50 border-emerald-200' 
+                          : 'hover:bg-slate-50'
+                      }`}
+                      onClick={() => setSelectedPharmacyForRouting(pharmacy)}
+                      data-testid={`pharmacy-option-${pharmacy.id}`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="font-medium">{pharmacy.name}</p>
+                          <p className="text-sm text-slate-500">{pharmacy.address}, {pharmacy.city}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Phone className="w-3 h-3 text-slate-400" />
+                            <span className="text-sm">{pharmacy.phone}</span>
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end gap-1">
+                          {pharmacy.has_nhis && (
+                            <Badge className="bg-green-100 text-green-700 text-xs">
+                              <Shield className="w-3 h-3 mr-1" /> NHIS
+                            </Badge>
+                          )}
+                          {pharmacy.has_24hr_service && (
+                            <Badge className="bg-purple-100 text-purple-700 text-xs">
+                              <Clock className="w-3 h-3 mr-1" /> 24hr
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Selected Pharmacy */}
+              {selectedPharmacyForRouting && (
+                <div className="p-4 bg-emerald-50 rounded-lg border border-emerald-200">
+                  <p className="font-medium text-emerald-800 mb-2">Selected Pharmacy:</p>
+                  <p className="font-semibold">{selectedPharmacyForRouting.name}</p>
+                  <p className="text-sm text-emerald-700">{selectedPharmacyForRouting.address}, {selectedPharmacyForRouting.city}</p>
+                  <p className="text-sm text-emerald-700">Region: {selectedPharmacyForRouting.region}</p>
+                  <p className="text-sm text-emerald-700">Phone: {selectedPharmacyForRouting.phone}</p>
+                </div>
+              )}
+
+              {/* Notes */}
+              <div className="space-y-2">
+                <Label>Additional Notes (Optional)</Label>
+                <Textarea
+                  placeholder="Any special instructions for the pharmacy..."
+                  value={routingNotes}
+                  onChange={(e) => setRoutingNotes(e.target.value)}
+                  rows={2}
+                />
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setSendToPharmacyDialogOpen(false);
+              setSelectedPharmacyForRouting(null);
+              setPharmacySearchResults([]);
+              setPharmacySearchQuery('');
+              setRoutingNotes('');
+            }}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSendToPharmacy}
+              disabled={!selectedPharmacyForRouting || saving}
+              className="gap-2 bg-emerald-600 hover:bg-emerald-700"
+              data-testid="confirm-send-rx-btn"
+            >
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              Send to Pharmacy
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
