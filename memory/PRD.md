@@ -28,6 +28,23 @@ Build a comprehensive Electronic Medical Records (EMR) system similar to Epic EM
 
 ## What's Been Implemented
 
+### PatientChart Refactoring (February 6, 2026)
+- [x] Created reusable components in `/components/patient-chart/`:
+  - `LabsTab.jsx` - Lab orders and results with enhanced integration
+  - `VitalsTab.jsx` - Vitals recording with status indicators
+  - `ProblemsTab.jsx` - Problem list management
+  - `MedicationsTab.jsx` - Medication management
+- [x] Reduced main PatientChart.jsx complexity
+- [x] Added lab results summary cards with abnormal flagging
+- [x] Added trending indicators (High/Low) for lab values
+
+### Real-Time Stock Alerts (February 6, 2026)
+- [x] New API endpoint: `/api/supply-chain/alerts` - Get current stock alerts
+- [x] New API endpoint: `/api/supply-chain/alerts/send-notifications` - Send notifications to pharmacists
+- [x] Alerts track: Low stock, Out of stock, Expiring items (30/90 days)
+- [x] Notifications created for pharmacy staff with priority levels
+- [x] Stock alerts visible in Pharmacy Portal Inventory tab
+
 ### Consolidated Pharmacy Portal (UPDATED - February 6, 2026)
 - [x] **Dispensing Tab**: Prescription verification, approval, and dispensing workflow
 - [x] **Inventory Tab**: Stock management with Supply Chain integration
