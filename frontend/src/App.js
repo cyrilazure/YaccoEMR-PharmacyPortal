@@ -221,6 +221,9 @@ function App() {
             <Route path="security" element={<SecuritySettings />} />
             <Route path="finance-settings" element={<FinanceSettings />} />
             <Route path="ambulance" element={<AmbulancePortal />} />
+            <Route path="nhis-claims" element={<NHISClaimsPortal />} />
+            <Route path="supply-chain" element={<SupplyChainPortal />} />
+            <Route path="inventory" element={<SupplyChainPortal />} />
 
 
             <Route path="audit-logs" element={<AuditLogs />} />
