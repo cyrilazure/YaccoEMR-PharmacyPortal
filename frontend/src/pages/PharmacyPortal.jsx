@@ -1260,6 +1260,59 @@ export default function PharmacyPortal() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Barcode Scanner Dialog */}
+      <Dialog open={scannerActive} onOpenChange={setScannerActive}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Camera className="w-5 h-5 text-blue-600" />
+              Scan Barcode
+            </DialogTitle>
+            <DialogDescription>
+              Point your camera at the medication barcode
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {scannerActive && (
+              <BarcodeScanner onDetected={handleBarcodeDetected} />
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setScannerActive(false)}>
+              <XCircle className="w-4 h-4 mr-2" /> Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+// Barcode Scanner Component using react-zxing
+function BarcodeScanner({ onDetected }) {
+  const { ref } = useZxing({
+    onDecodeResult(result) {
+      onDetected(result.getText());
+    },
+    onError(error) {
+      // Silently ignore continuous scanning errors
+      console.debug('Scanner:', error);
+    },
+  });
+
+  return (
+    <div className="relative">
+      <video 
+        ref={ref} 
+        className="w-full h-64 rounded-lg bg-black object-cover"
+      />
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div className="w-48 h-32 border-2 border-blue-500 rounded-lg animate-pulse" />
+      </div>
+      <p className="text-center text-sm text-gray-500 mt-2">
+        Position the barcode within the frame
+      </p>
     </div>
   );
 }
