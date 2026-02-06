@@ -110,6 +110,14 @@ const navItems = [
     color: 'text-emerald-500'
   },
   { 
+    to: '/pharmacy-directory', 
+    icon: Building2, 
+    label: 'Pharmacy Directory', 
+    roles: ['physician', 'nurse', 'pharmacist', 'pharmacy_tech', 'hospital_admin', 'super_admin'],
+    description: 'National pharmacy database',
+    color: 'text-cyan-500'
+  },
+  { 
     to: '/radiology', 
     icon: Scan, 
     label: 'Radiology', 
