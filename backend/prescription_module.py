@@ -287,6 +287,10 @@ def create_prescription_endpoints(db, get_current_user):
         
         await db["prescriptions"].insert_one(prescription_doc)
         
+        # Remove _id if it was added by MongoDB
+        if "_id" in prescription_doc:
+            del prescription_doc["_id"]
+        
         # Create audit log
         await db["audit_logs"].insert_one({
             "id": str(uuid.uuid4()),
