@@ -77,6 +77,43 @@ def create_finance_endpoints(db, get_current_user):
             )
         
         account_id = str(uuid.uuid4())
+        
+        # Create Paystack Subaccount if enabled (Direct Settlement to Hospital Bank)
+        paystack_subaccount_code = None
+        if data.enable_paystack_settlement and data.bank_code:
+            try:
+                import os
+                import requests
+                
+                paystack_secret = os.environ.get('PAYSTACK_SECRET_KEY', '')
+                if paystack_secret:
+                    # Create Paystack subaccount for this hospital's bank
+                    subaccount_data = {
+                        "business_name": data.account_name,
+                        "settlement_bank": data.bank_code,  # Ghana bank code (e.g., "057" for GCB)
+                        "account_number": data.account_number,
+                        "percentage_charge": 0,  # 0% = All money goes to hospital (or set commission if needed)
+                        "description": f"Hospital: {data.account_name}",
+                        "primary_contact_email": user.get("email"),
+                        "metadata": {
+                            "organization_id": org_id,
+                            "account_id": account_id
+                        }
+                    }
+                    
+                    response = requests.post(
+                        "https://api.paystack.co/subaccount",
+                        json=subaccount_data,
+                        headers={"Authorization": f"Bearer {paystack_secret}"}
+                    )
+                    
+                    if response.status_code == 201:
+                        result = response.json()
+                        paystack_subaccount_code = result["data"]["subaccount_code"]
+            except Exception as e:
+                # Log but don't fail if Paystack registration fails
+                print(f"Paystack subaccount creation failed: {e}")
+        
         account_doc = {
             "id": account_id,
             "organization_id": org_id,
@@ -87,7 +124,10 @@ def create_finance_endpoints(db, get_current_user):
             "swift_code": data.swift_code,
             "account_type": data.account_type,
             "currency": data.currency,
+            "bank_code": data.bank_code,
             "is_primary": data.is_primary,
+            "enable_paystack_settlement": data.enable_paystack_settlement,
+            "paystack_subaccount_code": paystack_subaccount_code,
             "is_active": True,
             "created_by": user.get("id"),
             "created_at": datetime.now(timezone.utc).isoformat(),
