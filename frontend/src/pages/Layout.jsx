@@ -26,7 +26,7 @@ import {
   ClipboardList, Settings, LogOut, ChevronLeft, ChevronRight,
   Pill, AlertTriangle, Stethoscope, BarChart3, Heart, UserCog, Shield, Video,
   Building2, Globe, CreditCard, Share2, ShieldCheck, FileSearch, Layers,
-  Menu, X, Bell, Search, Sun, Moon, HelpCircle, Bed, Scan
+  Menu, X, Bell, Search, Sun, Moon, HelpCircle, Bed, Scan, Ambulance, Package
 } from 'lucide-react';
 
 const navItems = [
