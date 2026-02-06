@@ -859,65 +859,212 @@ export default function PharmacyPortal() {
 
       {/* Add Inventory Item Dialog */}
       <Dialog open={addItemOpen} onOpenChange={setAddItemOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
           <DialogHeader>
-            <DialogTitle>Add Inventory Item</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="w-5 h-5 text-emerald-600" />
+              Add Inventory Item
+            </DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleAddInventoryItem} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Drug Name *</Label>
-                <Input value={itemForm.drug_name} onChange={(e) => setItemForm({...itemForm, drug_name: e.target.value})} placeholder="e.g., Paracetamol 500mg" required />
+          <div className="overflow-y-auto flex-1 pr-2">
+            <form onSubmit={handleAddInventoryItem} className="space-y-4">
+              {/* Barcode Scanner Section */}
+              <div className="p-4 border-2 border-dashed rounded-lg bg-gray-50">
+                <div className="flex items-center justify-between mb-2">
+                  <Label className="flex items-center gap-2">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                    </svg>
+                    Barcode / GTIN
+                  </Label>
+                  <Badge className="bg-blue-100 text-blue-700">Optional</Badge>
+                </div>
+                <div className="flex gap-2">
+                  <Input 
+                    value={itemForm.barcode} 
+                    onChange={(e) => setItemForm({...itemForm, barcode: e.target.value})}
+                    placeholder="Scan or enter barcode/GTIN..."
+                    className="flex-1"
+                  />
+                  <Button type="button" variant="outline" onClick={() => toast.info('Point your device camera at the barcode. Mobile scanning coming soon!')}>
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    Scan
+                  </Button>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Scanning will auto-populate drug information from the FDA database</p>
               </div>
-              <div className="space-y-2">
-                <Label>Drug Code</Label>
-                <Input value={itemForm.drug_code} onChange={(e) => setItemForm({...itemForm, drug_code: e.target.value})} placeholder="Auto-generated" />
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Drug Name *</Label>
+                  <Input 
+                    value={itemForm.drug_name} 
+                    onChange={(e) => setItemForm({...itemForm, drug_name: e.target.value})} 
+                    placeholder="e.g., Paracetamol 500mg Tablets" 
+                    required 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Drug Code</Label>
+                  <Input 
+                    value={itemForm.drug_code} 
+                    onChange={(e) => setItemForm({...itemForm, drug_code: e.target.value})} 
+                    placeholder="Auto-generated if empty" 
+                  />
+                </div>
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Manufacturer</Label>
-                <Input value={itemForm.manufacturer} onChange={(e) => setItemForm({...itemForm, manufacturer: e.target.value})} />
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>FDA Registration #</Label>
+                  <Input 
+                    value={itemForm.fda_registration} 
+                    onChange={(e) => setItemForm({...itemForm, fda_registration: e.target.value})} 
+                    placeholder="e.g., FDA/DRD-2024-001" 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Manufacturer</Label>
+                  <Input 
+                    value={itemForm.manufacturer} 
+                    onChange={(e) => setItemForm({...itemForm, manufacturer: e.target.value})}
+                    placeholder="e.g., Ernest Chemist Ltd"
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>Category</Label>
-                <Select value={itemForm.category} onValueChange={(v) => setItemForm({...itemForm, category: v})}>
-                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Antimalarials">Antimalarials</SelectItem>
-                    <SelectItem value="Antibiotics">Antibiotics</SelectItem>
-                    <SelectItem value="Analgesics">Analgesics</SelectItem>
-                    <SelectItem value="Cardiovascular">Cardiovascular</SelectItem>
-                    <SelectItem value="Diabetes">Diabetes</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Category *</Label>
+                  <Select value={itemForm.category} onValueChange={(v) => setItemForm({...itemForm, category: v})}>
+                    <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+                    <SelectContent className="max-h-60">
+                      <SelectItem value="Antimalarials">Antimalarials</SelectItem>
+                      <SelectItem value="Antibiotics">Antibiotics</SelectItem>
+                      <SelectItem value="Antivirals">Antivirals</SelectItem>
+                      <SelectItem value="Antifungals">Antifungals</SelectItem>
+                      <SelectItem value="Antiparasitics">Antiparasitics</SelectItem>
+                      <SelectItem value="Analgesics & NSAIDs">Analgesics & NSAIDs</SelectItem>
+                      <SelectItem value="Antipyretics">Antipyretics</SelectItem>
+                      <SelectItem value="Cardiovascular">Cardiovascular</SelectItem>
+                      <SelectItem value="Antihypertensives">Antihypertensives</SelectItem>
+                      <SelectItem value="Antidiabetics">Antidiabetics</SelectItem>
+                      <SelectItem value="Respiratory">Respiratory</SelectItem>
+                      <SelectItem value="Antihistamines">Antihistamines</SelectItem>
+                      <SelectItem value="Gastrointestinal">Gastrointestinal</SelectItem>
+                      <SelectItem value="Antacids & PPIs">Antacids & PPIs</SelectItem>
+                      <SelectItem value="Laxatives">Laxatives</SelectItem>
+                      <SelectItem value="Antiemetics">Antiemetics</SelectItem>
+                      <SelectItem value="CNS & Psychiatry">CNS & Psychiatry</SelectItem>
+                      <SelectItem value="Sedatives & Hypnotics">Sedatives & Hypnotics</SelectItem>
+                      <SelectItem value="Anticonvulsants">Anticonvulsants</SelectItem>
+                      <SelectItem value="Antidepressants">Antidepressants</SelectItem>
+                      <SelectItem value="Hormones & Steroids">Hormones & Steroids</SelectItem>
+                      <SelectItem value="Contraceptives">Contraceptives</SelectItem>
+                      <SelectItem value="Thyroid Medications">Thyroid Medications</SelectItem>
+                      <SelectItem value="Vitamins & Supplements">Vitamins & Supplements</SelectItem>
+                      <SelectItem value="Iron Preparations">Iron Preparations</SelectItem>
+                      <SelectItem value="Dermatological">Dermatological</SelectItem>
+                      <SelectItem value="Ophthalmic">Ophthalmic</SelectItem>
+                      <SelectItem value="ENT Preparations">ENT Preparations</SelectItem>
+                      <SelectItem value="Vaccines">Vaccines</SelectItem>
+                      <SelectItem value="IV Fluids">IV Fluids & Solutions</SelectItem>
+                      <SelectItem value="Surgical & Wound Care">Surgical & Wound Care</SelectItem>
+                      <SelectItem value="Oncology">Oncology</SelectItem>
+                      <SelectItem value="Antiretrovirals">Antiretrovirals (ARVs)</SelectItem>
+                      <SelectItem value="TB Medications">TB Medications</SelectItem>
+                      <SelectItem value="Herbal & Traditional">Herbal & Traditional</SelectItem>
+                      <SelectItem value="OTC">OTC (Over The Counter)</SelectItem>
+                      <SelectItem value="Controlled Substances">Controlled Substances</SelectItem>
+                      <SelectItem value="Medical Devices">Medical Devices</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Unit of Measure</Label>
+                  <Select value={itemForm.unit_of_measure} onValueChange={(v) => setItemForm({...itemForm, unit_of_measure: v})}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="tablet">Tablet</SelectItem>
+                      <SelectItem value="capsule">Capsule</SelectItem>
+                      <SelectItem value="bottle">Bottle</SelectItem>
+                      <SelectItem value="vial">Vial</SelectItem>
+                      <SelectItem value="ampule">Ampule</SelectItem>
+                      <SelectItem value="tube">Tube</SelectItem>
+                      <SelectItem value="sachet">Sachet</SelectItem>
+                      <SelectItem value="pack">Pack</SelectItem>
+                      <SelectItem value="box">Box</SelectItem>
+                      <SelectItem value="strip">Strip</SelectItem>
+                      <SelectItem value="ml">ml</SelectItem>
+                      <SelectItem value="unit">Unit</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Unit Cost (₵)</Label>
-                <Input type="number" step="0.01" value={itemForm.unit_cost} onChange={(e) => setItemForm({...itemForm, unit_cost: parseFloat(e.target.value) || 0})} />
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Unit Cost (₵)</Label>
+                  <Input 
+                    type="number" 
+                    step="0.01"
+                    min="0"
+                    value={itemForm.unit_cost} 
+                    onChange={(e) => setItemForm({...itemForm, unit_cost: e.target.value})}
+                    placeholder="0.00"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Selling Price (₵)</Label>
+                  <Input 
+                    type="number" 
+                    step="0.01"
+                    min="0"
+                    value={itemForm.selling_price} 
+                    onChange={(e) => setItemForm({...itemForm, selling_price: e.target.value})}
+                    placeholder="0.00"
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>Selling Price (₵)</Label>
-                <Input type="number" step="0.01" value={itemForm.selling_price} onChange={(e) => setItemForm({...itemForm, selling_price: parseFloat(e.target.value) || 0})} />
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Reorder Level</Label>
+                  <Input 
+                    type="number"
+                    min="0"
+                    value={itemForm.reorder_level} 
+                    onChange={(e) => setItemForm({...itemForm, reorder_level: e.target.value})}
+                    placeholder="10"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Max Stock Level</Label>
+                  <Input 
+                    type="number"
+                    min="0"
+                    value={itemForm.max_stock_level} 
+                    onChange={(e) => setItemForm({...itemForm, max_stock_level: e.target.value})}
+                    placeholder="1000"
+                  />
+                </div>
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Reorder Level</Label>
-                <Input type="number" value={itemForm.reorder_level} onChange={(e) => setItemForm({...itemForm, reorder_level: parseInt(e.target.value) || 10})} />
-              </div>
-              <div className="space-y-2">
-                <Label>Max Stock</Label>
-                <Input type="number" value={itemForm.max_stock_level} onChange={(e) => setItemForm({...itemForm, max_stock_level: parseInt(e.target.value) || 1000})} />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setAddItemOpen(false)}>Cancel</Button>
-              <Button type="submit" disabled={saving}>{saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />} Add Item</Button>
-            </DialogFooter>
+
+              <DialogFooter className="pt-4 border-t">
+                <Button type="button" variant="outline" onClick={() => setAddItemOpen(false)}>Cancel</Button>
+                <Button type="submit" disabled={saving} className="bg-emerald-600 hover:bg-emerald-700">
+                  {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  Add Item
+                </Button>
+              </DialogFooter>
+            </form>
+          </div>
+        </DialogContent>
+      </Dialog>
           </form>
         </DialogContent>
       </Dialog>
