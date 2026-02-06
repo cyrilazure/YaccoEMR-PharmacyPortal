@@ -110,6 +110,7 @@ export default function SupplyChainPortal() {
 
   useEffect(() => {
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchData = async () => {
