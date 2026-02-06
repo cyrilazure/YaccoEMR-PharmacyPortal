@@ -233,10 +233,11 @@ def create_bed_management_endpoints(db, get_current_user):
     
     @bed_management_router.post("/wards/seed-defaults")
     async def seed_default_wards(
+        use_auto_naming: bool = True,
         user: dict = Depends(get_current_user)
     ):
-        """Seed default ward templates"""
-        allowed_roles = ["bed_manager", "hospital_admin", "super_admin"]
+        """Seed default ward templates with optional auto-naming based on hospital"""
+        allowed_roles = ["bed_manager", "hospital_admin", "super_admin", "nursing_supervisor", "floor_supervisor"]
         if user.get("role") not in allowed_roles:
             raise HTTPException(status_code=403, detail="Not authorized")
         
@@ -247,12 +248,26 @@ def create_bed_management_endpoints(db, get_current_user):
         if existing > 0:
             return {"message": f"Wards already exist ({existing} found)", "skipped": True}
         
+        # Get hospital name for auto-naming
+        hospital_prefix = None
+        if use_auto_naming and org_id:
+            hospital = await db["hospitals"].find_one({"id": org_id}, {"_id": 0, "name": 1})
+            if hospital:
+                hospital_prefix = generate_hospital_ward_prefix(hospital["name"])
+        
         created = 0
         for template in DEFAULT_WARD_TEMPLATES:
             ward_id = str(uuid.uuid4())
+            
+            # Generate ward name
+            if use_auto_naming and hospital_prefix:
+                ward_name = generate_auto_ward_name(hospital_prefix, template["ward_type"])
+            else:
+                ward_name = template["name"]
+            
             ward_doc = {
                 "id": ward_id,
-                "name": template["name"],
+                "name": ward_name,
                 "ward_type": template["ward_type"],
                 "floor": template.get("floor"),
                 "building": None,
@@ -265,12 +280,18 @@ def create_bed_management_endpoints(db, get_current_user):
                 "description": None,
                 "organization_id": org_id,
                 "is_active": True,
+                "is_auto_generated": use_auto_naming,
+                "hospital_prefix": hospital_prefix if use_auto_naming else None,
                 "created_at": datetime.now(timezone.utc).isoformat()
             }
             await db["wards"].insert_one(ward_doc)
             created += 1
         
-        return {"message": f"Created {created} default wards", "count": created}
+        return {
+            "message": f"Created {created} default wards" + (f" with prefix {hospital_prefix}" if hospital_prefix else ""),
+            "count": created,
+            "prefix": hospital_prefix
+        }
     
     @bed_management_router.get("/wards")
     async def get_wards(
