@@ -323,6 +323,36 @@ export default function HospitalSuperAdminIT() {
     return <Badge className="bg-emerald-100 text-emerald-700">Active</Badge>;
   };
 
+  // Permission Management Handlers
+  const handleOpenPermissions = async (staffMember) => {
+    setSelectedStaff(staffMember);
+    try {
+      const res = await hospitalITAdminAPI.getStaffPermissions(effectiveHospitalId, staffMember.id);
+      setStaffPermissions(res.data);
+      setPermissionsDialogOpen(true);
+    } catch (err) {
+      toast.error('Failed to load permissions');
+    }
+  };
+
+  const handleTogglePermission = async (permission, isGranted) => {
+    if (!selectedStaff) return;
+    try {
+      if (isGranted) {
+        await hospitalITAdminAPI.revokePermission(effectiveHospitalId, selectedStaff.id, permission);
+        toast.success('Permission revoked');
+      } else {
+        await hospitalITAdminAPI.grantPermission(effectiveHospitalId, selectedStaff.id, permission);
+        toast.success('Permission granted');
+      }
+      // Refresh permissions
+      const res = await hospitalITAdminAPI.getStaffPermissions(effectiveHospitalId, selectedStaff.id);
+      setStaffPermissions(res.data);
+    } catch (err) {
+      toast.error('Failed to update permission');
+    }
+  };
+
   // Finance Settings Handlers
   const fetchFinanceData = async () => {
     try {
