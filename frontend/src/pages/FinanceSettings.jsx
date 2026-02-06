@@ -41,8 +41,10 @@ export default function FinanceSettings() {
   const [bankAccounts, setBankAccounts] = useState([]);
   const [mobileMoneyAccounts, setMobileMoneyAccounts] = useState([]);
   const [addBankDialogOpen, setAddBankDialogOpen] = useState(false);
+  const [editBankDialogOpen, setEditBankDialogOpen] = useState(false);
   const [addMoMoDialogOpen, setAddMoMoDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [editingAccount, setEditingAccount] = useState(null);
   
   const [bankForm, setBankForm] = useState({
     bank_name: '',
