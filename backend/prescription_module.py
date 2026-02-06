@@ -409,7 +409,7 @@ def create_prescription_endpoints(db, get_current_user):
         if user.get("role") not in ["physician", "super_admin"]:
             raise HTTPException(status_code=403, detail="Only physicians can renew prescriptions")
         
-        original = await db["prescriptions"].find_one({"id": prescription_id})
+        original = await db["prescriptions"].find_one({"id": prescription_id}, {"_id": 0})
         if not original:
             raise HTTPException(status_code=404, detail="Prescription not found")
         
@@ -420,7 +420,7 @@ def create_prescription_endpoints(db, get_current_user):
             **original,
             "id": new_id,
             "rx_number": new_rx_number,
-            "status": PrescriptionStatus.PENDING_VERIFICATION,
+            "status": PrescriptionStatus.PENDING_VERIFICATION.value,
             "created_at": datetime.now(timezone.utc).isoformat(),
             "updated_at": datetime.now(timezone.utc).isoformat(),
             "renewed_from": prescription_id,
@@ -428,9 +428,12 @@ def create_prescription_endpoints(db, get_current_user):
             "dispensed_by": None,
             "pharmacist_notes": None
         }
-        del renewed_prescription["_id"]
         
         await db["prescriptions"].insert_one(renewed_prescription)
+        
+        # Remove _id if it was added
+        if "_id" in renewed_prescription:
+            del renewed_prescription["_id"]
         
         return {"message": "Prescription renewed", "new_prescription": renewed_prescription}
     
@@ -447,7 +450,7 @@ def create_prescription_endpoints(db, get_current_user):
         await db["prescriptions"].update_one(
             {"id": prescription_id},
             {"$set": {
-                "status": PrescriptionStatus.CANCELLED,
+                "status": PrescriptionStatus.CANCELLED.value,
                 "discontinued_at": datetime.now(timezone.utc).isoformat(),
                 "discontinued_by": f"{user.get('first_name', '')} {user.get('last_name', '')}",
                 "discontinue_reason": reason,
