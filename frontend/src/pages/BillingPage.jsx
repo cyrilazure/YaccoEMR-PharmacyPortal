@@ -175,6 +175,49 @@ export default function BillingPage() {
     }
   };
 
+  const handleReverseInvoice = async (invoiceId) => {
+    if (!confirm('Are you sure you want to reverse this invoice? This will reopen the billing encounter.')) {
+      return;
+    }
+    
+    try {
+      await billingAPI.reverseInvoice(invoiceId);
+      toast.success('Invoice reversed successfully');
+      loadData();
+      setViewInvoice(null);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to reverse invoice');
+    }
+  };
+
+  const handleVoidInvoice = async (invoiceId) => {
+    if (!confirm('Are you sure you want to void this invoice? This action cannot be undone.')) {
+      return;
+    }
+    
+    try {
+      await billingAPI.voidInvoice(invoiceId);
+      toast.success('Invoice voided');
+      loadData();
+      setViewInvoice(null);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to void invoice');
+    }
+  };
+
+  const handleChangePaymentMethod = async (invoiceId) => {
+    const newMethod = prompt('Enter new payment method (cash, nhis_insurance, visa, mastercard, mobile_money):');
+    if (!newMethod) return;
+    
+    try {
+      await billingAPI.changePaymentMethod(invoiceId, newMethod);
+      toast.success('Payment method updated');
+      loadData();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to change payment method');
+    }
+  };
+
   // NHIS Insurance Lookup
   const handleNHISSearch = async () => {
     if (!nhisSearch.trim()) return;
