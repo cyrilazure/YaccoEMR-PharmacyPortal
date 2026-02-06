@@ -908,23 +908,40 @@ export default function HospitalSuperAdminIT() {
                           <TableCell className="text-sm text-gray-500">{account.branch || 'N/A'}</TableCell>
                           <TableCell className="capitalize text-sm">{account.account_type}</TableCell>
                           <TableCell>
-                            {account.is_primary ? (
-                              <Badge className="bg-emerald-100 text-emerald-700">
-                                <CheckCircle className="w-3 h-3 mr-1" /> Primary
-                              </Badge>
-                            ) : (
-                              <Badge variant="outline">Secondary</Badge>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right">
                             <Button
                               size="sm"
-                              variant="ghost"
-                              onClick={() => handleDeleteBankAccount(account.id)}
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              variant="outline"
+                              onClick={() => handleTogglePrimary(account.id, account.is_primary)}
+                              className={account.is_primary ? 'border-emerald-300' : ''}
                             >
-                              <Trash2 className="w-4 h-4" />
+                              {account.is_primary ? (
+                                <Badge className="bg-emerald-100 text-emerald-700 border-0">
+                                  <CheckCircle className="w-3 h-3 mr-1" /> Primary
+                                </Badge>
+                              ) : (
+                                <span className="text-xs text-gray-600">Set as Primary</span>
+                              )}
                             </Button>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex gap-1 justify-end">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleEditBankAccount(account)}
+                                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleDeleteBankAccount(account.id)}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
