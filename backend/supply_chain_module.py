@@ -924,6 +924,42 @@ def create_supply_chain_endpoints(db, get_current_user):
             "recipients": len(pharmacy_users)
         }
     
+    @supply_chain_router.get("/activity-logs")
+    async def get_pharmacy_activity_logs(
+        action: Optional[str] = None,
+        user_id: Optional[str] = None,
+        from_date: Optional[str] = None,
+        to_date: Optional[str] = None,
+        limit: int = Query(100, ge=1, le=500),
+        offset: int = Query(0, ge=0),
+        user: dict = Depends(get_current_user)
+    ):
+        """Get pharmacy activity logs for auditing"""
+        allowed_roles = ["pharmacist", "pharmacy_tech", "hospital_admin", "super_admin"]
+        if user.get("role") not in allowed_roles:
+            raise HTTPException(status_code=403, detail="Not authorized to view activity logs")
+        
+        query = {"organization_id": user.get("organization_id")}
+        
+        if action:
+            query["action"] = action
+        if user_id:
+            query["user_id"] = user_id
+        if from_date:
+            query["timestamp"] = {"$gte": from_date}
+        if to_date:
+            query.setdefault("timestamp", {})["$lte"] = to_date + "T23:59:59"
+        
+        logs = await db["pharmacy_activity_logs"].find(query, {"_id": 0}).sort("timestamp", -1).skip(offset).limit(limit).to_list(limit)
+        total = await db["pharmacy_activity_logs"].count_documents(query)
+        
+        return {
+            "logs": logs,
+            "total": total,
+            "limit": limit,
+            "offset": offset
+        }
+    
     return supply_chain_router
 
 
