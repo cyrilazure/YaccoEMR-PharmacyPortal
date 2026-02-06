@@ -379,6 +379,7 @@ export const twoFactorAPI = {
   regenerateBackupCodes: (code) => api.post('/2fa/backup-codes/regenerate', { code }),
   useBackupCode: (backupCode) => api.post('/2fa/backup-codes/use', { backup_code: backupCode }),
   getBackupCodesCount: () => api.get('/2fa/backup-codes/count'),
+  resetSetup: () => api.post('/2fa/reset-setup'),
 };
 
 // Enhanced Audit APIs
