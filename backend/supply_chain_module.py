@@ -652,9 +652,9 @@ def create_supply_chain_endpoints(db, get_current_user):
     @supply_chain_router.post("/suppliers/seed")
     async def seed_suppliers(user: dict = Depends(get_current_user)):
         """Seed common Ghana pharmaceutical suppliers"""
-        allowed_roles = ["hospital_admin", "super_admin"]
+        allowed_roles = ["pharmacist", "pharmacy_tech", "hospital_admin", "super_admin"]
         if user.get("role") not in allowed_roles:
-            raise HTTPException(status_code=403, detail="Admin access required")
+            raise HTTPException(status_code=403, detail="Not authorized - Pharmacist or Admin access required")
         
         created = 0
         for supplier in SEED_SUPPLIERS:
