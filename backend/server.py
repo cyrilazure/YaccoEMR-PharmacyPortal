@@ -1106,6 +1106,11 @@ from ambulance_module import ambulance_router, create_ambulance_endpoints
 ambulance_api_router = create_ambulance_endpoints(db, get_current_user)
 app.include_router(ambulance_router)
 
+# Include Ghana Pharmacy Network Module
+from pharmacy_network_module import pharmacy_network_router, create_pharmacy_network_endpoints
+pharmacy_network_api_router = create_pharmacy_network_endpoints(db, get_current_user)
+app.include_router(pharmacy_network_router)
+
 app.include_router(finance_router)
 
 
