@@ -932,10 +932,6 @@ export default function HospitalSuperAdminIT() {
             </Alert>
           </div>
         </TabsContent>
-
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
 
       {/* Create Staff Dialog */}
