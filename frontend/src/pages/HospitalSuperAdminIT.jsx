@@ -1515,6 +1515,159 @@ export default function HospitalSuperAdminIT() {
               </div>
               <div className="space-y-2">
                 <Label>Currency</Label>
+
+
+      {/* Edit Bank Account Dialog */}
+      <Dialog open={editBankDialogOpen} onOpenChange={setEditBankDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Bank Account</DialogTitle>
+            <DialogDescription>Update hospital bank account details</DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleUpdateBankAccount} className="space-y-4 mt-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Bank Name *</Label>
+                <Select 
+                  value={bankForm.bank_name} 
+                  onValueChange={(v) => {
+                    const bankMap = {
+                      'GCB Bank': '040',
+                      'Ecobank Ghana': '050',
+                      'Stanbic Bank': '030',
+                      'Fidelity Bank': '070',
+                      'GTBank Ghana': '080',
+                      'Absa Bank Ghana': '090',
+                      'Standard Chartered': '061',
+                      'ADB Bank': '011',
+                      'Zenith Bank': '012',
+                      'Cal Bank': '013',
+                      'Access Bank': '014',
+                      'UBA Ghana': '016',
+                      'Prudential Bank': '018'
+                    };
+                    setBankForm({...bankForm, bank_name: v, bank_code: bankMap[v] || ''});
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select bank" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="GCB Bank">GCB Bank</SelectItem>
+                    <SelectItem value="Ecobank Ghana">Ecobank Ghana</SelectItem>
+                    <SelectItem value="Absa Bank Ghana">Absa Bank Ghana</SelectItem>
+                    <SelectItem value="Stanbic Bank">Stanbic Bank</SelectItem>
+                    <SelectItem value="Fidelity Bank">Fidelity Bank</SelectItem>
+                    <SelectItem value="GTBank Ghana">GTBank Ghana</SelectItem>
+                    <SelectItem value="Standard Chartered">Standard Chartered</SelectItem>
+                    <SelectItem value="Cal Bank">Cal Bank</SelectItem>
+                    <SelectItem value="Access Bank">Access Bank</SelectItem>
+                    <SelectItem value="Zenith Bank">Zenith Bank</SelectItem>
+                    <SelectItem value="ADB Bank">ADB Bank</SelectItem>
+                    <SelectItem value="Prudential Bank">Prudential Bank</SelectItem>
+                    <SelectItem value="UBA Ghana">UBA Ghana</SelectItem>
+                  </SelectContent>
+                </Select>
+                {bankForm.bank_code && (
+                  <p className="text-xs text-gray-500">Bank Code: {bankForm.bank_code}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label>Account Name *</Label>
+                <Input
+                  value={bankForm.account_name}
+                  onChange={(e) => setBankForm({...bankForm, account_name: e.target.value})}
+                  placeholder="Hospital account name"
+                  required
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Account Number *</Label>
+                <Input
+                  value={bankForm.account_number}
+                  onChange={(e) => setBankForm({...bankForm, account_number: e.target.value})}
+                  placeholder="Account number"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Branch</Label>
+                <Input
+                  value={bankForm.branch}
+                  onChange={(e) => setBankForm({...bankForm, branch: e.target.value})}
+                  placeholder="e.g., Accra Main"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Account Type</Label>
+                <Select value={bankForm.account_type} onValueChange={(v) => setBankForm({...bankForm, account_type: v})}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="current">Current Account</SelectItem>
+                    <SelectItem value="savings">Savings Account</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Currency</Label>
+                <Select value={bankForm.currency} onValueChange={(v) => setBankForm({...bankForm, currency: v})}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="GHS">GHS (Ghana Cedi)</SelectItem>
+                    <SelectItem value="USD">USD (US Dollar)</SelectItem>
+                    <SelectItem value="EUR">EUR (Euro)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>SWIFT Code (Optional)</Label>
+              <Input
+                value={bankForm.swift_code}
+                onChange={(e) => setBankForm({...bankForm, swift_code: e.target.value})}
+                placeholder="For international transfers"
+              />
+            </div>
+            
+            <div className="flex items-center gap-2 p-3 bg-emerald-50 rounded-lg">
+              <input
+                type="checkbox"
+                id="edit-primary-bank"
+                checked={bankForm.is_primary}
+                onChange={(e) => setBankForm({...bankForm, is_primary: e.target.checked})}
+                className="rounded"
+              />
+              <Label htmlFor="edit-primary-bank" className="text-emerald-700 font-medium cursor-pointer">
+                <CheckCircle className="w-4 h-4 inline mr-1" />
+                Set as primary account for receiving payments
+              </Label>
+            </div>
+            
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setEditBankDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={saving} className="bg-blue-600 hover:bg-blue-700">
+                {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Update Bank Account
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
                 <Select value={bankForm.currency} onValueChange={(v) => setBankForm({...bankForm, currency: v})}>
                   <SelectTrigger>
                     <SelectValue />
