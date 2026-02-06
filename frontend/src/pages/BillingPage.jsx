@@ -25,6 +25,7 @@ export default function BillingPage() {
   const [patients, setPatients] = useState([]);
   const [serviceCodes, setServiceCodes] = useState([]);
   const [paystackConfig, setPaystackConfig] = useState(null);
+  const [hospitalBankAccount, setHospitalBankAccount] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('invoices');
   
@@ -65,6 +66,15 @@ export default function BillingPage() {
       setPatients(patientsRes.data || []);
       setServiceCodes(codesRes.data.service_codes || []);
       setPaystackConfig(paystackRes.data);
+      
+      // Fetch hospital's primary bank account for direct deposit
+      try {
+        const bankRes = await api.get('/finance/bank-accounts');
+        const primaryAccount = bankRes.data.accounts?.find(acc => acc.is_primary);
+        setHospitalBankAccount(primaryAccount || bankRes.data.accounts?.[0]);
+      } catch (err) {
+        console.log('Bank account info not available');
+      }
     } catch (err) {
       console.error('Error loading billing data:', err);
       toast.error('Failed to load billing data');
