@@ -99,6 +99,48 @@ DRUG_DATABASE = [
     {"name": "Artemether-Lumefantrine", "generic": "Artemether-Lumefantrine", "class": "Antimalarial", "forms": ["tablet"], "strengths": ["20mg/120mg"]},
 ]
 
+
+# ============== Ghana Pharmacies Database ==============
+GHANA_PHARMACIES = [
+    # Accra Region
+    {"id": "pharm-001", "name": "Ernest Chemist - Accra Mall", "location": "Accra Mall, Tetteh Quarshie", "region": "Greater Accra", "phone": "0302123456"},
+    {"id": "pharm-002", "name": "Ernest Chemist - Osu Oxford Street", "location": "Oxford Street, Osu", "region": "Greater Accra", "phone": "0302234567"},
+    {"id": "pharm-003", "name": "mPharma - Airport", "location": "Airport Residential Area", "region": "Greater Accra", "phone": "0302345678"},
+    {"id": "pharm-004", "name": "Kinapharma - Spintex", "location": "Spintex Road", "region": "Greater Accra", "phone": "0302456789"},
+    {"id": "pharm-005", "name": "Entrance Pharmacy - Ridge", "location": "Ridge Hospital Area", "region": "Greater Accra", "phone": "0302567890"},
+    {"id": "pharm-006", "name": "Starcare Pharmacy - Tema", "location": "Community 1, Tema", "region": "Greater Accra", "phone": "0303678901"},
+    {"id": "pharm-007", "name": "Tobinco Pharmacy - Madina", "location": "Madina Market", "region": "Greater Accra", "phone": "0302789012"},
+    {"id": "pharm-008", "name": "Letap Pharmaceuticals - Kaneshie", "location": "Kaneshie Market Road", "region": "Greater Accra", "phone": "0302890123"},
+    {"id": "pharm-009", "name": "Care Pharmacy - East Legon", "location": "East Legon", "region": "Greater Accra", "phone": "0302901234"},
+    {"id": "pharm-010", "name": "Pharmacy Council Pharmacy - Adabraka", "location": "Adabraka", "region": "Greater Accra", "phone": "0302012345"},
+    
+    # Kumasi - Ashanti Region
+    {"id": "pharm-011", "name": "Ernest Chemist - Adum", "location": "Adum, Kumasi", "region": "Ashanti", "phone": "0322123456"},
+    {"id": "pharm-012", "name": "mPharma - KNUST", "location": "KNUST Campus", "region": "Ashanti", "phone": "0322234567"},
+    {"id": "pharm-013", "name": "Kinapharma - Bantama", "location": "Bantama High Street", "region": "Ashanti", "phone": "0322345678"},
+    {"id": "pharm-014", "name": "Tobinco Pharmacy - Asafo", "location": "Asafo Market", "region": "Ashanti", "phone": "0322456789"},
+    
+    # Takoradi - Western Region
+    {"id": "pharm-015", "name": "Ernest Chemist - Takoradi Market Circle", "location": "Market Circle", "region": "Western", "phone": "0312123456"},
+    {"id": "pharm-016", "name": "Harbour Pharmacy - Takoradi", "location": "Harbour Area", "region": "Western", "phone": "0312234567"},
+    
+    # Tamale - Northern Region
+    {"id": "pharm-017", "name": "Tamale Central Pharmacy", "location": "Tamale Central Hospital", "region": "Northern", "phone": "0372123456"},
+    {"id": "pharm-018", "name": "Northern Star Pharmacy", "location": "Tamale Main Market", "region": "Northern", "phone": "0372234567"},
+    
+    # Cape Coast - Central Region
+    {"id": "pharm-019", "name": "Cape Coast Teaching Hospital Pharmacy", "location": "Cape Coast Teaching Hospital", "region": "Central", "phone": "0332123456"},
+    {"id": "pharm-020", "name": "Coastline Pharmacy", "location": "Cape Coast Commercial Area", "region": "Central", "phone": "0332234567"},
+    
+    # Other Major Pharmacies (National Chains)
+    {"id": "pharm-021", "name": "Ernest Chemist - Head Office", "location": "Ring Road, Accra", "region": "Greater Accra", "phone": "0302999000"},
+    {"id": "pharm-022", "name": "mPharma - Dzorwulu", "location": "Dzorwulu, Accra", "region": "Greater Accra", "phone": "0302999111"},
+    {"id": "pharm-023", "name": "Kinapharma - Achimota", "location": "Achimota Mall", "region": "Greater Accra", "phone": "0302999222"},
+    {"id": "pharm-024", "name": "Letap Pharmaceuticals - Spintex", "location": "Spintex Road", "region": "Greater Accra", "phone": "0302999333"},
+    {"id": "pharm-025", "name": "Entrance Pharmacy - 37 Military Hospital", "location": "37 Military Hospital", "region": "Greater Accra", "phone": "0302999444"},
+]
+
+
 # Drug interactions (simplified - real system would use comprehensive database)
 DRUG_INTERACTIONS = {
     "Warfarin": ["Aspirin", "Ibuprofen", "Naproxen"],
