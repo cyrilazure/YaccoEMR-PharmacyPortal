@@ -743,6 +743,160 @@ def create_supply_chain_endpoints(db, get_current_user):
             "generated_at": datetime.now(timezone.utc).isoformat()
         }
     
+    @supply_chain_router.get("/alerts")
+    async def get_stock_alerts(user: dict = Depends(get_current_user)):
+        """Get current stock alerts (low stock and expiring items)"""
+        org_id = user.get("organization_id")
+        
+        # Low stock items
+        low_stock_items = await db["inventory_items"].find({
+            "organization_id": org_id,
+            "is_active": True,
+            "$expr": {"$lte": ["$current_stock", "$reorder_level"]},
+            "current_stock": {"$gt": 0}
+        }, {"_id": 0}).to_list(100)
+        
+        # Out of stock items
+        out_of_stock_items = await db["inventory_items"].find({
+            "organization_id": org_id,
+            "is_active": True,
+            "current_stock": 0
+        }, {"_id": 0}).to_list(100)
+        
+        # Expiring batches (within 90 days)
+        expiry_threshold = (datetime.now(timezone.utc) + timedelta(days=90)).strftime("%Y-%m-%d")
+        expiring_batches = await db["inventory_batches"].find({
+            "organization_id": org_id,
+            "quantity_remaining": {"$gt": 0},
+            "expiry_date": {"$lte": expiry_threshold}
+        }, {"_id": 0}).sort("expiry_date", 1).to_list(100)
+        
+        return {
+            "low_stock": {
+                "count": len(low_stock_items),
+                "items": low_stock_items[:20]
+            },
+            "out_of_stock": {
+                "count": len(out_of_stock_items),
+                "items": out_of_stock_items[:20]
+            },
+            "expiring_soon": {
+                "count": len(expiring_batches),
+                "batches": expiring_batches[:20]
+            },
+            "generated_at": datetime.now(timezone.utc).isoformat()
+        }
+    
+    @supply_chain_router.post("/alerts/send-notifications")
+    async def send_stock_alert_notifications(
+        user: dict = Depends(get_current_user)
+    ):
+        """Send notifications to pharmacists about low stock and expiring items"""
+        allowed_roles = ["pharmacist", "pharmacy_tech", "hospital_admin", "super_admin"]
+        if user.get("role") not in allowed_roles:
+            raise HTTPException(status_code=403, detail="Not authorized")
+        
+        org_id = user.get("organization_id")
+        notifications_created = 0
+        
+        # Get low stock items
+        low_stock_items = await db["inventory_items"].find({
+            "organization_id": org_id,
+            "is_active": True,
+            "$expr": {"$lte": ["$current_stock", "$reorder_level"]},
+            "current_stock": {"$gt": 0}
+        }, {"_id": 0, "id": 1, "drug_name": 1, "current_stock": 1, "reorder_level": 1}).to_list(50)
+        
+        # Get out of stock items
+        out_of_stock = await db["inventory_items"].find({
+            "organization_id": org_id,
+            "is_active": True,
+            "current_stock": 0
+        }, {"_id": 0, "id": 1, "drug_name": 1}).to_list(50)
+        
+        # Get expiring batches (within 30 days - urgent)
+        expiry_threshold = (datetime.now(timezone.utc) + timedelta(days=30)).strftime("%Y-%m-%d")
+        expiring = await db["inventory_batches"].find({
+            "organization_id": org_id,
+            "quantity_remaining": {"$gt": 0},
+            "expiry_date": {"$lte": expiry_threshold}
+        }, {"_id": 0, "id": 1, "drug_name": 1, "batch_number": 1, "expiry_date": 1, "quantity_remaining": 1}).to_list(50)
+        
+        # Find pharmacy staff to notify
+        pharmacy_users = await db["users"].find({
+            "organization_id": org_id,
+            "role": {"$in": ["pharmacist", "pharmacy_tech"]},
+            "is_active": True
+        }, {"id": 1}).to_list(100)
+        
+        now = datetime.now(timezone.utc).isoformat()
+        
+        # Create notifications for each pharmacy staff member
+        for pharm_user in pharmacy_users:
+            # Low stock alert
+            if low_stock_items:
+                drug_names = ", ".join([i["drug_name"] for i in low_stock_items[:5]])
+                more = f" and {len(low_stock_items) - 5} more" if len(low_stock_items) > 5 else ""
+                await db["notifications"].insert_one({
+                    "id": str(uuid.uuid4()),
+                    "recipient_id": pharm_user["id"],
+                    "title": f"Low Stock Alert: {len(low_stock_items)} items",
+                    "message": f"The following items are below reorder level: {drug_names}{more}. Please review and create purchase orders.",
+                    "notification_type": "low_stock",
+                    "priority": "high",
+                    "action_url": "/pharmacy",
+                    "read": False,
+                    "organization_id": org_id,
+                    "created_at": now
+                })
+                notifications_created += 1
+            
+            # Out of stock alert
+            if out_of_stock:
+                drug_names = ", ".join([i["drug_name"] for i in out_of_stock[:5]])
+                more = f" and {len(out_of_stock) - 5} more" if len(out_of_stock) > 5 else ""
+                await db["notifications"].insert_one({
+                    "id": str(uuid.uuid4()),
+                    "recipient_id": pharm_user["id"],
+                    "title": f"Out of Stock: {len(out_of_stock)} items",
+                    "message": f"URGENT: The following items are out of stock: {drug_names}{more}. Immediate action required.",
+                    "notification_type": "low_stock",
+                    "priority": "urgent",
+                    "action_url": "/pharmacy",
+                    "read": False,
+                    "organization_id": org_id,
+                    "created_at": now
+                })
+                notifications_created += 1
+            
+            # Expiring items alert
+            if expiring:
+                batch_info = ", ".join([f"{b['drug_name']} ({b['batch_number']})" for b in expiring[:3]])
+                more = f" and {len(expiring) - 3} more" if len(expiring) > 3 else ""
+                await db["notifications"].insert_one({
+                    "id": str(uuid.uuid4()),
+                    "recipient_id": pharm_user["id"],
+                    "title": f"Expiring Soon: {len(expiring)} batches",
+                    "message": f"The following batches will expire within 30 days: {batch_info}{more}. Consider FEFO dispensing.",
+                    "notification_type": "expiring_drugs",
+                    "priority": "high",
+                    "action_url": "/pharmacy",
+                    "read": False,
+                    "organization_id": org_id,
+                    "created_at": now
+                })
+                notifications_created += 1
+        
+        return {
+            "message": f"Sent {notifications_created} notifications",
+            "alerts_summary": {
+                "low_stock_items": len(low_stock_items),
+                "out_of_stock_items": len(out_of_stock),
+                "expiring_batches": len(expiring)
+            },
+            "recipients": len(pharmacy_users)
+        }
+    
     return supply_chain_router
 
 
