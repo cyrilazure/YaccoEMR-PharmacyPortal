@@ -405,7 +405,10 @@ export default function SecuritySettings() {
       <Dialog open={setupDialogOpen} onOpenChange={setSetupDialogOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Set Up Two-Factor Authentication</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Smartphone className="w-5 h-5 text-sky-600" />
+              Set Up Two-Factor Authentication
+            </DialogTitle>
             <DialogDescription>
               {setupStep === 1 ? 'Scan this QR code with your authenticator app' : 
                setupStep === 2 ? 'Enter the code from your app to verify' :
@@ -415,30 +418,58 @@ export default function SecuritySettings() {
           
           {setupStep === 1 && setupData && (
             <div className="space-y-4">
-              <div className="flex justify-center">
-                <img src={setupData.qr_code} alt="QR Code" className="w-48 h-48" />
+              {/* QR Code Display - Improved */}
+              <div className="flex flex-col items-center justify-center p-6 bg-white border-2 border-gray-200 rounded-lg">
+                {setupData.qr_code ? (
+                  <img 
+                    src={setupData.qr_code} 
+                    alt="QR Code for 2FA Setup" 
+                    className="w-52 h-52 rounded"
+                    style={{ imageRendering: 'pixelated' }}
+                  />
+                ) : (
+                  <div className="w-52 h-52 bg-gray-100 flex items-center justify-center rounded">
+                    <QrCode className="w-16 h-16 text-gray-400" />
+                  </div>
+                )}
               </div>
               
-              <Alert>
+              {/* App Recommendations */}
+              <div className="text-center text-sm text-gray-500">
+                <p className="font-medium mb-1">Recommended Apps:</p>
+                <p>Google Authenticator, Microsoft Authenticator, Authy, or 1Password</p>
+              </div>
+              
+              {/* Manual Entry Key */}
+              <Alert className="bg-slate-50">
                 <AlertDescription>
-                  <p className="font-medium mb-2">Can't scan? Enter this code manually:</p>
-                  <div className="flex items-center gap-2 p-2 bg-slate-100 rounded font-mono text-sm">
-                    <code>{setupData.manual_entry_key}</code>
-                    <Button size="sm" variant="ghost" onClick={() => copyToClipboard(setupData.secret)}>
+                  <p className="font-medium mb-2 text-slate-700">Can&apos;t scan? Enter this key manually:</p>
+                  <div className="flex items-center gap-2 p-3 bg-white rounded border font-mono text-sm tracking-wider">
+                    <code className="flex-1 text-center select-all">{setupData.manual_entry_key || setupData.secret}</code>
+                    <Button size="sm" variant="ghost" onClick={() => copyToClipboard(setupData.secret)} title="Copy secret key">
                       <Copy className="w-4 h-4" />
                     </Button>
                   </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Account: {setupData.account_name} | Issuer: {setupData.issuer}
+                  </p>
                 </AlertDescription>
               </Alert>
               
-              <Button onClick={() => setSetupStep(2)} className="w-full">
-                Continue
+              <Button onClick={() => setSetupStep(2)} className="w-full bg-sky-600 hover:bg-sky-700">
+                I&apos;ve Scanned the QR Code - Continue
               </Button>
             </div>
           )}
           
           {setupStep === 2 && (
             <div className="space-y-4">
+              <Alert className="bg-blue-50 border-blue-200">
+                <AlertDescription className="text-blue-700">
+                  Open your authenticator app and enter the 6-digit code shown for &quot;Yacco EMR&quot;
+                </AlertDescription>
+              </Alert>
+              
               <div className="space-y-2">
                 <Label>Enter 6-digit code from your authenticator app</Label>
                 <Input
@@ -446,8 +477,9 @@ export default function SecuritySettings() {
                   placeholder="000000"
                   value={verifyCode}
                   onChange={(e) => setVerifyCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  className="text-center text-2xl tracking-widest font-mono"
+                  className="text-center text-3xl tracking-[0.5em] font-mono h-16"
                   maxLength={6}
+                  autoFocus
                 />
               </div>
               
@@ -455,7 +487,11 @@ export default function SecuritySettings() {
                 <Button variant="outline" onClick={() => setSetupStep(1)} className="flex-1">
                   Back
                 </Button>
-                <Button onClick={handleVerify2FA} disabled={saving || verifyCode.length !== 6} className="flex-1">
+                <Button 
+                  onClick={handleVerify2FA} 
+                  disabled={saving || verifyCode.length !== 6} 
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+                >
                   {saving ? 'Verifying...' : 'Verify & Enable'}
                 </Button>
               </div>
@@ -469,12 +505,13 @@ export default function SecuritySettings() {
                 <AlertTitle className="text-amber-800">Save Your Backup Codes</AlertTitle>
                 <AlertDescription className="text-amber-700">
                   Store these codes in a safe place. You can use them to access your account if you lose your phone.
+                  Each code can only be used once.
                 </AlertDescription>
               </Alert>
               
               <div className="grid grid-cols-2 gap-2 p-4 bg-slate-50 rounded-lg font-mono text-sm">
                 {setupData.backup_codes.map((code, i) => (
-                  <div key={i} className="p-2 bg-white rounded border">{code}</div>
+                  <div key={i} className="p-2 bg-white rounded border text-center select-all">{code}</div>
                 ))}
               </div>
               
@@ -486,8 +523,8 @@ export default function SecuritySettings() {
                 <Copy className="w-4 h-4 mr-2" /> Copy All Codes
               </Button>
               
-              <Button onClick={() => setSetupDialogOpen(false)} className="w-full">
-                Done
+              <Button onClick={() => { setSetupDialogOpen(false); fetchData(); }} className="w-full bg-emerald-600 hover:bg-emerald-700">
+                <CheckCircle2 className="w-4 h-4 mr-2" /> Done - I&apos;ve Saved My Codes
               </Button>
             </div>
           )}
