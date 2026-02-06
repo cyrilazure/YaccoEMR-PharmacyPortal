@@ -6,7 +6,7 @@ Manage ambulance fleet, dispatch requests, and patient referrals
 import uuid
 from datetime import datetime, timezone
 from typing import Optional, List
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Query
 from pydantic import BaseModel
 from enum import Enum
 
@@ -283,7 +283,7 @@ def create_ambulance_endpoints(db, get_current_user):
         user: dict = Depends(get_current_user)
     ):
         """Approve ambulance request"""
-        allowed_roles = ["facility_admin", "hospital_admin", "super_admin"]
+        allowed_roles = ["facility_admin", "hospital_admin", "hospital_it_admin", "super_admin"]
         if user.get("role") not in allowed_roles:
             raise HTTPException(status_code=403, detail="Admin approval required")
         
@@ -378,8 +378,8 @@ def create_ambulance_endpoints(db, get_current_user):
     
     @ambulance_router.post("/staff/clock-in")
     async def clock_in(
-        vehicle_id: str,
-        shift_type: str,
+        vehicle_id: str = Query(...),
+        shift_type: str = Query(...),
         user: dict = Depends(get_current_user)
     ):
         """Clock in for ambulance shift"""
