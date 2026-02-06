@@ -241,6 +241,19 @@ export default function BillingPage() {
 
   const getStatusBadge = (status) => {
     const statusConfig = {
+      'draft': { label: 'Draft', className: 'bg-gray-100 text-gray-700' },
+      'sent': { label: 'Sent', className: 'bg-blue-100 text-blue-700' },
+      'paid': { label: 'Paid', className: 'bg-green-100 text-green-700' },
+      'partially_paid': { label: 'Partially Paid', className: 'bg-amber-100 text-amber-700' },
+      'overdue': { label: 'Overdue', className: 'bg-red-100 text-red-700' },
+      'reversed': { label: 'Reversed', className: 'bg-purple-100 text-purple-700' },
+      'voided': { label: 'Voided', className: 'bg-slate-100 text-slate-600' },
+      'pending_insurance': { label: 'Pending Insurance', className: 'bg-yellow-100 text-yellow-700' },
+      'cancelled': { label: 'Cancelled', className: 'bg-red-100 text-red-700' }
+    };
+    const config = statusConfig[status] || { label: status, className: 'bg-gray-100 text-gray-700' };
+    return <Badge className={config.className}>{config.label}</Badge>;
+  };
       draft: { color: 'bg-slate-100 text-slate-700', icon: FileText },
       sent: { color: 'bg-blue-100 text-blue-700', icon: Send },
       paid: { color: 'bg-green-100 text-green-700', icon: CheckCircle },
