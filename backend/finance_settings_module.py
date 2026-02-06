@@ -22,6 +22,8 @@ class BankAccountCreate(BaseModel):
     account_type: str = "current"  # current, savings
     currency: str = "GHS"
     is_primary: bool = False
+    bank_code: Optional[str] = None  # Ghana bank code for Paystack (e.g., "057" for GCB)
+    enable_paystack_settlement: bool = True  # Auto-settle Paystack payments to this account
 
 class MobileMoneyAccountCreate(BaseModel):
     provider: str  # MTN, Vodafone, AirtelTigo
