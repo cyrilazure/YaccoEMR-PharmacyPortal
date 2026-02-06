@@ -693,6 +693,123 @@ export default function HospitalSuperAdminIT() {
                   )}
                 </div>
               </ScrollArea>
+
+
+        {/* Finance Settings Tab */}
+        <TabsContent value="finance" className="mt-6">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Landmark className="w-5 h-5 text-emerald-600" />
+                    Hospital Finance Settings
+                  </CardTitle>
+                  <CardDescription>
+                    Configure bank accounts and payment receiving methods
+                  </CardDescription>
+                </div>
+                <Button 
+                  onClick={() => navigate('/finance-settings')}
+                  className="gap-2 bg-emerald-600 hover:bg-emerald-700"
+                >
+                  <Landmark className="w-4 h-4" />
+                  Open Finance Settings
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <Alert className="border-emerald-200 bg-emerald-50">
+                  <Landmark className="w-4 h-4 text-emerald-600" />
+                  <AlertTitle className="text-emerald-800">Bank Account Management</AlertTitle>
+                  <AlertDescription className="text-emerald-700">
+                    Configure hospital bank accounts to receive payments from patients. You can add:
+                    <ul className="list-disc ml-5 mt-2 space-y-1">
+                      <li>Multiple bank accounts (GCB Bank, Ecobank, Absa, etc.)</li>
+                      <li>Account details: Bank name, Account number, Branch, SWIFT code</li>
+                      <li>Set primary account for default payment receiving</li>
+                      <li>Mobile money wallets (MTN, Vodafone, AirtelTigo)</li>
+                    </ul>
+                  </AlertDescription>
+                </Alert>
+                
+                <Card className="border-blue-200 bg-blue-50">
+                  <CardContent className="pt-4">
+                    <div className="flex items-start gap-3">
+                      <Shield className="w-6 h-6 text-blue-600 mt-1" />
+                      <div>
+                        <h4 className="font-semibold text-blue-900 mb-1">Security & Access</h4>
+                        <p className="text-sm text-blue-700">
+                          Bank account information is restricted to:
+                        </p>
+                        <ul className="text-sm text-blue-700 ml-4 mt-1 space-y-0.5">
+                          <li>• Finance Officers / Billers (view, create, update)</li>
+                          <li>• Hospital Admins (full access including delete)</li>
+                          <li>• Hospital IT Admins (full access)</li>
+                          <li>• Super Admin (read-only verification)</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Bank Accounts</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-gray-600">
+                        Configure Ghana banking details for receiving patient payments via bank transfer, card payments, and insurance payouts.
+                      </p>
+                      <div className="mt-4 space-y-2 text-sm">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="w-4 h-4 text-green-600" />
+                          <span>Support for multiple accounts</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="w-4 h-4 text-green-600" />
+                          <span>Primary account designation</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="w-4 h-4 text-green-600" />
+                          <span>GHS and foreign currency support</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Mobile Money</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-gray-600">
+                        Set up mobile money wallets for convenient patient payments.
+                      </p>
+                      <div className="mt-4 space-y-2 text-sm">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="w-4 h-4 text-green-600" />
+                          <span>MTN Mobile Money</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="w-4 h-4 text-green-600" />
+                          <span>Vodafone Cash</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="w-4 h-4 text-green-600" />
+                          <span>AirtelTigo Money</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
             </CardContent>
           </Card>
         </TabsContent>
