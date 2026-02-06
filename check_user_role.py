@@ -7,7 +7,7 @@ import requests
 import json
 
 def check_user_role():
-    base_url = "https://medrecords-ghana.preview.emergentagent.com/api"
+    base_url = "https://health-records-35.preview.emergentagent.com/api"
     
     # Login as IT Admin
     login_data = {
