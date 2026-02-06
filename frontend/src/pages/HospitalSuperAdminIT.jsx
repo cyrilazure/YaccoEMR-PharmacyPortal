@@ -1331,9 +1331,6 @@ export default function HospitalSuperAdminIT() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
-  );
-
 
       {/* Add Bank Account Dialog */}
       <Dialog open={addBankDialogOpen} onOpenChange={setAddBankDialogOpen}>
