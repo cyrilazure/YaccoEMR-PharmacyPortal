@@ -235,6 +235,16 @@ export const pharmacyAPI = {
   updatePrescriptionStatus: (prescriptionId, status) => api.put(`/pharmacy/prescriptions/${prescriptionId}/status`, null, { params: { status } }),
 };
 
+// Prescription/e-Prescribing APIs
+export const prescriptionAPI = {
+  searchDrugs: (query, limit) => api.get('/prescriptions/drugs/search', { params: { query, limit } }),
+  getDrugDatabase: () => api.get('/prescriptions/drugs/database'),
+  getGhanaPharmacies: (region) => api.get('/prescriptions/pharmacies/ghana', { params: { region } }),
+  createPrescription: (data) => api.post('/prescriptions/create', data),
+  getPatientPrescriptions: (patientId) => api.get(`/prescriptions/patient/${patientId}`),
+  checkInteractions: (data) => api.post('/prescriptions/check-interactions', data),
+};
+
 // Billing APIs
 export const billingAPI = {
   // Service codes
