@@ -595,6 +595,113 @@ export default function PatientChart() {
     }
   };
 
+  const handleCreatePrescription = async (e) => {
+    e.preventDefault();
+    
+    // Validate at least one medication
+    const validMeds = newPrescription.medications.filter(m => m.medication_name.trim());
+    if (validMeds.length === 0) {
+      toast.error('Please add at least one medication');
+      return;
+    }
+    
+    setSaving(true);
+    try {
+      const prescriptionData = {
+        patient_id: id,
+        pharmacy_id: newPrescription.pharmacy_id || null,
+        diagnosis: newPrescription.diagnosis,
+        clinical_notes: newPrescription.clinical_notes,
+        priority: newPrescription.priority,
+        medications: validMeds.map(m => ({
+          medication_name: m.medication_name,
+          dosage: m.dosage,
+          dosage_unit: m.dosage_unit,
+          frequency: m.frequency,
+          route: m.route,
+          duration_value: parseInt(m.duration_value) || 7,
+          duration_unit: m.duration_unit,
+          quantity: parseInt(m.quantity) || 1,
+          refills: parseInt(m.refills) || 0,
+          special_instructions: m.special_instructions
+        }))
+      };
+      
+      await prescriptionAPI.createPrescription(prescriptionData);
+      toast.success('Prescription created successfully');
+      setPrescriptionDialogOpen(false);
+      
+      // Reset form
+      setNewPrescription({
+        pharmacy_id: '',
+        diagnosis: '',
+        clinical_notes: '',
+        priority: 'routine',
+        medications: [{
+          medication_name: '',
+          dosage: '',
+          dosage_unit: 'mg',
+          frequency: 'BID',
+          route: 'oral',
+          duration_value: 7,
+          duration_unit: 'days',
+          quantity: 1,
+          refills: 0,
+          special_instructions: ''
+        }]
+      });
+      
+      // Refresh prescriptions
+      const rxRes = await prescriptionAPI.getPatientPrescriptions(id);
+      setPrescriptions(rxRes.data.prescriptions || []);
+      
+      // If pharmacy was selected, offer to send immediately
+      if (prescriptionData.pharmacy_id) {
+        toast.info('Prescription will be automatically routed to the selected pharmacy');
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to create prescription');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const addMedicationToRx = () => {
+    setNewPrescription({
+      ...newPrescription,
+      medications: [
+        ...newPrescription.medications,
+        {
+          medication_name: '',
+          dosage: '',
+          dosage_unit: 'mg',
+          frequency: 'BID',
+          route: 'oral',
+          duration_value: 7,
+          duration_unit: 'days',
+          quantity: 1,
+          refills: 0,
+          special_instructions: ''
+        }
+      ]
+    });
+  };
+
+  const removeMedicationFromRx = (index) => {
+    if (newPrescription.medications.length > 1) {
+      setNewPrescription({
+        ...newPrescription,
+        medications: newPrescription.medications.filter((_, i) => i !== index)
+      });
+    }
+  };
+
+  const updateMedicationInRx = (index, field, value) => {
+    const updated = [...newPrescription.medications];
+    updated[index] = { ...updated[index], [field]: value };
+    setNewPrescription({ ...newPrescription, medications: updated });
+  };
+
   const openSendToPharmacyDialog = (prescription) => {
     setSelectedPrescriptionForRouting(prescription);
     setSendToPharmacyDialogOpen(true);
