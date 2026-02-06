@@ -732,10 +732,9 @@ class ComprehensiveEMRTester:
             self.log_test("Radiology - Modalities", False, f"Status: {response.status_code if response else 'Error'}")
             return False
         
-        data = response.json()
-        modalities = data.get('modalities', [])
-        has_8_modalities = len(modalities) >= 8
-        self.log_test("Radiology - Modalities", has_8_modalities, f"Count: {len(modalities)}, Expected: >=8")
+        modalities = response.json()  # Returns a list directly
+        has_8_modalities = isinstance(modalities, list) and len(modalities) >= 8
+        self.log_test("Radiology - Modalities", has_8_modalities, f"Count: {len(modalities) if isinstance(modalities, list) else 'N/A'}, Expected: >=8")
         
         # Create radiology order
         if self.test_patient_id:
@@ -756,7 +755,7 @@ class ComprehensiveEMRTester:
                 self.test_radiology_order_id = response.json().get('id')
                 self.log_test("Radiology - Create Order", True, f"Order ID: {self.test_radiology_order_id}")
         
-        # Test access control - radiology_staff CANNOT create reports
+        # Test access control - radiologist CAN create reports
         if not self.login_user('radiologist'):
             self.log_test("Radiology - Access Control", False, "Failed to login as radiologist")
             return False
