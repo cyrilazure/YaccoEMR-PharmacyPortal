@@ -2453,7 +2453,10 @@ export default function PatientChart() {
               <div className="flex items-center justify-between">
                 <div>
                   <Label className="text-base font-medium text-emerald-800">Route to Pharmacy (Optional)</Label>
-                  <p className="text-sm text-emerald-600">Select a pharmacy to send this prescription directly</p>
+                  <p className="text-sm text-emerald-600">
+                    Select a pharmacy to send this prescription directly 
+                    {allPharmacies.length > 0 && <span className="text-emerald-500"> ({allPharmacies.length} available)</span>}
+                  </p>
                 </div>
                 {newPrescription.pharmacy_id && (
                   <Button
@@ -2480,20 +2483,24 @@ export default function PatientChart() {
                       const filtered = allPharmacies.filter(p => 
                         p.name?.toLowerCase().includes(query) ||
                         p.city?.toLowerCase().includes(query)
-                      ).slice(0, 10);
+                      ).slice(0, 15);
                       setPharmacySearchResults(filtered);
-                    } else {
-                      setPharmacySearchResults(filteredPharmacies.slice(0, 10));
+                    } else if (allPharmacies.length > 0) {
+                      setPharmacySearchResults(allPharmacies.slice(0, 15));
                     }
                   }}
-                  onFocus={() => setPharmacySearchResults(filteredPharmacies.slice(0, 10))}
+                  onFocus={() => {
+                    if (allPharmacies.length > 0) {
+                      setPharmacySearchResults(allPharmacies.slice(0, 15));
+                    }
+                  }}
                 />
               </div>
               
-              {/* Pharmacy options */}
-              {pharmacySearchResults.length > 0 && (
-                <div className="max-h-40 overflow-y-auto border rounded bg-white">
-                  {pharmacySearchResults.map(pharmacy => (
+              {/* Pharmacy options - always show if we have pharmacies */}
+              {allPharmacies.length > 0 ? (
+                <div className="max-h-48 overflow-y-auto border rounded bg-white">
+                  {(pharmacySearchResults.length > 0 ? pharmacySearchResults : allPharmacies.slice(0, 15)).map(pharmacy => (
                     <div
                       key={pharmacy.id}
                       className={`p-2 cursor-pointer flex items-center justify-between ${
@@ -2518,6 +2525,12 @@ export default function PatientChart() {
                     </div>
                   ))}
                 </div>
+              ) : (
+                <div className="p-4 text-center text-slate-500 border rounded bg-white">
+                  <Loader2 className="w-5 h-5 mx-auto animate-spin mb-2" />
+                  <p className="text-sm">Loading pharmacies...</p>
+                </div>
+              )}
               )}
               
               {newPrescription.pharmacy_id && (
