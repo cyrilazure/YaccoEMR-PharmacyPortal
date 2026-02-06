@@ -44,6 +44,7 @@ import NursingSupervisorDashboard from "@/pages/NursingSupervisorDashboard";
 import PharmacyPortal from "@/pages/PharmacyPortal";
 import RadiologyPortal from "@/pages/RadiologyPortal";
 import BedManagementPortal from "@/pages/BedManagementPortal";
+import FinanceSettings from "@/pages/FinanceSettings";
 
 // Role-based redirect component
 function RoleBasedRedirect() {
@@ -213,6 +214,8 @@ function App() {
             
             {/* Security & Audit */}
             <Route path="security" element={<SecuritySettings />} />
+            <Route path="finance-settings" element={<FinanceSettings />} />
+
             <Route path="audit-logs" element={<AuditLogs />} />
           </Route>
           
