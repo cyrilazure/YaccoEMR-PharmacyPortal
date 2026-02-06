@@ -236,34 +236,34 @@ export default function AuditLogs() {
               value={filters.search}
               onChange={(e) => setFilters({...filters, search: e.target.value})}
             />
-            <Select value={filters.action} onValueChange={(v) => setFilters({...filters, action: v})}>
+            <Select value={filters.action || "all"} onValueChange={(v) => setFilters({...filters, action: v === "all" ? "" : v})}>
               <SelectTrigger>
                 <SelectValue placeholder="All Actions" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Actions</SelectItem>
+                <SelectItem value="all">All Actions</SelectItem>
                 {actions.map(a => (
                   <SelectItem key={a} value={a}>{a}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            <Select value={filters.resource_type} onValueChange={(v) => setFilters({...filters, resource_type: v})}>
+            <Select value={filters.resource_type || "all"} onValueChange={(v) => setFilters({...filters, resource_type: v === "all" ? "" : v})}>
               <SelectTrigger>
                 <SelectValue placeholder="All Resources" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Resources</SelectItem>
+                <SelectItem value="all">All Resources</SelectItem>
                 {resourceTypes.map(t => (
                   <SelectItem key={t} value={t}>{t}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            <Select value={filters.severity} onValueChange={(v) => setFilters({...filters, severity: v})}>
+            <Select value={filters.severity || "all"} onValueChange={(v) => setFilters({...filters, severity: v === "all" ? "" : v})}>
               <SelectTrigger>
                 <SelectValue placeholder="All Severities" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Severities</SelectItem>
+                <SelectItem value="all">All Severities</SelectItem>
                 <SelectItem value="info">Info</SelectItem>
                 <SelectItem value="warning">Warning</SelectItem>
                 <SelectItem value="alert">Alert</SelectItem>
