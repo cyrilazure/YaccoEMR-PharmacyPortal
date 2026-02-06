@@ -172,28 +172,50 @@ export default function PatientChart() {
       setAllPharmacies(pharmacies);
       setGhanaPharmacies(pharmacies);
       
+      // Set initial search results to first 20 pharmacies
+      setPharmacySearchResults(pharmacies.slice(0, 20));
+      setFilteredPharmacies(pharmacies);
+      
       // Fetch regions for filtering
-      const regionsRes = await pharmacyNetworkAPI.getRegions();
-      setGhanaRegions(regionsRes.data.regions || []);
+      try {
+        const regionsRes = await pharmacyNetworkAPI.getRegions();
+        setGhanaRegions(regionsRes.data.regions || []);
+      } catch (regErr) {
+        console.error('Failed to fetch regions', regErr);
+        // Set default Ghana regions if API fails
+        setGhanaRegions([
+          { id: 'greater_accra', name: 'Greater Accra' },
+          { id: 'ashanti', name: 'Ashanti' },
+          { id: 'western', name: 'Western' },
+          { id: 'central', name: 'Central' },
+          { id: 'eastern', name: 'Eastern' },
+          { id: 'volta', name: 'Volta' },
+          { id: 'northern', name: 'Northern' },
+          { id: 'upper_east', name: 'Upper East' },
+          { id: 'upper_west', name: 'Upper West' },
+          { id: 'bono', name: 'Bono' },
+          { id: 'bono_east', name: 'Bono East' },
+          { id: 'ahafo', name: 'Ahafo' },
+          { id: 'western_north', name: 'Western North' },
+          { id: 'oti', name: 'Oti' },
+          { id: 'savannah', name: 'Savannah' },
+          { id: 'north_east', name: 'North East' }
+        ]);
+      }
       
       // Get user's hospital info from localStorage
       const hospitalData = localStorage.getItem('yacco_hospital');
       const userHospital = hospitalData ? JSON.parse(hospitalData) : null;
       
       // If user has a hospital, filter pharmacies by location
-      if (userHospital) {
+      if (userHospital && pharmacies.length > 0) {
         const hospitalRegion = userHospital.region_id || userHospital.region;
         const hospitalCity = userHospital.city;
-        
-        // Set default region filter to hospital's region
-        if (hospitalRegion) {
-          setPharmacyRegionFilter(hospitalRegion);
-        }
         
         // Find hospital's own pharmacy (if any)
         const ownPharmacy = pharmacies.find(p => 
           p.hospital_id === userHospital.id || 
-          p.name?.toLowerCase().includes(userHospital.name?.toLowerCase())
+          (userHospital.name && p.name?.toLowerCase().includes(userHospital.name?.toLowerCase()))
         );
         if (ownPharmacy) {
           setHospitalPharmacy(ownPharmacy);
@@ -202,11 +224,15 @@ export default function PatientChart() {
         // Sort pharmacies by proximity (same region first, then others)
         const sortedPharmacies = sortPharmaciesByLocation(pharmacies, hospitalRegion, hospitalCity);
         setFilteredPharmacies(sortedPharmacies);
-      } else {
-        setFilteredPharmacies(pharmacies);
+        setPharmacySearchResults(sortedPharmacies.slice(0, 20));
       }
     } catch (err) {
       console.error('Failed to fetch pharmacy network data', err);
+      // Don't crash - just set empty arrays
+      setAllPharmacies([]);
+      setGhanaPharmacies([]);
+      setFilteredPharmacies([]);
+      setPharmacySearchResults([]);
     }
   };
   
