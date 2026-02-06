@@ -320,7 +320,7 @@ def create_prescription_endpoints(db, get_current_user):
         if status:
             query["status"] = status
         
-        prescriptions = await db["prescriptions"].find(query).sort("created_at", -1).to_list(100)
+        prescriptions = await db["prescriptions"].find(query, {"_id": 0}).sort("created_at", -1).to_list(100)
         return {"prescriptions": prescriptions, "total": len(prescriptions)}
     
     @prescription_router.get("/pharmacy/queue")
@@ -339,19 +339,19 @@ def create_prescription_endpoints(db, get_current_user):
         else:
             # Default: show pending and approved prescriptions
             query["status"] = {"$in": [
-                PrescriptionStatus.PENDING_VERIFICATION,
-                PrescriptionStatus.APPROVED,
-                PrescriptionStatus.PARTIALLY_DISPENSED
+                PrescriptionStatus.PENDING_VERIFICATION.value,
+                PrescriptionStatus.APPROVED.value,
+                PrescriptionStatus.PARTIALLY_DISPENSED.value
             ]}
         
-        prescriptions = await db["prescriptions"].find(query).sort("created_at", -1).to_list(200)
+        prescriptions = await db["prescriptions"].find(query, {"_id": 0}).sort("created_at", -1).to_list(200)
         
         # Group by status
         stats = {
-            "pending": len([p for p in prescriptions if p["status"] == PrescriptionStatus.PENDING_VERIFICATION]),
-            "approved": len([p for p in prescriptions if p["status"] == PrescriptionStatus.APPROVED]),
-            "dispensed": len([p for p in prescriptions if p["status"] == PrescriptionStatus.DISPENSED]),
-            "ready": len([p for p in prescriptions if p["status"] == PrescriptionStatus.READY_FOR_PICKUP])
+            "pending": len([p for p in prescriptions if p["status"] == PrescriptionStatus.PENDING_VERIFICATION.value]),
+            "approved": len([p for p in prescriptions if p["status"] == PrescriptionStatus.APPROVED.value]),
+            "dispensed": len([p for p in prescriptions if p["status"] == PrescriptionStatus.DISPENSED.value]),
+            "ready": len([p for p in prescriptions if p["status"] == PrescriptionStatus.READY_FOR_PICKUP.value])
         }
         
         return {"prescriptions": prescriptions, "stats": stats, "total": len(prescriptions)}
