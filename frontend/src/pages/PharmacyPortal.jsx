@@ -1065,9 +1065,6 @@ export default function PharmacyPortal() {
           </div>
         </DialogContent>
       </Dialog>
-          </form>
-        </DialogContent>
-      </Dialog>
 
       {/* Receive Stock Dialog */}
       <Dialog open={receiveStockOpen} onOpenChange={setReceiveStockOpen}>
