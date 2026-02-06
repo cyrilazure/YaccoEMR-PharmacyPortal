@@ -693,7 +693,7 @@ def create_prescription_endpoints(db, get_current_user):
                 {"id": routing["prescription_id"]},
                 {"$set": {
                     "routing_status": "filled",
-                    "status": PrescriptionStatus.DISPENSED,
+                    "status": PrescriptionStatus.DISPENSED.value,
                     "dispensed_at": datetime.now(timezone.utc).isoformat(),
                     "dispensed_by": f"{user.get('first_name', '')} {user.get('last_name', '')}",
                     "updated_at": datetime.now(timezone.utc).isoformat()
