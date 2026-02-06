@@ -10,7 +10,7 @@ import os
 
 class NursingPortalTester:
     def __init__(self):
-        self.base_url = "https://careflow-183.preview.emergentagent.com/api"
+        self.base_url = "https://medrecords-gh.preview.emergentagent.com/api"
         self.token = None
         self.tests_run = 0
         self.tests_passed = 0

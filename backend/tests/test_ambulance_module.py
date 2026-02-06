@@ -10,7 +10,7 @@ import json
 from datetime import datetime, timedelta, timezone
 
 class AmbulanceModuleTester:
-    def __init__(self, base_url="https://careflow-183.preview.emergentagent.com"):
+    def __init__(self, base_url="https://medrecords-gh.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_base = f"{base_url}/api"
         self.token = None
