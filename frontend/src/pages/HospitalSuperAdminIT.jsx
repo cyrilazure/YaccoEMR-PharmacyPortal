@@ -689,6 +689,9 @@ export default function HospitalSuperAdminIT() {
                                 <Key className="w-4 h-4 mr-2" /> Reset Password
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => handleOpenPermissions(s)}>
+                                <Shield className="w-4 h-4 mr-2" /> Manage Permissions
+                              </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => {
                                 setSelectedStaff(s);
                                 setAssignmentData({ type: 'role', value: '' });
