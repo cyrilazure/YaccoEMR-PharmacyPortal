@@ -473,7 +473,7 @@ def create_prescription_endpoints(db, get_current_user):
         if user.get("role") not in ["physician", "nurse", "super_admin"]:
             raise HTTPException(status_code=403, detail="Not authorized to route prescriptions")
         
-        prescription = await db["prescriptions"].find_one({"id": prescription_id})
+        prescription = await db["prescriptions"].find_one({"id": prescription_id}, {"_id": 0})
         if not prescription:
             raise HTTPException(status_code=404, detail="Prescription not found")
         
