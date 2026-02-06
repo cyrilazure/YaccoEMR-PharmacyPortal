@@ -403,8 +403,8 @@ export default function SecuritySettings() {
 
       {/* 2FA Setup Dialog */}
       <Dialog open={setupDialogOpen} onOpenChange={setSetupDialogOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
+        <DialogContent className="max-w-lg max-h-[85vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <Smartphone className="w-5 h-5 text-sky-600" />
               Set Up Two-Factor Authentication
@@ -416,6 +416,7 @@ export default function SecuritySettings() {
             </DialogDescription>
           </DialogHeader>
           
+          <div className="flex-1 overflow-y-auto pr-2">
           {setupStep === 1 && setupData && (
             <div className="space-y-4">
               {/* Important Instructions */}
