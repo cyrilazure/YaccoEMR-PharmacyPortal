@@ -733,18 +733,79 @@ export default function BillingPage() {
                     </div>
                   )}
                   
-                  <div className="flex gap-2">
+                  <div className="grid grid-cols-3 gap-2">
                     <Button
                       variant="outline"
                       onClick={() => handleRecordPayment(viewInvoice, 'cash')}
+                      className="gap-2"
                     >
-                      Record Cash Payment
+                      <DollarSign className="w-4 h-4" />
+                      Cash
                     </Button>
                     <Button
                       variant="outline"
-                      onClick={() => handleRecordPayment(viewInvoice, 'card')}
+                      onClick={() => handleRecordPayment(viewInvoice, 'nhis_insurance')}
+                      className="gap-2"
                     >
-                      Record Card Payment
+                      <Shield className="w-4 h-4" />
+                      NHIS
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => handleRecordPayment(viewInvoice, 'visa')}
+                      className="gap-2"
+                    >
+                      <CreditCard className="w-4 h-4" />
+                      Visa
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => handleRecordPayment(viewInvoice, 'mastercard')}
+                      className="gap-2"
+                    >
+                      <CreditCard className="w-4 h-4" />
+                      MasterCard
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => handleRecordPayment(viewInvoice, 'mobile_money')}
+                      className="gap-2"
+                    >
+                      <Heart className="w-4 h-4" />
+                      Mobile Money
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => handleRecordPayment(viewInvoice, 'bank_transfer')}
+                      className="gap-2"
+                    >
+                      <Building2 className="w-4 h-4" />
+                      Bank Transfer
+                    </Button>
+                  </div>
+                </div>
+              )}
+              
+              {/* Invoice Actions */}
+              {viewInvoice.status === 'sent' && (
+                <div className="border-t pt-4">
+                  <h4 className="font-medium mb-3 text-red-700">Invoice Management</h4>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      className="text-red-600 border-red-300 hover:bg-red-50"
+                      onClick={() => handleReverseInvoice(viewInvoice.id)}
+                    >
+                      <XCircle className="w-4 h-4 mr-2" />
+                      Reverse Invoice
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="text-gray-600"
+                      onClick={() => handleChangePaymentMethod(viewInvoice.id)}
+                    >
+                      <AlertCircle className="w-4 h-4 mr-2" />
+                      Change Payment Type
                     </Button>
                   </div>
                 </div>
