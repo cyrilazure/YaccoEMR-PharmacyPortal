@@ -949,6 +949,149 @@ export default function BillingPage() {
                   </div>
                   </div>
                 </div>
+
+
+      {/* Payment Verification Dialog */}
+      <Dialog open={paymentVerificationOpen} onOpenChange={setPaymentVerificationOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle className="w-5 h-5 text-emerald-600" />
+              Verify {selectedPaymentMethod?.toUpperCase().replace('_', ' ')} Payment
+            </DialogTitle>
+            <DialogDescription>
+              Confirm payment receipt before recording - Amount: {formatCurrency(paymentVerification.amount)}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <Alert className="bg-amber-50 border-amber-300">
+              <AlertCircle className="w-4 h-4 text-amber-600" />
+              <AlertTitle className="text-amber-800">Payment Verification Required</AlertTitle>
+              <AlertDescription className="text-amber-700 text-sm">
+                Only record payment after you have VERIFIED funds received. Do not record unverified payments.
+              </AlertDescription>
+            </Alert>
+            
+            <div className="space-y-2">
+              <Label>Amount Received *</Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={paymentVerification.amount}
+                onChange={(e) => setPaymentVerification({...paymentVerification, amount: parseFloat(e.target.value)})}
+                className="font-bold text-lg"
+                required
+              />
+              <p className="text-xs text-gray-500">Verify this matches the amount received</p>
+            </div>
+            
+            {selectedPaymentMethod === 'bank_transfer' && (
+              <div className="space-y-2">
+                <Label>Bank Transaction Reference *</Label>
+                <Input
+                  value={paymentVerification.reference_number}
+                  onChange={(e) => setPaymentVerification({...paymentVerification, reference_number: e.target.value})}
+                  placeholder="e.g., TRF/2026/02/12345"
+                  required
+                />
+                <p className="text-xs text-gray-500">Enter the reference from bank statement or transfer receipt</p>
+              </div>
+            )}
+            
+            {selectedPaymentMethod === 'mobile_money' && (
+              <div className="space-y-2">
+                <Label>Mobile Money Transaction ID *</Label>
+                <Input
+                  value={paymentVerification.transaction_id}
+                  onChange={(e) => setPaymentVerification({...paymentVerification, transaction_id: e.target.value})}
+                  placeholder="e.g., MM123456789"
+                  required
+                />
+                <p className="text-xs text-gray-500">Transaction ID from mobile money confirmation SMS</p>
+              </div>
+            )}
+            
+            {(selectedPaymentMethod === 'visa' || selectedPaymentMethod === 'mastercard') && (
+              <div className="space-y-2">
+                <Label>Card Transaction Reference/Approval Code *</Label>
+                <Input
+                  value={paymentVerification.reference_number}
+                  onChange={(e) => setPaymentVerification({...paymentVerification, reference_number: e.target.value})}
+                  placeholder="POS approval code or receipt number"
+                  required
+                />
+                <p className="text-xs text-gray-500">Approval code from POS terminal receipt</p>
+              </div>
+            )}
+            
+            {selectedPaymentMethod === 'cash' && (
+              <div className="space-y-2">
+                <Label>Receipt Number (Optional)</Label>
+                <Input
+                  value={paymentVerification.reference_number}
+                  onChange={(e) => setPaymentVerification({...paymentVerification, reference_number: e.target.value})}
+                  placeholder="Cash receipt number"
+                />
+              </div>
+            )}
+            
+            {selectedPaymentMethod === 'nhis_insurance' && (
+              <div className="space-y-2">
+                <Label>NHIS Claim/Authorization Number *</Label>
+                <Input
+                  value={paymentVerification.reference_number}
+                  onChange={(e) => setPaymentVerification({...paymentVerification, reference_number: e.target.value})}
+                  placeholder="NHIS authorization or claim number"
+                  required
+                />
+              </div>
+            )}
+            
+            <div className="space-y-2">
+              <Label>Additional Notes</Label>
+              <Input
+                value={paymentVerification.notes}
+                onChange={(e) => setPaymentVerification({...paymentVerification, notes: e.target.value})}
+                placeholder="Any additional payment details..."
+              />
+            </div>
+            
+            <div className="flex items-center gap-3 p-4 bg-red-50 border-2 border-red-300 rounded-lg">
+              <input
+                type="checkbox"
+                id="verify-payment"
+                checked={paymentVerification.verified}
+                onChange={(e) => setPaymentVerification({...paymentVerification, verified: e.target.checked})}
+                className="rounded w-5 h-5"
+              />
+              <Label htmlFor="verify-payment" className="text-red-800 font-semibold cursor-pointer flex-1">
+                <Shield className="w-5 h-5 inline mr-2" />
+                I confirm that I have VERIFIED this payment was received
+              </Label>
+            </div>
+          </div>
+          
+          <div className="flex justify-end gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setPaymentVerificationOpen(false)}
+              type="button"
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleConfirmPayment}
+              disabled={!paymentVerification.verified}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              <CheckCircle className="w-4 h-4 mr-2" />
+              Record Verified Payment
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
               )}
               
               {/* Invoice Actions */}
