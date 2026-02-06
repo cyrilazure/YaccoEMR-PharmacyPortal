@@ -87,7 +87,43 @@ Build a comprehensive Electronic Medical Records (EMR) system similar to Epic EM
 - [x] Drug categories: Human Medicine, Herbal, Veterinary, etc.
 - [x] Manufacturer database with product counts
 - [x] Safety alerts (mock data for demonstration)
-- [x] API endpoints: `/api/fda/drugs/*`, `/api/fda/verify`, `/api/fda/schedules`
+- [x] **Barcode Lookup** (NEW - February 6, 2026): `/api/fda/lookup/barcode?barcode=GTIN`
+  - Returns drug info (name, generic, registration #, manufacturer, category) for known barcodes
+  - Mock data includes: Paracetamol, Amoxicillin, Artemether, Metformin, Omeprazole
+- [x] API endpoints: `/api/fda/drugs/*`, `/api/fda/verify`, `/api/fda/schedules`, `/api/fda/lookup/barcode`
+
+### IT Admin User Permission Management (February 6, 2026)
+- [x] **Module-level permissions** that IT Admin can grant/revoke per user
+- [x] Available permissions:
+  - `supply_chain:manage` - Full access to inventory, stock receiving, supplier management
+  - `supply_chain:view` - View-only access to inventory
+  - `billing:manage` - Full access to billing operations
+  - `lab:manage` - Full access to laboratory operations
+  - `radiology:manage` - Full access to radiology
+  - `nhis:claims` - Submit and manage NHIS claims
+- [x] API endpoints:
+  - `GET /api/hospital/{id}/super-admin/staff/{staff_id}/permissions`
+  - `POST /api/hospital/{id}/super-admin/staff/{staff_id}/permissions/grant`
+  - `POST /api/hospital/{id}/super-admin/staff/{staff_id}/permissions/revoke`
+- [x] UI: Staff dropdown menu → "Manage Permissions" → Toggle permissions dialog
+
+### Barcode Scanning for Inventory (February 6, 2026)
+- [x] React-zxing integration for camera-based barcode scanning
+- [x] Add Item dialog includes barcode input field + "Scan" button
+- [x] When barcode is scanned or entered:
+  - Calls FDA lookup API to get drug info
+  - Auto-populates: drug_name, drug_code, fda_registration, manufacturer, category
+  - Shows toast notification with drug name or "not found" message
+- [x] BarcodeScanner component with video preview and scan frame
+
+### Two-Factor Authentication Improvements (February 6, 2026)
+- [x] Fixed QR code URL encoding (special characters in email/issuer)
+- [x] Improved 2FA setup dialog UI:
+  - Clear instructions: "Open your authenticator app and SCAN this QR code"
+  - Warning: "Do NOT copy the URL"
+  - Recommended apps list (Google Authenticator, Microsoft Authenticator, Authy, 1Password)
+  - Manual entry key with copy button and formatted display
+  - Account and issuer info displayed
 
 ### Ghana Pharmacy Network (February 6, 2026)
 - [x] Comprehensive national pharmacy database (133 pharmacies across all 16 regions)
