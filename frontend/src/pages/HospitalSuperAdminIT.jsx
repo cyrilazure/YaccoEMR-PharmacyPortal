@@ -798,117 +798,139 @@ export default function HospitalSuperAdminIT() {
 
         {/* Finance Settings Tab */}
         <TabsContent value="finance" className="mt-6">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
+          <div className="space-y-4">
+            {/* Bank Accounts Section */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-2">
-                    <Landmark className="w-5 h-5 text-emerald-600" />
-                    Hospital Finance Settings
+                    <Building2 className="w-5 h-5 text-emerald-600" />
+                    Bank Accounts
                   </CardTitle>
-                  <CardDescription>
-                    Configure bank accounts and payment receiving methods
-                  </CardDescription>
+                  <CardDescription>Hospital bank accounts for receiving patient payments</CardDescription>
                 </div>
-                <Button 
-                  onClick={() => navigate('/finance-settings')}
-                  className="gap-2 bg-emerald-600 hover:bg-emerald-700"
-                >
-                  <Landmark className="w-4 h-4" />
-                  Open Finance Settings
+                <Button onClick={() => setAddBankDialogOpen(true)} className="gap-2 bg-emerald-600 hover:bg-emerald-700">
+                  <Plus className="w-4 h-4" /> Add Bank Account
                 </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <Alert className="border-emerald-200 bg-emerald-50">
-                  <Landmark className="w-4 h-4 text-emerald-600" />
-                  <AlertTitle className="text-emerald-800">Bank Account Management</AlertTitle>
-                  <AlertDescription className="text-emerald-700">
-                    Configure hospital bank accounts to receive payments from patients. You can add:
-                    <ul className="list-disc ml-5 mt-2 space-y-1">
-                      <li>Multiple bank accounts (GCB Bank, Ecobank, Absa, etc.)</li>
-                      <li>Account details: Bank name, Account number, Branch, SWIFT code</li>
-                      <li>Set primary account for default payment receiving</li>
-                      <li>Mobile money wallets (MTN, Vodafone, AirtelTigo)</li>
-                    </ul>
-                  </AlertDescription>
-                </Alert>
-                
-                <Card className="border-blue-200 bg-blue-50">
-                  <CardContent className="pt-4">
-                    <div className="flex items-start gap-3">
-                      <Shield className="w-6 h-6 text-blue-600 mt-1" />
-                      <div>
-                        <h4 className="font-semibold text-blue-900 mb-1">Security & Access</h4>
-                        <p className="text-sm text-blue-700">
-                          Bank account information is restricted to:
-                        </p>
-                        <ul className="text-sm text-blue-700 ml-4 mt-1 space-y-0.5">
-                          <li>• Finance Officers / Billers (view, create, update)</li>
-                          <li>• Hospital Admins (full access including delete)</li>
-                          <li>• Hospital IT Admins (full access)</li>
-                          <li>• Super Admin (read-only verification)</li>
-                        </ul>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+              </CardHeader>
+              <CardContent>
+                {bankAccounts.length === 0 ? (
+                  <div className="text-center py-12 text-gray-500">
+                    <Building2 className="w-12 h-12 mx-auto mb-4 opacity-30" />
+                    <p className="mb-4">No bank accounts configured</p>
+                    <Button onClick={() => setAddBankDialogOpen(true)} variant="outline" className="gap-2">
+                      <Plus className="w-4 h-4" /> Add Your First Bank Account
+                    </Button>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Bank Name</TableHead>
+                        <TableHead>Account Name</TableHead>
+                        <TableHead>Account Number</TableHead>
+                        <TableHead>Branch</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {bankAccounts.map((account) => (
+                        <TableRow key={account.id}>
+                          <TableCell className="font-medium">{account.bank_name}</TableCell>
+                          <TableCell>{account.account_name}</TableCell>
+                          <TableCell className="font-mono text-sm">{account.account_number}</TableCell>
+                          <TableCell className="text-sm text-gray-500">{account.branch || 'N/A'}</TableCell>
+                          <TableCell className="capitalize text-sm">{account.account_type}</TableCell>
+                          <TableCell>
+                            {account.is_primary ? (
+                              <Badge className="bg-emerald-100 text-emerald-700">
+                                <CheckCircle className="w-3 h-3 mr-1" /> Primary
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline">Secondary</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleDeleteBankAccount(account.id)}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base">Bank Accounts</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-gray-600">
-                        Configure Ghana banking details for receiving patient payments via bank transfer, card payments, and insurance payouts.
-                      </p>
-                      <div className="mt-4 space-y-2 text-sm">
-                        <div className="flex items-center gap-2">
-                          <CheckCircle className="w-4 h-4 text-green-600" />
-                          <span>Support for multiple accounts</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckCircle className="w-4 h-4 text-green-600" />
-                          <span>Primary account designation</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckCircle className="w-4 h-4 text-green-600" />
-                          <span>GHS and foreign currency support</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base">Mobile Money</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-gray-600">
-                        Set up mobile money wallets for convenient patient payments.
-                      </p>
-                      <div className="mt-4 space-y-2 text-sm">
-                        <div className="flex items-center gap-2">
-                          <CheckCircle className="w-4 h-4 text-green-600" />
-                          <span>MTN Mobile Money</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckCircle className="w-4 h-4 text-green-600" />
-                          <span>Vodafone Cash</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckCircle className="w-4 h-4 text-green-600" />
-                          <span>AirtelTigo Money</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+            {/* Mobile Money Section */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Activity className="w-5 h-5 text-blue-600" />
+                    Mobile Money Accounts
+                  </CardTitle>
+                  <CardDescription>MTN, Vodafone, AirtelTigo wallet accounts</CardDescription>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+                <Button onClick={() => setAddMoMoDialogOpen(true)} className="gap-2 bg-blue-600 hover:bg-blue-700">
+                  <Plus className="w-4 h-4" /> Add Mobile Money
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {mobileMoneyAccounts.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <Activity className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                    <p>No mobile money accounts configured</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {mobileMoneyAccounts.map((account) => (
+                      <Card key={account.id} className="border-blue-200">
+                        <CardContent className="pt-4">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Badge className="bg-blue-100 text-blue-700">{account.provider}</Badge>
+                                {account.is_primary && (
+                                  <Badge className="bg-emerald-100 text-emerald-700">Primary</Badge>
+                                )}
+                              </div>
+                              <p className="font-medium">{account.account_name}</p>
+                              <p className="text-sm text-gray-600 font-mono">{account.mobile_number}</p>
+                              {account.wallet_id && (
+                                <p className="text-xs text-gray-500 mt-1">Wallet: {account.wallet_id}</p>
+                              )}
+                            </div>
+                            <Button size="sm" variant="ghost" className="text-red-600">
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Security Info */}
+            <Alert className="border-amber-200 bg-amber-50">
+              <Shield className="w-4 h-4 text-amber-600" />
+              <AlertTitle className="text-amber-800">Financial Security Notice</AlertTitle>
+              <AlertDescription className="text-amber-700">
+                Bank account information is sensitive. Only Finance Officers, Hospital Admins, and IT Admins can access this section.
+                All changes are logged in the audit trail.
+              </AlertDescription>
+            </Alert>
+          </div>
         </TabsContent>
 
             </CardContent>
