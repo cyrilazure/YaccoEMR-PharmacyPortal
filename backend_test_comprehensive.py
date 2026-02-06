@@ -138,8 +138,8 @@ class ComprehensiveEMRTester:
         
         if response.status_code == 200:
             data = response.json()
-            codes = data.get('codes', [])
-            total = data.get('total', 0)
+            codes = data.get('service_codes', [])
+            total = data.get('total', len(codes))
             success = total >= 70 and len(codes) >= 70
             self.log_test("Service Codes - All", success, f"Total: {total}, Expected: >=70")
             return success
