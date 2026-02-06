@@ -212,10 +212,17 @@ export default function PharmacyPortal() {
     if (!itemForm.drug_name) { toast.error('Drug name is required'); return; }
     setSaving(true);
     try {
-      await supplyAPI.createInventoryItem(itemForm);
+      const payload = {
+        ...itemForm,
+        unit_cost: itemForm.unit_cost ? parseFloat(itemForm.unit_cost) : 0,
+        selling_price: itemForm.selling_price ? parseFloat(itemForm.selling_price) : 0,
+        reorder_level: itemForm.reorder_level ? parseInt(itemForm.reorder_level) : 10,
+        max_stock_level: itemForm.max_stock_level ? parseInt(itemForm.max_stock_level) : 1000
+      };
+      await supplyAPI.createInventoryItem(payload);
       toast.success('Item added to inventory');
       setAddItemOpen(false);
-      setItemForm({ drug_name: '', drug_code: '', manufacturer: '', category: '', unit_of_measure: 'tablet', unit_cost: 0, selling_price: 0, reorder_level: 10, max_stock_level: 1000 });
+      setItemForm({ drug_name: '', drug_code: '', manufacturer: '', category: '', unit_of_measure: 'tablet', unit_cost: '', selling_price: '', reorder_level: '', max_stock_level: '', fda_registration: '', barcode: '' });
       fetchInventoryData();
     } catch (err) {
       toast.error(getErrorMessage(err, 'Failed to add item'));
