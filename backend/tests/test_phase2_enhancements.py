@@ -49,8 +49,8 @@ def login_user(email, password, role_name):
             json={
                 "email": email,
                 "password": password,
-                "hospital_id": "e717ed11-7955-4884-8d6b-a529f918c34f",
-                "location_id": "b61d7896-b4ef-436b-868e-94a60b55c64c"
+                "hospital_id": "008cca73-b733-4224-afa3-992c02c045a4",
+                "location_id": "67a711dc-90c2-4ba5-b499-85a485060e5f"
             }
         )
         
