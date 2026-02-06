@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { organizationAPI } from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,6 +36,7 @@ import {
 
 export default function HospitalSettings() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('organization');
   
@@ -523,6 +525,40 @@ export default function HospitalSettings() {
                                   </Button>
                                 ) : (
                                   <Button size="sm" variant="outline" className="text-green-600" onClick={() => handleActivateStaff(member.id)}>
+
+
+        {/* Finance Settings Tab */}
+        <TabsContent value="finance" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Landmark className="w-5 h-5 text-emerald-600" />
+                Finance & Banking Setup
+              </CardTitle>
+              <CardDescription>
+                Configure hospital bank accounts for receiving patient payments
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8">
+                <Landmark className="w-16 h-16 mx-auto mb-4 text-emerald-200" />
+                <h3 className="text-lg font-semibold mb-2">Hospital Banking Configuration</h3>
+                <p className="text-gray-600 mb-6 max-w-lg mx-auto">
+                  Set up your hospital's bank accounts and mobile money wallets to receive payments from patients via cash, card, insurance, and mobile money.
+                </p>
+                <Button 
+                  onClick={() => navigate('/finance-settings')}
+                  className="gap-2 bg-emerald-600 hover:bg-emerald-700"
+                  size="lg"
+                >
+                  <Landmark className="w-5 h-5" />
+                  Open Finance Settings
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
                                     Activate
                                   </Button>
                                 )
