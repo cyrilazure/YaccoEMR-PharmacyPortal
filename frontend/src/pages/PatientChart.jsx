@@ -148,7 +148,50 @@ export default function PatientChart() {
     fetchAllData();
     fetchLabPanels();
     fetchRadiologyModalities();
+    fetchPharmacyNetworkData();
+    fetchFDAData();
+    fetchRoutedPrescriptions();
   }, [id]);
+
+  const fetchPharmacyNetworkData = async () => {
+    try {
+      const res = await pharmacyNetworkAPI.listAll({ limit: 100 });
+      setGhanaPharmacies(res.data.pharmacies || []);
+    } catch (err) {
+      console.error('Failed to fetch pharmacy network data', err);
+    }
+  };
+
+  const fetchFDAData = async () => {
+    try {
+      const res = await fdaAPI.listDrugs({ limit: 50 });
+      setFdaDrugs(res.data.drugs || []);
+    } catch (err) {
+      console.error('Failed to fetch FDA data', err);
+    }
+  };
+
+  const fetchRoutedPrescriptions = async () => {
+    try {
+      const res = await prescriptionRoutingAPI.getPatientRouted(id);
+      setRoutedPrescriptions(res.data.routings || []);
+    } catch (err) {
+      console.error('Failed to fetch routed prescriptions', err);
+    }
+  };
+
+  const searchPharmacies = async (query) => {
+    if (query.length < 2) {
+      setPharmacySearchResults([]);
+      return;
+    }
+    try {
+      const res = await pharmacyNetworkAPI.search(query, null, 20);
+      setPharmacySearchResults(res.data.pharmacies || []);
+    } catch (err) {
+      console.error('Failed to search pharmacies', err);
+    }
+  };
 
   const fetchLabPanels = async () => {
     try {
