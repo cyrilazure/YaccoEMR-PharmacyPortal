@@ -448,9 +448,23 @@ def create_bed_management_endpoints(db, get_current_user):
         rooms_created = 0
         beds_created = 0
         
+        # Get ward info for naming
+        ward_prefix = None
+        if ward.get("hospital_prefix"):
+            ward_prefix = ward.get("hospital_prefix")
+        elif ward.get("is_auto_generated"):
+            # Extract prefix from ward name (e.g., "KBT-ICU" → "KBT")
+            if "-" in ward.get("name", ""):
+                ward_prefix = ward["name"].split("-")[0]
+        
         for room_num in range(1, num_rooms + 1):
             room_id = str(uuid.uuid4())
-            room_number = f"{room_prefix}{room_num:02d}"
+            
+            # Generate room number with ward prefix if available
+            if ward_prefix:
+                room_number = f"{ward_prefix}-{room_prefix}{room_num:02d}"
+            else:
+                room_number = f"{room_prefix}{room_num:02d}"
             
             room_doc = {
                 "id": room_id,
