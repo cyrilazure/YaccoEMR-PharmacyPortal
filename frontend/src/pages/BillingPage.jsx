@@ -182,7 +182,42 @@ export default function BillingPage() {
   };
 
   const handleRecordPayment = async (invoice, method) => {
-    // Open verification dialog instead of recording immediately
+    // For Visa/MasterCard - Use Paystack for secure card processing
+    if (method === 'visa' || method === 'mastercard') {
+      // Redirect to Paystack payment page for card processing
+      if (!paymentEmail) {
+        // Ask for email first
+        const email = prompt('Enter patient email for card payment:');
+        if (!email) return;
+        setPaymentEmail(email);
+      }
+      
+      toast.info('Redirecting to secure card payment page...');
+      handleInitiatePayment();
+      return;
+    }
+    
+    // For Mobile Money - Need to collect mobile number
+    if (method === 'mobile_money') {
+      const mobileNumber = prompt('Enter patient Mobile Money number (e.g., 0244123456):');
+      if (!mobileNumber) return;
+      
+      // TODO: Integrate with MTN/Vodafone MoMo API
+      // For now, show verification dialog with mobile number
+      setSelectedPaymentMethod(method);
+      setPaymentVerification({
+        amount: invoice.balance_due,
+        reference_number: mobileNumber,
+        transaction_id: '',
+        notes: 'Mobile Money payment - awaiting confirmation',
+        verified: false
+      });
+      setPaymentVerificationOpen(true);
+      toast.info('Mobile Money payment initiated. Verify patient has approved on their phone.');
+      return;
+    }
+    
+    // For Bank Transfer, Cash, NHIS - Open verification dialog
     setSelectedPaymentMethod(method);
     setPaymentVerification({
       amount: invoice.balance_due,
