@@ -337,6 +337,33 @@ def create_supply_chain_endpoints(db, get_current_user):
         if "_id" in batch_doc:
             del batch_doc["_id"]
         
+        # Create activity log for auditing
+        activity_log = {
+            "id": str(uuid.uuid4()),
+            "action": "stock_received",
+            "module": "pharmacy_inventory",
+            "entity_type": "inventory_batch",
+            "entity_id": batch_id,
+            "description": f"Received {data.quantity} units of {item.get('drug_name')} (Batch: {data.batch_number})",
+            "details": {
+                "drug_name": item.get("drug_name"),
+                "quantity": data.quantity,
+                "batch_number": data.batch_number,
+                "expiry_date": data.expiry_date,
+                "supplier": data.supplier_name,
+                "unit_cost": data.unit_cost,
+                "new_stock_level": (item.get("current_stock", 0) + data.quantity)
+            },
+            "user_id": user.get("id"),
+            "user_email": user.get("email"),
+            "user_name": f"{user.get('first_name', '')} {user.get('last_name', '')}",
+            "user_role": user.get("role"),
+            "organization_id": user.get("organization_id"),
+            "ip_address": None,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+        await db["pharmacy_activity_logs"].insert_one(activity_log)
+        
         return {
             "message": "Stock received successfully",
             "batch": batch_doc,
