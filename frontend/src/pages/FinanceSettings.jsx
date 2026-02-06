@@ -523,6 +523,104 @@ export default function FinanceSettings() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Bank Account Dialog */}
+      <Dialog open={editBankDialogOpen} onOpenChange={(open) => { setEditBankDialogOpen(open); if (!open) setEditingAccount(null); }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Bank Account</DialogTitle>
+            <DialogDescription>Update bank account information</DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleUpdateBankAccount} className="space-y-4 mt-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Bank Name *</Label>
+                <Input
+                  value={bankForm.bank_name}
+                  onChange={(e) => setBankForm({...bankForm, bank_name: e.target.value})}
+                  placeholder="e.g., GCB Bank, Ecobank Ghana"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Account Name *</Label>
+                <Input
+                  value={bankForm.account_name}
+                  onChange={(e) => setBankForm({...bankForm, account_name: e.target.value})}
+                  placeholder="Hospital account name"
+                  required
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Account Number *</Label>
+                <Input
+                  value={bankForm.account_number}
+                  onChange={(e) => setBankForm({...bankForm, account_number: e.target.value})}
+                  placeholder="Account number"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Branch</Label>
+                <Input
+                  value={bankForm.branch}
+                  onChange={(e) => setBankForm({...bankForm, branch: e.target.value})}
+                  placeholder="e.g., Accra Main"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Account Type</Label>
+                <Select value={bankForm.account_type} onValueChange={(v) => setBankForm({...bankForm, account_type: v})}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="current">Current Account</SelectItem>
+                    <SelectItem value="savings">Savings Account</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>SWIFT Code (Optional)</Label>
+                <Input
+                  value={bankForm.swift_code}
+                  onChange={(e) => setBankForm({...bankForm, swift_code: e.target.value})}
+                  placeholder="For international transfers"
+                />
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2 p-3 bg-emerald-50 rounded-lg">
+              <input
+                type="checkbox"
+                id="primary-bank-edit"
+                checked={bankForm.is_primary}
+                onChange={(e) => setBankForm({...bankForm, is_primary: e.target.checked})}
+                className="rounded"
+              />
+              <Label htmlFor="primary-bank-edit" className="text-emerald-700 font-medium">
+                <CheckCircle className="w-4 h-4 inline mr-1" />
+                Set as primary account for receiving payments
+              </Label>
+            </div>
+            
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => { setEditBankDialogOpen(false); setEditingAccount(null); }}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={saving} className="bg-blue-600 hover:bg-blue-700">
+                {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Update Bank Account
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
