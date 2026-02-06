@@ -1337,4 +1337,196 @@ export default function HospitalSuperAdminIT() {
       </Dialog>
     </div>
   );
+
+
+      {/* Add Bank Account Dialog */}
+      <Dialog open={addBankDialogOpen} onOpenChange={setAddBankDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Add Hospital Bank Account</DialogTitle>
+            <DialogDescription>Configure bank account for receiving patient payments</DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleAddBankAccount} className="space-y-4 mt-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Bank Name *</Label>
+                <Input
+                  value={bankForm.bank_name}
+                  onChange={(e) => setBankForm({...bankForm, bank_name: e.target.value})}
+                  placeholder="e.g., GCB Bank, Ecobank Ghana"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Account Name *</Label>
+                <Input
+                  value={bankForm.account_name}
+                  onChange={(e) => setBankForm({...bankForm, account_name: e.target.value})}
+                  placeholder="Hospital account name"
+                  required
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Account Number *</Label>
+                <Input
+                  value={bankForm.account_number}
+                  onChange={(e) => setBankForm({...bankForm, account_number: e.target.value})}
+                  placeholder="Account number"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Branch</Label>
+                <Input
+                  value={bankForm.branch}
+                  onChange={(e) => setBankForm({...bankForm, branch: e.target.value})}
+                  placeholder="e.g., Accra Main"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Account Type</Label>
+                <Select value={bankForm.account_type} onValueChange={(v) => setBankForm({...bankForm, account_type: v})}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="current">Current Account</SelectItem>
+                    <SelectItem value="savings">Savings Account</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Currency</Label>
+                <Select value={bankForm.currency} onValueChange={(v) => setBankForm({...bankForm, currency: v})}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="GHS">GHS (Ghana Cedi)</SelectItem>
+                    <SelectItem value="USD">USD (US Dollar)</SelectItem>
+                    <SelectItem value="EUR">EUR (Euro)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>SWIFT Code (Optional)</Label>
+              <Input
+                value={bankForm.swift_code}
+                onChange={(e) => setBankForm({...bankForm, swift_code: e.target.value})}
+                placeholder="For international transfers"
+              />
+            </div>
+            
+            <div className="flex items-center gap-2 p-3 bg-emerald-50 rounded-lg">
+              <input
+                type="checkbox"
+                id="primary-bank"
+                checked={bankForm.is_primary}
+                onChange={(e) => setBankForm({...bankForm, is_primary: e.target.checked})}
+                className="rounded"
+              />
+              <Label htmlFor="primary-bank" className="text-emerald-700 font-medium cursor-pointer">
+                <CheckCircle className="w-4 h-4 inline mr-1" />
+                Set as primary account for receiving payments
+              </Label>
+            </div>
+            
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setAddBankDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={saving} className="bg-emerald-600 hover:bg-emerald-700">
+                {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Add Bank Account
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Mobile Money Dialog */}
+      <Dialog open={addMoMoDialogOpen} onOpenChange={setAddMoMoDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Mobile Money Account</DialogTitle>
+            <DialogDescription>Configure mobile money wallet for payments</DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleAddMoMoAccount} className="space-y-4 mt-4">
+            <div className="space-y-2">
+              <Label>Provider *</Label>
+              <Select value={momoForm.provider} onValueChange={(v) => setMomoForm({...momoForm, provider: v})}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="MTN">MTN Mobile Money</SelectItem>
+                  <SelectItem value="Vodafone">Vodafone Cash</SelectItem>
+                  <SelectItem value="AirtelTigo">AirtelTigo Money</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Account Name *</Label>
+              <Input
+                value={momoForm.account_name}
+                onChange={(e) => setMomoForm({...momoForm, account_name: e.target.value})}
+                placeholder="Hospital name on mobile money"
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Mobile Number *</Label>
+              <Input
+                value={momoForm.mobile_number}
+                onChange={(e) => setMomoForm({...momoForm, mobile_number: e.target.value})}
+                placeholder="e.g., 0244123456"
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Wallet ID (Optional)</Label>
+              <Input
+                value={momoForm.wallet_id}
+                onChange={(e) => setMomoForm({...momoForm, wallet_id: e.target.value})}
+                placeholder="Merchant/Wallet ID if applicable"
+              />
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="primary-momo"
+                checked={momoForm.is_primary}
+                onChange={(e) => setMomoForm({...momoForm, is_primary: e.target.checked})}
+                className="rounded"
+              />
+              <Label htmlFor="primary-momo" className="cursor-pointer">Set as primary mobile money account</Label>
+            </div>
+            
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setAddMoMoDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={saving} className="bg-blue-600 hover:bg-blue-700">
+                {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Add Mobile Money
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
 }
