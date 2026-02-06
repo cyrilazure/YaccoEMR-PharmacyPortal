@@ -248,7 +248,7 @@ GET  /api/finance/bank-accounts          - Manage hospital bank accounts
 ### P3 (Future)
 - [ ] National e-Pharmacy platform integration
 - [ ] Mobile apps
-- [ ] Refactor PatientChart.jsx (>1700 lines)
+- [ ] Email notifications (Resend integration ready)
 
 ## Test Credentials
 - **Super Admin**: ygtnetworks@gmail.com / test123
