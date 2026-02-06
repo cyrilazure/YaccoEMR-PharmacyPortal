@@ -6515,3 +6515,362 @@ agent_communication:
       2. Fix staff clock-in API signature (add Query parameters)
       3. Investigate organization_id filtering for ambulance requests
       4. Re-test complete ambulance workflow after fixes
+
+user_problem_statement: |
+  Comprehensive Testing - All Phases (1, 2, 3) Complete System Verification
+  
+  **Backend URL:** https://careflow-183.preview.emergentagent.com
+  
+  **Test Users:**
+  - Super Admin: ygtnetworks@gmail.com / test123
+  - IT Admin: it_admin@yacco.health / test123
+  - Biller: biller@yacco.health / test123
+  - Physician: internist@yacco.health / test123
+  - Nurse: testnurse@hospital.com / test123
+  - Bed Manager: bed_manager@yacco.health / test123
+  - Radiologist: radiologist@yacco.health / test123
+  
+  ## PHASE 1: BILLING ENHANCEMENTS - COMPREHENSIVE TEST
+  ### 1.1 Billing Bug Fixes
+  - GET /api/billing/invoices - Should return invoices WITHOUT 520 error
+  - GET /api/billing/invoices/{id} - Single invoice retrieval
+  - Verify payments array doesn't cause ObjectId serialization errors
+  
+  ### 1.2 Expanded Service Codes (70 codes)
+  - GET /api/billing/service-codes - All 70 codes
+  - GET /api/billing/service-codes?category=consumable - 15 items
+  - GET /api/billing/service-codes?category=medication - 6 items
+  - GET /api/billing/service-codes?category=admission - 5 items
+  - GET /api/billing/service-codes?category=surgery - 4 items
+  
+  ### 1.3 Invoice Reversal & Payment Changes
+  - Create invoice → Send → Reverse (test complete flow)
+  - Verify reversed status, timestamp, reason captured
+  - Change payment method: nhis_insurance → cash
+  - Test void invoice (draft only)
+  
+  ### 1.4 Payment Methods (7 methods)
+  - Record payment with each method: cash, nhis_insurance, visa, mastercard, mobile_money, bank_transfer
+  
+  ### 1.5 Paystack Integration
+  - POST /api/billing/paystack/initialize
+  - Verify subaccount parameter included
+  
+  ## PHASE 2: FINANCE SETTINGS & BED MANAGEMENT
+  ### 2.1 Bank Account Management
+  - POST /api/finance/bank-accounts - Create account
+  - GET /api/finance/bank-accounts - List accounts
+  - PUT /api/finance/bank-accounts/{id} - Update account
+  - DELETE /api/finance/bank-accounts/{id} - Delete account
+  
+  ### 2.2 Mobile Money Accounts
+  - POST /api/finance/mobile-money-accounts - Add MTN/Vodafone
+  - GET /api/finance/mobile-money-accounts - List accounts
+  
+  ### 2.3 Hospital Prefix & Auto-Ward Naming
+  - GET /api/beds/hospital-prefix
+  - Verify prefix generation
+  
+  ### 2.4 Bed Management
+  - GET /api/beds/wards - List wards
+  - GET /api/beds/beds - List beds
+  - POST /api/beds/admissions/create - Admit patient
+  - POST /api/beds/admissions/{id}/transfer - Transfer patient
+  - POST /api/beds/admissions/{id}/discharge - Discharge patient
+  
+  ## PHASE 3: AMBULANCE MODULE
+  ### 3.1 Fleet Management
+  - POST /api/ambulance/vehicles - Register vehicles
+  - GET /api/ambulance/vehicles - List all vehicles
+  - GET /api/ambulance/vehicles?status=available - Filter by status
+  - PUT /api/ambulance/vehicles/{id}/status - Update status
+  
+  ### 3.2 Request Workflow (Complete End-to-End)
+  1. POST /api/ambulance/requests - Physician creates request
+  2. GET /api/ambulance/requests - Verify request appears
+  3. PUT /api/ambulance/requests/{id}/approve - IT admin approves
+  4. POST /api/ambulance/requests/{id}/dispatch - Assign vehicle
+  5. PUT /api/ambulance/requests/{id}/update-status - en_route, arrived, completed
+  
+  ### 3.3 Staff Shifts
+  - POST /api/ambulance/staff/clock-in - Clock in with vehicle
+  - GET /api/ambulance/staff/active-shifts - List active
+  - POST /api/ambulance/staff/clock-out - Clock out
+  
+  ### 3.4 Dashboard & Reports
+  - GET /api/ambulance/dashboard
+  - Verify all metrics: fleet, requests, staff
+  
+  ### 3.5 Access Control
+  - Test physician can create request
+  - Test biller CANNOT create request (403)
+  - Test IT admin can approve
+  - Test nurse cannot approve (403)
+  
+  ## INTEGRATION TESTS (Cross-Module)
+  ### 4.1 Physician Workflow
+  - Login as physician
+  - Order radiology scan
+  - Request ambulance transfer
+  
+  ### 4.2 Radiology Integration
+  - GET /api/radiology/modalities - 8 modalities
+  - POST /api/radiology/orders/create - Create order
+  - GET /api/radiology/orders/queue - Radiology staff view
+  - Verify radiology_staff CANNOT create reports (403)
+  - Verify radiologist CAN create reports
+  
+  ### 4.3 Billing Integration with Bank Accounts
+  - Create invoice
+  - Fetch hospital bank account (primary)
+  - Verify bank details display on invoice
+  - Verify Paystack initialization includes subaccount
+
+backend:
+  - task: "Billing Invoices List (No 520 Error)"
+    implemented: true
+    working: "NA"
+    file: "backend/billing_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of GET /api/billing/invoices - should return invoices WITHOUT 520 error"
+
+  - task: "Service Codes - All 70 Codes"
+    implemented: true
+    working: "NA"
+    file: "backend/billing_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of GET /api/billing/service-codes - should return all 70 service codes"
+
+  - task: "Service Codes by Category"
+    implemented: true
+    working: "NA"
+    file: "backend/billing_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of service codes filtering by category (consumable: 15, medication: 6, admission: 5, surgery: 4)"
+
+  - task: "Invoice Reversal Flow"
+    implemented: true
+    working: "NA"
+    file: "backend/billing_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of invoice reversal flow: Create → Send → Reverse with status, timestamp, and reason verification"
+
+  - task: "Payment Methods (7 methods)"
+    implemented: true
+    working: "NA"
+    file: "backend/billing_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of all 7 payment methods: cash, nhis_insurance, visa, mastercard, mobile_money, bank_transfer, paystack"
+
+  - task: "Paystack Integration"
+    implemented: true
+    working: "NA"
+    file: "backend/billing_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of POST /api/billing/paystack/initialize with subaccount parameter verification"
+
+  - task: "Bank Account Management"
+    implemented: true
+    working: "NA"
+    file: "backend/finance_settings_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of bank account CRUD operations: Create, List, Update, Delete with primary account switching"
+
+  - task: "Mobile Money Accounts"
+    implemented: true
+    working: "NA"
+    file: "backend/finance_settings_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of mobile money account management: Create (MTN/Vodafone) and List"
+
+  - task: "Hospital Prefix & Auto-Ward Naming"
+    implemented: true
+    working: "NA"
+    file: "backend/bed_management_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of GET /api/beds/hospital-prefix and auto-ward naming (e.g., YGT-ICU, YGT-ER)"
+
+  - task: "Bed Management Flow"
+    implemented: true
+    working: "NA"
+    file: "backend/bed_management_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of bed management: List wards/beds, Admit patient (nurse role), Transfer, Discharge"
+
+  - task: "Ambulance Fleet Management"
+    implemented: true
+    working: "NA"
+    file: "backend/ambulance_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of ambulance fleet: Register vehicles, List, Filter by status, Update status"
+
+  - task: "Ambulance Request Workflow"
+    implemented: true
+    working: "NA"
+    file: "backend/ambulance_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of complete ambulance request workflow: Create → Approve → Dispatch → Status updates (en_route, arrived, completed)"
+
+  - task: "Ambulance Staff Shifts"
+    implemented: true
+    working: "NA"
+    file: "backend/ambulance_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of ambulance staff shifts: Clock in with vehicle, List active shifts, Clock out"
+
+  - task: "Ambulance Dashboard"
+    implemented: true
+    working: "NA"
+    file: "backend/ambulance_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of GET /api/ambulance/dashboard with fleet, requests, and staff metrics"
+
+  - task: "Ambulance Access Control"
+    implemented: true
+    working: "NA"
+    file: "backend/ambulance_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of role-based access: Physician can create, Biller cannot (403), IT admin can approve, Nurse cannot approve (403)"
+
+  - task: "Radiology Integration"
+    implemented: true
+    working: "NA"
+    file: "backend/radiology_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of radiology: 8 modalities, Create order, Queue view, Access control (radiology_staff cannot create reports, radiologist can)"
+
+  - task: "Billing-Bank Integration"
+    implemented: true
+    working: "NA"
+    file: "backend/billing_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of billing integration with bank accounts: Invoice creation, Fetch primary bank account, Verify bank details on invoice, Paystack subaccount"
+
+metadata:
+  created_by: "testing_agent"
+  version: "1.0"
+  test_sequence: 2
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "Billing Invoices List (No 520 Error)"
+    - "Service Codes - All 70 Codes"
+    - "Service Codes by Category"
+    - "Invoice Reversal Flow"
+    - "Payment Methods (7 methods)"
+    - "Paystack Integration"
+    - "Bank Account Management"
+    - "Mobile Money Accounts"
+    - "Hospital Prefix & Auto-Ward Naming"
+    - "Bed Management Flow"
+    - "Ambulance Fleet Management"
+    - "Ambulance Request Workflow"
+    - "Ambulance Staff Shifts"
+    - "Ambulance Dashboard"
+    - "Ambulance Access Control"
+    - "Radiology Integration"
+    - "Billing-Bank Integration"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "testing"
+    message: |
+      🧪 COMPREHENSIVE BACKEND TESTING STARTED - ALL PHASES (1, 2, 3)
+      
+      Testing comprehensive system verification across:
+      - Phase 1: Billing Enhancements (Invoices, Service Codes, Payments, Paystack)
+      - Phase 2: Finance Settings & Bed Management (Bank Accounts, Mobile Money, Beds, Wards)
+      - Phase 3: Ambulance Module (Fleet, Requests, Shifts, Dashboard, Access Control)
+      - Integration Tests: Radiology, Billing-Bank integration, Cross-module workflows
+      
+      Initial test run identified several API structure issues that need fixing in test file.
+      Proceeding with corrected comprehensive testing...
+
