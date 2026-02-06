@@ -67,6 +67,17 @@ export default function PatientChart() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   
+  // Location-based pharmacy filtering
+  const [allPharmacies, setAllPharmacies] = useState([]);
+  const [filteredPharmacies, setFilteredPharmacies] = useState([]);
+  const [pharmacyRegionFilter, setPharmacyRegionFilter] = useState('');
+  const [pharmacyOwnershipFilter, setPharmacyOwnershipFilter] = useState('');
+  const [pharmacyNhisFilter, setPharmacyNhisFilter] = useState(false);
+  const [pharmacy24hrFilter, setPharmacy24hrFilter] = useState(false);
+  const [pharmacyViewMode, setPharmacyViewMode] = useState('nearby'); // 'nearby', 'region', 'all'
+  const [ghanaRegions, setGhanaRegions] = useState([]);
+  const [hospitalPharmacy, setHospitalPharmacy] = useState(null);
+  
   // Dialog states
   const [vitalsDialogOpen, setVitalsDialogOpen] = useState(false);
   const [problemDialogOpen, setProblemDialogOpen] = useState(false);
