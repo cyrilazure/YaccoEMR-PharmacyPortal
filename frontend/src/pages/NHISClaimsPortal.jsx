@@ -484,7 +484,7 @@ export default function NHISClaimsPortal() {
                 <Verified className="w-5 h-5 text-green-600" />
                 Verify NHIS Member
               </CardTitle>
-              <CardDescription>Check patient's NHIS membership status and coverage</CardDescription>
+              <CardDescription>Check patient&apos;s NHIS membership status and coverage</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex gap-4 items-end">
