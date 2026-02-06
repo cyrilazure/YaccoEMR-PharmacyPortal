@@ -926,4 +926,103 @@ def create_fda_endpoints(db, get_current_user):
             "last_updated": datetime.now(timezone.utc).isoformat()
         }
     
+    @fda_router.get("/lookup/barcode")
+    async def lookup_by_barcode(
+        barcode: str = Query(..., description="Product barcode or GTIN"),
+        user: dict = Depends(get_current_user)
+    ):
+        """
+        Lookup drug information by barcode/GTIN.
+        This is a MOCK implementation - in production, connect to real FDA or GS1 database.
+        """
+        # Mock drug database by barcode
+        MOCK_BARCODE_DB = {
+            "5000456123456": {
+                "found": True,
+                "drug": {
+                    "name": "Paracetamol 500mg Tablets",
+                    "generic_name": "Acetaminophen",
+                    "registration_number": "FDA/DRD-2023-0001",
+                    "manufacturer": "Ernest Chemist Ltd",
+                    "category": "Analgesics & NSAIDs",
+                    "dosage_form": "Tablet",
+                    "strength": "500mg",
+                    "pack_size": "100 tablets",
+                    "schedule": "OTC"
+                }
+            },
+            "5000789456123": {
+                "found": True,
+                "drug": {
+                    "name": "Amoxicillin 500mg Capsules",
+                    "generic_name": "Amoxicillin Trihydrate",
+                    "registration_number": "FDA/DRD-2023-0025",
+                    "manufacturer": "Kinapharma Ltd",
+                    "category": "Antibiotics",
+                    "dosage_form": "Capsule",
+                    "strength": "500mg",
+                    "pack_size": "21 capsules",
+                    "schedule": "POM"
+                }
+            },
+            "5001234567890": {
+                "found": True,
+                "drug": {
+                    "name": "Artemether-Lumefantrine Tablets",
+                    "generic_name": "Artemether/Lumefantrine",
+                    "registration_number": "FDA/DRD-2022-0156",
+                    "manufacturer": "mPharma Ghana",
+                    "category": "Antimalarials",
+                    "dosage_form": "Tablet",
+                    "strength": "20mg/120mg",
+                    "pack_size": "24 tablets",
+                    "schedule": "POM"
+                }
+            },
+            "5009876543210": {
+                "found": True,
+                "drug": {
+                    "name": "Metformin 500mg Tablets",
+                    "generic_name": "Metformin Hydrochloride",
+                    "registration_number": "FDA/DRD-2021-0089",
+                    "manufacturer": "Tobinco Pharmaceuticals",
+                    "category": "Antidiabetics",
+                    "dosage_form": "Tablet",
+                    "strength": "500mg",
+                    "pack_size": "100 tablets",
+                    "schedule": "POM"
+                }
+            },
+            "5005551234567": {
+                "found": True,
+                "drug": {
+                    "name": "Omeprazole 20mg Capsules",
+                    "generic_name": "Omeprazole",
+                    "registration_number": "FDA/DRD-2022-0045",
+                    "manufacturer": "Atlantic Lifesciences",
+                    "category": "Antacids & PPIs",
+                    "dosage_form": "Capsule",
+                    "strength": "20mg",
+                    "pack_size": "28 capsules",
+                    "schedule": "POM"
+                }
+            }
+        }
+        
+        # Check if barcode exists in mock database
+        if barcode in MOCK_BARCODE_DB:
+            return MOCK_BARCODE_DB[barcode]
+        
+        # Try partial match (last 8 digits)
+        for key, value in MOCK_BARCODE_DB.items():
+            if barcode.endswith(key[-8:]) or key.endswith(barcode[-8:]):
+                return value
+        
+        # Not found
+        return {
+            "found": False,
+            "barcode": barcode,
+            "message": "Drug not found in FDA database. Please enter details manually."
+        }
+    
     return fda_router
