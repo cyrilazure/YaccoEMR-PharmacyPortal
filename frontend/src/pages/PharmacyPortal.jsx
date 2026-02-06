@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useZxing } from 'react-zxing';
 import { useAuth } from '@/lib/auth';
 import { getErrorMessage } from '@/lib/utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,7 +16,7 @@ import { toast } from 'sonner';
 import {
   Pill, RefreshCw, Search, CheckCircle, AlertCircle, Clock, User, Package, FileText, Eye, Check, X,
   AlertTriangle, Loader2, CreditCard, DollarSign, TrendingUp, Send, Plus, ArrowDownCircle,
-  Building, Verified, ArrowUpCircle, BarChart3, Truck, MapPin, Phone
+  Building, Verified, ArrowUpCircle, BarChart3, Truck, MapPin, Phone, Camera, XCircle
 } from 'lucide-react';
 import api from '@/lib/api';
 
