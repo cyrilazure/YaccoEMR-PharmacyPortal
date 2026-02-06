@@ -741,7 +741,7 @@ export default function PharmacyPortal() {
               <SelectTrigger className="w-48"><SelectValue placeholder="Filter by region" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Regions</SelectItem>
-                {regions.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                {regions.map(r => <SelectItem key={r.id || r} value={r.name || r}>{r.name || r}</SelectItem>)}
               </SelectContent>
             </Select>
             <Button onClick={fetchDirectoryData} variant="outline">Search</Button>
