@@ -1092,38 +1092,6 @@ export default function BillingPage() {
           </div>
         </DialogContent>
       </Dialog>
-
-              )}
-              
-              {/* Invoice Actions */}
-              {viewInvoice.status === 'sent' && (
-                <div className="border-t pt-4">
-                  <h4 className="font-medium mb-3 text-red-700">Invoice Management</h4>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      className="text-red-600 border-red-300 hover:bg-red-50"
-                      onClick={() => handleReverseInvoice(viewInvoice.id)}
-                    >
-                      <XCircle className="w-4 h-4 mr-2" />
-                      Reverse Invoice
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="text-gray-600"
-                      onClick={() => handleChangePaymentMethod(viewInvoice.id)}
-                    >
-                      <AlertCircle className="w-4 h-4 mr-2" />
-                      Change Payment Type
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
