@@ -396,6 +396,66 @@ export default function HospitalSuperAdminIT() {
     }
   };
 
+  const handleEditBankAccount = (account) => {
+    setSelectedBankAccount(account);
+    setBankForm({
+      bank_name: account.bank_name,
+      account_name: account.account_name,
+      account_number: account.account_number,
+      branch: account.branch || '',
+      swift_code: account.swift_code || '',
+      account_type: account.account_type,
+      currency: account.currency,
+      bank_code: account.bank_code || '',
+      enable_paystack_settlement: account.enable_paystack_settlement !== false,
+      is_primary: account.is_primary
+    });
+    setEditBankDialogOpen(true);
+  };
+
+  const handleUpdateBankAccount = async (e) => {
+    e.preventDefault();
+    if (!selectedBankAccount) return;
+    
+    setSaving(true);
+    try {
+      await api.put(`/finance/bank-accounts/${selectedBankAccount.id}`, bankForm);
+      toast.success('Bank account updated');
+      setEditBankDialogOpen(false);
+      setSelectedBankAccount(null);
+      setBankForm({
+        bank_name: '', account_name: '', account_number: '',
+        branch: '', swift_code: '', account_type: 'current',
+        currency: 'GHS', bank_code: '', enable_paystack_settlement: true, is_primary: false
+      });
+      fetchFinanceData();
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Failed to update bank account'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleTogglePrimary = async (accountId, currentIsPrimary) => {
+    if (currentIsPrimary) {
+      toast.info('This is already the primary account');
+      return;
+    }
+    
+    try {
+      // Update to make this primary (backend will unset others)
+      const account = bankAccounts.find(a => a.id === accountId);
+      await api.put(`/finance/bank-accounts/${accountId}`, {
+        ...account,
+        is_primary: true
+      });
+      toast.success('Primary account updated');
+      fetchFinanceData();
+    } catch (err) {
+      toast.error('Failed to update primary account');
+    }
+  };
+
   if (loading && !dashboard) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
