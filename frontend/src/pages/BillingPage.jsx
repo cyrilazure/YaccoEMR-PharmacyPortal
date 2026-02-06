@@ -699,11 +699,12 @@ export default function BillingPage() {
 
       {/* View Invoice Dialog */}
       <Dialog open={!!viewInvoice} onOpenChange={() => setViewInvoice(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>Invoice {viewInvoice?.invoice_number}</DialogTitle>
           </DialogHeader>
           
+          <div className="overflow-y-auto pr-2" style={{ maxHeight: 'calc(90vh - 120px)' }}>
           {viewInvoice && (
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
@@ -942,6 +943,7 @@ export default function BillingPage() {
               )}
             </div>
           )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
