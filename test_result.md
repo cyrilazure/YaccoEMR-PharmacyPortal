@@ -1583,6 +1583,141 @@ agent_communication:
       **RECOMMENDATION**: The new Yacco EMR backend modules are ready for production deployment. All endpoints tested successfully with proper error handling, data validation, and response formats.
 
 backend:
+  - task: "Billing Bug Fixes - GET /api/billing/invoices"
+    implemented: true
+    working: true
+    file: "backend/billing_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of GET /api/billing/invoices - Should work WITHOUT 520 error, verify invoices load with payments array (no ObjectId errors)"
+      - working: true
+        agent: "testing"
+        comment: "✅ Billing Bug Fixes - GET /api/billing/invoices works WITHOUT 520 error. Invoices load successfully with payments array properly cleaned (no ObjectId errors). Invoice retrieval working correctly."
+
+  - task: "Expanded Payment Methods (7 methods)"
+    implemented: true
+    working: true
+    file: "backend/billing_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of 7 payment methods: cash, nhis_insurance, visa, mastercard, mobile_money, bank_transfer, paystack"
+      - working: true
+        agent: "testing"
+        comment: "✅ Expanded Payment Methods - All 7 payment methods tested and working: cash, nhis_insurance, visa, mastercard, mobile_money, bank_transfer, paystack. POST /api/billing/payments accepts and records all payment methods correctly."
+
+  - task: "Invoice Reversal Workflow (NEW)"
+    implemented: true
+    working: true
+    file: "backend/billing_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of complete invoice reversal flow: Create → Send → Reverse, verify reversed_at, reversed_by, reversal_reason, audit log"
+      - working: true
+        agent: "testing"
+        comment: "✅ Invoice Reversal Workflow - Complete flow working: Create invoice → Send (draft → sent) → Reverse (sent → reversed). Verified: reversed_at timestamp added, reversed_by user ID captured, reversal_reason saved, audit log created. Edge cases tested: reversing draft invoice fails (400), reversing paid invoice fails (400), reversing already reversed invoice fails (400)."
+
+  - task: "Invoice Void Functionality (NEW)"
+    implemented: true
+    working: true
+    file: "backend/billing_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of invoice void functionality: void invoice, verify voided_at, void_reason, audit log, test voiding paid invoice (should fail)"
+      - working: true
+        agent: "testing"
+        comment: "✅ Invoice Void Functionality - Voiding workflow complete: Create invoice → Void (status → voided). Verified: voided_at timestamp added, void_reason saved, audit log created. Edge case tested: voiding paid invoice fails correctly (400 error)."
+
+  - task: "Payment Method Change (NEW)"
+    implemented: true
+    working: true
+    file: "backend/billing_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of payment method changes: insurance → cash, cash → nhis_insurance, verify status changes"
+      - working: true
+        agent: "testing"
+        comment: "✅ Payment Method Change - Payment method change working correctly. Tested: insurance → cash (status changes from pending_insurance → sent), cash → nhis_insurance (status changes to pending_insurance). Verified: payment_method field updated, payment_method_changed_at timestamp captured, payment_method_changed_by user ID captured, audit log created."
+
+  - task: "Expanded Service Codes (70 codes, 9 categories)"
+    implemented: true
+    working: true
+    file: "backend/billing_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of expanded service codes: 70 total codes across 9 categories (consultation, lab, imaging, procedure, admission, consumable, surgery, medication, telehealth)"
+      - working: true
+        agent: "testing"
+        comment: "✅ Expanded Service Codes - GET /api/billing/service-codes returns 70 total codes. Category breakdown verified: consumable (15 items), medication (6 items), surgery (4 items), admission (5 items). Each code has: code, description, price, category. All categories working correctly."
+
+  - task: "Invoice Status System (9 statuses)"
+    implemented: true
+    working: true
+    file: "backend/billing_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of all 9 invoice statuses: draft, sent, paid, partially_paid, reversed, voided, pending_insurance, cancelled, overdue"
+      - working: true
+        agent: "testing"
+        comment: "✅ Invoice Status System - All 9 statuses verified: draft (new invoice), sent (after send), paid (full payment), partially_paid (partial payment), reversed (after reversal), voided (after void), pending_insurance (NHIS invoices), cancelled (after cancellation), overdue (date-based, supported). Status transitions working correctly."
+
+  - task: "Multi-Item Invoice with Expanded Codes"
+    implemented: true
+    working: true
+    file: "backend/billing_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of multi-item invoice with items from different categories: Consultation (CONS-SPEC), Lab (LAB-MALARIA), Consumable (CONS-IV-NS), Medication (MED-ARTEMETHER)"
+      - working: true
+        agent: "testing"
+        comment: "✅ Multi-Item Invoice - Created invoice with 4 items from different categories: Consultation (₵200), Lab test (₵15), Consumable (₵15), Medication (₵8). Total calculates correctly: ₵238.00. Multi-category invoicing working correctly."
+
+  - task: "Audit Logging for Billing Operations"
+    implemented: true
+    working: true
+    file: "backend/billing_module.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of audit logging for invoice reversal, void, and payment method change"
+      - working: true
+        agent: "testing"
+        comment: "✅ Audit Logging - Audit logs created successfully for all critical billing operations: invoice reversal, invoice void, payment method change. All logs include: action, resource_type, resource_id, user_id, user_name, organization_id, details, timestamp. Audit trail working correctly."
+
   - task: "MRN Auto-Generation"
     implemented: true
     working: true
