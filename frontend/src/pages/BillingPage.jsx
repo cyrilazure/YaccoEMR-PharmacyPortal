@@ -469,9 +469,9 @@ export default function BillingPage() {
                         <td className="p-4 font-mono text-sm">{invoice.invoice_number}</td>
                         <td className="p-4">{invoice.patient_name}</td>
                         <td className="p-4 text-slate-500">{invoice.created_at?.slice(0, 10)}</td>
-                        <td className="p-4 text-right font-medium">${invoice.total?.toFixed(2)}</td>
+                        <td className="p-4 text-right font-medium">{formatCurrency(invoice.total)}</td>
                         <td className="p-4 text-right font-medium text-amber-600">
-                          ${invoice.balance_due?.toFixed(2)}
+                          {formatCurrency(invoice.balance_due)}
                         </td>
                         <td className="p-4 text-center">{getStatusBadge(invoice.status)}</td>
                         <td className="p-4 text-right">
