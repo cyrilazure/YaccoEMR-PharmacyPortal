@@ -1521,5 +1521,6 @@ export default function HospitalSuperAdminIT() {
           </form>
         </DialogContent>
       </Dialog>
-
+    </div>
+  );
 }
