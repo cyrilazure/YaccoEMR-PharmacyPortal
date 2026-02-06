@@ -96,14 +96,18 @@ export default function PharmacyPortal() {
   // Forms
   const [itemForm, setItemForm] = useState({
     drug_name: '', drug_code: '', manufacturer: '', category: '',
-    unit_of_measure: 'tablet', unit_cost: 0, selling_price: 0,
-    reorder_level: 10, max_stock_level: 1000
+    unit_of_measure: 'tablet', unit_cost: '', selling_price: '',
+    reorder_level: '', max_stock_level: '', fda_registration: '',
+    barcode: ''
   });
   
   const [receiveForm, setReceiveForm] = useState({
-    inventory_item_id: '', quantity: 0, batch_number: '',
-    expiry_date: '', supplier_name: '', unit_cost: 0
+    inventory_item_id: '', quantity: '', batch_number: '',
+    expiry_date: '', supplier_name: '', unit_cost: ''
   });
+  
+  // Barcode Scanner State
+  const [scannerActive, setScannerActive] = useState(false);
   
   const [claimForm, setClaimForm] = useState({
     patient_name: '', membership_id: '', diagnosis_codes: '',
