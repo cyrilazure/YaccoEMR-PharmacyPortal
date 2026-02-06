@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { 
   patientAPI, vitalsAPI, problemsAPI, medicationsAPI, 
-  allergiesAPI, notesAPI, ordersAPI, aiAPI, labAPI, radiologyAPI 
+  allergiesAPI, notesAPI, ordersAPI, aiAPI, labAPI, radiologyAPI, prescriptionAPI 
 } from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -34,7 +34,7 @@ import { calculateAge, formatDate, formatDateTime, getStatusColor } from '@/lib/
 import { 
   ArrowLeft, User, Heart, AlertTriangle, Pill, FileText, ClipboardList,
   Plus, Activity, Thermometer, Droplets, Wind, Scale, Ruler,
-  Sparkles, Check, Loader2, Calendar, FlaskConical, TrendingUp, TrendingDown, Scan
+  Sparkles, Check, Loader2, Calendar, FlaskConical, TrendingUp, TrendingDown, Scan, Send
 } from 'lucide-react';
 
 export default function PatientChart() {
@@ -54,6 +54,9 @@ export default function PatientChart() {
   const [radiologyOrders, setRadiologyOrders] = useState([]);
   const [radiologyModalities, setRadiologyModalities] = useState([]);
   const [radiologyStudyTypes, setRadiologyStudyTypes] = useState([]);
+  const [prescriptions, setPrescriptions] = useState([]);
+  const [ghanaPharmacies, setGhanaPharmacies] = useState([]);
+  const [drugDatabase, setDrugDatabase] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   
@@ -67,6 +70,7 @@ export default function PatientChart() {
   const [aiDialogOpen, setAiDialogOpen] = useState(false);
   const [labOrderDialogOpen, setLabOrderDialogOpen] = useState(false);
   const [radiologyOrderDialogOpen, setRadiologyOrderDialogOpen] = useState(false);
+  const [prescriptionDialogOpen, setPrescriptionDialogOpen] = useState(false);
   
   // Form states
   const [newVitals, setNewVitals] = useState({
@@ -103,6 +107,24 @@ export default function PatientChart() {
     priority: 'routine',
     contrast_required: false,
     special_instructions: ''
+  });
+  const [newPrescription, setNewPrescription] = useState({
+    pharmacy_id: '',
+    diagnosis: '',
+    clinical_notes: '',
+    priority: 'routine',
+    medications: [{
+      medication_name: '',
+      dosage: '',
+      dosage_unit: 'mg',
+      frequency: 'BID',
+      route: 'oral',
+      duration_value: 7,
+      duration_unit: 'days',
+      quantity: 1,
+      refills: 0,
+      special_instructions: ''
+    }]
   });
   const [aiRequest, setAiRequest] = useState({
     note_type: 'progress_note', symptoms: '', findings: '', context: ''
