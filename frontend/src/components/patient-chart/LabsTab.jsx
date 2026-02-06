@@ -33,6 +33,7 @@ export default function LabsTab({ patientId, user }) {
 
   useEffect(() => {
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [patientId]);
 
   const fetchData = async () => {
