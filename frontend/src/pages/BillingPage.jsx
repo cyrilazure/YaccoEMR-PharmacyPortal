@@ -910,6 +910,7 @@ export default function BillingPage() {
                       Bank Transfer
                     </Button>
                   </div>
+                  </div>
                 </div>
               )}
               
