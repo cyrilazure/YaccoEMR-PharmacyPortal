@@ -545,7 +545,7 @@ def setup_routes(db, get_current_user):
         email: str,
         current_user: dict = Depends(get_current_user)
     ):
-        """Initialize a Paystack payment"""
+        """Initialize Paystack payment - Auto-settles to hospital's bank account via subaccount"""
         if not PAYSTACK_SECRET_KEY:
             raise HTTPException(status_code=500, detail="Paystack not configured")
         
@@ -557,9 +557,50 @@ def setup_routes(db, get_current_user):
         if invoice["balance_due"] <= 0:
             raise HTTPException(status_code=400, detail="No balance due")
         
+        org_id = current_user.get("organization_id")
+        
+        # Get hospital's primary bank account with Paystack subaccount
+        hospital_bank = await db.bank_accounts.find_one(
+            {"organization_id": org_id, "is_primary": True, "enable_paystack_settlement": True},
+            {"_id": 0}
+        )
+        
         # Amount in kobo (multiply by 100)
         amount_kobo = int(invoice["balance_due"] * 100)
         reference = f"YACCO-{invoice['invoice_number']}-{str(uuid.uuid4())[:8]}"
+        
+        # Build Paystack payment payload
+        payload = {
+            "email": email,
+            "amount": amount_kobo,
+            "reference": reference,
+            "callback_url": f"{os.environ.get('FRONTEND_URL', '')}/billing/verify",
+            "currency": "GHS",
+            "metadata": {
+                "invoice_id": invoice_id,
+                "invoice_number": invoice["invoice_number"],
+                "patient_id": invoice["patient_id"],
+                "organization_id": org_id,
+                "custom_fields": [
+                    {
+                        "display_name": "Invoice Number",
+                        "variable_name": "invoice_number",
+                        "value": invoice["invoice_number"]
+                    },
+                    {
+                        "display_name": "Patient",
+                        "variable_name": "patient_name",
+                        "value": invoice["patient_name"]
+                    }
+                ]
+            }
+        }
+        
+        # KEY FEATURE: If hospital has Paystack subaccount, payment goes DIRECTLY to their bank
+        if hospital_bank and hospital_bank.get("paystack_subaccount_code"):
+            payload["subaccount"] = hospital_bank["paystack_subaccount_code"]
+            payload["transaction_charge"] = 0  # Hospital gets 100% (or set commission %)
+            # Money settles directly to hospital's bank account - NOT Yacco's account
         
         try:
             response = requests.post(
@@ -568,17 +609,7 @@ def setup_routes(db, get_current_user):
                     "Authorization": f"Bearer {PAYSTACK_SECRET_KEY}",
                     "Content-Type": "application/json"
                 },
-                json={
-                    "email": email,
-                    "amount": amount_kobo,
-                    "reference": reference,
-                    "callback_url": f"{os.environ.get('FRONTEND_URL', '')}/billing/verify",
-                    "metadata": {
-                        "invoice_id": invoice_id,
-                        "invoice_number": invoice["invoice_number"],
-                        "patient_id": invoice["patient_id"]
-                    }
-                }
+                json=payload
             )
             
             data = response.json()
@@ -593,6 +624,9 @@ def setup_routes(db, get_current_user):
                 "invoice_id": invoice_id,
                 "amount": invoice["balance_due"],
                 "status": "pending",
+                "subaccount_code": hospital_bank.get("paystack_subaccount_code") if hospital_bank else None,
+                "settlement_bank": hospital_bank.get("bank_name") if hospital_bank else None,
+                "settlement_account": hospital_bank.get("account_number") if hospital_bank else None,
                 "created_at": datetime.now(timezone.utc).isoformat()
             })
             
