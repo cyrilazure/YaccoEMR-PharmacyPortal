@@ -109,8 +109,14 @@ def generate_backup_codes(count: int = 10) -> List[str]:
 
 def generate_qr_code(secret: str, email: str, issuer: str = "Yacco EMR") -> str:
     """Generate QR code for authenticator app setup"""
-    # Create otpauth URI
-    uri = f"otpauth://totp/{issuer}:{email}?secret={secret}&issuer={issuer}&algorithm=SHA1&digits=6&period=30"
+    import urllib.parse
+    
+    # URL encode the email and issuer for safety
+    encoded_email = urllib.parse.quote(email, safe='')
+    encoded_issuer = urllib.parse.quote(issuer, safe='')
+    
+    # Create otpauth URI with proper URL encoding
+    uri = f"otpauth://totp/{encoded_issuer}:{encoded_email}?secret={secret}&issuer={encoded_issuer}&algorithm=SHA1&digits=6&period=30"
     
     # Generate QR code
     qr = qrcode.QRCode(
