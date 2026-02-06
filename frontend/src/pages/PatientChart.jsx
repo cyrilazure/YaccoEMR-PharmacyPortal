@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { 
   patientAPI, vitalsAPI, problemsAPI, medicationsAPI, 
-  allergiesAPI, notesAPI, ordersAPI, aiAPI, labAPI, radiologyAPI, prescriptionAPI 
+  allergiesAPI, notesAPI, ordersAPI, aiAPI, labAPI, radiologyAPI, prescriptionAPI,
+  pharmacyNetworkAPI, fdaAPI, prescriptionRoutingAPI
 } from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import {
   Select,
@@ -34,7 +36,8 @@ import { calculateAge, formatDate, formatDateTime, getStatusColor } from '@/lib/
 import { 
   ArrowLeft, User, Heart, AlertTriangle, Pill, FileText, ClipboardList,
   Plus, Activity, Thermometer, Droplets, Wind, Scale, Ruler,
-  Sparkles, Check, Loader2, Calendar, FlaskConical, TrendingUp, TrendingDown, Scan, Send
+  Sparkles, Check, Loader2, Calendar, FlaskConical, TrendingUp, TrendingDown, Scan, Send,
+  Building2, Phone, MapPin, Clock, Shield, Truck, Search, ExternalLink, CheckCircle, XCircle, Package
 } from 'lucide-react';
 
 export default function PatientChart() {
