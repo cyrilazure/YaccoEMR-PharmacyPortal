@@ -7,7 +7,7 @@ Test Phase 3 - Complete ambulance workflow from request to completion
 import requests
 import sys
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 class AmbulanceModuleTester:
     def __init__(self, base_url="https://careflow-183.preview.emergentagent.com"):
