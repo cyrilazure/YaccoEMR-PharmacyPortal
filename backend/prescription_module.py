@@ -452,4 +452,309 @@ def create_prescription_endpoints(db, get_current_user):
         
         return {"message": "Prescription discontinued"}
     
+    # ============== E-PRESCRIPTION ROUTING ==============
+    
+    @prescription_router.post("/{prescription_id}/send-to-pharmacy")
+    async def send_prescription_to_pharmacy(
+        prescription_id: str,
+        pharmacy_id: str,
+        notes: Optional[str] = None,
+        user: dict = Depends(get_current_user)
+    ):
+        """Route an e-prescription to an external pharmacy"""
+        if user.get("role") not in ["physician", "nurse", "super_admin"]:
+            raise HTTPException(status_code=403, detail="Not authorized to route prescriptions")
+        
+        prescription = await db["prescriptions"].find_one({"id": prescription_id})
+        if not prescription:
+            raise HTTPException(status_code=404, detail="Prescription not found")
+        
+        # Import pharmacy network to validate pharmacy
+        from pharmacy_network_module import SEED_PHARMACIES
+        
+        pharmacy = None
+        for p in SEED_PHARMACIES:
+            if p.get("id") == pharmacy_id:
+                pharmacy = p
+                break
+        
+        if not pharmacy:
+            raise HTTPException(status_code=404, detail="Pharmacy not found in network")
+        
+        # Create routing record
+        routing_id = str(uuid.uuid4())
+        routing_record = {
+            "id": routing_id,
+            "prescription_id": prescription_id,
+            "rx_number": prescription.get("rx_number"),
+            "pharmacy_id": pharmacy_id,
+            "pharmacy_name": pharmacy.get("name"),
+            "pharmacy_address": pharmacy.get("address"),
+            "pharmacy_city": pharmacy.get("city"),
+            "pharmacy_phone": pharmacy.get("phone"),
+            "patient_id": prescription.get("patient_id"),
+            "patient_name": prescription.get("patient_name"),
+            "sent_by_id": user.get("id"),
+            "sent_by_name": f"{user.get('first_name', '')} {user.get('last_name', '')}",
+            "organization_id": user.get("organization_id"),
+            "notes": notes,
+            "status": "sent",  # sent, received, accepted, rejected, filled
+            "sent_at": datetime.now(timezone.utc).isoformat(),
+            "received_at": None,
+            "accepted_at": None,
+            "filled_at": None,
+            "rejection_reason": None
+        }
+        
+        await db["prescription_routings"].insert_one(routing_record)
+        
+        # Update prescription with routing info
+        await db["prescriptions"].update_one(
+            {"id": prescription_id},
+            {"$set": {
+                "pharmacy_id": pharmacy_id,
+                "pharmacy_name": pharmacy.get("name"),
+                "send_to_external": True,
+                "routing_id": routing_id,
+                "routing_status": "sent",
+                "status": PrescriptionStatus.APPROVED,
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+        
+        # Audit log
+        await db["audit_logs"].insert_one({
+            "id": str(uuid.uuid4()),
+            "action": "prescription_routed",
+            "resource_type": "prescription",
+            "resource_id": prescription_id,
+            "user_id": user.get("id"),
+            "user_name": f"{user.get('first_name', '')} {user.get('last_name', '')}",
+            "organization_id": user.get("organization_id"),
+            "details": {
+                "rx_number": prescription.get("rx_number"),
+                "pharmacy_id": pharmacy_id,
+                "pharmacy_name": pharmacy.get("name"),
+                "routing_id": routing_id
+            },
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        })
+        
+        return {
+            "message": f"Prescription sent to {pharmacy.get('name')}",
+            "routing_id": routing_id,
+            "pharmacy": {
+                "id": pharmacy_id,
+                "name": pharmacy.get("name"),
+                "address": pharmacy.get("address"),
+                "phone": pharmacy.get("phone")
+            }
+        }
+    
+    @prescription_router.get("/routing/{routing_id}/status")
+    async def get_routing_status(
+        routing_id: str,
+        user: dict = Depends(get_current_user)
+    ):
+        """Get the status of a routed prescription"""
+        routing = await db["prescription_routings"].find_one({"id": routing_id}, {"_id": 0})
+        if not routing:
+            raise HTTPException(status_code=404, detail="Routing record not found")
+        
+        return routing
+    
+    @prescription_router.get("/patient/{patient_id}/routed")
+    async def get_patient_routed_prescriptions(
+        patient_id: str,
+        user: dict = Depends(get_current_user)
+    ):
+        """Get all routed prescriptions for a patient"""
+        routings = await db["prescription_routings"].find(
+            {"patient_id": patient_id},
+            {"_id": 0}
+        ).sort("sent_at", -1).to_list(100)
+        
+        return {"routings": routings, "total": len(routings)}
+    
+    @prescription_router.put("/routing/{routing_id}/accept")
+    async def accept_routed_prescription(
+        routing_id: str,
+        user: dict = Depends(get_current_user)
+    ):
+        """Pharmacy accepts a routed prescription"""
+        allowed_roles = ["pharmacist", "pharmacy_tech", "hospital_admin", "super_admin"]
+        if user.get("role") not in allowed_roles:
+            raise HTTPException(status_code=403, detail="Pharmacy access required")
+        
+        routing = await db["prescription_routings"].find_one({"id": routing_id})
+        if not routing:
+            raise HTTPException(status_code=404, detail="Routing record not found")
+        
+        await db["prescription_routings"].update_one(
+            {"id": routing_id},
+            {"$set": {
+                "status": "accepted",
+                "accepted_at": datetime.now(timezone.utc).isoformat(),
+                "accepted_by_id": user.get("id"),
+                "accepted_by_name": f"{user.get('first_name', '')} {user.get('last_name', '')}"
+            }}
+        )
+        
+        # Update original prescription
+        if routing.get("prescription_id"):
+            await db["prescriptions"].update_one(
+                {"id": routing["prescription_id"]},
+                {"$set": {
+                    "routing_status": "accepted",
+                    "updated_at": datetime.now(timezone.utc).isoformat()
+                }}
+            )
+        
+        return {"message": "Prescription accepted", "routing_id": routing_id}
+    
+    @prescription_router.put("/routing/{routing_id}/reject")
+    async def reject_routed_prescription(
+        routing_id: str,
+        reason: str = "Unable to fulfill",
+        user: dict = Depends(get_current_user)
+    ):
+        """Pharmacy rejects a routed prescription"""
+        allowed_roles = ["pharmacist", "pharmacy_tech", "hospital_admin", "super_admin"]
+        if user.get("role") not in allowed_roles:
+            raise HTTPException(status_code=403, detail="Pharmacy access required")
+        
+        routing = await db["prescription_routings"].find_one({"id": routing_id})
+        if not routing:
+            raise HTTPException(status_code=404, detail="Routing record not found")
+        
+        await db["prescription_routings"].update_one(
+            {"id": routing_id},
+            {"$set": {
+                "status": "rejected",
+                "rejected_at": datetime.now(timezone.utc).isoformat(),
+                "rejection_reason": reason,
+                "rejected_by_id": user.get("id"),
+                "rejected_by_name": f"{user.get('first_name', '')} {user.get('last_name', '')}"
+            }}
+        )
+        
+        # Update original prescription
+        if routing.get("prescription_id"):
+            await db["prescriptions"].update_one(
+                {"id": routing["prescription_id"]},
+                {"$set": {
+                    "routing_status": "rejected",
+                    "routing_rejection_reason": reason,
+                    "updated_at": datetime.now(timezone.utc).isoformat()
+                }}
+            )
+        
+        return {"message": "Prescription rejected", "reason": reason}
+    
+    @prescription_router.put("/routing/{routing_id}/fill")
+    async def mark_prescription_filled(
+        routing_id: str,
+        user: dict = Depends(get_current_user)
+    ):
+        """Mark a routed prescription as filled"""
+        allowed_roles = ["pharmacist", "pharmacy_tech", "hospital_admin", "super_admin"]
+        if user.get("role") not in allowed_roles:
+            raise HTTPException(status_code=403, detail="Pharmacy access required")
+        
+        routing = await db["prescription_routings"].find_one({"id": routing_id})
+        if not routing:
+            raise HTTPException(status_code=404, detail="Routing record not found")
+        
+        await db["prescription_routings"].update_one(
+            {"id": routing_id},
+            {"$set": {
+                "status": "filled",
+                "filled_at": datetime.now(timezone.utc).isoformat(),
+                "filled_by_id": user.get("id"),
+                "filled_by_name": f"{user.get('first_name', '')} {user.get('last_name', '')}"
+            }}
+        )
+        
+        # Update original prescription
+        if routing.get("prescription_id"):
+            await db["prescriptions"].update_one(
+                {"id": routing["prescription_id"]},
+                {"$set": {
+                    "routing_status": "filled",
+                    "status": PrescriptionStatus.DISPENSED,
+                    "dispensed_at": datetime.now(timezone.utc).isoformat(),
+                    "dispensed_by": f"{user.get('first_name', '')} {user.get('last_name', '')}",
+                    "updated_at": datetime.now(timezone.utc).isoformat()
+                }}
+            )
+        
+        return {"message": "Prescription marked as filled", "routing_id": routing_id}
+    
+    @prescription_router.get("/tracking/{rx_number}")
+    async def track_prescription(rx_number: str):
+        """Track a prescription by RX number (public endpoint for patients)"""
+        prescription = await db["prescriptions"].find_one(
+            {"rx_number": rx_number},
+            {"_id": 0, "clinical_notes": 0}  # Exclude sensitive info
+        )
+        
+        if not prescription:
+            raise HTTPException(status_code=404, detail="Prescription not found")
+        
+        # Get routing info if exists
+        routing = None
+        if prescription.get("routing_id"):
+            routing = await db["prescription_routings"].find_one(
+                {"id": prescription["routing_id"]},
+                {"_id": 0}
+            )
+        
+        # Build status timeline
+        timeline = [
+            {
+                "status": "created",
+                "timestamp": prescription.get("created_at"),
+                "description": "Prescription created"
+            }
+        ]
+        
+        if routing:
+            if routing.get("sent_at"):
+                timeline.append({
+                    "status": "sent",
+                    "timestamp": routing["sent_at"],
+                    "description": f"Sent to {routing.get('pharmacy_name')}"
+                })
+            if routing.get("accepted_at"):
+                timeline.append({
+                    "status": "accepted",
+                    "timestamp": routing["accepted_at"],
+                    "description": "Pharmacy accepted"
+                })
+            if routing.get("rejected_at"):
+                timeline.append({
+                    "status": "rejected",
+                    "timestamp": routing["rejected_at"],
+                    "description": f"Rejected: {routing.get('rejection_reason')}"
+                })
+            if routing.get("filled_at"):
+                timeline.append({
+                    "status": "filled",
+                    "timestamp": routing["filled_at"],
+                    "description": "Ready for pickup"
+                })
+        
+        return {
+            "rx_number": rx_number,
+            "status": prescription.get("status"),
+            "routing_status": prescription.get("routing_status"),
+            "pharmacy_name": prescription.get("pharmacy_name"),
+            "created_at": prescription.get("created_at"),
+            "timeline": sorted(timeline, key=lambda x: x["timestamp"] if x["timestamp"] else ""),
+            "medications": [
+                {"name": m.get("medication_name"), "dosage": m.get("dosage"), "quantity": m.get("quantity")}
+                for m in prescription.get("medications", [])
+            ]
+        }
+    
     return prescription_router
