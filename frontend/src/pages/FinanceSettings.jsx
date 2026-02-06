@@ -147,6 +147,47 @@ export default function FinanceSettings() {
     }
   };
 
+  const handleEditBankAccount = (account) => {
+    setEditingAccount(account);
+    setBankForm({
+      bank_name: account.bank_name || '',
+      account_name: account.account_name || '',
+      account_number: account.account_number || '',
+      branch: account.branch || '',
+      swift_code: account.swift_code || '',
+      account_type: account.account_type || 'current',
+      currency: account.currency || 'GHS',
+      is_primary: account.is_primary || false
+    });
+    setEditBankDialogOpen(true);
+  };
+
+  const handleUpdateBankAccount = async (e) => {
+    e.preventDefault();
+    if (!bankForm.bank_name || !bankForm.account_number) {
+      toast.error('Bank name and account number are required');
+      return;
+    }
+    
+    setSaving(true);
+    try {
+      await financeAPI.updateBankAccount(editingAccount.id, bankForm);
+      toast.success('Bank account updated successfully');
+      setEditBankDialogOpen(false);
+      setEditingAccount(null);
+      setBankForm({
+        bank_name: '', account_name: '', account_number: '',
+        branch: '', swift_code: '', account_type: 'current',
+        currency: 'GHS', is_primary: false
+      });
+      fetchData();
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Failed to update bank account'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
