@@ -42,6 +42,7 @@ import NursingSupervisorDashboard from "@/pages/NursingSupervisorDashboard";
 
 // New Modules - e-Prescribing, Radiology, Bed Management
 import PharmacyPortal from "@/pages/PharmacyPortal";
+import PharmacyDirectory from "@/pages/PharmacyDirectory";
 import RadiologyPortal from "@/pages/RadiologyPortal";
 import BedManagementPortal from "@/pages/BedManagementPortal";
 import FinanceSettings from "@/pages/FinanceSettings";
