@@ -37,7 +37,7 @@ import {
   ArrowLeft, User, Heart, AlertTriangle, Pill, FileText, ClipboardList,
   Plus, Activity, Thermometer, Droplets, Wind, Scale, Ruler,
   Sparkles, Check, Loader2, Calendar, FlaskConical, TrendingUp, TrendingDown, Scan, Send,
-  Building2, Phone, MapPin, Clock, Shield, Truck, Search, ExternalLink, CheckCircle, XCircle, Package
+  Building2, Phone, MapPin, Clock, Shield, Truck, Search, ExternalLink, CheckCircle, XCircle, Package, X
 } from 'lucide-react';
 
 export default function PatientChart() {
