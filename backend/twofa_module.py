@@ -77,12 +77,30 @@ def get_totp_token(secret: str, time_step: int = 30, digits: int = 6) -> str:
     return str(code).zfill(digits)
 
 
-def verify_totp(secret: str, code: str, window: int = 1) -> bool:
-    """Verify TOTP code with time window for drift tolerance"""
+def verify_totp(secret: str, code: str, window: int = 2) -> bool:
+    """
+    Verify TOTP code with time window for drift tolerance.
+    Window of 2 allows ±60 seconds drift (2 x 30-second intervals)
+    """
+    # Normalize the code - remove spaces and ensure 6 digits
+    code = code.strip().replace(" ", "")
+    if len(code) != 6 or not code.isdigit():
+        return False
+    
+    # Normalize the secret - ensure proper base32 padding
+    secret = secret.upper().replace(" ", "")
+    padding_needed = (8 - len(secret) % 8) % 8
+    padded_secret = secret + '=' * padding_needed
+    
+    try:
+        secret_bytes = base64.b32decode(padded_secret)
+    except Exception:
+        return False
+    
     # Check current time and +/- window steps
+    current_time = int(time.time())
     for offset in range(-window, window + 1):
-        secret_bytes = base64.b32decode(secret + '=' * (8 - len(secret) % 8))
-        counter = (int(time.time()) // 30) + offset
+        counter = (current_time // 30) + offset
         counter_bytes = struct.pack('>Q', counter)
         
         hmac_hash = hmac.new(secret_bytes, counter_bytes, hashlib.sha1).digest()
