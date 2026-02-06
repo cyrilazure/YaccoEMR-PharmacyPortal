@@ -1,116 +1,75 @@
 <analysis>**original_problem_statement:**
-The user has requested a multi-phase expansion and refinement of a Ghana-based Electronic Medical Records (EMR) platform.
+The user has requested a multi-phase expansion of a Ghana-based Electronic Medical Records (EMR) platform. The primary goals are to add several new modules, fix existing bugs, and integrate third-party services like payment gateways.
 
-**Initial Request (Summary):**
-*   Build and integrate four new modules: e-Prescribing & Pharmacy, NHIS Claims & Billing, Radiology Orders, and Bed Management.
-*   Enforce strict Role-Based Access Control (RBAC) and maintain the existing UI/UX.
-
-**Second Major Request (Phased Implementation):**
-*   **Phase 1 (Billing):** Fix billing portal errors, add invoice reversal, expand service codes, localize currency to GHS (₵), and add more payment methods.
-*   **Phase 2 (Finance & Beds):** Create a Hospital Banking Setup module, and enhance Bed Management with manual/auto ward creation and prefixed bed naming.
-*   **Phase 3 (Ambulance):** Build a new Ambulance Portal for managing fleet, requests, dispatch, and reporting.
-*   **Phase 4 (Future):** Physician portal enhancements, notifications, and audit logging.
-
-**Third Major Request (Payment Gateway):**
-*   Integrate a payment gateway (Paystack) to allow patient payments to settle directly into each hospital's configured bank account using Paystack's Subaccount/Split Payment feature.
-
-**Fourth Major Request (Pharmacy Network):**
-*   Build a comprehensive national pharmacy database (GHS, private, retail).
-*   Create a Pharmacy Portal for managing prescriptions.
-*   Implement e-prescription routing from the physician's chart.
-*   Integrate NHIS claims for pharmacy billing.
-
-The user has instructed the agent to proceed with a phased approach and to be careful not to break or delete existing functionality.
+**Recent Requests:**
+*   **Build a comprehensive Ghana Pharmacy Network:** Create a national database of all pharmacies, a pharmacy search directory, and a portal for pharmacists.
+*   **Implement E-Prescription Routing:** Allow physicians to send prescriptions directly from the patient chart to any pharmacy in the network.
+*   **Integrate with Ghana FDA:** Add functionality to verify drugs against the FDA database (currently mocked).
+*   **Proceed with Next Features:** User has approved moving forward with:
+    *   Completing the Ambulance Portal UI.
+    *   Building an NHIS Pharmacy Claims Integration module.
+    *   Implementing real-time notifications for prescription status updates.
+    *   Building a Supply Chain/Inventory module for pharmacies.
 
 **User's preferred language**: English
 
 **what currently exists?**
-A full-stack EMR application (FastAPI backend, React frontend, MongoDB) with a multi-tenant, role-based architecture. Key functionalities include:
-*   **Core Portals:** Super Admin, Hospital Admin, Hospital IT Admin, Physician, Nurse, etc.
-*   **Bed Management Module:** Fully functional with ward/bed display, admission, transfer, and discharge workflows. Features custom and auto-generated ward/bed naming.
-*   **Radiology Module:** Physicians can order scans from the patient chart. A dedicated Radiology Portal allows staff to manage the queue. RBAC is enforced between  and .
-*   **Billing & Finance Module:** A robust billing portal with GHS (₵) currency, invoice creation, and expanded service codes. It supports invoice reversal and payment method changes. A payment verification step is enforced for manual payments (Cash, Bank Transfer).
-*   **Payment Gateway Integration:** Paystack is integrated using the **Subaccounts** model. When a hospital admin adds a bank account via the Finance Settings tab, it's automatically created as a Paystack subaccount, enabling direct payment settlement to the hospital's bank.
-*   **Ambulance Module:** The backend module and a basic frontend portal have been scaffolded.
+A full-stack EMR application (FastAPI backend, React frontend, MongoDB) with a multi-tenant, role-based architecture.
+*   **Core Portals:** Super Admin, Hospital Admin, Physician, Nurse, Biller, etc.
+*   **Ghana Pharmacy Network:** A comprehensive backend module () with a seed database of 133 pharmacies across all 16 regions of Ghana. The frontend includes a fully functional Pharmacy Directory page with search and filtering capabilities.
+*   **E-Prescription & FDA Integration:** Physicians can now create and route e-prescriptions directly to any pharmacy in the network from an enhanced Pharmacy tab within the . This includes integration with a **mock** Ghana FDA API for drug verification.
+*   **Existing Modules:** Fully functional Bed Management, Radiology, and a robust Billing & Finance module with Paystack Subaccount integration for direct payment settlements.
 
 **Last working item**:
-    - Last item agent was working: The agent was beginning the implementation of the comprehensive **Ghana Pharmacy Network** as requested by the user. The first step was to update  with the new, detailed data structures for pharmacies, including ownership types and a seed list.
+    - Last item agent was working: The agent was scaffolding the backend modules for the next set of features requested by the user. It had just created the  and the  and was about to create the .
     - Status: IN PROGRESS
     - Agent Testing Done: N
     - Which testing method agent to use? backend testing agent
     - User Testing Done: N
 
 **All Pending/In progress Issue list**:
-  - Issue 1: Failed to update pharmacy data structures. (P0)
-
-  Issues Detail:
-  - Issue 1: 
-     - **Description:** An attempt to use  to update  with the new pharmacy data model and seed list failed. The agent needs to re-attempt this update to lay the foundation for the pharmacy module.
-     - **Attempted fixes:** A single  call failed. The agent then verified the backend was still healthy with the old code.
-     - **Next debug checklist:**
-        1. Read the contents of .
-        2. Programmatically remove the old, simple  list.
-        3. Add the new  Enum and  Pydantic model.
-        4. Insert the new comprehensive  data structure.
-        5. Add the new API endpoints for searching and listing all pharmacies (, ).
-        6. Integrate these new routes into the  function.
-     - **Why fix this issue and what will be achieved with the fix?** This is the foundational step for building the entire national pharmacy network and e-prescribing feature set requested by the user.
-     - **Status**: NOT STARTED
-     - **Is recurring issue?** N
-     - **Should Test frontend/backend/both after fix?** backend
-     - **Blocked on other issue:** None. This is the starting point for the current task.
+  - None. The previous tasks were completed, and the agent is starting a new batch of features.
 
 **In progress Task List**:
-  - Task 1: Build the complete Ghana Pharmacy Network System. (P0)
+  - Task 1: Scaffold new backend modules for upcoming features. (P0)
 
  Task Detail:
   - Task 1: 
-     - **Where to resume**: Resume at . The immediate next step is to correctly implement the new pharmacy data structures and API endpoints, resolving Issue 1.
-     - **What will be achieved with this?**: This will establish the backend for a national pharmacy database, which is required for all subsequent pharmacy-related tasks like the pharmacy portal, e-prescription routing, and search functionality.
+     - **Where to resume**: The agent has already created  and . The immediate next step is to create the file for the **Supply Chain Inventory module**.
+     - **Command to run**: 
+     - **What will be achieved with this?**: This will complete the initial scaffolding of all backend modules requested by the user in the latest message, preparing for their full implementation.
      - **Status**: IN PROGRESS
-     - **Should Test frontend/backend/both after fix?** both
-     - **Blocked on something**: Issue 1: Failed to update pharmacy data structures.
+     - **Should Test frontend/backend/both after fix?** backend
+     - **Blocked on something**: None.
 
 **Upcoming and Future Tasks**
     Upcoming Tasks:
-    - (P0) **Complete National Pharmacy Module:** After fixing Issue 1, continue with:
-        - Seeding GHS, private, and retail pharmacies into the database.
-        - Creating the frontend Pharmacy Portal () for pharmacists to manage prescriptions.
-        - Implementing e-prescription routing logic in the Physician's .
-        - Adding prescription status tracking visible to physicians and nurses.
-        - Building a Pharmacy Search Directory UI.
-    - (P1) **Complete Ambulance Portal UI & Workflow:**
-        - Flesh out  to include UI for Fleet Management, the full Request Workflow, Dispatch Status updates, and the Reports Dashboard.
-    - (P2) **NHIS Pharmacy Claims Integration:**
-        - Build the backend and frontend for pharmacies to verify NHIS coverage and submit medication claims.
-    - (P3) **Notifications & Auditing Expansion:**
-        - Implement user notifications for key events (e.g., new prescription, ambulance dispatch, invoice reversal).
-        - Extend audit logs to cover all new modules (Ambulance, Pharmacy).
+    - (P0) **Complete Ambulance Portal UI:** Flesh out  to include a functional UI for Fleet Management, the full Request Workflow, Dispatch Status updates, and a Reports Dashboard.
+    - (P0) **Implement NHIS Pharmacy Claims Integration:** Build the full backend and frontend functionality for the newly created , allowing pharmacies to submit medication claims.
+    - (P1) **Implement Notifications Module:** Build out the  to provide real-time updates for key events, starting with prescription status changes (e.g., accepted by pharmacy, filled).
+    - (P1) **Implement Supply Chain Inventory Module:** Build out the  to allow pharmacies to manage their inventory.
+    - (P2) **Replace Mock FDA API:** Integrate with the real Ghana FDA API to replace the mock data and endpoints in .
 
     Future Tasks:
+    - Extend audit logs to cover all new modules (Ambulance, Pharmacy, NHIS).
     - Integration with other payment gateways (Flutterwave, Hubtel).
-    - Integration with a national e-Pharmacy platform and FDA APIs.
-    - Supply chain inventory synchronization for pharmacies.
+    - Integration with a national e-Pharmacy platform.
 
 **Completed work in this session**
-- **Billing & Finance Overhaul (Phases 1 & 2):**
-  - **Functionality:** Implemented invoice reversal, payment method changes, and expanded service codes. Localized all currency to GHS (₵).
-  - **Payment Verification:** Added a mandatory verification dialog for manual payments (Cash, Bank Transfer) to prevent errors and fraud. Made the dialogs scrollable.
-  - **Paystack Subaccounts:** Integrated Paystack to settle payments directly into each hospital's bank account. This included creating subaccounts via the Paystack API and adding bank code selection to the UI.
-  - **Direct Deposit Info:** Implemented a section in the invoice view to display the hospital's bank details for manual transfers, with conditional display for domestic (always on) and international (if SWIFT is configured) transfers.
-- **Hospital IT Admin Portal Enhancements:**
-  - **Finance Settings:** Built and integrated a Finance Settings tab with full CRUD functionality for managing multiple bank and mobile money accounts, including setting a primary account. Fixed all UI/build errors related to this feature.
-- **Bed Management Fixes & Enhancements:**
-  - Resolved all critical backend bugs, including  serialization and data isolation errors.
-  - Implemented and tested the complete admit, transfer, and discharge workflow.
-  - Added logic for custom and auto-generated ward/bed naming.
-- **Radiology Module Fixes & Enhancements:**
-  - Fixed UI errors and implemented proper RBAC for  vs. .
-  - Added the Order Imaging feature to the physician's patient chart.
-- **Access Control Refinements:**
-  - Removed the Patients clinical records link from the  role's navigation to enforce data segregation.
-- **Numerous Frontend Bug Fixes:**
-  - Resolved over a dozen user-reported UI bugs, including build errors, runtime crashes (e.g., ), missing component imports, and broken JSX layouts.
+- **Ghana Pharmacy Network (Complete):**
+  - Created a new backend module () with a comprehensive database of 133 pharmacies across Ghana.
+  - Added multiple API endpoints for searching, filtering, and listing pharmacies, chains, and regions.
+  - Built a new Pharmacy Directory frontend page () with statistics and a searchable/filterable table.
+- **E-Prescription Routing (Complete):**
+  - Enhanced  to support routing prescriptions to external pharmacies.
+  - Overhauled the  to include a new Pharmacy tab for creating and sending prescriptions.
+  - Implemented prescription status tracking (, , ).
+  - Fixed numerous MongoDB  and  serialization bugs that arose during implementation.
+- **Mock Ghana FDA API (Complete):**
+  - Created a new backend module () to simulate drug registration lookups and verification.
+  - Integrated FDA drug search into the e-prescription creation UI in the patient chart.
+- **Testing:**
+  - Successfully ran two full test cycles using the , achieving >97% pass rates and fixing identified bugs.
 
 **Earlier issues found/mentioned but not fixed**
    - **Issue 1**: Minor linting errors (quote escaping) exist in several older frontend files (, etc.). This is a low-priority code quality issue and does not affect functionality.
@@ -128,89 +87,83 @@ A full-stack EMR application (FastAPI backend, React frontend, MongoDB) with a m
 **Key Technical Concepts**
 - **Backend**: FastAPI, MongoDB (motor), Pydantic, JWT.
 - **Frontend**: React, Tailwind CSS, shadcn/ui.
-- **Architecture**: Multi-tenant RBAC, Monolithic backend with modular structure, SPA frontend.
-- **Key New Concept**: **Paystack Subaccounts API** for direct payment settlement. Each hospital's bank account is programmatically registered as a subaccount, and payment initializations include the  code to route funds correctly.
+- **Architecture**: Multi-tenant RBAC, Monolithic backend with modular structure.
+- **Key New Concept**: **Mock API Development**. The  was created as a stand-in for a real external API, allowing frontend development to proceed without being blocked.
 
 **key DB schema**
-  - **bank_accounts (new)**: 
-  - **mobile_money_accounts (new)**: 
-  - **ambulances (new)**: 
-  - **ambulance_requests (new)**: 
-  - **pharmacies (to be created)**: 
-  - **invoices (modified)**: Added  enum (e.g., , ), , .
+  - **prescription_routings (new)**: 
+  - **claims (to be created)**: 
+  - **notifications (to be created)**: 
+  - **inventory_items (to be created)**: 
 
 **All files of reference**
 - **Created**:
-  - : Handles creation of bank/momo accounts and Paystack subaccounts.
-  - : Backend logic for the ambulance fleet and dispatch.
-  - : UI for the ambulance module.
-  - : A reference document for Ghana bank codes required by Paystack.
+  - : The core of the national pharmacy database.
+  - : A mock API for Ghana FDA drug lookups.
+  - : The UI for searching the pharmacy network.
+  - : Scaffolded file for NHIS claims.
+  - : Scaffolded file for user notifications.
 - **Updated**:
-  - : Major overhaul to integrate Paystack subaccounts, invoice reversal, and fix bugs.
-  - : Added custom/auto ward naming logic.
-  - : Major overhaul for UI, payment verification, and currency localization.
-  - : Major overhaul to embed and manage the finance settings UI.
-  - : Updated navigation to restrict biller access.
-  - : Added numerous new API client functions for finance, billing, and ambulance modules.
+  - : Integrated all new backend modules.
+  - : Major overhaul to add e-prescription routing and fix serialization bugs.
+  - : Massive update to add the Pharmacy tab, drug search, and prescription sending workflow.
+  - : Added client functions for all new pharmacy and FDA endpoints.
+  - : Added the route for the new  page.
+  - : Added a link to the Pharmacy Directory in the navigation sidebar.
+  - : Updated to reflect completion of the pharmacy network and e-prescription tasks.
 
 **Areas that need refactoring**:
--  has grown significantly by embedding the entire finance settings functionality. This logic could be better encapsulated within its own components to make the IT admin page cleaner.
--  is also very large and manages multiple dialogs and states. It could benefit from being broken down into smaller components (e.g., , , ).
+- ** is now extremely large (>1700 lines)** and complex. It manages state and logic for patient info, vitals, meds, labs, imaging, and now a full e-prescription workflow. It should be broken down into smaller, manageable components (e.g., , , ).
+- The older suggestions to refactor  and  are still valid.
 
 **key api endpoints**
-- : (CRUD) Manages hospital bank accounts and associated Paystack subaccounts.
-- : (POST) Reverses a sent invoice.
-- : (POST) Changes an invoice's payment type.
-- : (POST) Initializes a Paystack transaction, now includes a  code.
-- : (CRUD) Manages the ambulance fleet.
-- : (CRUD) Manages ambulance dispatch requests.
+- : (GET) Lists all pharmacies with filters.
+- : (GET) Searches pharmacies by name, region, etc.
+- : (GET) Provides summary statistics for the directory.
+- : (GET) Verifies a drug registration number (mock).
+- : (POST) Routes a created prescription to an external pharmacy.
+- : (GET) Tracks the status history of a sent prescription.
 
 **Critical Info for New Agent**
-- You are starting the **Ghana Pharmacy Network** implementation. The very first step is to fix the failed file update in  (see All Pending/In progress Issue list).
-- The payment system uses **Paystack Subaccounts**. The logic is in  (creates subaccount on bank creation) and  (uses subaccount on payment). The  is required.
-- The user has reported numerous frontend build/runtime errors. After making changes to JSX files, always verify the build (yarn run v1.22.22
-info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command.) and check the browser console for errors. Common issues have been missing imports and incorrect JSX structure (unclosed tags).
-- MongoDB  serialization errors have been a recurring problem. Be vigilant about projecting it out of all database queries () and ensuring documents returned from the API are clean.
+- You are starting a new batch of features. The immediate next step is to create the  file to complete the backend scaffolding.
+- The Ghana FDA integration is currently a **mock** (). A future task is to replace this with a real API integration.
+- MongoDB  serialization remains a critical point of failure. Be vigilant about projecting it out of all database queries () and ensuring Pydantic models with Enums are correctly serialized to strings/values before being returned from the API.
+- The frontend login flow is multi-step and requires interacting with the UI to set the session. For testing, it's more reliable to get a token via an API call and set it in browser local storage, as the agent successfully did in the last session.
 
 **documents and test reports created in this job**
-  - 
+  -  (Updated)
   - 
   - 
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **Request**: Fix  error in IT Admin portal. **Status**: Completed.
-2.  **Request**: Fix  error in Billing page. **Status**: Completed.
-3.  **Request**: Make long invoices scrollable. **Status**: Completed.
-4.  **Request**: Add payment verification step instead of auto-marking as paid. **Status**: Completed.
-5.  **Request**: Fix  error. **Status**: Completed.
-6.  **Request**: For Card/MoMo payments, use a gateway; don't just show verification. **Status**: Completed (clarified flow).
-7.  **Request**: Make payment verification dialog scrollable. **Status**: Completed.
-8.  **Request**: Remove patient clinical data access from the billing portal. **Status**: Completed.
-9.  **Request**: Add full routing info for bank transfers. **Status**: Completed.
-10. **Request**: Start building the comprehensive Ghana Pharmacy Network. **Status**: In Progress.
+1.  **User**: Confirms the plan to start the Pharmacy Network. **Status**: Completed.
+2.  **User**: Asks agent to continue and build the comprehensive pharmacy database. **Status**: Completed.
+3.  **Agent**: Finishes Pharmacy Network and e-Prescription routing. Asks about next steps. **Status**: Completed.
+4.  **User**: Approves adding e-prescription routing and FDA API integration. **Status**: Completed.
+5.  **Agent**: Finishes e-prescription and mock FDA integration. Asks about next steps. **Status**: Completed.
+6.  **User**: Approves all suggested next actions: Complete Ambulance Portal UI, NHIS Claims, real FDA integration, and notifications. **Status**: In Progress.
 
 **Project Health Check:**
-- **Broken**: No modules are currently broken. The backend is healthy.
-- **Mocked**: Paystack API calls use test keys.  for email is configured but inactive as it's missing a production API key.
+- **Broken**: No modules are broken.
+- **Mocked**: The Ghana FDA API () is a mock and does not connect to a real service.
 
 **3rd Party Integrations**
-- **Paystack**: Used for payment processing. Configured to use the **Subaccounts API** to enable direct settlement into individual hospital bank accounts. Requires a  environment variable.
-- **Resend**: For email notifications. Library is installed, but it requires a User API Key () to be functional.
+- **Paystack**: Used for payment processing via Subaccounts. Requires .
+- **Resend**: For email notifications. Library installed, requires .
 
 **Testing status**
-  - Testing agent used after significant changes: YES (both backend and frontend agents were used).
+  - Testing agent used after significant changes: YES. Two full iterations were run.
   - Troubleshoot agent used after agent stuck in loop: NO
   - Test files created: []
-  - Known regressions: The frontend testing agent has previously had issues with session/login for certain user roles, which can block UI tests. This might recur.
+  - Known regressions: None from this session.
 
 **Credentials to test flow:**
 - **Super Admin**:  / 
-- **Hospital IT Admin**:  /  (crucial for testing finance settings)
+- **Hospital IT Admin**:  / 
 - **Biller**:  / 
 - **Bed Manager**:  / 
 - **Radiologist**:  / 
-- **Radiology Staff**:  / 
-- **Nurse**:  / 
+- **Physician**: (Use Super Admin login, it has physician role access)
 
 **What agent forgot to execute**
-- The agent has been diligent in responding to user requests. However, the initial scaffolding of the Ambulance portal was very basic, and the frontend UI () still needs to be fully built out beyond the initial test-driven fixes. This is captured in the Upcoming Tasks.</analysis>
+The agent was in the middle of scaffolding new modules based on the user's last request. It created  and  but the session ended before it could create . This is the immediate first step for the next agent.</analysis>
