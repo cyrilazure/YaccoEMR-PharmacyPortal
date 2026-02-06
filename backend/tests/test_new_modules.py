@@ -170,7 +170,7 @@ class TestSupplyChainModule(TestSetup):
         # Verify dashboard structure
         assert "inventory" in data, "Missing inventory in dashboard"
         assert "alerts" in data, "Missing alerts in dashboard"
-        assert "orders" in data, "Missing orders in dashboard"
+        assert "purchase_orders" in data, "Missing purchase_orders in dashboard"
         
         inventory = data["inventory"]
         assert "total_items" in inventory, "Missing total_items"
