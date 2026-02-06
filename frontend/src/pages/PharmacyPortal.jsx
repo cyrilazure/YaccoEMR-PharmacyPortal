@@ -36,6 +36,11 @@ const supplyAPI = {
   getDashboard: () => api.get('/supply-chain/dashboard'),
 };
 
+const fdaAPI = {
+  lookupByBarcode: (barcode) => api.get('/fda/lookup/barcode', { params: { barcode } }),
+  verifyDrug: (params) => api.get('/fda/verify', { params }),
+};
+
 const nhisAPI = {
   verifyMember: (data) => api.post('/nhis/verify-member', data),
   getDrugTariff: (params) => api.get('/nhis/tariff', { params }),
