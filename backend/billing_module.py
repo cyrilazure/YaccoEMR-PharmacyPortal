@@ -328,6 +328,127 @@ def setup_routes(db, get_current_user):
             raise HTTPException(status_code=404, detail="Invoice not found")
         
         return {"message": "Invoice sent"}
+
+    
+    @router.put("/invoices/{invoice_id}/reverse")
+    async def reverse_invoice(invoice_id: str, reason: Optional[str] = None, current_user: dict = Depends(get_current_user)):
+        """Reverse a sent invoice - reopens the billing encounter"""
+        invoice = await db.invoices.find_one({"id": invoice_id})
+        if not invoice:
+            raise HTTPException(status_code=404, detail="Invoice not found")
+        
+        if invoice["status"] not in [InvoiceStatus.SENT, InvoiceStatus.PENDING_INSURANCE]:
+            raise HTTPException(status_code=400, detail="Can only reverse sent or pending insurance invoices")
+        
+        # Update invoice status
+        await db.invoices.update_one(
+            {"id": invoice_id},
+            {"$set": {
+                "status": InvoiceStatus.REVERSED,
+                "reversed_at": datetime.now(timezone.utc).isoformat(),
+                "reversed_by": current_user["id"],
+                "reversal_reason": reason or "Invoice reversed",
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+        
+        # Audit log
+        await db.audit_logs.insert_one({
+            "id": str(uuid.uuid4()),
+            "action": "invoice_reversed",
+            "resource_type": "invoice",
+            "resource_id": invoice_id,
+            "user_id": current_user["id"],
+            "user_name": f"{current_user.get('first_name', '')} {current_user.get('last_name', '')}",
+            "organization_id": current_user.get("organization_id"),
+            "details": {"invoice_number": invoice["invoice_number"], "reason": reason},
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        })
+        
+        return {"message": "Invoice reversed successfully"}
+    
+    @router.put("/invoices/{invoice_id}/void")
+    async def void_invoice(invoice_id: str, reason: Optional[str] = None, current_user: dict = Depends(get_current_user)):
+        """Void an invoice - marks as cancelled/invalid"""
+        invoice = await db.invoices.find_one({"id": invoice_id})
+        if not invoice:
+            raise HTTPException(status_code=404, detail="Invoice not found")
+        
+        if invoice["status"] in [InvoiceStatus.PAID, InvoiceStatus.PARTIALLY_PAID]:
+            raise HTTPException(status_code=400, detail="Cannot void paid or partially paid invoices")
+        
+        await db.invoices.update_one(
+            {"id": invoice_id},
+            {"$set": {
+                "status": InvoiceStatus.VOIDED,
+                "voided_at": datetime.now(timezone.utc).isoformat(),
+                "voided_by": current_user["id"],
+                "void_reason": reason or "Invoice voided",
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+        
+        # Audit log
+        await db.audit_logs.insert_one({
+            "id": str(uuid.uuid4()),
+            "action": "invoice_voided",
+            "resource_type": "invoice",
+            "resource_id": invoice_id,
+            "user_id": current_user["id"],
+            "user_name": f"{current_user.get('first_name', '')} {current_user.get('last_name', '')}",
+            "organization_id": current_user.get("organization_id"),
+            "details": {"invoice_number": invoice["invoice_number"], "reason": reason},
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        })
+        
+        return {"message": "Invoice voided successfully"}
+    
+    @router.put("/invoices/{invoice_id}/change-payment-method")
+    async def change_payment_method(
+        invoice_id: str,
+        new_method: PaymentMethod,
+        reason: Optional[str] = None,
+        current_user: dict = Depends(get_current_user)
+    ):
+        """Change payment method for an invoice (e.g., Insurance to Cash)"""
+        invoice = await db.invoices.find_one({"id": invoice_id})
+        if not invoice:
+            raise HTTPException(status_code=404, detail="Invoice not found")
+        
+        old_method = invoice.get("payment_method", "not_set")
+        
+        # Update invoice
+        update_data = {
+            "payment_method": new_method,
+            "payment_method_changed_at": datetime.now(timezone.utc).isoformat(),
+            "payment_method_changed_by": current_user["id"],
+            "payment_method_change_reason": reason or f"Changed from {old_method} to {new_method}",
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }
+        
+        # If changing from insurance to cash, update status
+        if new_method == PaymentMethod.CASH and invoice["status"] == InvoiceStatus.PENDING_INSURANCE:
+            update_data["status"] = InvoiceStatus.SENT
+        elif new_method == PaymentMethod.NHIS_INSURANCE:
+            update_data["status"] = InvoiceStatus.PENDING_INSURANCE
+        
+        await db.invoices.update_one({"id": invoice_id}, {"$set": update_data})
+        
+        # Audit log
+        await db.audit_logs.insert_one({
+            "id": str(uuid.uuid4()),
+            "action": "payment_method_changed",
+            "resource_type": "invoice",
+            "resource_id": invoice_id,
+            "user_id": current_user["id"],
+            "user_name": f"{current_user.get('first_name', '')} {current_user.get('last_name', '')}",
+            "organization_id": current_user.get("organization_id"),
+            "details": {"invoice_number": invoice["invoice_number"], "old_method": old_method, "new_method": new_method},
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        })
+        
+        return {"message": f"Payment method changed from {old_method} to {new_method}"}
+
     
     @router.delete("/invoices/{invoice_id}")
     async def cancel_invoice(invoice_id: str, current_user: dict = Depends(get_current_user)):
