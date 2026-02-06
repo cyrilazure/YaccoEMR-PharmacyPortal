@@ -2764,9 +2764,8 @@ export default function PatientChart() {
                     ))
                   ) : (
                     <div className="p-8 text-center text-slate-500">
-                      <Building2 className="w-12 h-12 mx-auto mb-2 opacity-30" />
-                      <p>No pharmacies found matching your criteria</p>
-                      <p className="text-sm">Try adjusting your filters or search terms</p>
+                      <Loader2 className="w-8 h-8 mx-auto mb-2 animate-spin opacity-50" />
+                      <p>Loading pharmacies...</p>
                     </div>
                   )}
                 </div>
