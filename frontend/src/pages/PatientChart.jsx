@@ -2642,14 +2642,14 @@ export default function PatientChart() {
                 {/* Filter Row */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   {/* Region Filter */}
-                  <Select value={pharmacyRegionFilter} onValueChange={setPharmacyRegionFilter}>
+                  <Select value={pharmacyRegionFilter || "all"} onValueChange={(v) => setPharmacyRegionFilter(v === "all" ? "" : v)}>
                     <SelectTrigger className="h-9">
                       <SelectValue placeholder="All Regions" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Regions</SelectItem>
+                      <SelectItem value="all">All Regions</SelectItem>
                       {ghanaRegions.map((r) => (
-                        <SelectItem key={r.id || r.name} value={r.id || r.name}>
+                        <SelectItem key={r.id || r.name} value={r.id || r.name || `region-${Math.random()}`}>
                           {r.name?.replace(/_/g, ' ')}
                         </SelectItem>
                       ))}
@@ -2657,12 +2657,12 @@ export default function PatientChart() {
                   </Select>
                   
                   {/* Ownership Type Filter */}
-                  <Select value={pharmacyOwnershipFilter} onValueChange={setPharmacyOwnershipFilter}>
+                  <Select value={pharmacyOwnershipFilter || "all"} onValueChange={(v) => setPharmacyOwnershipFilter(v === "all" ? "" : v)}>
                     <SelectTrigger className="h-9">
                       <SelectValue placeholder="All Types" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Types</SelectItem>
+                      <SelectItem value="all">All Types</SelectItem>
                       <SelectItem value="public">Public/Government</SelectItem>
                       <SelectItem value="private">Private</SelectItem>
                       <SelectItem value="chain">Chain Pharmacy</SelectItem>
