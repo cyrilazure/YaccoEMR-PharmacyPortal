@@ -518,6 +518,7 @@ class TestAmbulanceModule(TestSetup):
         """Test approving ambulance request"""
         # First create a request
         test_request = {
+            "patient_id": "test-patient-002",  # Required field
             "patient_name": "TEST_Approve_Patient",
             "patient_mrn": "MRN-TEST-002",
             "pickup_location": "Ward B",
@@ -529,6 +530,7 @@ class TestAmbulanceModule(TestSetup):
         
         create_response = requests.post(f"{BASE_URL}/api/ambulance/requests", 
             headers=auth_headers, json=test_request)
+        assert create_response.status_code == 200, f"Create request failed: {create_response.text}"
         request_id = create_response.json()["request"]["id"]
         
         # Approve the request
