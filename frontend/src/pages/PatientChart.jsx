@@ -2531,7 +2531,6 @@ export default function PatientChart() {
                   <p className="text-sm">Loading pharmacies...</p>
                 </div>
               )}
-              )}
               
               {newPrescription.pharmacy_id && (
                 <div className="p-2 bg-emerald-100 rounded flex items-center gap-2">
