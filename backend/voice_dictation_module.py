@@ -438,7 +438,7 @@ def create_voice_dictation_router(db, get_current_user) -> APIRouter:
             raise HTTPException(status_code=500, detail="AI service not configured")
         
         try:
-            from emergentintegrations.llm.openai import OpenAIChat
+            from emergentintegrations.llm.openai import LlmChat
             
             # Define prompts for different note types
             system_prompts = {
