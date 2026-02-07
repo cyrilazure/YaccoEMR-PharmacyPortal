@@ -525,16 +525,273 @@ export default function BillingPage() {
           <h1 className="text-2xl font-bold text-slate-900" style={{ fontFamily: 'Manrope' }}>
             Billing & Revenue
           </h1>
-          <p className="text-slate-500">Manage invoices, payments, and insurance claims</p>
+          <p className="text-slate-500">
+            {isAdmin ? 'Hospital-wide financial overview' : 'Manage invoices, payments, and insurance claims'}
+          </p>
         </div>
-        <Button onClick={() => setShowCreateInvoice(true)} className="bg-sky-600 hover:bg-sky-700 gap-2">
-          <Plus className="w-4 h-4" />
-          New Invoice
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button variant="outline" size="icon" onClick={() => { loadData(); loadShiftData(); }}>
+            <RefreshCw className="w-4 h-4" />
+          </Button>
+          <Button onClick={() => setShowCreateInvoice(true)} className="bg-sky-600 hover:bg-sky-700 gap-2">
+            <Plus className="w-4 h-4" />
+            New Invoice
+          </Button>
+        </div>
       </div>
 
-      {/* Stats Cards */}
-      {stats && (
+      {/* Shift Clock In/Out Status Card (For Billers) */}
+      {!isAdmin && (
+        <Card className={activeShift ? "border-emerald-200 bg-emerald-50/50" : "border-amber-200 bg-amber-50/50"}>
+          <CardContent className="py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${activeShift ? 'bg-emerald-100' : 'bg-amber-100'}`}>
+                  {activeShift ? <Timer className="w-6 h-6 text-emerald-600" /> : <Clock className="w-6 h-6 text-amber-600" />}
+                </div>
+                <div>
+                  {activeShift ? (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <Badge className="bg-emerald-500">ON SHIFT</Badge>
+                        <span className="text-sm font-medium text-emerald-700">{activeShift.shift_type?.toUpperCase()} Shift</span>
+                      </div>
+                      <p className="text-sm text-slate-600 mt-1">
+                        Started: {new Date(activeShift.start_time).toLocaleTimeString()} • Duration: <span className="font-semibold">{getShiftDuration(activeShift.start_time)}</span>
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="font-medium text-amber-700">Not Clocked In</p>
+                      <p className="text-sm text-slate-500">Clock in to start tracking your shift collections</p>
+                    </>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                {activeShift ? (
+                  <Button onClick={() => setClockOutOpen(true)} variant="outline" className="border-red-300 text-red-600 hover:bg-red-50">
+                    <LogOut className="w-4 h-4 mr-2" /> Clock Out
+                  </Button>
+                ) : (
+                  <Button onClick={() => setClockInOpen(true)} className="bg-emerald-600 hover:bg-emerald-700">
+                    <LogIn className="w-4 h-4 mr-2" /> Clock In
+                  </Button>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Shift-Scoped KPIs (Biller View) */}
+      {!isAdmin && activeShift && shiftMetrics && (
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+          <Card className="bg-gradient-to-br from-sky-50 to-sky-100 border-sky-200">
+            <CardContent className="p-4 text-center">
+              <FileText className="w-6 h-6 mx-auto mb-2 text-sky-600" />
+              <p className="text-xs text-sky-700 font-medium">Invoices (Shift)</p>
+              <p className="text-xl font-bold text-sky-900">{shiftMetrics.invoices_generated}</p>
+              <p className="text-xs text-sky-600">₵{shiftMetrics.invoices_amount?.toLocaleString()}</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+            <CardContent className="p-4 text-center">
+              <Receipt className="w-6 h-6 mx-auto mb-2 text-green-600" />
+              <p className="text-xs text-green-700 font-medium">Payments (Shift)</p>
+              <p className="text-xl font-bold text-green-900">{shiftMetrics.payments_received}</p>
+              <p className="text-xs text-green-600">₵{shiftMetrics.payments_amount?.toLocaleString()}</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200">
+            <CardContent className="p-4 text-center">
+              <Banknote className="w-6 h-6 mx-auto mb-2 text-emerald-600" />
+              <p className="text-xs text-emerald-700 font-medium">Cash</p>
+              <p className="text-xl font-bold text-emerald-900">₵{shiftMetrics.cash_collected?.toLocaleString() || '0'}</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+            <CardContent className="p-4 text-center">
+              <Smartphone className="w-6 h-6 mx-auto mb-2 text-purple-600" />
+              <p className="text-xs text-purple-700 font-medium">Mobile Money</p>
+              <p className="text-xl font-bold text-purple-900">₵{shiftMetrics.mobile_money_collected?.toLocaleString() || '0'}</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+            <CardContent className="p-4 text-center">
+              <CreditCard className="w-6 h-6 mx-auto mb-2 text-blue-600" />
+              <p className="text-xs text-blue-700 font-medium">Card</p>
+              <p className="text-xl font-bold text-blue-900">₵{shiftMetrics.card_payments?.toLocaleString() || '0'}</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-gradient-to-br from-teal-50 to-teal-100 border-teal-200">
+            <CardContent className="p-4 text-center">
+              <Shield className="w-6 h-6 mx-auto mb-2 text-teal-600" />
+              <p className="text-xs text-teal-700 font-medium">Insurance</p>
+              <p className="text-xl font-bold text-teal-900">₵{shiftMetrics.insurance_billed?.toLocaleString() || '0'}</p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Admin Financial Dashboard */}
+      {isAdmin && adminDashboard && (
+        <div className="space-y-4">
+          {/* Period Summary */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="bg-gradient-to-br from-sky-500 to-sky-600 text-white">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sky-100 text-sm">Today's Revenue</p>
+                    <p className="text-3xl font-bold">₵{adminDashboard.daily?.revenue?.toLocaleString() || '0'}</p>
+                    <p className="text-sky-200 text-sm mt-1">{adminDashboard.daily?.payments_count || 0} payments</p>
+                  </div>
+                  <Calendar className="w-10 h-10 opacity-50" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-emerald-100 text-sm">This Week</p>
+                    <p className="text-3xl font-bold">₵{adminDashboard.weekly?.revenue?.toLocaleString() || '0'}</p>
+                    <p className="text-emerald-200 text-sm mt-1">{adminDashboard.weekly?.invoices_count || 0} invoices</p>
+                  </div>
+                  <TrendingUp className="w-10 h-10 opacity-50" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-purple-100 text-sm">This Month</p>
+                    <p className="text-3xl font-bold">₵{adminDashboard.monthly?.revenue?.toLocaleString() || '0'}</p>
+                    <p className="text-purple-200 text-sm mt-1">{adminDashboard.monthly?.invoices_count || 0} invoices</p>
+                  </div>
+                  <BarChart3 className="w-10 h-10 opacity-50" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Payment Mode Distribution & Shifts */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg">Payment Methods (Monthly)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {Object.entries(adminDashboard.payment_modes || {}).map(([mode, amount]) => {
+                    const total = Object.values(adminDashboard.payment_modes || {}).reduce((a, b) => a + b, 0) || 1;
+                    const percentage = ((amount / total) * 100).toFixed(1);
+                    const icons = { cash: Banknote, mobile_money: Smartphone, card: CreditCard, insurance: Shield, bank_transfer: Building2 };
+                    const colors = { cash: 'emerald', mobile_money: 'purple', card: 'blue', insurance: 'teal', bank_transfer: 'slate' };
+                    const Icon = icons[mode] || Wallet;
+                    const color = colors[mode] || 'gray';
+                    return (
+                      <div key={mode} className="flex items-center gap-3">
+                        <Icon className={`w-5 h-5 text-${color}-500`} />
+                        <div className="flex-1">
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="capitalize">{mode.replace('_', ' ')}</span>
+                            <span className="font-semibold">₵{amount.toLocaleString()}</span>
+                          </div>
+                          <Progress value={parseFloat(percentage)} className="h-2" />
+                        </div>
+                        <span className="text-sm text-slate-500 w-12 text-right">{percentage}%</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg flex items-center justify-between">
+                  Shift Overview
+                  <Badge variant="outline">{adminDashboard.shifts?.active || 0} Active</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-3 bg-emerald-50 rounded-lg text-center">
+                      <Users className="w-5 h-5 mx-auto mb-1 text-emerald-600" />
+                      <p className="text-2xl font-bold text-emerald-700">{adminDashboard.shifts?.active || 0}</p>
+                      <p className="text-xs text-emerald-600">Active Shifts</p>
+                    </div>
+                    <div className="p-3 bg-blue-50 rounded-lg text-center">
+                      <CheckCircle className="w-5 h-5 mx-auto mb-1 text-blue-600" />
+                      <p className="text-2xl font-bold text-blue-700">{adminDashboard.shifts?.completed_today || 0}</p>
+                      <p className="text-xs text-blue-600">Completed Today</p>
+                    </div>
+                  </div>
+                  <Separator />
+                  <div className="p-3 bg-amber-50 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-amber-700 font-medium">Outstanding Balances</p>
+                        <p className="text-xl font-bold text-amber-800">₵{adminDashboard.outstanding?.total_outstanding?.toLocaleString() || '0'}</p>
+                      </div>
+                      <AlertCircle className="w-6 h-6 text-amber-500" />
+                    </div>
+                  </div>
+                  <div className="p-3 bg-teal-50 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-teal-700 font-medium">Pending Insurance Claims</p>
+                        <p className="text-xl font-bold text-teal-800">₵{adminDashboard.pending_insurance_claims?.toLocaleString() || '0'}</p>
+                      </div>
+                      <Shield className="w-6 h-6 text-teal-500" />
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )}
+
+      {/* Outstanding Balances (Persistent - Shows for all) */}
+      {outstanding && (outstanding.total_outstanding > 0 || outstanding.pending_insurance_value > 0) && (
+        <Card className="border-amber-200 bg-amber-50/30">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-amber-600" />
+              Outstanding Balances (Persistent)
+            </CardTitle>
+            <CardDescription>These balances persist until cleared - not affected by shift changes</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="p-3 bg-white rounded-lg border">
+                <p className="text-sm text-slate-500">Total Outstanding</p>
+                <p className="text-xl font-bold text-amber-600">₵{outstanding.total_outstanding?.toLocaleString() || '0'}</p>
+              </div>
+              <div className="p-3 bg-white rounded-lg border">
+                <p className="text-sm text-slate-500">Partially Paid</p>
+                <p className="text-xl font-bold text-orange-600">{outstanding.partially_paid_count || 0}</p>
+              </div>
+              <div className="p-3 bg-white rounded-lg border">
+                <p className="text-sm text-slate-500">Unpaid Invoices</p>
+                <p className="text-xl font-bold text-red-600">{outstanding.unpaid_count || 0}</p>
+              </div>
+              <div className="p-3 bg-white rounded-lg border">
+                <p className="text-sm text-slate-500">Pending Insurance</p>
+                <p className="text-xl font-bold text-teal-600">₵{outstanding.pending_insurance_value?.toLocaleString() || '0'}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Stats Cards (Shows for non-admin when no active shift, or simplified view) */}
+      {!isAdmin && !activeShift && stats && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
             <CardContent className="p-4">
