@@ -460,13 +460,52 @@ export default function VoiceDictation({
               <Textarea
                 value={correctedText || transcribedText}
                 onChange={(e) => setCorrectedText(e.target.value)}
-                rows={6}
+                rows={4}
                 className="bg-green-50 border-green-200"
               />
             </div>
             
+            {/* AI Expanded Text */}
+            {enableAiExpand && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="flex items-center gap-2 text-purple-700">
+                    <Sparkles className="w-4 h-4" />
+                    AI-Expanded Text
+                  </Label>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={handleAiExpand}
+                    disabled={isExpanding || (!transcribedText && !correctedText)}
+                    className="gap-2 border-purple-300 text-purple-700 hover:bg-purple-50"
+                  >
+                    {isExpanding ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="w-4 h-4" />
+                    )}
+                    {isExpanding ? 'Expanding...' : 'AI Expand'}
+                  </Button>
+                </div>
+                {expandedText ? (
+                  <Textarea
+                    value={expandedText}
+                    onChange={(e) => setExpandedText(e.target.value)}
+                    rows={6}
+                    className="bg-purple-50 border-purple-200"
+                  />
+                ) : (
+                  <p className="text-sm text-slate-500 bg-slate-50 rounded p-3">
+                    Click "AI Expand" to automatically structure and expand your dictation into a complete {noteType.replace(/_/g, ' ')}.
+                  </p>
+                )}
+              </div>
+            )}
+            
             {/* Original Text (if different) */}
-            {corrections.length > 0 && (
+            {corrections.length > 0 && !expandedText && (
               <div className="space-y-2">
                 <Label className="text-slate-500 flex items-center gap-2">
                   <AlertCircle className="w-4 h-4" />
@@ -475,7 +514,7 @@ export default function VoiceDictation({
                 <Textarea
                   value={transcribedText}
                   readOnly
-                  rows={3}
+                  rows={2}
                   className="bg-slate-50 text-slate-600"
                 />
               </div>
@@ -490,14 +529,31 @@ export default function VoiceDictation({
               {copied ? <Check className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />}
               {copied ? 'Copied!' : 'Copy'}
             </Button>
-            {corrections.length > 0 && (
+            {corrections.length > 0 && !expandedText && (
               <Button variant="outline" onClick={() => applyTranscription(true)}>
                 Use Original
               </Button>
             )}
-            <Button onClick={() => applyTranscription(false)} className="bg-purple-600 hover:bg-purple-700">
+            {expandedText && (
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setUseExpanded(false);
+                  applyTranscription(false);
+                }}
+              >
+                Use Corrected Only
+              </Button>
+            )}
+            <Button 
+              onClick={() => {
+                if (expandedText) setUseExpanded(true);
+                applyTranscription(false);
+              }} 
+              className="bg-purple-600 hover:bg-purple-700"
+            >
               <Check className="w-4 h-4 mr-2" />
-              {appendMode ? 'Append' : 'Insert'} Text
+              {expandedText ? 'Insert Expanded' : (appendMode ? 'Append' : 'Insert')} Text
             </Button>
           </DialogFooter>
         </DialogContent>
