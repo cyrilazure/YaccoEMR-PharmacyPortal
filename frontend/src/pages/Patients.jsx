@@ -332,14 +332,37 @@ export default function Patients() {
                             <SelectValue placeholder="Select provider" />
                           </SelectTrigger>
                           <SelectContent>
+                            {/* Government Insurance */}
                             <SelectItem value="NHIS">NHIS (National Health Insurance)</SelectItem>
-                            <SelectItem value="Acacia Health">Acacia Health</SelectItem>
+                            
+                            {/* Private Health Insurance - Major Providers */}
+                            <SelectItem value="Acacia Health">Acacia Health Insurance</SelectItem>
+                            <SelectItem value="Apex Health Insurance">Apex Health Insurance</SelectItem>
+                            <SelectItem value="Cosmopolitan Health Insurance">Cosmopolitan Health Insurance</SelectItem>
+                            <SelectItem value="Enterprise Life">Enterprise Life Assurance</SelectItem>
                             <SelectItem value="Glico Healthcare">Glico Healthcare</SelectItem>
-                            <SelectItem value="Nationwide Medical">Nationwide Medical</SelectItem>
-                            <SelectItem value="Star Assurance">Star Assurance</SelectItem>
-                            <SelectItem value="Enterprise Life">Enterprise Life</SelectItem>
-                            <SelectItem value="Metropolitan Insurance">Metropolitan Insurance</SelectItem>
-                            <SelectItem value="Other">Other</SelectItem>
+                            <SelectItem value="Metropolitan Insurance">Metropolitan Health Insurance</SelectItem>
+                            <SelectItem value="Nationwide Medical">Nationwide Medical Insurance</SelectItem>
+                            <SelectItem value="Phoenix Health Insurance">Phoenix Health Insurance</SelectItem>
+                            <SelectItem value="Premier Health Insurance">Premier Health Insurance</SelectItem>
+                            <SelectItem value="Star Assurance">Star Assurance Health</SelectItem>
+                            <SelectItem value="Vanguard Assurance">Vanguard Assurance</SelectItem>
+                            
+                            {/* Corporate/Group Plans */}
+                            <SelectItem value="SIC Insurance">SIC Insurance Company</SelectItem>
+                            <SelectItem value="Ghana Union Assurance">Ghana Union Assurance</SelectItem>
+                            <SelectItem value="Activa International">Activa International Insurance</SelectItem>
+                            <SelectItem value="Donewell Insurance">Donewell Insurance</SelectItem>
+                            <SelectItem value="Hollard Insurance">Hollard Insurance Ghana</SelectItem>
+                            <SelectItem value="Old Mutual">Old Mutual Ghana</SelectItem>
+                            <SelectItem value="Prudential Life">Prudential Life Insurance Ghana</SelectItem>
+                            
+                            {/* HMO / Managed Care */}
+                            <SelectItem value="AAR Health Services">AAR Health Services</SelectItem>
+                            <SelectItem value="Medivac Healthcare">Medivac Healthcare</SelectItem>
+                            
+                            {/* Other */}
+                            <SelectItem value="Other">Other Insurance Provider</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
