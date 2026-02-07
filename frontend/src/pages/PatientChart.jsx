@@ -37,8 +37,9 @@ import {
   ArrowLeft, User, Heart, AlertTriangle, Pill, FileText, ClipboardList,
   Plus, Activity, Thermometer, Droplets, Wind, Scale, Ruler,
   Sparkles, Check, Loader2, Calendar, FlaskConical, TrendingUp, TrendingDown, Scan, Send,
-  Building2, Phone, MapPin, Clock, Shield, Truck, Search, ExternalLink, CheckCircle, XCircle, Package, X
+  Building2, Phone, MapPin, Clock, Shield, Truck, Search, ExternalLink, CheckCircle, XCircle, Package, X, Mic
 } from 'lucide-react';
+import VoiceDictation from '@/components/VoiceDictation';
 
 export default function PatientChart() {
   const { id } = useParams();
