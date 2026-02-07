@@ -169,12 +169,14 @@ export default function NursingSupervisorDashboard() {
       
       // Fetch bed management data
       try {
-        const [wardsRes, censusRes] = await Promise.all([
+        const [wardsRes, censusRes, patientsRes] = await Promise.all([
           bedManagementAPI.listWards(),
-          bedManagementAPI.getDashboard()
+          bedManagementAPI.getDashboard(),
+          patientAPI.getAll({ limit: 100 })
         ]);
         setWards(wardsRes.data.wards || []);
         setBedCensus(censusRes.data || { summary: {}, wards: [] });
+        setAllPatients(patientsRes.data || []);
       } catch (bedErr) {
         console.error('Bed data fetch error:', bedErr);
       }
