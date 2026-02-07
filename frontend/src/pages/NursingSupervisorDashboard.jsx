@@ -750,9 +750,6 @@ export default function NursingSupervisorDashboard() {
           </div>
         </TabsContent>
 
-          </Card>
-        </TabsContent>
-
         {/* Handoff Notes Tab */}
         <TabsContent value="handoff" className="mt-6">
           <Card>
