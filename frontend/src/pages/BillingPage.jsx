@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
-import { billingAPI, patientAPI } from '@/lib/api';
+import { billingAPI, patientAPI, billingShiftsAPI } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import api from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,11 +15,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
+import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import {
   CreditCard, DollarSign, FileText, Receipt, Plus, Send, Eye,
   TrendingUp, Clock, CheckCircle, XCircle, AlertCircle, Building2,
-  Shield, Search, IdCard, Heart, Printer
+  Shield, Search, IdCard, Heart, Printer, LogIn, LogOut, Timer,
+  Wallet, Smartphone, Banknote, BarChart3, Users, RefreshCw, Loader2,
+  Calendar, ArrowUp, ArrowDown, Minus
 } from 'lucide-react';
 
 export default function BillingPage() {
@@ -33,6 +36,27 @@ export default function BillingPage() {
   const [paystackConfig, setPaystackConfig] = useState(null);
   const [hospitalBankAccount, setHospitalBankAccount] = useState(null);
   const [loading, setLoading] = useState(true);
+  
+  // Shift Management State
+  const [activeShift, setActiveShift] = useState(null);
+  const [shiftMetrics, setShiftMetrics] = useState(null);
+  const [outstanding, setOutstanding] = useState(null);
+  const [recentPayments, setRecentPayments] = useState([]);
+  const [clockInOpen, setClockInOpen] = useState(false);
+  const [clockOutOpen, setClockOutOpen] = useState(false);
+  const [shiftType, setShiftType] = useState('day');
+  const [clockingIn, setClockingIn] = useState(false);
+  const [clockingOut, setClockingOut] = useState(false);
+  const [closingNotes, setClosingNotes] = useState('');
+  const [actualCash, setActualCash] = useState('');
+  
+  // Admin Dashboard State
+  const [adminDashboard, setAdminDashboard] = useState(null);
+  const [allShifts, setAllShifts] = useState([]);
+  const [loadingAdminData, setLoadingAdminData] = useState(false);
+  
+  // Check if user is admin
+  const isAdmin = ['hospital_admin', 'finance_manager', 'admin'].includes(user?.role);
   const [activeTab, setActiveTab] = useState('invoices');
   
   // Invoice creation state
