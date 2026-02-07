@@ -55,6 +55,9 @@ export default function BillingPage() {
   const [allShifts, setAllShifts] = useState([]);
   const [loadingAdminData, setLoadingAdminData] = useState(false);
   
+  // Hospital Info for receipts
+  const [hospitalInfo, setHospitalInfo] = useState(null);
+  
   // Check if user is admin
   const isAdmin = ['hospital_admin', 'hospital_it_admin', 'finance_manager', 'admin'].includes(user?.role);
   const [activeTab, setActiveTab] = useState('invoices');
