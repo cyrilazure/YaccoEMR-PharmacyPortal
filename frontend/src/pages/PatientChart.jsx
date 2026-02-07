@@ -1436,20 +1436,68 @@ export default function PatientChart() {
                         <Input value={newNote.chief_complaint} onChange={(e) => setNewNote({ ...newNote, chief_complaint: e.target.value })} data-testid="note-cc" />
                       </div>
                       <div className="space-y-2">
-                        <Label>Subjective</Label>
-                        <Textarea value={newNote.subjective} onChange={(e) => setNewNote({ ...newNote, subjective: e.target.value })} rows={3} data-testid="note-subjective" />
+                        <div className="flex items-center justify-between">
+                          <Label>Subjective</Label>
+                          <VoiceDictation
+                            onTranscriptionComplete={(text) => setNewNote({ ...newNote, subjective: text })}
+                            context="clinical"
+                            targetField="subjective"
+                            appendMode={!!newNote.subjective}
+                            currentValue={newNote.subjective}
+                            buttonVariant="ghost"
+                            buttonSize="sm"
+                            showLabel={false}
+                          />
+                        </div>
+                        <Textarea value={newNote.subjective} onChange={(e) => setNewNote({ ...newNote, subjective: e.target.value })} rows={3} data-testid="note-subjective" placeholder="Patient's symptoms, history... or use voice dictation" />
                       </div>
                       <div className="space-y-2">
-                        <Label>Objective</Label>
-                        <Textarea value={newNote.objective} onChange={(e) => setNewNote({ ...newNote, objective: e.target.value })} rows={3} data-testid="note-objective" />
+                        <div className="flex items-center justify-between">
+                          <Label>Objective</Label>
+                          <VoiceDictation
+                            onTranscriptionComplete={(text) => setNewNote({ ...newNote, objective: text })}
+                            context="clinical"
+                            targetField="objective"
+                            appendMode={!!newNote.objective}
+                            currentValue={newNote.objective}
+                            buttonVariant="ghost"
+                            buttonSize="sm"
+                            showLabel={false}
+                          />
+                        </div>
+                        <Textarea value={newNote.objective} onChange={(e) => setNewNote({ ...newNote, objective: e.target.value })} rows={3} data-testid="note-objective" placeholder="Physical exam findings... or use voice dictation" />
                       </div>
                       <div className="space-y-2">
-                        <Label>Assessment</Label>
-                        <Textarea value={newNote.assessment} onChange={(e) => setNewNote({ ...newNote, assessment: e.target.value })} rows={3} data-testid="note-assessment" />
+                        <div className="flex items-center justify-between">
+                          <Label>Assessment</Label>
+                          <VoiceDictation
+                            onTranscriptionComplete={(text) => setNewNote({ ...newNote, assessment: text })}
+                            context="clinical"
+                            targetField="assessment"
+                            appendMode={!!newNote.assessment}
+                            currentValue={newNote.assessment}
+                            buttonVariant="ghost"
+                            buttonSize="sm"
+                            showLabel={false}
+                          />
+                        </div>
+                        <Textarea value={newNote.assessment} onChange={(e) => setNewNote({ ...newNote, assessment: e.target.value })} rows={3} data-testid="note-assessment" placeholder="Diagnosis, differential... or use voice dictation" />
                       </div>
                       <div className="space-y-2">
-                        <Label>Plan</Label>
-                        <Textarea value={newNote.plan} onChange={(e) => setNewNote({ ...newNote, plan: e.target.value })} rows={3} data-testid="note-plan" />
+                        <div className="flex items-center justify-between">
+                          <Label>Plan</Label>
+                          <VoiceDictation
+                            onTranscriptionComplete={(text) => setNewNote({ ...newNote, plan: text })}
+                            context="clinical"
+                            targetField="plan"
+                            appendMode={!!newNote.plan}
+                            currentValue={newNote.plan}
+                            buttonVariant="ghost"
+                            buttonSize="sm"
+                            showLabel={false}
+                          />
+                        </div>
+                        <Textarea value={newNote.plan} onChange={(e) => setNewNote({ ...newNote, plan: e.target.value })} rows={3} data-testid="note-plan" placeholder="Treatment plan... or use voice dictation" />
                       </div>
                       {newNote.content && (
                         <div className="space-y-2">
