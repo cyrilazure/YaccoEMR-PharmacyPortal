@@ -621,6 +621,8 @@ export default function NursingSupervisorDashboard() {
                 )}
               </div>
             </CardContent>
+          </Card>
+        </TabsContent>
 
         {/* Bed Management Tab */}
         <TabsContent value="beds" className="mt-6">
