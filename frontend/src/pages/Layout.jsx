@@ -155,28 +155,28 @@ const navItems = [
     to: '/patients', 
     icon: Users, 
     label: 'Patients', 
-    roles: ['physician', 'nurse', 'scheduler', 'hospital_admin', 'records_officer'],
+    roles: ['physician', 'nurse', 'nursing_supervisor', 'floor_supervisor', 'scheduler', 'hospital_admin', 'records_officer'],
     color: 'text-sky-500'
   },
   { 
     to: '/appointments', 
     icon: Calendar, 
     label: 'Appointments', 
-    roles: ['physician', 'nurse', 'scheduler', 'hospital_admin'],
+    roles: ['physician', 'nurse', 'nursing_supervisor', 'floor_supervisor', 'scheduler', 'hospital_admin'],
     color: 'text-violet-500'
   },
   { 
     to: '/orders', 
     icon: ClipboardList, 
     label: 'Orders', 
-    roles: ['physician', 'nurse', 'hospital_admin'],
+    roles: ['physician', 'nurse', 'nursing_supervisor', 'floor_supervisor', 'hospital_admin'],
     color: 'text-orange-500'
   },
   { 
     to: '/telehealth', 
     icon: Video, 
     label: 'Telehealth', 
-    roles: ['physician', 'nurse', 'hospital_admin'],
+    roles: ['physician', 'nurse', 'nursing_supervisor', 'floor_supervisor', 'hospital_admin'],
     color: 'text-pink-500'
   },
   { 
