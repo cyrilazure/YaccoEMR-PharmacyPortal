@@ -482,9 +482,9 @@ Use professional nursing terminology. Be clear and thorough."""
             if context:
                 system_prompt += f"\n\nAdditional context: {context}"
             
-            chat = OpenAIChat(api_key=api_key)
+            chat = LlmChat(api_key=api_key)
             
-            response = await chat.chat(
+            response = await chat.send_message(
                 model="gpt-4o",
                 messages=[
                     {"role": "system", "content": system_prompt},
