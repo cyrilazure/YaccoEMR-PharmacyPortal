@@ -325,6 +325,7 @@ export default function IRStatusBoard({
                 <ProcedureRoomCard 
                   procedure={proc} 
                   latestVitals={proc ? vitalsMap[proc.id] : null}
+                  onSelect={onSelectProcedure}
                 />
               </div>
             ))}
