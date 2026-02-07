@@ -23,6 +23,7 @@ import {
 
 export default function BillingPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [invoices, setInvoices] = useState([]);
   const [claims, setClaims] = useState([]);
   const [stats, setStats] = useState(null);
