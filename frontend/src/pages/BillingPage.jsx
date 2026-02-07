@@ -62,6 +62,11 @@ export default function BillingPage() {
   // Insurance Details Dialog
   const [viewInsuranceOpen, setViewInsuranceOpen] = useState(false);
   const [selectedInsurancePatient, setSelectedInsurancePatient] = useState(null);
+  
+  // Print Receipt State
+  const [printReceiptOpen, setPrintReceiptOpen] = useState(false);
+  const [receiptInvoice, setReceiptInvoice] = useState(null);
+  const receiptRef = useRef(null);
 
   useEffect(() => {
     loadData();
