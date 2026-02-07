@@ -58,6 +58,13 @@ class RadiologyOrderCreate(BaseModel):
     scheduled_date: Optional[str] = None
 
 
+class ReportStatus(str, Enum):
+    DRAFT = "draft"
+    PENDING_REVIEW = "pending_review"
+    FINALIZED = "finalized"
+    ADDENDUM = "addendum"
+
+
 class RadiologyResultCreate(BaseModel):
     order_id: str
     findings: str
@@ -67,6 +74,42 @@ class RadiologyResultCreate(BaseModel):
     images_available: bool = True
     pacs_link: Optional[str] = None
     dicom_study_uid: Optional[str] = None
+
+
+class StructuredReportCreate(BaseModel):
+    """Structured radiology report with sections"""
+    order_id: str
+    # Study Info
+    study_quality: Optional[str] = "diagnostic"  # diagnostic, limited, non-diagnostic
+    comparison_studies: Optional[str] = None
+    technique: Optional[str] = None
+    # Clinical
+    clinical_indication: Optional[str] = None
+    clinical_history: Optional[str] = None
+    # Findings (can be structured by body system/region)
+    findings_sections: Optional[List[dict]] = None  # [{section: "Chest", findings: "..."}]
+    findings_text: str  # Plain text findings
+    # Impression
+    impression: str
+    differential_diagnosis: Optional[List[str]] = None
+    # Recommendations
+    recommendations: Optional[str] = None
+    follow_up: Optional[str] = None
+    # Flags
+    critical_finding: bool = False
+    critical_finding_details: Optional[str] = None
+    # Status
+    status: ReportStatus = ReportStatus.DRAFT
+
+
+class RadiologyNoteCreate(BaseModel):
+    """Radiologist notes (addendums, procedure notes, etc.)"""
+    order_id: Optional[str] = None
+    report_id: Optional[str] = None
+    patient_id: str
+    note_type: str  # addendum, procedure_note, progress_note, communication
+    content: str
+    urgency: Optional[str] = "routine"  # routine, urgent, critical
 
 
 class RadiologyOrderUpdate(BaseModel):
