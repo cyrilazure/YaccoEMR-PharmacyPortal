@@ -105,7 +105,7 @@ const navItems = [
     to: '/billing', 
     icon: CreditCard, 
     label: 'Billing Portal', 
-    roles: ['biller', 'senior_biller', 'cashier', 'hospital_admin', 'hospital_it_admin', 'finance_manager'],
+    roles: ['biller', 'senior_biller', 'cashier', 'hospital_admin', 'finance_manager'],
     description: 'Financial administration',
     color: 'text-green-500'
   },
