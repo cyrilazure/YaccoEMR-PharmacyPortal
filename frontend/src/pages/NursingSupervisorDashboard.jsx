@@ -166,6 +166,18 @@ export default function NursingSupervisorDashboard() {
       setCurrentShifts(shiftsRes.data.active_shifts || []);
       setUnassignedPatients(unassignedRes.data.patients || []);
       setHandoffNotes(handoffRes.data.handoff_notes || []);
+      
+      // Fetch bed management data
+      try {
+        const [wardsRes, censusRes] = await Promise.all([
+          bedManagementAPI.listWards(),
+          bedManagementAPI.getDashboard()
+        ]);
+        setWards(wardsRes.data.wards || []);
+        setBedCensus(censusRes.data || { summary: {}, wards: [] });
+      } catch (bedErr) {
+        console.error('Bed data fetch error:', bedErr);
+      }
     } catch (err) {
       console.error('Dashboard fetch error:', err);
       toast.error('Failed to load dashboard');
