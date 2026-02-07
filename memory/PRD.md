@@ -555,29 +555,40 @@ REACT_APP_BACKEND_URL=<url>
 ```
 /app/
 ├── backend/
-│   ├── server.py                   # Main FastAPI app
-│   ├── nhis_claims_module.py       # NHIS pharmacy claims
-│   ├── supply_chain_module.py      # Inventory management
-│   ├── notifications_module.py     # Real-time notifications
-│   ├── ambulance_module.py         # Emergency transport
-│   ├── pharmacy_network_module.py  # National pharmacy database
-│   ├── fda_module.py               # Ghana FDA drug registry (mock)
-│   ├── prescription_module.py      # E-prescription routing
-│   ├── billing_module.py           # Billing & finance
-│   ├── bed_management_module.py    # Ward management
-│   ├── radiology_module.py         # Imaging module
+│   ├── server.py                          # Main FastAPI app
+│   ├── nhis_claims_module.py              # NHIS pharmacy claims
+│   ├── supply_chain_module.py             # Inventory management
+│   ├── notifications_module.py            # Real-time notifications
+│   ├── ambulance_module.py                # Emergency transport
+│   ├── pharmacy_network_module.py         # National pharmacy database
+│   ├── fda_module.py                      # Ghana FDA drug registry (mock)
+│   ├── prescription_module.py             # E-prescription routing
+│   ├── billing_module.py                  # Billing & finance
+│   ├── bed_management_module.py           # Ward management
+│   ├── radiology_module.py                # Imaging module
+│   ├── voice_dictation_module.py          # Voice transcription & AI expansion
+│   ├── interventional_radiology_module.py # IR procedures & sedation monitoring
+│   ├── pacs_integration_module.py         # DICOM/PACS integration (demo mode)
 │   └── ...
 ├── frontend/
 │   └── src/
 │       ├── pages/
-│       │   ├── NHISClaimsPortal.jsx    # NHIS claims UI
-│       │   ├── SupplyChainPortal.jsx   # Inventory UI
-│       │   ├── AmbulancePortal.jsx     # Emergency transport UI
-│       │   ├── PharmacyDirectory.jsx   # Pharmacy search
-│       │   ├── PatientChart.jsx        # Patient chart with Pharmacy tab
+│       │   ├── NHISClaimsPortal.jsx       # NHIS claims UI
+│       │   ├── SupplyChainPortal.jsx      # Inventory UI
+│       │   ├── AmbulancePortal.jsx        # Emergency transport UI
+│       │   ├── PharmacyDirectory.jsx      # Pharmacy search
+│       │   ├── PatientChart.jsx           # Patient chart with Pharmacy tab
+│       │   ├── InterventionalRadiologyPortal.jsx  # IR Portal
+│       │   ├── VoiceDictationAnalytics.jsx        # Voice dictation stats
+│       │   ├── RadiologyPortal.jsx                # Radiology worklist
+│       │   └── ...
+│       ├── components/
+│       │   ├── VoiceDictation.jsx         # Voice dictation component
+│       │   ├── DicomViewer.jsx            # DICOM viewer (OHIF/MedDream/Weasis)
+│       │   ├── IRStatusBoard.jsx          # Real-time IR suite status
 │       │   └── ...
 │       └── lib/
-│           └── api.js                  # API client
+│           └── api.js                     # API client
 └── memory/
-    └── PRD.md                          # This file
+    └── PRD.md                             # This file
 ```
