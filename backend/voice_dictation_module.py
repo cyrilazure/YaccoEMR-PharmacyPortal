@@ -482,6 +482,8 @@ Use professional nursing terminology. Be clear and thorough."""
             if context:
                 system_prompt += f"\n\nAdditional context: {context}"
             
+            from emergentintegrations.llm.openai import UserMessage
+            
             session_id = str(uuid.uuid4())
             chat = LlmChat(
                 api_key=api_key,
@@ -489,12 +491,11 @@ Use professional nursing terminology. Be clear and thorough."""
                 system_message=system_prompt
             )
             
-            # Set model parameters
-            chat = chat.with_model("gpt-4o").with_params(temperature=0.3, max_tokens=2000)
+            # Set model parameters (provider, model)
+            chat = chat.with_model("openai", "gpt-4o").with_params(temperature=0.3, max_tokens=2000)
             
-            response = await chat.send_message(
-                message=f"Expand this brief dictation into a complete {note_type.replace('_', ' ')}:\n\n{text}"
-            )
+            user_msg = UserMessage(text=f"Expand this brief dictation into a complete {note_type.replace('_', ' ')}:\n\n{text}")
+            response = await chat.send_message(user_message=user_msg)
             
             expanded_text = response
             
