@@ -655,7 +655,7 @@ export default function PharmacyPortal() {
           </Card>
         </TabsContent>
 
-        {/* ==================== NHIS CLAIMS TAB ==================== */}
+        {/* ==================== INSURANCE CLAIMS TAB ==================== */}
         <TabsContent value="nhis" className="mt-4 space-y-4">
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <Card>
@@ -696,13 +696,13 @@ export default function PharmacyPortal() {
           </div>
 
           <div className="flex gap-4">
-            <Button onClick={() => setCreateClaimOpen(true)} className="gap-2 bg-green-600 hover:bg-green-700" data-testid="new-claim-btn"><Plus className="w-4 h-4" /> New Claim</Button>
+            <Button onClick={() => setCreateClaimOpen(true)} className="gap-2 bg-green-600 hover:bg-green-700" data-testid="new-claim-btn"><Plus className="w-4 h-4" /> New Insurance Claim</Button>
           </div>
 
           <Card>
             <CardHeader>
-              <CardTitle>Pharmacy Claims</CardTitle>
-              <CardDescription>NHIS claim submissions</CardDescription>
+              <CardTitle>Pharmacy Insurance Claims</CardTitle>
+              <CardDescription>NHIS & Private Insurance claim submissions</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               {nhisClaims.length === 0 ? (
@@ -717,7 +717,7 @@ export default function PharmacyPortal() {
                     <TableRow>
                       <TableHead>Claim #</TableHead>
                       <TableHead>Patient</TableHead>
-                      <TableHead>NHIS ID</TableHead>
+                      <TableHead>Insurance ID</TableHead>
                       <TableHead>Items</TableHead>
                       <TableHead>Amount</TableHead>
                       <TableHead>Status</TableHead>
