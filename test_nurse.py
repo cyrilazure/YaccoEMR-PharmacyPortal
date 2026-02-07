@@ -26,7 +26,7 @@ def test_endpoint(method, url, data=None, headers=None):
         return None
 
 def main():
-    base_url = "https://xrayportal-1.preview.emergentagent.com/api"
+    base_url = "https://carecloud-3.preview.emergentagent.com/api"
     
     print("🧪 Testing Nurse Shift Management")
     print("=" * 60)
