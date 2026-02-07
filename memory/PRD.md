@@ -361,8 +361,8 @@ GET  /api/billing-shifts/audit-logs      - Billing audit logs
 - [ ] Complete PatientChart refactoring (remaining tabs: Overview, Notes, Orders, Imaging, Pharmacy)
 - [x] ~~Notifications for prescription updates~~ ✅ DONE
 - [x] ~~Stock alerts for pharmacists~~ ✅ DONE
+- [x] ~~Advanced Admin Dashboard Widgets (graphs/charts for revenue trends)~~ ✅ DONE (Feb 7, 2026)
 - [ ] Audit & Compliance Logging UI (view detailed audit logs for financial actions)
-- [ ] Advanced Admin Dashboard Widgets (graphs/charts for daily, weekly, monthly revenue trends)
 
 ### P2 (Medium Priority)
 - [ ] Integration with other payment gateways (Flutterwave, Hubtel)
