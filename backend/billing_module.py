@@ -258,12 +258,23 @@ def setup_routes(db, get_current_user):
             "created_by": current_user["id"],
             "paid_at": None,
             "organization_id": current_user.get("organization_id"),
+            "hospital_id": current_user.get("hospital_id"),
             "insurance_id": invoice_data.insurance_id,
             "payments": []
         }
         
         await db.invoices.insert_one(invoice_doc)
         invoice_doc.pop("_id", None)
+        
+        # Update biller's active shift if exists
+        from billing_shifts_module import update_shift_on_invoice, log_billing_action
+        await update_shift_on_invoice(db, current_user["id"], total, current_user.get("hospital_id"))
+        await log_billing_action(db, "invoice_created", current_user, {
+            "invoice_id": invoice_doc["id"],
+            "invoice_number": invoice_number,
+            "amount": total,
+            "patient_name": invoice_data.patient_name
+        })
         
         return {
             "message": "Invoice created",
