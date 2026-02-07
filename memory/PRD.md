@@ -182,24 +182,86 @@ Build a comprehensive Electronic Medical Records (EMR) system similar to Epic EM
   - 56 common medical terms with variants (e.g., "new monia" → "pneumonia")
   - 32 medical abbreviations supported
   - Context-aware correction (radiology, nursing, clinical contexts)
+- [x] **AI-Powered Report Auto-Generation**:
+  - GPT-4o expands brief dictations into structured clinical notes
+  - Supports: SOAP notes, radiology reports, nursing assessments, progress notes
+  - "AI Expand" button in transcription result dialog
 - [x] **Integrated Roles**:
   - **Radiologists**: Findings, Impression fields in structured reports; Note content
   - **Physicians**: SOAP notes (Subjective, Objective, Assessment, Plan) in PatientChart
   - **Nurses**: Handoff notes during clock-out
   - **Nurse Supervisors**: Assignment notes
-  - **Floor Supervisors**: Task notes
+  - **Floor Supervisors**: Task notes (via shared NursingSupervisor dashboard)
   - **Hospital Admins**: Documentation notes
-- [x] **Features**:
-  - Dictate button with microphone icon next to text fields
-  - Settings gear for configuring transcription method
-  - Auto-populate or append to existing text
-  - Review and edit transcription before inserting
-  - Copy to clipboard option
-  - Shows corrections made with original vs corrected text
+- [x] **Voice Dictation Analytics Dashboard**:
+  - Usage by role, context, and user
+  - Daily usage trends
+  - Top users by transcription count
+  - Total duration and corrections statistics
 - [x] **API Endpoints**:
   - `POST /api/voice-dictation/transcribe` - Audio transcription with Whisper
   - `POST /api/voice-dictation/correct-terminology` - Apply medical term corrections
   - `GET /api/voice-dictation/medical-terms` - List supported medical terms
+  - `POST /api/voice-dictation/ai-expand` - AI-powered note expansion
+  - `GET /api/voice-dictation/analytics` - Usage analytics (admin only)
+  - `GET /api/voice-dictation/audit-logs` - Detailed audit logs (admin only)
+
+### PACS/DICOM Integration (February 7, 2026) - NEW
+- [x] **dcm4chee Archive Integration**:
+  - WADO-RS: Web Access to DICOM Objects (study retrieval)
+  - QIDO-RS: Query based on ID for DICOM Objects (study search)
+  - Demo mode when PACS not configured
+- [x] **DICOM Viewer Integration**:
+  - Support for MedDream, OHIF, and Weasis viewers
+  - Dynamic viewer URL generation with study UID
+  - Audit logging for viewer access
+- [x] **HL7 Workflow Support**:
+  - ADT: Patient admission, registration, updates
+  - ORM: Imaging order messages
+  - ORU: Result notification processing
+- [x] **Modality Worklist (MWL)**:
+  - Scheduled procedure list for modalities
+  - Integration with radiology order scheduling
+- [x] **Configuration**:
+  - Environment variables: PACS_HOST, PACS_PORT, PACS_AE_TITLE, WADO_URL, DICOM_VIEWER_URL
+  - Status check endpoint for connectivity verification
+
+### Interventional Radiology Module (February 7, 2026) - NEW
+- [x] **Procedure Management**:
+  - 14 procedure types: Angiography, Angioplasty, Biopsy, Drainage, Embolization, Ablation, etc.
+  - Status tracking: Scheduled → Pre-procedure → In Progress → Recovery → Completed
+  - Case number generation (IR-YYYYMMDD-XXXXXX)
+- [x] **Pre-Procedure Assessment**:
+  - Allergy review
+  - Medication review (anticoagulants)
+  - Lab review (INR, Platelets, Creatinine, eGFR)
+  - Consent documentation
+  - NPO status tracking
+  - IV access documentation
+- [x] **Intra-Procedure Documentation**:
+  - Access site and method
+  - Anesthesia/sedation type
+  - Contrast usage (type, volume)
+  - Fluoroscopy time and radiation dose
+  - Devices used
+  - Findings and interventions performed
+  - Complications tracking
+  - Specimen collection
+- [x] **Post-Procedure Documentation**:
+  - Recovery monitoring
+  - Access site status (hemostasis, closure device)
+  - Vital signs stability
+  - Discharge criteria assessment
+  - Follow-up scheduling
+- [x] **Sedation Monitoring**:
+  - Real-time vital signs recording (HR, BP, RR, SpO2)
+  - Sedation level tracking
+  - Medication administration logging
+- [x] **IR Dashboard**:
+  - Today's schedule
+  - Procedures in progress
+  - Patients in recovery
+  - Status counts by category
 
 ### Radiologist Portal & Radiology Workflow (February 7, 2026) - NEW
 - [x] **Radiologist Workstation Dashboard** (`/radiology`):
