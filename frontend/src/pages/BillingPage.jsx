@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { billingAPI, patientAPI } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
