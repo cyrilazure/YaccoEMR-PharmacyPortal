@@ -131,9 +131,10 @@ def create_ambulance_endpoints(db, get_current_user):
         user: dict = Depends(get_current_user)
     ):
         """Register new ambulance vehicle"""
-        allowed_roles = ["hospital_admin", "hospital_it_admin", "facility_admin", "super_admin"]
+        # Nursing supervisors can register/manage ambulance vehicles for operational purposes
+        allowed_roles = ["hospital_admin", "hospital_it_admin", "facility_admin", "super_admin", "nursing_supervisor", "floor_supervisor"]
         if user.get("role") not in allowed_roles:
-            raise HTTPException(status_code=403, detail="Admin access required")
+            raise HTTPException(status_code=403, detail="Access denied. Nursing supervisors and admins can register vehicles.")
         
         vehicle_id = str(uuid.uuid4())
         vehicle_doc = {
