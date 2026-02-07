@@ -1846,8 +1846,18 @@ export default function BillingPage() {
               <div className="overflow-y-auto flex-1 max-h-[60vh] pr-2">
                 <div ref={receiptRef} className="border rounded-lg p-4 bg-white">
                   <div className="receipt">
-                    {/* Header - Dynamic Hospital Info */}
+                    {/* Header - Dynamic Hospital Info with Logo */}
                     <div className="header text-center border-b-2 border-dashed pb-4 mb-4">
+                      {hospitalInfo?.logo_url && (
+                        <div className="mb-2">
+                          <img 
+                            src={hospitalInfo.logo_url} 
+                            alt={hospitalInfo?.name || 'Hospital Logo'}
+                            className="h-12 w-auto mx-auto object-contain"
+                            onError={(e) => { e.target.style.display = 'none'; }}
+                          />
+                        </div>
+                      )}
                       <div className="hospital-name text-lg font-bold uppercase">
                         {hospitalInfo?.name || user?.hospital_name || 'HOSPITAL'}
                       </div>
