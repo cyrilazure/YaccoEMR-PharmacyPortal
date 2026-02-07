@@ -305,6 +305,7 @@ GET  /api/billing-shifts/audit-logs      - Billing audit logs
 - [x] **Shift Clock-In/Out**: Billers clock in to track shift-specific collections
 - [x] **Shift-Scoped KPIs**: Invoices generated, payments received, cash/MoMo/card/insurance breakdown
 - [x] **Admin Financial Dashboard**: Daily/Weekly/Monthly revenue, payment mode distribution
+- [x] **Revenue Trend Charts**: Area chart for weekly revenue, Pie chart for payment distribution, Bar chart for daily transactions (Feb 7)
 - [x] **Outstanding Balances (Persistent)**: Unpaid invoices, pending insurance - NOT reset with shifts
 - [x] **Shift Reconciliation UI**: Admins can reconcile shifts with actual cash verification
 - [x] **Shift Flagging**: Flag shifts with discrepancies for investigation
