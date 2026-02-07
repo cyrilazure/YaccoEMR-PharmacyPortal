@@ -752,13 +752,31 @@ export const radiologyAPI = {
   // Orders
   createOrder: (data) => api.post('/radiology/orders/create', data),
   getQueue: (params) => api.get('/radiology/orders/queue', { params }),
+  getWorklist: (params) => api.get('/radiology/worklist', { params }),
   getPatientOrders: (patientId) => api.get(`/radiology/orders/patient/${patientId}`),
   updateOrder: (orderId, data) => api.put(`/radiology/orders/${orderId}`, data),
+  assignOrder: (orderId, radiologistId) => api.post(`/radiology/orders/${orderId}/assign`, null, { params: { radiologist_id: radiologistId } }),
+  getOrderTimeline: (orderId) => api.get(`/radiology/orders/${orderId}/timeline`),
   
-  // Results
+  // Dashboard
+  getDashboard: () => api.get('/radiology/dashboard/radiologist'),
+  
+  // Legacy Results
   createResult: (data) => api.post('/radiology/results/create', data),
   getPatientResults: (patientId) => api.get(`/radiology/results/patient/${patientId}`),
   getResult: (resultId) => api.get(`/radiology/results/${resultId}`),
+  
+  // Structured Reports
+  createReport: (data) => api.post('/radiology/reports/create', data),
+  updateReport: (reportId, data) => api.put(`/radiology/reports/${reportId}`, data),
+  finalizeReport: (reportId) => api.post(`/radiology/reports/${reportId}/finalize`),
+  getReport: (reportId) => api.get(`/radiology/reports/${reportId}`),
+  getPatientReports: (patientId) => api.get(`/radiology/reports/patient/${patientId}`),
+  communicateCritical: (reportId, data) => api.post(`/radiology/reports/${reportId}/communicate-critical`, null, { params: data }),
+  
+  // Radiologist Notes
+  createNote: (data) => api.post('/radiology/notes/create', data),
+  getPatientNotes: (patientId) => api.get(`/radiology/notes/patient/${patientId}`),
   
   // Reference data
   getModalities: () => api.get('/radiology/modalities'),
