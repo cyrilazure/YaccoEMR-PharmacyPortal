@@ -329,7 +329,7 @@ def create_billing_shifts_router(db, get_current_user):
     @router.get("/dashboard/admin")
     async def get_admin_financial_dashboard(current_user: dict = Depends(get_current_user)):
         """Get full financial dashboard for administrators"""
-        allowed_roles = ['hospital_admin', 'finance_manager', 'admin']
+        allowed_roles = ['hospital_admin', 'hospital_it_admin', 'finance_manager', 'admin']
         if current_user.get('role') not in allowed_roles:
             raise HTTPException(status_code=403, detail="Not authorized to view admin financial dashboard")
         
