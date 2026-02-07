@@ -545,6 +545,7 @@ export default function BillingPage() {
                               size="sm"
                               variant="outline"
                               onClick={() => setViewInvoice(invoice)}
+                              title="View Invoice"
                             >
                               <Eye className="w-4 h-4" />
                             </Button>
@@ -553,8 +554,20 @@ export default function BillingPage() {
                                 size="sm"
                                 variant="outline"
                                 onClick={() => handleSendInvoice(invoice.id)}
+                                title="Send Invoice"
                               >
                                 <Send className="w-4 h-4" />
+                              </Button>
+                            )}
+                            {(invoice.status === 'paid' || invoice.balance_due === 0) && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-green-600 border-green-300 hover:bg-green-50"
+                                onClick={() => handlePrintReceipt(invoice)}
+                                title="Print Receipt"
+                              >
+                                <Printer className="w-4 h-4" />
                               </Button>
                             )}
                           </div>
