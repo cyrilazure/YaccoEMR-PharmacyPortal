@@ -136,9 +136,6 @@ export default function BillingPage() {
       setInvoices(invoicesRes.data.invoices || []);
       setClaims(claimsRes.data.claims || []);
       setStats(statsRes.data);
-      console.log('Patients response:', patientsRes.data);
-      console.log('Patients is array:', Array.isArray(patientsRes.data));
-      console.log('Patients length:', patientsRes.data?.length);
       setPatients(patientsRes.data || []);
       setServiceCodes(codesRes.data.service_codes || []);
       setPaystackConfig(paystackRes.data);
