@@ -1952,6 +1952,150 @@ export default function BillingPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Clock In Dialog */}
+      <Dialog open={clockInOpen} onOpenChange={setClockInOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <LogIn className="w-5 h-5 text-emerald-600" />
+              Start Billing Shift
+            </DialogTitle>
+            <DialogDescription>
+              Clock in to start tracking your shift collections
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Select Shift Type</Label>
+              <Select value={shiftType} onValueChange={setShiftType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select shift type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="day">Day Shift (7AM - 3PM)</SelectItem>
+                  <SelectItem value="evening">Evening Shift (3PM - 11PM)</SelectItem>
+                  <SelectItem value="night">Night Shift (11PM - 7AM)</SelectItem>
+                  <SelectItem value="12hr_day">12-Hour Day (7AM - 7PM)</SelectItem>
+                  <SelectItem value="12hr_night">12-Hour Night (7PM - 7AM)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Alert>
+              <Clock className="w-4 h-4" />
+              <AlertTitle>Current Time</AlertTitle>
+              <AlertDescription>{new Date().toLocaleString()}</AlertDescription>
+            </Alert>
+            <Alert className="bg-blue-50 border-blue-200">
+              <AlertCircle className="w-4 h-4 text-blue-600" />
+              <AlertDescription className="text-blue-700">
+                Your shift metrics (invoices, payments) will be tracked from this point. Outstanding balances remain visible.
+              </AlertDescription>
+            </Alert>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setClockInOpen(false)}>Cancel</Button>
+            <Button onClick={handleClockIn} disabled={clockingIn} className="bg-emerald-600 hover:bg-emerald-700">
+              {clockingIn ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Clocking In...</> : <><LogIn className="w-4 h-4 mr-2" /> Clock In</>}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Clock Out Dialog */}
+      <Dialog open={clockOutOpen} onOpenChange={setClockOutOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <LogOut className="w-5 h-5 text-red-600" />
+              End Billing Shift
+            </DialogTitle>
+            <DialogDescription>Close your shift and submit your collection summary</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {activeShift && shiftMetrics && (
+              <div className="p-4 bg-slate-50 rounded-lg space-y-3">
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <p className="text-slate-500">Shift Type</p>
+                    <p className="font-semibold">{activeShift.shift_type?.toUpperCase()}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500">Duration</p>
+                    <p className="font-semibold text-emerald-600">{getShiftDuration(activeShift.start_time)}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500">Invoices Created</p>
+                    <p className="font-semibold">{shiftMetrics.invoices_generated}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500">Payments Received</p>
+                    <p className="font-semibold">{shiftMetrics.payments_received}</p>
+                  </div>
+                </div>
+                <Separator />
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <p className="text-slate-500">Total Cash</p>
+                    <p className="font-semibold text-emerald-600">₵{shiftMetrics.cash_collected?.toLocaleString() || '0'}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500">Mobile Money</p>
+                    <p className="font-semibold text-purple-600">₵{shiftMetrics.mobile_money_collected?.toLocaleString() || '0'}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500">Card Payments</p>
+                    <p className="font-semibold text-blue-600">₵{shiftMetrics.card_payments?.toLocaleString() || '0'}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500">Insurance Billed</p>
+                    <p className="font-semibold text-teal-600">₵{shiftMetrics.insurance_billed?.toLocaleString() || '0'}</p>
+                  </div>
+                </div>
+                <Separator />
+                <div className="p-3 bg-emerald-50 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-emerald-700">Total Collections</span>
+                    <span className="text-xl font-bold text-emerald-800">₵{shiftMetrics.payments_amount?.toLocaleString() || '0'}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <div className="space-y-2">
+              <Label>Actual Cash on Hand (for reconciliation)</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">₵</span>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="Enter actual cash amount"
+                  value={actualCash}
+                  onChange={(e) => setActualCash(e.target.value)}
+                  className="pl-8"
+                />
+              </div>
+              <p className="text-xs text-slate-500">Optional: Enter the actual cash you collected to help identify discrepancies</p>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Closing Notes</Label>
+              <Textarea
+                placeholder="Any notes about this shift..."
+                value={closingNotes}
+                onChange={(e) => setClosingNotes(e.target.value)}
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setClockOutOpen(false)}>Cancel</Button>
+            <Button onClick={handleClockOut} disabled={clockingOut} variant="destructive">
+              {clockingOut ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Clocking Out...</> : <><LogOut className="w-4 h-4 mr-2" /> Clock Out</>}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
