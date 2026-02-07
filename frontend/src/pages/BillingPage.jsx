@@ -552,16 +552,16 @@ export default function BillingPage() {
           </Card>
         </TabsContent>
 
-        {/* NHIS Lookup Tab */}
+        {/* Insurance Lookup Tab */}
         <TabsContent value="nhis" className="mt-4">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Heart className="w-5 h-5 text-red-500" />
-                NHIS Insurance Verification
+                <Shield className="w-5 h-5 text-blue-500" />
+                Insurance Verification
               </CardTitle>
               <CardDescription>
-                Search for patients with National Health Insurance Scheme (NHIS) coverage
+                Search for patients with health insurance coverage (NHIS & Private Insurers)
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -570,7 +570,7 @@ export default function BillingPage() {
                 <div className="relative flex-1 max-w-md">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <Input
-                    placeholder="Search by NHIS ID, patient name, or phone..."
+                    placeholder="Search by Insurance ID, patient name, or phone..."
                     value={nhisSearch}
                     onChange={(e) => setNhisSearch(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleNHISSearch()}
@@ -578,7 +578,7 @@ export default function BillingPage() {
                   />
                 </div>
                 <Button onClick={handleNHISSearch} disabled={nhisSearching}>
-                  {nhisSearching ? 'Searching...' : 'Search NHIS'}
+                  {nhisSearching ? 'Searching...' : 'Search Insurance'}
                 </Button>
               </div>
 
