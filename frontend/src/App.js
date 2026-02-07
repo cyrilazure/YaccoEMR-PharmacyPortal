@@ -236,6 +236,9 @@ function App() {
             
             {/* Interventional Radiology Portal */}
             <Route path="interventional-radiology" element={<InterventionalRadiologyPortal />} />
+            
+            {/* IR Status Board (Full Screen Display) */}
+            <Route path="ir-status-board" element={<IRStatusBoardPage />} />
           </Route>
           
           {/* Catch-all redirect to landing page */}
