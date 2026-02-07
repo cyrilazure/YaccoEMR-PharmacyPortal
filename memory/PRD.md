@@ -2,7 +2,7 @@
 
 ## Project Overview
 **Name:** Yacco EMR - Electronic Medical Records System  
-**Version:** 1.5.0  
+**Version:** 1.6.0  
 **Created:** February 3, 2026  
 **Last Updated:** February 7, 2026
 
