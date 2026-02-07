@@ -428,6 +428,12 @@ export default function NursingSupervisorDashboard() {
         </div>
         
         <div className="flex items-center gap-3">
+          <PatientScanner 
+            buttonLabel="Scan Patient ID"
+            onPatientFound={(patient) => {
+              toast.success(`Patient verified: ${patient.first_name} ${patient.last_name} (MRN: ${patient.mrn})`);
+            }}
+          />
           <Button onClick={() => setAddPatientOpen(true)} className="bg-sky-600 hover:bg-sky-700">
             <Plus className="w-4 h-4 mr-2" />
             Add Patient
