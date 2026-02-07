@@ -1031,6 +1031,12 @@ export default function BillingPage() {
             <Heart className="w-4 h-4" />
             Insurance Lookup
           </TabsTrigger>
+          {(isAdmin || isSeniorBiller) && (
+            <TabsTrigger value="reconciliation" className="gap-2">
+              <CheckCircle className="w-4 h-4" />
+              Shift Reconciliation
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="invoices" className="mt-4">
