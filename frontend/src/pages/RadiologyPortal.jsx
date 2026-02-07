@@ -1083,6 +1083,7 @@ export default function RadiologyPortal() {
                                   setSelectedOrder(order);
                                   setReportDialogOpen(true);
                                 }}
+                                data-testid={`report-btn-${order.id}`}
                               >
                                 <FileText className="w-4 h-4 mr-1" /> Report
                               </Button>
