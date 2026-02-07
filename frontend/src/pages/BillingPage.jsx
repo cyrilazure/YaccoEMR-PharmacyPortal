@@ -770,6 +770,175 @@ export default function BillingPage() {
             </Card>
           </div>
 
+          {/* Revenue Trend Charts */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Daily Revenue Trend Area Chart */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-blue-600" />
+                  Weekly Revenue Trend
+                </CardTitle>
+                <CardDescription>Daily revenue over the past 7 days</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={adminDashboard.daily_trend || []}>
+                      <defs>
+                        <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                      <XAxis 
+                        dataKey="day" 
+                        tick={{ fill: '#6b7280', fontSize: 12 }}
+                        axisLine={{ stroke: '#e5e7eb' }}
+                      />
+                      <YAxis 
+                        tick={{ fill: '#6b7280', fontSize: 12 }}
+                        axisLine={{ stroke: '#e5e7eb' }}
+                        tickFormatter={(value) => `₵${value}`}
+                      />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: '#fff', 
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                        }}
+                        formatter={(value) => [`₵${value.toLocaleString()}`, 'Revenue']}
+                        labelFormatter={(label) => `Day: ${label}`}
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="revenue" 
+                        stroke="#3b82f6" 
+                        strokeWidth={2}
+                        fillOpacity={1} 
+                        fill="url(#colorRevenue)" 
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Payment Methods Pie Chart */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Wallet className="w-5 h-5 text-purple-600" />
+                  Payment Distribution
+                </CardTitle>
+                <CardDescription>Revenue breakdown by payment method</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={Object.entries(adminDashboard.payment_modes || {})
+                          .filter(([, value]) => value > 0)
+                          .map(([name, value]) => ({
+                            name: name.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                            value,
+                            fill: {
+                              cash: '#10b981',
+                              mobile_money: '#8b5cf6',
+                              card: '#3b82f6',
+                              insurance: '#14b8a6',
+                              bank_transfer: '#64748b'
+                            }[name] || '#94a3b8'
+                          }))}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={90}
+                        paddingAngle={2}
+                        dataKey="value"
+                      >
+                        {Object.entries(adminDashboard.payment_modes || {})
+                          .filter(([, value]) => value > 0)
+                          .map(([name], index) => (
+                            <Cell 
+                              key={`cell-${index}`} 
+                              fill={{
+                                cash: '#10b981',
+                                mobile_money: '#8b5cf6',
+                                card: '#3b82f6',
+                                insurance: '#14b8a6',
+                                bank_transfer: '#64748b'
+                              }[name] || '#94a3b8'}
+                            />
+                          ))}
+                      </Pie>
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: '#fff', 
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px'
+                        }}
+                        formatter={(value) => [`₵${value.toLocaleString()}`, 'Amount']}
+                      />
+                      <Legend 
+                        verticalAlign="bottom" 
+                        height={36}
+                        formatter={(value) => <span className="text-sm text-slate-600">{value}</span>}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Daily Transaction Bar Chart */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-emerald-600" />
+                Daily Transactions
+              </CardTitle>
+              <CardDescription>Number of payments processed per day</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-48">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={adminDashboard.daily_trend || []}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                    <XAxis 
+                      dataKey="day" 
+                      tick={{ fill: '#6b7280', fontSize: 12 }}
+                      axisLine={{ stroke: '#e5e7eb' }}
+                    />
+                    <YAxis 
+                      tick={{ fill: '#6b7280', fontSize: 12 }}
+                      axisLine={{ stroke: '#e5e7eb' }}
+                      allowDecimals={false}
+                    />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: '#fff', 
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px'
+                      }}
+                      formatter={(value) => [value, 'Transactions']}
+                    />
+                    <Bar 
+                      dataKey="count" 
+                      fill="#10b981" 
+                      radius={[4, 4, 0, 0]}
+                      maxBarSize={40}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Payment Mode Distribution & Shifts */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Card>
