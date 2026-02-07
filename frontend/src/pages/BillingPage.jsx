@@ -107,6 +107,59 @@ export default function BillingPage() {
     }
   };
 
+  // Print Receipt Handler
+  const handlePrintReceipt = (invoice) => {
+    setReceiptInvoice(invoice);
+    setPrintReceiptOpen(true);
+  };
+
+  const printReceipt = () => {
+    const printContent = receiptRef.current;
+    if (!printContent) return;
+
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Payment Receipt - ${receiptInvoice?.invoice_number}</title>
+          <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; max-width: 400px; margin: 0 auto; }
+            .receipt { border: 2px solid #000; padding: 20px; }
+            .header { text-align: center; border-bottom: 2px dashed #000; padding-bottom: 15px; margin-bottom: 15px; }
+            .hospital-name { font-size: 18px; font-weight: bold; margin-bottom: 5px; }
+            .hospital-info { font-size: 11px; color: #555; }
+            .receipt-title { font-size: 16px; font-weight: bold; margin: 15px 0; text-align: center; background: #f0f0f0; padding: 8px; }
+            .info-row { display: flex; justify-content: space-between; margin: 8px 0; font-size: 12px; }
+            .info-label { color: #666; }
+            .info-value { font-weight: 600; }
+            .divider { border-top: 1px dashed #000; margin: 15px 0; }
+            .items-header { font-weight: bold; font-size: 12px; border-bottom: 1px solid #000; padding-bottom: 5px; margin-bottom: 10px; }
+            .item-row { display: flex; justify-content: space-between; font-size: 11px; margin: 5px 0; }
+            .totals { margin-top: 15px; border-top: 2px solid #000; padding-top: 10px; }
+            .total-row { display: flex; justify-content: space-between; font-size: 13px; margin: 5px 0; }
+            .grand-total { font-size: 16px; font-weight: bold; background: #000; color: #fff; padding: 10px; margin-top: 10px; }
+            .payment-info { margin-top: 15px; padding: 10px; background: #e8f5e9; border: 1px solid #4caf50; }
+            .payment-badge { display: inline-block; background: #4caf50; color: white; padding: 3px 10px; border-radius: 3px; font-size: 11px; font-weight: bold; }
+            .footer { text-align: center; margin-top: 20px; font-size: 10px; color: #666; }
+            .footer-thanks { font-size: 14px; font-weight: bold; margin-bottom: 5px; }
+            @media print { body { padding: 0; } .receipt { border: none; } }
+          </style>
+        </head>
+        <body>
+          ${printContent.innerHTML}
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 250);
+  };
+
   const handleAddLineItem = () => {
     setLineItems([...lineItems, { description: '', service_code: '', quantity: 1, unit_price: 0, discount: 0 }]);
   };
