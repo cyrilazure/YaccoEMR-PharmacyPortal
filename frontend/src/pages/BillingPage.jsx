@@ -127,6 +127,22 @@ export default function BillingPage() {
         console.log('Bank account info not available');
       }
       
+      // Fetch hospital info for receipts
+      try {
+        const hospitalRes = await api.get('/hospital/info');
+        setHospitalInfo(hospitalRes.data);
+      } catch (err) {
+        // Fallback to user's hospital info
+        setHospitalInfo({
+          name: user?.hospital_name || 'Hospital',
+          phone: user?.hospital_phone || '',
+          email: user?.hospital_email || '',
+          address: user?.hospital_address || '',
+          region: user?.region || '',
+          district: user?.district || ''
+        });
+      }
+      
       // Load shift data
       await loadShiftData();
       
