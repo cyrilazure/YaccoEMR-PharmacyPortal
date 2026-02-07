@@ -113,6 +113,60 @@ export default function AmbulancePortal() {
     }
   };
 
+  // Patient Search Handler
+  const handlePatientSearch = useCallback(async (query) => {
+    setPatientSearchQuery(query);
+    if (!query || query.length < 2) {
+      setPatientSearchResults([]);
+      return;
+    }
+    
+    setSearchingPatients(true);
+    try {
+      const response = await patientAPI.getAll({ search: query });
+      setPatientSearchResults(response.data || []);
+    } catch (err) {
+      console.error('Patient search error:', err);
+    } finally {
+      setSearchingPatients(false);
+    }
+  }, []);
+  
+  // Select patient from search results
+  const handleSelectPatient = (patient) => {
+    setSelectedPatient(patient);
+    setRequestForm({
+      ...requestForm,
+      patient_id: patient.id,
+      patient_name: `${patient.first_name} ${patient.last_name}`,
+      patient_mrn: patient.mrn || ''
+    });
+    setPatientSearchResults([]);
+    setPatientSearchQuery('');
+  };
+  
+  // Clear selected patient
+  const handleClearPatient = () => {
+    setSelectedPatient(null);
+    setRequestForm({
+      ...requestForm,
+      patient_id: '',
+      patient_name: '',
+      patient_mrn: ''
+    });
+  };
+  
+  // Reset dialog when closed
+  const handleRequestDialogClose = (open) => {
+    setRequestAmbulanceOpen(open);
+    if (!open) {
+      setSelectedPatient(null);
+      setEntryMode('search');
+      setPatientSearchQuery('');
+      setPatientSearchResults([]);
+    }
+  };
+
   const handleAddVehicle = async (e) => {
     e.preventDefault();
     setSaving(true);
