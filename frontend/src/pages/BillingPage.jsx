@@ -2032,7 +2032,7 @@ export default function BillingPage() {
 
       {/* Clock Out Dialog */}
       <Dialog open={clockOutOpen} onOpenChange={setClockOutOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <LogOut className="w-5 h-5 text-red-600" />
@@ -2040,80 +2040,82 @@ export default function BillingPage() {
             </DialogTitle>
             <DialogDescription>Close your shift and submit your collection summary</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            {activeShift && shiftMetrics && (
-              <div className="p-4 bg-slate-50 rounded-lg space-y-3">
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div>
-                    <p className="text-slate-500">Shift Type</p>
-                    <p className="font-semibold">{activeShift.shift_type?.toUpperCase()}</p>
+          <div className="overflow-y-auto flex-1 max-h-[60vh] pr-2">
+            <div className="space-y-4 py-4">
+              {activeShift && shiftMetrics && (
+                <div className="p-4 bg-slate-50 rounded-lg space-y-3">
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="text-slate-500">Shift Type</p>
+                      <p className="font-semibold">{activeShift.shift_type?.toUpperCase()}</p>
+                    </div>
+                    <div>
+                      <p className="text-slate-500">Duration</p>
+                      <p className="font-semibold text-emerald-600">{getShiftDuration(activeShift.start_time)}</p>
+                    </div>
+                    <div>
+                      <p className="text-slate-500">Invoices Created</p>
+                      <p className="font-semibold">{shiftMetrics.invoices_generated}</p>
+                    </div>
+                    <div>
+                      <p className="text-slate-500">Payments Received</p>
+                      <p className="font-semibold">{shiftMetrics.payments_received}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-slate-500">Duration</p>
-                    <p className="font-semibold text-emerald-600">{getShiftDuration(activeShift.start_time)}</p>
+                  <Separator />
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="text-slate-500">Total Cash</p>
+                      <p className="font-semibold text-emerald-600">₵{shiftMetrics.cash_collected?.toLocaleString() || '0'}</p>
+                    </div>
+                    <div>
+                      <p className="text-slate-500">Mobile Money</p>
+                      <p className="font-semibold text-purple-600">₵{shiftMetrics.mobile_money_collected?.toLocaleString() || '0'}</p>
+                    </div>
+                    <div>
+                      <p className="text-slate-500">Card Payments</p>
+                      <p className="font-semibold text-blue-600">₵{shiftMetrics.card_payments?.toLocaleString() || '0'}</p>
+                    </div>
+                    <div>
+                      <p className="text-slate-500">Insurance Billed</p>
+                      <p className="font-semibold text-teal-600">₵{shiftMetrics.insurance_billed?.toLocaleString() || '0'}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-slate-500">Invoices Created</p>
-                    <p className="font-semibold">{shiftMetrics.invoices_generated}</p>
-                  </div>
-                  <div>
-                    <p className="text-slate-500">Payments Received</p>
-                    <p className="font-semibold">{shiftMetrics.payments_received}</p>
+                  <Separator />
+                  <div className="p-3 bg-emerald-50 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-emerald-700">Total Collections</span>
+                      <span className="text-xl font-bold text-emerald-800">₵{shiftMetrics.payments_amount?.toLocaleString() || '0'}</span>
+                    </div>
                   </div>
                 </div>
-                <Separator />
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div>
-                    <p className="text-slate-500">Total Cash</p>
-                    <p className="font-semibold text-emerald-600">₵{shiftMetrics.cash_collected?.toLocaleString() || '0'}</p>
-                  </div>
-                  <div>
-                    <p className="text-slate-500">Mobile Money</p>
-                    <p className="font-semibold text-purple-600">₵{shiftMetrics.mobile_money_collected?.toLocaleString() || '0'}</p>
-                  </div>
-                  <div>
-                    <p className="text-slate-500">Card Payments</p>
-                    <p className="font-semibold text-blue-600">₵{shiftMetrics.card_payments?.toLocaleString() || '0'}</p>
-                  </div>
-                  <div>
-                    <p className="text-slate-500">Insurance Billed</p>
-                    <p className="font-semibold text-teal-600">₵{shiftMetrics.insurance_billed?.toLocaleString() || '0'}</p>
-                  </div>
+              )}
+              
+              <div className="space-y-2">
+                <Label>Actual Cash on Hand (for reconciliation)</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">₵</span>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="Enter actual cash amount"
+                    value={actualCash}
+                    onChange={(e) => setActualCash(e.target.value)}
+                    className="pl-8"
+                  />
                 </div>
-                <Separator />
-                <div className="p-3 bg-emerald-50 rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-emerald-700">Total Collections</span>
-                    <span className="text-xl font-bold text-emerald-800">₵{shiftMetrics.payments_amount?.toLocaleString() || '0'}</span>
-                  </div>
-                </div>
+                <p className="text-xs text-slate-500">Optional: Enter the actual cash you collected to help identify discrepancies</p>
               </div>
-            )}
-            
-            <div className="space-y-2">
-              <Label>Actual Cash on Hand (for reconciliation)</Label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">₵</span>
-                <Input
-                  type="number"
-                  step="0.01"
-                  placeholder="Enter actual cash amount"
-                  value={actualCash}
-                  onChange={(e) => setActualCash(e.target.value)}
-                  className="pl-8"
+              
+              <div className="space-y-2">
+                <Label>Closing Notes</Label>
+                <Textarea
+                  placeholder="Any notes about this shift..."
+                  value={closingNotes}
+                  onChange={(e) => setClosingNotes(e.target.value)}
+                  rows={3}
                 />
               </div>
-              <p className="text-xs text-slate-500">Optional: Enter the actual cash you collected to help identify discrepancies</p>
-            </div>
-            
-            <div className="space-y-2">
-              <Label>Closing Notes</Label>
-              <Textarea
-                placeholder="Any notes about this shift..."
-                value={closingNotes}
-                onChange={(e) => setClosingNotes(e.target.value)}
-                rows={3}
-              />
             </div>
           </div>
           <DialogFooter>
