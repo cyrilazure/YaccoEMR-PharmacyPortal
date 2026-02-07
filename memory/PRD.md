@@ -286,12 +286,29 @@ POST /api/billing/paystack/initialize    - Initialize Paystack payment
 GET  /api/finance/bank-accounts          - Manage hospital bank accounts
 ```
 
+### Nurse Supervisor Portal Enhancements (February 7, 2026)
+- [x] **Bed Management Tab**: Integrated bed census display in Nursing Supervisor Dashboard
+  - Shows Total Beds, Available, Occupied, Reserved, Occupancy %
+  - Ward Census with individual ward details and occupancy bars
+  - Quick access to Full Bed Management page
+- [x] **Nurse Assignment Fix**: Nurse list now populates correctly in "Assign Patient to Nurse" dialog
+  - Shows all nurses with on-shift indicators (green = on shift, gray = off duty)
+  - Grouped by on-shift and available nurses
+- [x] **Ambulance Request Patient Search**: Enhanced Request Ambulance dialog
+  - Toggle between "Search Existing Patient" and "Manual Entry (New Patient)"
+  - Patient search by name or MRN
+  - Auto-populates patient info when selected
+- [x] **Ambulance Vehicle Registration**: Nursing Supervisors can now register ambulance vehicles
+  - Added `nursing_supervisor` to allowed_roles in ambulance_module.py
+  - No more "Access denied" error for vehicle registration
+
 ## Prioritized Backlog
 
 ### P0 (Critical)
 - [x] ~~Complete Ambulance Portal UI~~ ✅ DONE
 - [x] ~~NHIS Pharmacy Claims Integration~~ ✅ DONE
 - [x] ~~Supply Chain Inventory Module~~ ✅ DONE
+- [x] ~~Nurse Supervisor Portal Enhancements~~ ✅ DONE (Feb 7, 2026)
 
 ### P1 (High Priority)
 - [ ] Real Ghana FDA API integration (replace mock data)
@@ -312,6 +329,7 @@ GET  /api/finance/bank-accounts          - Manage hospital bank accounts
 ## Test Credentials
 - **Super Admin**: ygtnetworks@gmail.com / test123
 - **Hospital IT Admin**: it_admin@yacco.health / test123
+- **Nursing Supervisor**: nursing_supervisor@yacco.health / test123
 - **Biller**: billing@yacco.health / test123
 - **Bed Manager**: bed_manager@yacco.health / test123
 - **Radiologist**: radiologist@yacco.health / test123
