@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/lib/auth';
 import { appointmentsAPI, patientAPI, usersAPI } from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,6 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import {
   Select,
@@ -30,8 +31,10 @@ import { formatTime, getStatusColor, calculateAge, formatDate } from '@/lib/util
 import { 
   Calendar, Plus, Clock, User, ChevronLeft, ChevronRight, 
   UserPlus, CheckCircle, XCircle, Users, CalendarDays, Eye,
-  Phone, Mail, MapPin, Shield, AlertCircle, LogIn, LogOut, Search
+  Phone, Mail, MapPin, Shield, AlertCircle, LogIn, LogOut, Search,
+  Printer, QrCode
 } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 
 export default function SchedulerDashboard() {
   const { user } = useAuth();
