@@ -496,6 +496,10 @@ GET  /api/billing-shifts/audit-logs      - Billing audit logs
 - [x] ~~Billing Shift-Based Financial Controls~~ ✅ DONE (Feb 7, 2026)
 - [x] ~~Senior Biller Dashboard & Reconciliation UI~~ ✅ DONE (Feb 7, 2026)
 - [x] ~~Hospital Logo on Receipts~~ ✅ DONE (Feb 7, 2026)
+- [x] ~~Interventional Radiology Portal~~ ✅ DONE (Feb 7, 2026)
+- [x] ~~Voice Dictation Analytics Dashboard~~ ✅ DONE (Feb 7, 2026)
+- [x] ~~IR Status Board (Real-time Procedure Monitoring)~~ ✅ DONE (Feb 7, 2026)
+- [x] ~~PACS/DICOM Integration (Demo Mode)~~ ✅ DONE (Feb 7, 2026)
 
 ### P1 (High Priority)
 - [ ] Real Ghana FDA API integration (replace mock data)
