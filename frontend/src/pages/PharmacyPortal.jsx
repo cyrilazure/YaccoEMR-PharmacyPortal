@@ -1153,22 +1153,70 @@ export default function PharmacyPortal() {
         </DialogContent>
       </Dialog>
 
-      {/* Create NHIS Claim Dialog */}
+      {/* Create Insurance Claim Dialog */}
       <Dialog open={createClaimOpen} onOpenChange={setCreateClaimOpen}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
-            <DialogTitle>Create NHIS Pharmacy Claim</DialogTitle>
+            <DialogTitle>Create Insurance Pharmacy Claim</DialogTitle>
           </DialogHeader>
           <div className="overflow-y-auto flex-1 pr-2">
             <form onSubmit={handleCreateClaim} className="space-y-4">
+              {/* Insurance Provider Selection */}
+              <Card>
+                <CardHeader className="pb-2"><CardTitle className="text-sm">Insurance Provider</CardTitle></CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="space-y-1">
+                    <Label>Select Insurance Provider *</Label>
+                    <Select value={claimForm.insurance_provider || 'NHIS'} onValueChange={(v) => setClaimForm({...claimForm, insurance_provider: v})}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select insurance provider" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {/* Government Insurance */}
+                        <SelectItem value="NHIS">NHIS (National Health Insurance)</SelectItem>
+                        
+                        {/* Private Health Insurance - Major Providers */}
+                        <SelectItem value="Acacia Health">Acacia Health Insurance</SelectItem>
+                        <SelectItem value="Apex Health Insurance">Apex Health Insurance</SelectItem>
+                        <SelectItem value="Cosmopolitan Health Insurance">Cosmopolitan Health Insurance</SelectItem>
+                        <SelectItem value="Enterprise Life">Enterprise Life Assurance</SelectItem>
+                        <SelectItem value="Glico Healthcare">Glico Healthcare</SelectItem>
+                        <SelectItem value="Metropolitan Insurance">Metropolitan Health Insurance</SelectItem>
+                        <SelectItem value="Nationwide Medical">Nationwide Medical Insurance</SelectItem>
+                        <SelectItem value="Phoenix Health Insurance">Phoenix Health Insurance</SelectItem>
+                        <SelectItem value="Premier Health Insurance">Premier Health Insurance</SelectItem>
+                        <SelectItem value="Star Assurance">Star Assurance Health</SelectItem>
+                        <SelectItem value="Vanguard Assurance">Vanguard Assurance</SelectItem>
+                        
+                        {/* Corporate/Group Plans */}
+                        <SelectItem value="SIC Insurance">SIC Insurance Company</SelectItem>
+                        <SelectItem value="Ghana Union Assurance">Ghana Union Assurance</SelectItem>
+                        <SelectItem value="Activa International">Activa International Insurance</SelectItem>
+                        <SelectItem value="Donewell Insurance">Donewell Insurance</SelectItem>
+                        <SelectItem value="Hollard Insurance">Hollard Insurance Ghana</SelectItem>
+                        <SelectItem value="Old Mutual">Old Mutual Ghana</SelectItem>
+                        <SelectItem value="Prudential Life">Prudential Life Insurance Ghana</SelectItem>
+                        
+                        {/* HMO / Managed Care */}
+                        <SelectItem value="AAR Health Services">AAR Health Services</SelectItem>
+                        <SelectItem value="Medivac Healthcare">Medivac Healthcare</SelectItem>
+                        
+                        {/* Other */}
+                        <SelectItem value="Other">Other Insurance Provider</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardContent>
+              </Card>
+
               {/* Member Verification */}
               <Card>
                 <CardHeader className="pb-2"><CardTitle className="text-sm">Member Verification</CardTitle></CardHeader>
                 <CardContent className="space-y-3">
                   <div className="flex gap-3 items-end">
                     <div className="flex-1 space-y-1">
-                      <Label>NHIS Membership ID *</Label>
-                      <Input value={membershipId} onChange={(e) => setMembershipId(e.target.value)} placeholder="NHIS-2024-001234" />
+                      <Label>Insurance Membership ID *</Label>
+                      <Input value={membershipId} onChange={(e) => setMembershipId(e.target.value)} placeholder="e.g., NHIS-2024-001234 or Policy Number" />
                     </div>
                     <Button type="button" onClick={handleVerifyMember} disabled={verifying}>{verifying && <Loader2 className="w-4 h-4 mr-2 animate-spin" />} Verify</Button>
                   </div>
@@ -1209,7 +1257,7 @@ export default function PharmacyPortal() {
               <Card>
                 <CardHeader className="pb-2"><CardTitle className="text-sm">Medications</CardTitle></CardHeader>
                 <CardContent className="space-y-3">
-                  <Input value={drugSearch} onChange={(e) => setDrugSearch(e.target.value)} placeholder="Search NHIS drug tariff..." />
+                  <Input value={drugSearch} onChange={(e) => setDrugSearch(e.target.value)} placeholder="Search drug tariff..." />
                   {drugSearch && (
                     <div className="max-h-32 overflow-y-auto border rounded">
                       {filteredTariff.slice(0, 8).map(drug => (
