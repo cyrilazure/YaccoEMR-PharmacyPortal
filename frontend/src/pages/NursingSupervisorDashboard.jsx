@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
-import { nursingSupervisorAPI, patientAPI, bedManagementAPI } from '@/lib/api';
+import { nursingSupervisorAPI, patientAPI, bedManagementAPI, nurseAPI } from '@/lib/api';
 import { getErrorMessage } from '@/lib/utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -32,7 +32,8 @@ import {
   Clock, CheckCircle, AlertCircle, RefreshCw,
   Eye, UserCheck, Activity, Stethoscope, 
   Calendar, ChevronRight, Search, Plus,
-  FileCheck, Send, Star, Loader2, Bed
+  FileCheck, Send, Star, Loader2, Bed,
+  LogIn, LogOut, Timer
 } from 'lucide-react';
 
 // Stat Card Component
