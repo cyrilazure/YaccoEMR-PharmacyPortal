@@ -574,6 +574,8 @@ export default function NurseDashboard() {
                           currentValue={handoffNotes}
                           buttonVariant="outline"
                           buttonSize="sm"
+                          noteType="nursing_assessment"
+                          enableAiExpand={true}
                         />
                       </div>
                       <Textarea 
