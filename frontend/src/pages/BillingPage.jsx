@@ -1297,6 +1297,12 @@ export default function BillingPage() {
               Shift Reconciliation
             </TabsTrigger>
           )}
+          {(isAdmin || isSeniorBiller) && (
+            <TabsTrigger value="audit" className="gap-2">
+              <FileSearch className="w-4 h-4" />
+              Audit Logs
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="invoices" className="mt-4">
