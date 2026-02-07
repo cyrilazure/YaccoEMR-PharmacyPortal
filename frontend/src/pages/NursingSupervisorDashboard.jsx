@@ -482,6 +482,10 @@ export default function NursingSupervisorDashboard() {
       <Tabs defaultValue="nurses" className="w-full">
         <TabsList className="grid w-full grid-cols-6 max-w-3xl">
           <TabsTrigger value="nurses">Nurses</TabsTrigger>
+          <TabsTrigger value="patients">
+            <Users className="w-4 h-4 mr-1.5 text-emerald-600" />
+            Patients
+          </TabsTrigger>
           <TabsTrigger value="shifts">Current Shifts</TabsTrigger>
           <TabsTrigger value="beds">
             <Bed className="w-4 h-4 mr-1" />
