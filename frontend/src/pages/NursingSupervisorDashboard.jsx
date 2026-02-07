@@ -33,8 +33,9 @@ import {
   Eye, UserCheck, Activity, Stethoscope, 
   Calendar, ChevronRight, Search, Plus,
   FileCheck, Send, Star, Loader2, Bed,
-  LogIn, LogOut, Timer
+  LogIn, LogOut, Timer, QrCode
 } from 'lucide-react';
+import PatientScanner from '@/components/PatientScanner';
 
 // Stat Card Component
 function StatCard({ label, value, icon: Icon, color = 'blue' }) {
