@@ -114,9 +114,9 @@ def radiologist_auth():
 
 @pytest.fixture(scope="module")
 def admin_auth():
-    """Get super admin authentication token"""
+    """Get admin authentication token"""
     test = TestAuthentication()
-    return test.test_super_admin_login()
+    return test.test_admin_login()
 
 
 class TestInterventionalRadiologyDashboard:
