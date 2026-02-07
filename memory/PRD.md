@@ -2,9 +2,9 @@
 
 ## Project Overview
 **Name:** Yacco EMR - Electronic Medical Records System  
-**Version:** 1.4.0  
+**Version:** 1.5.0  
 **Created:** February 3, 2026  
-**Last Updated:** February 6, 2026
+**Last Updated:** February 7, 2026
 
 ## Problem Statement
 Build a comprehensive Electronic Medical Records (EMR) system similar to Epic EMR with core clinical modules, multi-role support, scheduling, AI-assisted documentation, and healthcare interoperability (FHIR). Extended with Ghana-specific features including NHIS integration, regional pharmacy network, Ghana FDA drug verification, ambulance fleet management, and Paystack payment processing.
