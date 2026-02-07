@@ -175,9 +175,12 @@ export default function SchedulerDashboard() {
                 <UserPlus className="w-4 h-4" /> Register Patient
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Register New Patient</DialogTitle>
+                <DialogDescription>
+                  MRN will be auto-generated after registration
+                </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleCreatePatient} className="space-y-4 mt-4">
                 <div className="grid grid-cols-2 gap-4">
