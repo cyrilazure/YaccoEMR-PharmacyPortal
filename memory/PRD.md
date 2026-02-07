@@ -312,6 +312,7 @@ GET  /api/billing-shifts/audit-logs      - Billing audit logs
 - [x] **Billing Audit Logs**: Track invoice creation, payments, shift events
 - [x] **Print Receipt with Hospital Logo**: Generate receipts with hospital name, address, logo (Feb 7)
 - [x] **Senior Biller Dashboard**: Department-wide view for senior billers showing all active shifts (Feb 7)
+- [x] **Audit & Compliance UI**: Searchable/filterable audit log with timeline view and summary stats (Feb 7)
 
 **Data Visibility Rules:**
 | Role | Own Shift | All Shifts | Daily/Weekly/Monthly | Outstanding |
