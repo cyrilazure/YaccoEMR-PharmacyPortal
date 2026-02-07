@@ -536,6 +536,28 @@ def setup_routes(db, get_current_user):
             }
         )
         
+        # Also store payment in billing_payments collection for shift tracking
+        billing_payment = {
+            **payment_doc,
+            "hospital_id": current_user.get("hospital_id"),
+            "organization_id": current_user.get("organization_id"),
+            "patient_name": invoice.get("patient_name"),
+            "invoice_number": invoice.get("invoice_number"),
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.billing_payments.insert_one(billing_payment)
+        
+        # Update biller's active shift if exists
+        from billing_shifts_module import update_shift_on_payment, log_billing_action
+        await update_shift_on_payment(db, current_user["id"], payment_data.amount, payment_data.payment_method, current_user.get("hospital_id"))
+        await log_billing_action(db, "payment_recorded", current_user, {
+            "payment_id": payment_id,
+            "invoice_id": payment_data.invoice_id,
+            "amount": payment_data.amount,
+            "payment_method": payment_data.payment_method,
+            "new_status": new_status
+        })
+        
         return {
             "message": "Payment recorded",
             "payment_id": payment_id,
