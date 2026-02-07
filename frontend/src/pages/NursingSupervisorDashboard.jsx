@@ -190,6 +190,15 @@ export default function NursingSupervisorDashboard() {
       } catch (bedErr) {
         console.error('Bed data fetch error:', bedErr);
       }
+      
+      // Check supervisor's own shift status
+      try {
+        const shiftRes = await nurseAPI.getActiveShift();
+        setMyActiveShift(shiftRes.data || null);
+      } catch (shiftErr) {
+        // No active shift or error
+        setMyActiveShift(null);
+      }
     } catch (err) {
       console.error('Dashboard fetch error:', err);
       toast.error('Failed to load dashboard');
