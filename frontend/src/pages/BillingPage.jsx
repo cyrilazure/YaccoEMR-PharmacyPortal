@@ -22,7 +22,7 @@ import {
   TrendingUp, Clock, CheckCircle, XCircle, AlertCircle, Building2,
   Shield, Search, IdCard, Heart, Printer, LogIn, LogOut, Timer,
   Wallet, Smartphone, Banknote, BarChart3, Users, RefreshCw, Loader2,
-  Calendar, ArrowUp, ArrowDown, Minus, Flag
+  Calendar, ArrowUp, ArrowDown, Minus, Flag, FileSearch, Activity
 } from 'lucide-react';
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
