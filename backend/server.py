@@ -43,6 +43,7 @@ class UserRole(str, Enum):
     NURSING_SUPERVISOR = "nursing_supervisor"
     FLOOR_SUPERVISOR = "floor_supervisor"
     SCHEDULER = "scheduler"
+    RECEPTIONIST = "receptionist"
     ADMIN = "admin"
     HOSPITAL_ADMIN = "hospital_admin"
     HOSPITAL_IT_ADMIN = "hospital_it_admin"
