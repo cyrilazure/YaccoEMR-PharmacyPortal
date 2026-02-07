@@ -127,7 +127,7 @@ class MedicalCorrectionRequest(BaseModel):
 
 
 def create_voice_dictation_router(db, get_current_user) -> APIRouter:
-    router = APIRouter(prefix="/voice-dictation", tags=["Voice Dictation"])
+    router = APIRouter(prefix="/api/voice-dictation", tags=["Voice Dictation"])
     
     def correct_medical_terminology(text: str, context: str = "general") -> tuple:
         """Apply medical terminology corrections to transcribed text."""
