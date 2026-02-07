@@ -339,6 +339,7 @@ GET  /api/billing-shifts/audit-logs      - Billing audit logs
 - [x] ~~NHIS Pharmacy Claims Integration~~ ✅ DONE
 - [x] ~~Supply Chain Inventory Module~~ ✅ DONE
 - [x] ~~Nurse Supervisor Portal Enhancements~~ ✅ DONE (Feb 7, 2026)
+- [x] ~~Billing Shift-Based Financial Controls~~ ✅ DONE (Feb 7, 2026)
 
 ### P1 (High Priority)
 - [ ] Real Ghana FDA API integration (replace mock data)
