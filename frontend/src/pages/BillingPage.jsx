@@ -57,6 +57,10 @@ export default function BillingPage() {
   const [nhisSearch, setNhisSearch] = useState('');
   const [nhisResults, setNhisResults] = useState([]);
   const [nhisSearching, setNhisSearching] = useState(false);
+  
+  // Insurance Details Dialog
+  const [viewInsuranceOpen, setViewInsuranceOpen] = useState(false);
+  const [selectedInsurancePatient, setSelectedInsurancePatient] = useState(null);
 
   useEffect(() => {
     loadData();
