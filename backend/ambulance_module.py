@@ -284,9 +284,10 @@ def create_ambulance_endpoints(db, get_current_user):
         user: dict = Depends(get_current_user)
     ):
         """Approve ambulance request"""
-        allowed_roles = ["facility_admin", "hospital_admin", "hospital_it_admin", "super_admin"]
+        # Allow nursing supervisors to approve ambulance requests for operational efficiency
+        allowed_roles = ["facility_admin", "hospital_admin", "hospital_it_admin", "super_admin", "nursing_supervisor", "floor_supervisor"]
         if user.get("role") not in allowed_roles:
-            raise HTTPException(status_code=403, detail="Admin approval required")
+            raise HTTPException(status_code=403, detail="Supervisor or admin approval required")
         
         await db.ambulance_requests.update_one(
             {"id": request_id},
