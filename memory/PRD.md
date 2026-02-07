@@ -573,6 +573,7 @@ GET  /api/billing-shifts/audit-logs      - Billing audit logs
 - **Ghana FDA API**: Using seed data in `fda_module.py` (29 registered drugs) - NOT actual Ghana FDA API
 - **NHIS Member Database**: Using sample data in `nhis_claims_module.py` - NOT actual NHIS API
 - **Paystack**: Using test keys for payment processing
+- **PACS/DICOM**: Running in demo mode (`PACS_HOST=localhost`) - Returns mock study data. Configure `PACS_HOST`, `PACS_PORT`, `DICOM_VIEWER_URL` for real dcm4chee integration
 
 ## Environment Variables
 ```
