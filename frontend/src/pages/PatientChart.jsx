@@ -1447,6 +1447,8 @@ export default function PatientChart() {
                             buttonVariant="ghost"
                             buttonSize="sm"
                             showLabel={false}
+                            noteType="soap_note"
+                            enableAiExpand={true}
                           />
                         </div>
                         <Textarea value={newNote.subjective} onChange={(e) => setNewNote({ ...newNote, subjective: e.target.value })} rows={3} data-testid="note-subjective" placeholder="Patient's symptoms, history... or use voice dictation" />
@@ -1463,6 +1465,8 @@ export default function PatientChart() {
                             buttonVariant="ghost"
                             buttonSize="sm"
                             showLabel={false}
+                            noteType="soap_note"
+                            enableAiExpand={true}
                           />
                         </div>
                         <Textarea value={newNote.objective} onChange={(e) => setNewNote({ ...newNote, objective: e.target.value })} rows={3} data-testid="note-objective" placeholder="Physical exam findings... or use voice dictation" />
@@ -1479,6 +1483,8 @@ export default function PatientChart() {
                             buttonVariant="ghost"
                             buttonSize="sm"
                             showLabel={false}
+                            noteType="soap_note"
+                            enableAiExpand={true}
                           />
                         </div>
                         <Textarea value={newNote.assessment} onChange={(e) => setNewNote({ ...newNote, assessment: e.target.value })} rows={3} data-testid="note-assessment" placeholder="Diagnosis, differential... or use voice dictation" />
@@ -1495,6 +1501,8 @@ export default function PatientChart() {
                             buttonVariant="ghost"
                             buttonSize="sm"
                             showLabel={false}
+                            noteType="soap_note"
+                            enableAiExpand={true}
                           />
                         </div>
                         <Textarea value={newNote.plan} onChange={(e) => setNewNote({ ...newNote, plan: e.target.value })} rows={3} data-testid="note-plan" placeholder="Treatment plan... or use voice dictation" />
