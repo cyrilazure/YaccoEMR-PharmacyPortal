@@ -44,6 +44,10 @@ export default function SchedulerDashboard() {
   const [patientDialogOpen, setPatientDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   
+  // Patient Info Dialog State
+  const [viewPatientInfo, setViewPatientInfo] = useState(null);
+  const [patientSearchTerm, setPatientSearchTerm] = useState('');
+  
   const [newAppointment, setNewAppointment] = useState({
     patient_id: '', provider_id: '', appointment_type: 'follow_up',
     date: '', start_time: '', end_time: '', reason: '', notes: ''
@@ -51,7 +55,9 @@ export default function SchedulerDashboard() {
   
   const [newPatient, setNewPatient] = useState({
     first_name: '', last_name: '', date_of_birth: '', gender: 'male',
-    email: '', phone: '', insurance_provider: '', insurance_id: ''
+    email: '', phone: '', address: '', 
+    emergency_contact_name: '', emergency_contact_phone: '',
+    insurance_provider: '', insurance_id: ''
   });
 
   const fetchData = useCallback(async () => {
