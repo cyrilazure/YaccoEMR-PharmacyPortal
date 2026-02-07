@@ -173,6 +173,34 @@ Build a comprehensive Electronic Medical Records (EMR) system similar to Epic EM
 - [x] Patient admission, transfer, and discharge workflows
 - [x] Census dashboard
 
+### Voice Dictation for Hands-Free Documentation (February 7, 2026) - NEW
+- [x] **Dual Speech-to-Text Options**:
+  - OpenAI Whisper (recommended): High accuracy, medical terminology support, server-side processing
+  - Browser Web Speech API: Real-time transcription, client-side, free
+  - User can choose preferred method in Settings dialog
+- [x] **Medical Terminology Auto-Correction**:
+  - 56 common medical terms with variants (e.g., "new monia" → "pneumonia")
+  - 32 medical abbreviations supported
+  - Context-aware correction (radiology, nursing, clinical contexts)
+- [x] **Integrated Roles**:
+  - **Radiologists**: Findings, Impression fields in structured reports; Note content
+  - **Physicians**: SOAP notes (Subjective, Objective, Assessment, Plan) in PatientChart
+  - **Nurses**: Handoff notes during clock-out
+  - **Nurse Supervisors**: Assignment notes
+  - **Floor Supervisors**: Task notes
+  - **Hospital Admins**: Documentation notes
+- [x] **Features**:
+  - Dictate button with microphone icon next to text fields
+  - Settings gear for configuring transcription method
+  - Auto-populate or append to existing text
+  - Review and edit transcription before inserting
+  - Copy to clipboard option
+  - Shows corrections made with original vs corrected text
+- [x] **API Endpoints**:
+  - `POST /api/voice-dictation/transcribe` - Audio transcription with Whisper
+  - `POST /api/voice-dictation/correct-terminology` - Apply medical term corrections
+  - `GET /api/voice-dictation/medical-terms` - List supported medical terms
+
 ### Radiologist Portal & Radiology Workflow (February 7, 2026) - NEW
 - [x] **Radiologist Workstation Dashboard** (`/radiology`):
   - Stats: My Assigned, Pending Review, STAT Pending, My Reports Today, Critical Pending, Under Review, Total Queue
