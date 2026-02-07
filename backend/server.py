@@ -1208,6 +1208,36 @@ from interventional_radiology_module import create_ir_module_router
 ir_router = create_ir_module_router(db, get_current_user)
 app.include_router(ir_router)
 
+# Pharmacy Portal Module (Standalone pharmacy system)
+from pharmacy_portal_module import create_pharmacy_portal_router
+pharmacy_portal_router = create_pharmacy_portal_router(db)
+app.include_router(pharmacy_portal_router)
+
+# Medication Database API
+from medication_database import get_all_medications, search_medications, get_medication_categories, get_medications_by_category
+
+@api_router.get("/medications/search")
+async def api_search_medications(
+    query: str = "",
+    category: str = None,
+    limit: int = 50
+):
+    """Search medications in the global database"""
+    results = search_medications(query, category, limit)
+    return {"medications": results, "total": len(results)}
+
+@api_router.get("/medications/categories")
+async def api_get_medication_categories():
+    """Get all medication categories"""
+    categories = get_medication_categories()
+    return {"categories": categories}
+
+@api_router.get("/medications/by-category/{category}")
+async def api_get_medications_by_category(category: str):
+    """Get all medications in a specific category"""
+    medications = get_medications_by_category(category)
+    return {"medications": medications, "total": len(medications)}
+
 
 app.add_middleware(
     CORSMiddleware,
