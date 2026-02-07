@@ -16,6 +16,7 @@ Build a comprehensive Electronic Medical Records (EMR) system similar to Epic EM
 4. **Administrators** - Oversee system, manage users, view analytics, monitor system health
 5. **Pharmacists** - Manage e-prescriptions, dispense medications, verify FDA registration, manage NHIS claims
 6. **Billers** - Create invoices, process payments, manage claims
+7. **Radiologists** - Review imaging studies, create structured reports, communicate critical findings
 
 ## Tech Stack
 - **Frontend:** React 19, Tailwind CSS, shadcn/ui components, Recharts
