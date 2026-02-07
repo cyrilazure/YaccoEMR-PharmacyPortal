@@ -1193,6 +1193,11 @@ app.include_router(billing_shifts_router)
 
 app.include_router(finance_router)
 
+# Voice Dictation Module
+from voice_dictation_module import create_voice_dictation_router
+voice_dictation_router = create_voice_dictation_router(db, get_current_user)
+app.include_router(voice_dictation_router)
+
 
 app.add_middleware(
     CORSMiddleware,
