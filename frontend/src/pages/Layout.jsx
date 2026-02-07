@@ -127,6 +127,14 @@ const navItems = [
     color: 'text-purple-500'
   },
   { 
+    to: '/interventional-radiology', 
+    icon: Syringe, 
+    label: 'Interventional Radiology', 
+    roles: ['radiologist', 'physician', 'hospital_admin'],
+    description: 'IR procedures & sedation',
+    color: 'text-indigo-500'
+  },
+  { 
     to: '/bed-management', 
     icon: Bed, 
     label: 'Bed Management', 
