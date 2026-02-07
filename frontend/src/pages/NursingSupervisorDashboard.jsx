@@ -1311,9 +1311,20 @@ export default function NursingSupervisorDashboard() {
             </div>
             
             <div className="space-y-2">
-              <Label>Notes</Label>
+              <div className="flex items-center justify-between">
+                <Label>Notes</Label>
+                <VoiceDictation
+                  onTranscriptionComplete={(text) => setAssignmentForm({...assignmentForm, notes: text})}
+                  context="nursing"
+                  targetField="assignment notes"
+                  appendMode={!!assignmentForm.notes}
+                  currentValue={assignmentForm.notes}
+                  buttonVariant="outline"
+                  buttonSize="sm"
+                />
+              </div>
               <Textarea 
-                placeholder="Assignment notes..."
+                placeholder="Assignment notes... or use voice dictation"
                 value={assignmentForm.notes}
                 onChange={(e) => setAssignmentForm({...assignmentForm, notes: e.target.value})}
               />
