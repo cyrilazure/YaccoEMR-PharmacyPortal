@@ -299,9 +299,35 @@ export default function VoiceDictation({
     }
   }, [settings.method, settings.language, settings.autoCorrect, context, transcribedText]);
   
+  // AI Expand function
+  const handleAiExpand = useCallback(async () => {
+    const textToExpand = correctedText || transcribedText;
+    if (!textToExpand) return;
+    
+    setIsExpanding(true);
+    try {
+      const response = await voiceAPI.aiExpand(textToExpand, noteType, context);
+      setExpandedText(response.data.expanded_text);
+      setUseExpanded(true);
+      toast.success(`AI expanded to ${response.data.word_count} words`);
+    } catch (err) {
+      console.error('AI expansion error:', err);
+      toast.error('Failed to expand with AI. Using original text.');
+    } finally {
+      setIsExpanding(false);
+    }
+  }, [correctedText, transcribedText, noteType, context]);
+  
   // Apply transcription to target field
   const applyTranscription = useCallback((useOriginal = false) => {
-    const textToUse = useOriginal ? transcribedText : (correctedText || transcribedText);
+    let textToUse;
+    if (useExpanded && expandedText) {
+      textToUse = expandedText;
+    } else if (useOriginal) {
+      textToUse = transcribedText;
+    } else {
+      textToUse = correctedText || transcribedText;
+    }
     
     if (onTranscriptionComplete) {
       if (appendMode && currentValue) {
@@ -312,8 +338,10 @@ export default function VoiceDictation({
     }
     
     setShowResultDialog(false);
+    setExpandedText('');
+    setUseExpanded(false);
     toast.success(`Text ${appendMode ? 'appended to' : 'inserted into'} ${targetField || 'field'}`);
-  }, [transcribedText, correctedText, onTranscriptionComplete, appendMode, currentValue, targetField]);
+  }, [transcribedText, correctedText, expandedText, useExpanded, onTranscriptionComplete, appendMode, currentValue, targetField]);
   
   // Copy to clipboard
   const copyToClipboard = useCallback(async () => {
