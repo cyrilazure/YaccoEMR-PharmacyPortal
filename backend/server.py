@@ -48,6 +48,8 @@ class UserRole(str, Enum):
     HOSPITAL_IT_ADMIN = "hospital_it_admin"
     FACILITY_ADMIN = "facility_admin"
     BILLER = "biller"
+    SENIOR_BILLER = "senior_biller"
+    FINANCE_MANAGER = "finance_manager"
     PHARMACIST = "pharmacist"
     PHARMACY_TECH = "pharmacy_tech"
     RADIOLOGY_STAFF = "radiology_staff"
