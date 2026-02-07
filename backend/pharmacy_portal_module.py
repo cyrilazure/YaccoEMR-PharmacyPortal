@@ -1302,4 +1302,267 @@ def create_pharmacy_portal_router(db) -> APIRouter:
             "total_amount": total_amount
         }
     
+    # ============== GLOBAL MEDICATION DATABASE ==============
+    
+    @router.get("/medications/search")
+    async def search_global_medications(
+        query: Optional[str] = None,
+        category: Optional[str] = None,
+        limit: int = 50,
+        user: dict = Depends(get_current_pharmacy_user)
+    ):
+        """Search the global medication database"""
+        from medication_database import search_medications, get_medication_categories
+        
+        results = search_medications(query or "", category, limit)
+        
+        # Format results
+        medications = []
+        for med in results:
+            medications.append({
+                "generic_name": med["generic_name"],
+                "brand_names": med.get("brand_names", []),
+                "category": med.get("category", ""),
+                "dosage_forms": med.get("dosage_forms", []),
+                "strengths": med.get("strengths", [])
+            })
+        
+        return {
+            "medications": medications,
+            "total": len(medications),
+            "categories": get_medication_categories() if not category else None
+        }
+    
+    @router.get("/medications/categories")
+    async def get_medication_categories_list(user: dict = Depends(get_current_pharmacy_user)):
+        """Get all medication categories"""
+        from medication_database import get_medication_categories
+        
+        categories = get_medication_categories()
+        
+        return {
+            "categories": [
+                {"code": cat, "name": cat.replace("_", " ").title()}
+                for cat in categories
+            ]
+        }
+    
+    @router.post("/drugs/seed")
+    async def seed_drugs_from_database(
+        categories: Optional[List[str]] = Body(None),
+        user: dict = Depends(require_roles(
+            PharmacyStaffRole.PHARMACY_IT_ADMIN,
+            PharmacyStaffRole.PHARMACY_OWNER,
+            PharmacyStaffRole.SUPERINTENDENT_PHARMACIST
+        ))
+    ):
+        """Seed drugs from global medication database into pharmacy catalog"""
+        from medication_database import get_all_medications, get_medications_by_category
+        
+        pharmacy_id = user.get("pharmacy_id")
+        now = datetime.now(timezone.utc).isoformat()
+        
+        # Get medications to seed
+        if categories:
+            medications = []
+            for cat in categories:
+                medications.extend(get_medications_by_category(cat))
+        else:
+            medications = get_all_medications()
+        
+        added_count = 0
+        skipped_count = 0
+        
+        for med in medications:
+            # Check if drug already exists
+            existing = await db["pharmacy_drugs"].find_one({
+                "pharmacy_id": pharmacy_id,
+                "generic_name": med["generic_name"]
+            })
+            
+            if existing:
+                skipped_count += 1
+                continue
+            
+            # Map category to drug category enum
+            category_map = {
+                "opioid_analgesic": "controlled_substance",
+                "psychiatric_benzodiazepine": "controlled_substance",
+                "anesthetic_general": "prescription_only",
+                "anesthetic_local": "prescription_only",
+                "antibiotic": "prescription_only",
+                "antiviral_arv": "prescription_only",
+                "antitubercular": "prescription_only",
+                "hormone": "prescription_only",
+                "contraceptive": "prescription_only",
+            }
+            
+            drug_category = "pharmacy_only"
+            for key, val in category_map.items():
+                if key in med.get("category", ""):
+                    drug_category = val
+                    break
+            
+            if "analgesic" in med.get("category", "") and "opioid" not in med.get("category", ""):
+                drug_category = "over_the_counter"
+            if "vitamin" in med.get("category", "") or "mineral" in med.get("category", ""):
+                drug_category = "general_sale"
+            if "antihistamine" in med.get("category", ""):
+                drug_category = "pharmacy_only"
+            
+            # Create drug record
+            drug_id = str(uuid.uuid4())
+            primary_form = med.get("dosage_forms", ["tablet"])[0]
+            primary_strength = med.get("strengths", [""])[0]
+            
+            drug_record = {
+                "id": drug_id,
+                "pharmacy_id": pharmacy_id,
+                "generic_name": med["generic_name"],
+                "brand_name": med.get("brand_names", [""])[0] if med.get("brand_names") else "",
+                "brand_names": med.get("brand_names", []),
+                "manufacturer": "Various",
+                "strength": primary_strength,
+                "all_strengths": med.get("strengths", []),
+                "dosage_form": primary_form,
+                "all_dosage_forms": med.get("dosage_forms", []),
+                "category": drug_category,
+                "therapeutic_category": med.get("category", ""),
+                "unit_price": 0.0,  # To be set by pharmacy
+                "pack_size": 1,
+                "reorder_level": 10,
+                "current_stock": 0,
+                "is_active": True,
+                "created_at": now,
+                "created_by": user["id"]
+            }
+            
+            await db["pharmacy_drugs"].insert_one(drug_record)
+            added_count += 1
+        
+        # Audit log
+        await db["pharmacy_audit_logs"].insert_one({
+            "id": str(uuid.uuid4()),
+            "pharmacy_id": pharmacy_id,
+            "action": "drugs_seeded",
+            "details": f"Seeded {added_count} drugs from global database (skipped {skipped_count} existing)",
+            "performed_by": user["id"],
+            "timestamp": now
+        })
+        
+        return {
+            "message": f"Drug catalog seeded successfully",
+            "added": added_count,
+            "skipped": skipped_count,
+            "total_in_catalog": await db["pharmacy_drugs"].count_documents({"pharmacy_id": pharmacy_id})
+        }
+    
+    # ============== UPDATE DRUG PRICES ==============
+    
+    @router.put("/drugs/{drug_id}")
+    async def update_drug(
+        drug_id: str,
+        unit_price: Optional[float] = Body(None),
+        reorder_level: Optional[int] = Body(None),
+        pack_size: Optional[int] = Body(None),
+        is_active: Optional[bool] = Body(None),
+        user: dict = Depends(require_roles(
+            PharmacyStaffRole.PHARMACY_IT_ADMIN,
+            PharmacyStaffRole.SUPERINTENDENT_PHARMACIST,
+            PharmacyStaffRole.INVENTORY_MANAGER
+        ))
+    ):
+        """Update drug information (pricing, reorder levels)"""
+        pharmacy_id = user.get("pharmacy_id")
+        
+        update_data = {"updated_at": datetime.now(timezone.utc).isoformat()}
+        
+        if unit_price is not None:
+            update_data["unit_price"] = unit_price
+        if reorder_level is not None:
+            update_data["reorder_level"] = reorder_level
+        if pack_size is not None:
+            update_data["pack_size"] = pack_size
+        if is_active is not None:
+            update_data["is_active"] = is_active
+        
+        result = await db["pharmacy_drugs"].update_one(
+            {"id": drug_id, "pharmacy_id": pharmacy_id},
+            {"$set": update_data}
+        )
+        
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="Drug not found")
+        
+        return {"message": "Drug updated successfully"}
+    
+    # ============== BATCH PRICE UPDATE ==============
+    
+    @router.post("/drugs/batch-update-prices")
+    async def batch_update_drug_prices(
+        updates: List[Dict[str, Any]] = Body(...),  # [{drug_id, unit_price, reorder_level}]
+        user: dict = Depends(require_roles(
+            PharmacyStaffRole.PHARMACY_IT_ADMIN,
+            PharmacyStaffRole.SUPERINTENDENT_PHARMACIST,
+            PharmacyStaffRole.INVENTORY_MANAGER
+        ))
+    ):
+        """Batch update drug prices"""
+        pharmacy_id = user.get("pharmacy_id")
+        now = datetime.now(timezone.utc).isoformat()
+        
+        updated = 0
+        for update in updates:
+            result = await db["pharmacy_drugs"].update_one(
+                {"id": update.get("drug_id"), "pharmacy_id": pharmacy_id},
+                {"$set": {
+                    "unit_price": update.get("unit_price", 0),
+                    "reorder_level": update.get("reorder_level", 10),
+                    "updated_at": now
+                }}
+            )
+            if result.modified_count > 0:
+                updated += 1
+        
+        return {"message": f"Updated {updated} drugs", "updated": updated}
+    
+    # ============== PHARMACY APPROVAL (Platform Admin) ==============
+    
+    @router.put("/admin/pharmacies/{pharmacy_id}/approve")
+    async def approve_pharmacy(
+        pharmacy_id: str,
+        status: str = Body(..., embed=True),  # "approved" or "rejected"
+        notes: Optional[str] = Body(None, embed=True)
+    ):
+        """Approve or reject pharmacy registration (Platform Admin only)"""
+        # This would require platform admin auth - simplified for now
+        
+        if status not in ["approved", "rejected", "active"]:
+            raise HTTPException(status_code=400, detail="Invalid status")
+        
+        result = await db["pharmacies"].update_one(
+            {"id": pharmacy_id},
+            {"$set": {
+                "status": status,
+                "registration_status": status,
+                "approval_notes": notes,
+                "approved_at": datetime.now(timezone.utc).isoformat() if status == "approved" else None
+            }}
+        )
+        
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="Pharmacy not found")
+        
+        return {"message": f"Pharmacy {status}"}
+    
+    @router.get("/admin/pharmacies/pending")
+    async def list_pending_pharmacies():
+        """List pharmacies pending approval"""
+        pharmacies = await db["pharmacies"].find(
+            {"status": {"$in": ["pending", "under_review"]}},
+            {"_id": 0, "password": 0}
+        ).to_list(100)
+        
+        return {"pharmacies": pharmacies, "total": len(pharmacies)}
+    
     return router
