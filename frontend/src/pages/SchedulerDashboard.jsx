@@ -116,15 +116,12 @@ export default function SchedulerDashboard() {
     try {
       const response = await patientAPI.create(newPatient);
       const createdPatient = response.data;
-      toast.success(
-        <div>
-          <p className="font-semibold">Patient Registered Successfully!</p>
-          <p className="text-sm">MRN: <span className="font-mono font-bold">{createdPatient.mrn || 'Generated'}</span></p>
-          <p className="text-sm">{createdPatient.first_name} {createdPatient.last_name}</p>
-        </div>,
-        { duration: 6000 }
-      );
+      
+      // Store registered patient and show QR dialog
+      setRegisteredPatient(createdPatient);
       setPatientDialogOpen(false);
+      setQrDialogOpen(true);
+      
       setNewPatient({
         first_name: '', last_name: '', date_of_birth: '', gender: 'male',
         email: '', phone: '', address: '',
@@ -137,6 +134,69 @@ export default function SchedulerDashboard() {
     } finally {
       setSaving(false);
     }
+  };
+
+  // Print QR Code Label
+  const handlePrintQR = () => {
+    const printContent = qrPrintRef.current;
+    if (!printContent) return;
+
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Patient Label - ${registeredPatient?.mrn}</title>
+          <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { font-family: 'Segoe UI', Arial, sans-serif; }
+            .label { 
+              width: 4in; 
+              padding: 0.25in;
+              border: 1px solid #000;
+            }
+            .header { 
+              text-align: center; 
+              border-bottom: 2px solid #000; 
+              padding-bottom: 8px; 
+              margin-bottom: 10px;
+            }
+            .hospital-name { font-size: 14px; font-weight: bold; }
+            .mrn { font-size: 18px; font-weight: bold; font-family: monospace; margin: 8px 0; }
+            .patient-name { font-size: 16px; font-weight: bold; margin: 5px 0; }
+            .info-row { font-size: 12px; margin: 4px 0; }
+            .qr-container { text-align: center; margin: 10px 0; }
+            .physician { font-size: 12px; margin-top: 8px; padding-top: 8px; border-top: 1px dashed #000; }
+            @media print { 
+              body { padding: 0; } 
+              .label { border: none; }
+            }
+          </style>
+        </head>
+        <body>
+          ${printContent.innerHTML}
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 250);
+  };
+
+  // Generate QR Code data
+  const getQRData = () => {
+    if (!registeredPatient) return '';
+    const physicianName = providers.find(p => p.id === selectedPhysician);
+    return JSON.stringify({
+      mrn: registeredPatient.mrn,
+      firstName: registeredPatient.first_name,
+      lastName: registeredPatient.last_name,
+      dob: registeredPatient.date_of_birth,
+      physician: physicianName ? `Dr. ${physicianName.first_name} ${physicianName.last_name}` : 'Not Assigned'
+    });
   };
 
   const handleStatusChange = async (apptId, newStatus) => {
