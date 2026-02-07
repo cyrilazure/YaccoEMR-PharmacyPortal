@@ -36,9 +36,10 @@ import {
   Heart, User, Plus, Check, Bell, LogIn, LogOut, 
   Users, Stethoscope, AlertCircle, Timer, Shield, 
   Droplets, Gauge, RefreshCw, Eye, Search, Hash, Calendar, IdCard,
-  FileText, Send, Edit, Save, FileCheck, QrCode
+  FileText, Send, Edit, Save, FileCheck, QrCode, Mic
 } from 'lucide-react';
 import PatientScanner from '@/components/PatientScanner';
+import VoiceDictation from '@/components/VoiceDictation';
 
 const priorityColors = { 
   stat: 'bg-red-500 text-white', 
