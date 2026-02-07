@@ -2547,6 +2547,109 @@ export default function BillingPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Reconciliation Dialog */}
+      <Dialog open={reconcileShift !== null} onOpenChange={(open) => !open && setReconcileShift(null)}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle className="w-5 h-5 text-emerald-600" />
+              Reconcile Shift
+            </DialogTitle>
+            <DialogDescription>
+              Review and approve the shift closing for {reconcileShift?.biller_name}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {reconcileShift && (
+            <div className="space-y-4 py-4">
+              {/* Shift Summary */}
+              <div className="p-4 bg-slate-50 rounded-lg space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Shift Type:</span>
+                  <span className="font-medium">{reconcileShift.shift_type?.toUpperCase()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Start Time:</span>
+                  <span className="font-medium">{new Date(reconcileShift.start_time).toLocaleString()}</span>
+                </div>
+                {reconcileShift.end_time && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">End Time:</span>
+                    <span className="font-medium">{new Date(reconcileShift.end_time).toLocaleString()}</span>
+                  </div>
+                )}
+                <Separator />
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Total Invoices:</span>
+                  <span className="font-medium">{reconcileShift.total_invoices || 0}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Total Collections:</span>
+                  <span className="font-bold text-emerald-600">₵{(reconcileShift.total_payments_amount || 0).toLocaleString()}</span>
+                </div>
+                <Separator />
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Expected Cash:</span>
+                  <span className="font-medium">₵{(reconcileShift.cash_collected || 0).toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Reported Cash:</span>
+                  <span className="font-medium">
+                    {reconcileShift.actual_cash_submitted !== null 
+                      ? `₵${reconcileShift.actual_cash_submitted.toLocaleString()}`
+                      : 'Not reported'
+                    }
+                  </span>
+                </div>
+              </div>
+
+              {/* Actual Cash Input */}
+              <div className="space-y-2">
+                <Label>Verified Cash Amount</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">₵</span>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="Enter verified cash amount"
+                    value={actualCashAmount}
+                    onChange={(e) => setActualCashAmount(e.target.value)}
+                    className="pl-8"
+                  />
+                </div>
+                <p className="text-xs text-slate-500">Enter the actual cash verified during reconciliation</p>
+              </div>
+
+              {/* Reconciliation Notes */}
+              <div className="space-y-2">
+                <Label>Reconciliation Notes</Label>
+                <Textarea
+                  placeholder="Add any notes about this reconciliation..."
+                  value={reconcileNotes}
+                  onChange={(e) => setReconcileNotes(e.target.value)}
+                  rows={3}
+                />
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReconcileShift(null)}>Cancel</Button>
+            <Button 
+              onClick={handleReconcileShift} 
+              disabled={reconciling}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              {reconciling ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Reconciling...</>
+              ) : (
+                <><CheckCircle className="w-4 h-4 mr-2" /> Approve Reconciliation</>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
