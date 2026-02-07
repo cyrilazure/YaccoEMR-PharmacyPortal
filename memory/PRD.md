@@ -522,6 +522,49 @@ GET  /api/billing-shifts/audit-logs      - Billing audit logs
 - [x] API endpoints: `/api/pacs/config`, `/api/pacs/status`, `/api/pacs/studies/*`, `/api/pacs/viewer/url`
 - [x] Note: Currently in **DEMO MODE** - no dcm4chee server connected
 
+### Pharmacy Landing Zone & National Pharmacy Database - Phase 1 (February 7, 2026)
+- [x] **Pharmacy Landing Page** (`/pharmacy`): National gateway for all pharmacies in Ghana
+  - Hero section with stats (20+ pharmacies, 16 regions, 24/7 emergency, NHIS support)
+  - Full-text search bar for pharmacies
+  - Features section highlighting e-Prescription, NHIS Claims, Inventory Management
+- [x] **Ghana Region Selection**: All 16 regions displayed as cards with pharmacy counts
+  - Greater Accra, Ashanti, Central, Eastern, Western, Western North, Volta, Oti
+  - Northern, Savannah, North East, Upper East, Upper West, Bono, Bono East, Ahafo
+  - Click region to filter pharmacies
+- [x] **Pharmacy Directory Database**: National pharmacy registry
+  - Fields: Name, License #, Region, District, Town, GPS Address, Phone, Email
+  - Operating Hours, Ownership Type, NHIS Accreditation, 24hr Service
+  - Search filters: Region, District, Name, License #
+- [x] **Pharmacy Profile Page** (`/pharmacy/:id`): Individual pharmacy details
+  - Contact information, location, operating hours
+  - License & accreditation info
+  - Services offered, badges (NHIS, 24/7)
+  - Map placeholder for future integration
+- [x] **Pharmacy Registration** (3-step flow):
+  - Step 1: Basic Info (name, license, region, ownership type)
+  - Step 2: Contact & Location (address, GPS, phone, email, NHIS checkbox)
+  - Step 3: Superintendent details & credentials
+  - Pending approval workflow
+- [x] **Pharmacy Authentication**: Separate from hospital EMR
+  - Independent login system for pharmacy staff
+  - JWT tokens with "pharmacy_portal" type
+  - Password hashing with bcrypt
+- [x] **Pharmacy Dashboard** (`/pharmacy/dashboard`): Staff workspace
+  - Dashboard with stats (Today's Sales, Pending Rx, Low Stock, Total Drugs)
+  - Drug Catalog management
+  - Inventory management with reorder suggestions
+  - Sales/Dispensing workflow
+  - e-Prescription receiving
+  - Staff management (IT Admin portal)
+- [x] **Global Medication Database**: 200+ medications
+  - Analgesics, Antibiotics, Antimalarials, Antihypertensives
+  - Antidiabetics, GI meds, Respiratory, Vitamins, Dermatological, etc.
+  - API endpoints: `/api/medications/search`, `/api/medications/categories`
+- [x] **API Endpoints**:
+  - Public: `/api/pharmacy-portal/public/regions`, `/api/pharmacy-portal/public/pharmacies`
+  - Auth: `/api/pharmacy-portal/auth/login`, `/api/pharmacy-portal/register`
+  - Protected: `/api/pharmacy-portal/dashboard`, `/api/pharmacy-portal/drugs`, etc.
+
 ## Prioritized Backlog
 
 ### P0 (Critical)
