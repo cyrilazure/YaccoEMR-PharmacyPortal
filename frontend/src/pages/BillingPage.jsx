@@ -1273,6 +1273,104 @@ export default function BillingPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Insurance Details Dialog - Billing View Only */}
+      <Dialog open={viewInsuranceOpen} onOpenChange={setViewInsuranceOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Shield className="w-5 h-5 text-blue-600" />
+              Insurance Information
+            </DialogTitle>
+            <DialogDescription>
+              Patient insurance details for billing purposes
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedInsurancePatient && (
+            <div className="space-y-4">
+              {/* Patient Basic Info (Non-Medical) */}
+              <div className="p-4 bg-slate-50 rounded-lg">
+                <h4 className="font-semibold text-slate-700 mb-3">Patient Information</h4>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <p className="text-slate-500">Full Name</p>
+                    <p className="font-medium">{selectedInsurancePatient.first_name} {selectedInsurancePatient.last_name}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500">Date of Birth</p>
+                    <p className="font-medium">{selectedInsurancePatient.date_of_birth || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500">Phone</p>
+                    <p className="font-medium">{selectedInsurancePatient.phone || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500">MRN</p>
+                    <p className="font-medium font-mono">{selectedInsurancePatient.mrn || 'N/A'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Insurance Details */}
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h4 className="font-semibold text-blue-800 mb-3 flex items-center gap-2">
+                  <IdCard className="w-4 h-4" />
+                  Insurance Coverage
+                </h4>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <p className="text-blue-600">Insurance Provider</p>
+                    <p className="font-semibold text-blue-900">{selectedInsurancePatient.insurance_provider || 'NHIS Ghana'}</p>
+                  </div>
+                  <div>
+                    <p className="text-blue-600">Insurance/Policy ID</p>
+                    <p className="font-semibold text-blue-900 font-mono">{selectedInsurancePatient.nhis_id || selectedInsurancePatient.insurance_id || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <p className="text-blue-600">Insurance Plan</p>
+                    <p className="font-semibold text-blue-900">{selectedInsurancePatient.insurance_plan || 'Standard'}</p>
+                  </div>
+                  <div>
+                    <p className="text-blue-600">Coverage Status</p>
+                    <Badge className="bg-green-100 text-green-700 mt-1">
+                      <CheckCircle className="w-3 h-3 mr-1" />
+                      Active
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              {/* Billing Address */}
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <h4 className="font-semibold text-slate-700 mb-2">Billing Address</h4>
+                <p className="text-sm text-slate-600">{selectedInsurancePatient.address || 'Address not provided'}</p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-2">
+                <Button 
+                  className="flex-1"
+                  onClick={() => {
+                    setSelectedPatient(selectedInsurancePatient.id);
+                    setViewInsuranceOpen(false);
+                    setShowCreateInvoice(true);
+                  }}
+                >
+                  <Receipt className="w-4 h-4 mr-2" />
+                  Create Invoice
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => setViewInsuranceOpen(false)}
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
