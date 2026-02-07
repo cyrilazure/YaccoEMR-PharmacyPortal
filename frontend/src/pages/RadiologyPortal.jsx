@@ -1205,7 +1205,7 @@ export default function RadiologyPortal() {
                             <p className="font-medium">{finding.patient_name}</p>
                             <p className="text-sm text-pink-700">{finding.critical_finding_details || 'Critical finding identified'}</p>
                             <p className="text-xs text-gray-500">
-                              {finding.study_type} | Reported: {new Date(finding.reported_at).toLocaleString()}
+                              {finding.study_type} | Reported: {new Date(finding.finalized_at || finding.created_at).toLocaleString()}
                             </p>
                           </div>
                         </div>
