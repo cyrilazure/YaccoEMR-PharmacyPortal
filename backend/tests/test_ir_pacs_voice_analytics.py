@@ -25,10 +25,11 @@ class TestAuthentication:
     
     def test_radiologist_login(self):
         """Test radiologist login flow"""
-        # Step 1: Get regions
-        response = requests.get(f"{BASE_URL}/api/regions")
+        # Step 1: Get regions (note: API returns {"regions": [...]} format)
+        response = requests.get(f"{BASE_URL}/api/regions/")
         assert response.status_code == 200
-        regions = response.json()
+        data = response.json()
+        regions = data.get("regions", [])
         assert len(regions) > 0
         print(f"SUCCESS: Found {len(regions)} regions")
         
@@ -39,9 +40,10 @@ class TestAuthentication:
         print(f"SUCCESS: Found Greater Accra Region: {region_id}")
         
         # Step 2: Get hospitals in region
-        response = requests.get(f"{BASE_URL}/api/hospitals/by-region/{region_id}")
+        response = requests.get(f"{BASE_URL}/api/regions/{region_id}/hospitals")
         assert response.status_code == 200
-        hospitals = response.json()
+        hospitals_data = response.json()
+        hospitals = hospitals_data.get("hospitals", [])
         assert len(hospitals) > 0
         print(f"SUCCESS: Found {len(hospitals)} hospitals in Greater Accra")
         
@@ -58,7 +60,7 @@ class TestAuthentication:
             "password": RADIOLOGIST_PASSWORD,
             "hospital_id": hospital_id
         }
-        response = requests.post(f"{BASE_URL}/api/auth/login", json=login_data)
+        response = requests.post(f"{BASE_URL}/api/regions/auth/login", json=login_data)
         assert response.status_code == 200, f"Login failed: {response.text}"
         data = response.json()
         assert "token" in data
@@ -70,9 +72,10 @@ class TestAuthentication:
     def test_super_admin_login(self):
         """Test super admin login flow"""
         # Step 1: Get regions
-        response = requests.get(f"{BASE_URL}/api/regions")
+        response = requests.get(f"{BASE_URL}/api/regions/")
         assert response.status_code == 200
-        regions = response.json()
+        data = response.json()
+        regions = data.get("regions", [])
         
         # Find Greater Accra Region
         greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
@@ -80,9 +83,10 @@ class TestAuthentication:
         region_id = greater_accra.get("id")
         
         # Step 2: Get hospitals
-        response = requests.get(f"{BASE_URL}/api/hospitals/by-region/{region_id}")
+        response = requests.get(f"{BASE_URL}/api/regions/{region_id}/hospitals")
         assert response.status_code == 200
-        hospitals = response.json()
+        hospitals_data = response.json()
+        hospitals = hospitals_data.get("hospitals", [])
         hospital = next((h for h in hospitals if "ygtworks" in h.get("name", "").lower()), hospitals[0])
         hospital_id = hospital.get("id")
         
@@ -92,7 +96,7 @@ class TestAuthentication:
             "password": SUPER_ADMIN_PASSWORD,
             "hospital_id": hospital_id
         }
-        response = requests.post(f"{BASE_URL}/api/auth/login", json=login_data)
+        response = requests.post(f"{BASE_URL}/api/regions/auth/login", json=login_data)
         assert response.status_code == 200, f"Login failed: {response.text}"
         data = response.json()
         assert "token" in data
