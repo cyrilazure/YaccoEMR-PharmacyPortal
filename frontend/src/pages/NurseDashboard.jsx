@@ -615,6 +615,12 @@ export default function NurseDashboard() {
               </DialogContent>
             </Dialog>
           )}
+          <PatientScanner 
+            buttonLabel="Scan Patient"
+            onPatientFound={(patient) => {
+              toast.success(`Patient verified: ${patient.first_name} ${patient.last_name} (MRN: ${patient.mrn})`);
+            }}
+          />
           <Button variant="outline" size="icon" onClick={fetchData}>
             <RefreshCw className="w-4 h-4" />
           </Button>
