@@ -875,13 +875,40 @@ export default function NursingSupervisorDashboard() {
               >
                 <SelectTrigger><SelectValue placeholder="Select nurse" /></SelectTrigger>
                 <SelectContent>
-                  {nurses.filter(n => n.active_shift).map((n) => (
-                    <SelectItem key={n.id} value={n.id}>
-                      {n.first_name} {n.last_name} ({n.patient_count || 0} patients)
-                    </SelectItem>
-                  ))}
+                  {/* Show on-shift nurses first, then others */}
+                  {nurses.length > 0 ? (
+                    <>
+                      {nurses.filter(n => n.active_shift).length > 0 && (
+                        <div className="px-2 py-1 text-xs font-semibold text-green-700 bg-green-50">On Shift</div>
+                      )}
+                      {nurses.filter(n => n.active_shift).map((n) => (
+                        <SelectItem key={n.id} value={n.id}>
+                          <span className="flex items-center gap-2">
+                            <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                            {n.first_name} {n.last_name} ({n.patient_count || 0} patients)
+                          </span>
+                        </SelectItem>
+                      ))}
+                      {nurses.filter(n => !n.active_shift).length > 0 && (
+                        <div className="px-2 py-1 text-xs font-semibold text-slate-500 bg-slate-50 mt-1">Available Nurses</div>
+                      )}
+                      {nurses.filter(n => !n.active_shift).map((n) => (
+                        <SelectItem key={n.id} value={n.id}>
+                          <span className="flex items-center gap-2">
+                            <span className="w-2 h-2 bg-slate-300 rounded-full"></span>
+                            {n.first_name} {n.last_name}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </>
+                  ) : (
+                    <div className="px-3 py-2 text-sm text-slate-500">No nurses available</div>
+                  )}
                 </SelectContent>
               </Select>
+              {nurses.length === 0 && (
+                <p className="text-xs text-amber-600">No nurses found. Please ensure nurses are registered in the system.</p>
+              )}
             </div>
             
             <div className="grid grid-cols-2 gap-4">
