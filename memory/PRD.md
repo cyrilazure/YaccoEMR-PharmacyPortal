@@ -486,6 +486,42 @@ GET  /api/billing-shifts/audit-logs      - Billing audit logs
 - [x] Print Receipt displays hospital logo if available
 - [x] Receipt shows hospital name, address, contact info dynamically
 
+### Interventional Radiology Portal (February 7, 2026)
+- [x] **IR Dashboard**: Real-time stats (Today's Cases, In Progress, In Recovery, Completed, Scheduled)
+- [x] **Procedure Management**: Create, start, complete IR procedures
+- [x] **Pre-Assessment**: Document patient pre-procedure assessment with risk factors
+- [x] **Intra-Procedure Notes**: Document findings, techniques, complications during procedure
+- [x] **Post-Procedure Notes**: Document recovery, discharge instructions
+- [x] **Sedation Monitoring**: Record vitals during procedures (HR, BP, SpO2, RR, Pain Scale)
+- [x] **IR Status Board**: Real-time procedure room monitoring with 4 rooms visualization
+  - Shows procedure status (scheduled, pre_procedure, in_progress, recovery, completed)
+  - Live vitals display for in-progress procedures
+  - Recovery area patient list
+  - Upcoming procedures today
+- [x] Procedure types: Angiography, Embolization, Biopsy, Drainage, Ablation, Stent Placement
+- [x] Sedation levels: None, Minimal, Moderate, Deep, General Anesthesia
+- [x] API endpoints: `/api/interventional-radiology/*`
+- [x] Role access: `radiologist`, `physician`, `hospital_admin`
+
+### Voice Dictation Analytics Dashboard (February 7, 2026)
+- [x] **Overview Tab**: Daily usage trend chart, usage by context pie chart, usage by role breakdown
+- [x] **Top Users Tab**: Leaderboard of users by transcription count and character count
+- [x] **Audit Logs Tab**: Detailed audit logs with filters (user, action type, date range)
+- [x] Admin-only access: `hospital_admin`, `super_admin`, `hospital_it_admin`
+- [x] Tracks: Transcription count, AI expansion usage, character counts, timestamps
+- [x] API endpoints: `/api/voice-dictation/analytics`, `/api/voice-dictation/audit-logs`
+
+### PACS/DICOM Integration (February 7, 2026)
+- [x] **DICOM Viewer Component**: Multi-viewer support (OHIF, MedDream, Weasis)
+- [x] **Demo Mode**: Returns mock studies when no PACS server configured
+- [x] **Study Search**: QIDO-RS compatible search by patient ID, name, accession, modality
+- [x] **Viewer URL Generation**: Dynamic URL generation for all three viewers
+- [x] **Patient Chart Integration**: DICOM viewer embedded in Imaging tab
+- [x] **HL7 Integration**: ADT and ORM message sending
+- [x] Configuration: Set `PACS_HOST`, `PACS_PORT`, `DICOM_VIEWER_URL` for production
+- [x] API endpoints: `/api/pacs/config`, `/api/pacs/status`, `/api/pacs/studies/*`, `/api/pacs/viewer/url`
+- [x] Note: Currently in **DEMO MODE** - no dcm4chee server connected
+
 ## Prioritized Backlog
 
 ### P0 (Critical)
