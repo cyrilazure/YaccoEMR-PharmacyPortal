@@ -1829,7 +1829,7 @@ export default function BillingPage() {
 
       {/* Print Receipt Dialog */}
       <Dialog open={printReceiptOpen} onOpenChange={setPrintReceiptOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Printer className="w-5 h-5 text-green-600" />
@@ -1842,82 +1842,90 @@ export default function BillingPage() {
           
           {receiptInvoice && (
             <>
-              {/* Receipt Preview */}
-              <div ref={receiptRef} className="border rounded-lg p-4 bg-white">
-                <div className="receipt">
-                  {/* Header */}
-                  <div className="header text-center border-b-2 border-dashed pb-4 mb-4">
-                    <div className="hospital-name text-lg font-bold">YGTWORKS HEALTH CENTER</div>
-                    <div className="hospital-info text-xs text-gray-500">
-                      Greater Accra Region, Ghana<br />
-                      Tel: +233 XX XXX XXXX | Email: info@ygtworks.health
+              {/* Receipt Preview - Scrollable */}
+              <div className="overflow-y-auto flex-1 max-h-[60vh] pr-2">
+                <div ref={receiptRef} className="border rounded-lg p-4 bg-white">
+                  <div className="receipt">
+                    {/* Header - Dynamic Hospital Info */}
+                    <div className="header text-center border-b-2 border-dashed pb-4 mb-4">
+                      <div className="hospital-name text-lg font-bold uppercase">
+                        {hospitalInfo?.name || user?.hospital_name || 'HOSPITAL'}
+                      </div>
+                      <div className="hospital-info text-xs text-gray-500 mt-1">
+                        {hospitalInfo?.address && <>{hospitalInfo.address}<br /></>}
+                        {(hospitalInfo?.district || hospitalInfo?.region) && (
+                          <>{hospitalInfo.district}{hospitalInfo.district && hospitalInfo.region ? ', ' : ''}{hospitalInfo.region}<br /></>
+                        )}
+                        {hospitalInfo?.phone && <>Tel: {hospitalInfo.phone}</>}
+                        {hospitalInfo?.phone && hospitalInfo?.email && <> | </>}
+                        {hospitalInfo?.email && <>Email: {hospitalInfo.email}</>}
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Receipt Title */}
-                  <div className="receipt-title text-center font-bold bg-gray-100 py-2 mb-4">
-                    PAYMENT RECEIPT
-                  </div>
+                    {/* Receipt Title */}
+                    <div className="receipt-title text-center font-bold bg-gray-100 py-2 mb-4">
+                      PAYMENT RECEIPT
+                    </div>
 
-                  {/* Receipt Info */}
-                  <div className="space-y-2 text-sm">
-                    <div className="info-row flex justify-between">
-                      <span className="info-label text-gray-500">Receipt No:</span>
-                      <span className="info-value font-semibold">{receiptInvoice.invoice_number}</span>
-                    </div>
-                    <div className="info-row flex justify-between">
-                      <span className="info-label text-gray-500">Date:</span>
-                      <span className="info-value font-semibold">{new Date().toLocaleDateString('en-GB')}</span>
-                    </div>
-                    <div className="info-row flex justify-between">
-                      <span className="info-label text-gray-500">Time:</span>
-                      <span className="info-value font-semibold">{new Date().toLocaleTimeString()}</span>
-                    </div>
-                  </div>
-
-                  <Separator className="my-4" />
-
-                  {/* Patient Info */}
-                  <div className="space-y-2 text-sm">
-                    <div className="info-row flex justify-between">
-                      <span className="info-label text-gray-500">Patient Name:</span>
-                      <span className="info-value font-semibold">{receiptInvoice.patient_name}</span>
-                    </div>
-                    {receiptInvoice.patient_mrn && (
+                    {/* Receipt Info */}
+                    <div className="space-y-2 text-sm">
                       <div className="info-row flex justify-between">
-                        <span className="info-label text-gray-500">MRN:</span>
-                        <span className="info-value font-mono">{receiptInvoice.patient_mrn}</span>
+                        <span className="info-label text-gray-500">Receipt No:</span>
+                        <span className="info-value font-semibold">{receiptInvoice.invoice_number}</span>
                       </div>
-                    )}
-                  </div>
-
-                  <Separator className="my-4" />
-
-                  {/* Items */}
-                  <div className="items-section">
-                    <div className="items-header font-bold text-sm border-b pb-2 mb-2">Service Details</div>
-                    {receiptInvoice.line_items?.map((item, index) => (
-                      <div key={index} className="item-row flex justify-between text-xs py-1">
-                        <span className="flex-1">{item.description}</span>
-                        <span className="font-semibold">₵{(item.quantity * item.unit_price).toFixed(2)}</span>
+                      <div className="info-row flex justify-between">
+                        <span className="info-label text-gray-500">Date:</span>
+                        <span className="info-value font-semibold">{new Date().toLocaleDateString('en-GB')}</span>
                       </div>
-                    )) || (
-                      <div className="item-row flex justify-between text-xs py-1">
-                        <span>Medical Services</span>
-                        <span className="font-semibold">₵{receiptInvoice.total?.toFixed(2)}</span>
+                      <div className="info-row flex justify-between">
+                        <span className="info-label text-gray-500">Time:</span>
+                        <span className="info-value font-semibold">{new Date().toLocaleTimeString()}</span>
                       </div>
-                    )}
-                  </div>
-
-                  <Separator className="my-4" />
-
-                  {/* Totals */}
-                  <div className="totals space-y-2">
-                    <div className="total-row flex justify-between text-sm">
-                      <span>Subtotal:</span>
-                      <span>₵{receiptInvoice.subtotal?.toFixed(2) || receiptInvoice.total?.toFixed(2)}</span>
                     </div>
-                    {receiptInvoice.tax_amount > 0 && (
+
+                    <Separator className="my-4" />
+
+                    {/* Patient Info */}
+                    <div className="space-y-2 text-sm">
+                      <div className="info-row flex justify-between">
+                        <span className="info-label text-gray-500">Patient Name:</span>
+                        <span className="info-value font-semibold">{receiptInvoice.patient_name}</span>
+                      </div>
+                      {receiptInvoice.patient_mrn && (
+                        <div className="info-row flex justify-between">
+                          <span className="info-label text-gray-500">MRN:</span>
+                          <span className="info-value font-mono">{receiptInvoice.patient_mrn}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <Separator className="my-4" />
+
+                    {/* Items */}
+                    <div className="items-section">
+                      <div className="items-header font-bold text-sm border-b pb-2 mb-2">Service Details</div>
+                      {receiptInvoice.line_items?.map((item, index) => (
+                        <div key={index} className="item-row flex justify-between text-xs py-1">
+                          <span className="flex-1">{item.description}</span>
+                          <span className="font-semibold">₵{(item.quantity * item.unit_price).toFixed(2)}</span>
+                        </div>
+                      )) || (
+                        <div className="item-row flex justify-between text-xs py-1">
+                          <span>Medical Services</span>
+                          <span className="font-semibold">₵{receiptInvoice.total?.toFixed(2)}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <Separator className="my-4" />
+
+                    {/* Totals */}
+                    <div className="totals space-y-2">
+                      <div className="total-row flex justify-between text-sm">
+                        <span>Subtotal:</span>
+                        <span>₵{receiptInvoice.subtotal?.toFixed(2) || receiptInvoice.total?.toFixed(2)}</span>
+                      </div>
+                      {receiptInvoice.tax_amount > 0 && (
                       <div className="total-row flex justify-between text-sm">
                         <span>Tax:</span>
                         <span>₵{receiptInvoice.tax_amount?.toFixed(2)}</span>
