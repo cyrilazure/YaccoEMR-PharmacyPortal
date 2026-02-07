@@ -455,35 +455,205 @@ export default function SchedulerDashboard() {
         </CardContent>
       </Card>
 
-      {/* Patient List Quick View */}
+      {/* Patient List - Limited View for Scheduler */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Users className="w-5 h-5" /> Recent Patients
+            <Users className="w-5 h-5" /> Patient Directory
           </CardTitle>
-          <CardDescription>Quick access to patient records</CardDescription>
+          <CardDescription>View basic patient information for scheduling (limited access)</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3">
-            {patients.slice(0, 10).map((patient) => (
+          {/* Search */}
+          <div className="mb-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Input
+                placeholder="Search by name..."
+                value={patientSearchTerm}
+                onChange={(e) => setPatientSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {patients
+              .filter(p => {
+                if (!patientSearchTerm) return true;
+                const search = patientSearchTerm.toLowerCase();
+                return (
+                  p.first_name?.toLowerCase().includes(search) ||
+                  p.last_name?.toLowerCase().includes(search) ||
+                  p.mrn?.toLowerCase().includes(search)
+                );
+              })
+              .slice(0, 12)
+              .map((patient) => (
               <div 
                 key={patient.id}
-                className="p-3 rounded-lg border border-slate-200 hover:border-sky-200 cursor-pointer transition-colors"
+                className="p-4 rounded-lg border border-slate-200 hover:border-sky-300 hover:shadow-sm transition-all"
               >
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center text-sm font-semibold">
-                    {patient.first_name?.[0]}{patient.last_name?.[0]}
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center text-sm font-semibold">
+                      {patient.first_name?.[0]}{patient.last_name?.[0]}
+                    </div>
+                    <div>
+                      <p className="font-medium text-slate-900">{patient.first_name} {patient.last_name}</p>
+                      <p className="text-xs text-slate-500">MRN: {patient.mrn}</p>
+                      {patient.date_of_birth && (
+                        <p className="text-xs text-slate-400">DOB: {formatDate(patient.date_of_birth)}</p>
+                      )}
+                    </div>
                   </div>
-                  <div className="overflow-hidden">
-                    <p className="font-medium text-sm text-slate-900 truncate">{patient.first_name} {patient.last_name}</p>
-                    <p className="text-xs text-slate-500">{patient.mrn}</p>
-                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setViewPatientInfo(patient)}
+                    className="gap-1"
+                  >
+                    <Eye className="w-3 h-3" />
+                    View
+                  </Button>
                 </div>
               </div>
             ))}
           </div>
+          
+          {patients.length === 0 && (
+            <div className="text-center py-12 text-slate-500">
+              <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p>No patients registered</p>
+              <p className="text-sm">Register a new patient to get started</p>
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      {/* Patient Info Dialog - Limited Information for Scheduler */}
+      <Dialog open={viewPatientInfo !== null} onOpenChange={(open) => !open && setViewPatientInfo(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <User className="w-5 h-5 text-sky-600" />
+              Patient Information
+            </DialogTitle>
+            <DialogDescription>
+              Basic patient details for scheduling purposes
+            </DialogDescription>
+          </DialogHeader>
+          
+          {viewPatientInfo && (
+            <div className="space-y-4 py-2">
+              {/* Basic Info */}
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center text-xl font-bold">
+                  {viewPatientInfo.first_name?.[0]}{viewPatientInfo.last_name?.[0]}
+                </div>
+                <div>
+                  <p className="text-xl font-semibold text-slate-900">
+                    {viewPatientInfo.first_name} {viewPatientInfo.last_name}
+                  </p>
+                  <p className="text-sm text-slate-500">MRN: {viewPatientInfo.mrn}</p>
+                </div>
+              </div>
+              
+              <Separator />
+              
+              {/* Personal Details */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 text-sm">
+                  <Calendar className="w-4 h-4 text-slate-400" />
+                  <span className="text-slate-600">Date of Birth:</span>
+                  <span className="font-medium">
+                    {viewPatientInfo.date_of_birth ? formatDate(viewPatientInfo.date_of_birth) : 'Not provided'}
+                    {viewPatientInfo.date_of_birth && (
+                      <span className="text-slate-500 ml-1">
+                        ({calculateAge(viewPatientInfo.date_of_birth)} years)
+                      </span>
+                    )}
+                  </span>
+                </div>
+                
+                <div className="flex items-center gap-3 text-sm">
+                  <MapPin className="w-4 h-4 text-slate-400" />
+                  <span className="text-slate-600">Address:</span>
+                  <span className="font-medium">{viewPatientInfo.address || 'Not provided'}</span>
+                </div>
+                
+                <div className="flex items-center gap-3 text-sm">
+                  <Phone className="w-4 h-4 text-slate-400" />
+                  <span className="text-slate-600">Phone:</span>
+                  <span className="font-medium">{viewPatientInfo.phone || 'Not provided'}</span>
+                </div>
+                
+                <div className="flex items-center gap-3 text-sm">
+                  <Mail className="w-4 h-4 text-slate-400" />
+                  <span className="text-slate-600">Email:</span>
+                  <span className="font-medium">{viewPatientInfo.email || 'Not provided'}</span>
+                </div>
+              </div>
+              
+              <Separator />
+              
+              {/* Emergency Contact */}
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm font-medium text-red-800 flex items-center gap-2 mb-2">
+                  <AlertCircle className="w-4 h-4" />
+                  Emergency Contact
+                </p>
+                <div className="space-y-1 text-sm">
+                  <p className="text-slate-700">
+                    <span className="text-slate-500">Name:</span>{' '}
+                    <span className="font-medium">{viewPatientInfo.emergency_contact_name || 'Not provided'}</span>
+                  </p>
+                  <p className="text-slate-700">
+                    <span className="text-slate-500">Phone:</span>{' '}
+                    <span className="font-medium">{viewPatientInfo.emergency_contact_phone || 'Not provided'}</span>
+                  </p>
+                </div>
+              </div>
+              
+              {/* Insurance Info */}
+              <div className="p-3 bg-sky-50 border border-sky-200 rounded-lg">
+                <p className="text-sm font-medium text-sky-800 flex items-center gap-2 mb-2">
+                  <Shield className="w-4 h-4" />
+                  Insurance Information
+                </p>
+                <div className="space-y-1 text-sm">
+                  <p className="text-slate-700">
+                    <span className="text-slate-500">Provider:</span>{' '}
+                    <span className="font-medium">{viewPatientInfo.insurance_provider || 'Not provided'}</span>
+                  </p>
+                  <p className="text-slate-700">
+                    <span className="text-slate-500">Insurance ID:</span>{' '}
+                    <span className="font-medium">{viewPatientInfo.insurance_id || 'Not provided'}</span>
+                  </p>
+                </div>
+              </div>
+              
+              {/* Actions */}
+              <div className="flex gap-2 pt-2">
+                <Button 
+                  className="flex-1 bg-sky-600 hover:bg-sky-700"
+                  onClick={() => {
+                    setNewAppointment({ ...newAppointment, patient_id: viewPatientInfo.id });
+                    setViewPatientInfo(null);
+                    setDialogOpen(true);
+                  }}
+                >
+                  <CalendarDays className="w-4 h-4 mr-2" />
+                  Schedule Appointment
+                </Button>
+                <Button variant="outline" onClick={() => setViewPatientInfo(null)}>
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
