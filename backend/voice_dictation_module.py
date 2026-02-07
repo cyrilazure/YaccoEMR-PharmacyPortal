@@ -482,19 +482,21 @@ Use professional nursing terminology. Be clear and thorough."""
             if context:
                 system_prompt += f"\n\nAdditional context: {context}"
             
-            chat = LlmChat(api_key=api_key)
-            
-            response = await chat.send_message(
-                model="gpt-4o",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": f"Expand this brief dictation into a complete {note_type.replace('_', ' ')}:\n\n{text}"}
-                ],
-                temperature=0.3,
-                max_tokens=2000
+            session_id = str(uuid.uuid4())
+            chat = LlmChat(
+                api_key=api_key,
+                session_id=session_id,
+                system_message=system_prompt
             )
             
-            expanded_text = response.choices[0].message.content
+            # Set model parameters
+            chat = chat.with_model("gpt-4o").with_params(temperature=0.3, max_tokens=2000)
+            
+            response = await chat.send_message(
+                message=f"Expand this brief dictation into a complete {note_type.replace('_', ' ')}:\n\n{text}"
+            )
+            
+            expanded_text = response
             
             # Log AI expansion
             await db["voice_dictation_logs"].insert_one({
