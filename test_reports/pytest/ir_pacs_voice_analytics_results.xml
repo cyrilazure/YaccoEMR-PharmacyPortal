@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="22" failures="2" skipped="0" tests="24" time="0.622" timestamp="2026-02-07T18:10:59.208687+00:00" hostname="agent-env-d7af131a-4fed-4ad5-a442-2fd467e3cf4c"><testcase classname="backend.tests.test_ir_pacs_voice_analytics.TestAuthentication" name="test_radiologist_login" time="0.083"><failure message="AttributeError: 'str' object has no attribute 'get'">backend/tests/test_ir_pacs_voice_analytics.py:36: in test_radiologist_login
+    greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_ir_pacs_voice_analytics.py:36: in &lt;genexpr&gt;
+    greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
+                                                                   ^^^^^
+E   AttributeError: 'str' object has no attribute 'get'</failure></testcase><testcase classname="backend.tests.test_ir_pacs_voice_analytics.TestAuthentication" name="test_super_admin_login" time="0.061"><failure message="AttributeError: 'str' object has no attribute 'get'">backend/tests/test_ir_pacs_voice_analytics.py:78: in test_super_admin_login
+    greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_ir_pacs_voice_analytics.py:78: in &lt;genexpr&gt;
+    greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
+                                                                   ^^^^^
+E   AttributeError: 'str' object has no attribute 'get'</failure></testcase><testcase classname="backend.tests.test_ir_pacs_voice_analytics.TestInterventionalRadiologyDashboard" name="test_ir_dashboard" time="0.061"><error message="failed on setup with &quot;AttributeError: 'str' object has no attribute 'get'&quot;">backend/tests/test_ir_pacs_voice_analytics.py:108: in radiologist_auth
+    return test.test_radiologist_login()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_ir_pacs_voice_analytics.py:36: in test_radiologist_login
+    greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_ir_pacs_voice_analytics.py:36: in &lt;genexpr&gt;
+    greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
+                                                                   ^^^^^
+E   AttributeError: 'str' object has no attribute 'get'</error></testcase><testcase classname="backend.tests.test_ir_pacs_voice_analytics.TestInterventionalRadiologyDashboard" name="test_ir_procedures_list" time="0.000"><error message="failed on setup with &quot;AttributeError: 'str' object has no attribute 'get'&quot;">backend/tests/test_ir_pacs_voice_analytics.py:108: in radiologist_auth
+    return test.test_radiologist_login()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_ir_pacs_voice_analytics.py:36: in test_radiologist_login
+    greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_ir_pacs_voice_analytics.py:36: in &lt;genexpr&gt;
+    greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
+                                                                   ^^^^^
+E   AttributeError: 'str' object has no attribute 'get'</error></testcase><testcase classname="backend.tests.test_ir_pacs_voice_analytics.TestInterventionalRadiologyDashboard" name="test_create_ir_procedure" time="0.000"><error message="failed on setup with &quot;AttributeError: 'str' object has no attribute 'get'&quot;">backend/tests/test_ir_pacs_voice_analytics.py:108: in radiologist_auth
+    return test.test_radiologist_login()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_ir_pacs_voice_analytics.py:36: in test_radiologist_login
+    greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_ir_pacs_voice_analytics.py:36: in &lt;genexpr&gt;
+    greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
+                                                                   ^^^^^
+E   AttributeError: 'str' object has no attribute 'get'</error></testcase><testcase classname="backend.tests.test_ir_pacs_voice_analytics.TestInterventionalRadiologyDashboard" name="test_get_ir_procedure_details" time="0.000"><error message="failed on setup with &quot;AttributeError: 'str' object has no attribute 'get'&quot;">backend/tests/test_ir_pacs_voice_analytics.py:108: in radiologist_auth
+    return test.test_radiologist_login()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_ir_pacs_voice_analytics.py:36: in test_radiologist_login
+    greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_ir_pacs_voice_analytics.py:36: in &lt;genexpr&gt;
+    greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
+                                                                   ^^^^^
+E   AttributeError: 'str' object has no attribute 'get'</error></testcase><testcase classname="backend.tests.test_ir_pacs_voice_analytics.TestInterventionalRadiologyDashboard" name="test_update_procedure_status" time="0.000"><error message="failed on setup with &quot;AttributeError: 'str' object has no attribute 'get'&quot;">backend/tests/test_ir_pacs_voice_analytics.py:108: in radiologist_auth
+    return test.test_radiologist_login()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_ir_pacs_voice_analytics.py:36: in test_radiologist_login
+    greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_ir_pacs_voice_analytics.py:36: in &lt;genexpr&gt;
+    greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
+                                                                   ^^^^^
+E   AttributeError: 'str' object has no attribute 'get'</error></testcase><testcase classname="backend.tests.test_ir_pacs_voice_analytics.TestInterventionalRadiologyDashboard" name="test_create_pre_assessment" time="0.000"><error message="failed on setup with &quot;AttributeError: 'str' object has no attribute 'get'&quot;">backend/tests/test_ir_pacs_voice_analytics.py:108: in radiologist_auth
+    return test.test_radiologist_login()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_ir_pacs_voice_analytics.py:36: in test_radiologist_login
+    greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_ir_pacs_voice_analytics.py:36: in &lt;genexpr&gt;
+    greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
+                                                                   ^^^^^
+E   AttributeError: 'str' object has no attribute 'get'</error></testcase><testcase classname="backend.tests.test_ir_pacs_voice_analytics.TestInterventionalRadiologyDashboard" name="test_record_sedation_vitals" time="0.000"><error message="failed on setup with &quot;AttributeError: 'str' object has no attribute 'get'&quot;">backend/tests/test_ir_pacs_voice_analytics.py:108: in radiologist_auth
+    return test.test_radiologist_login()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_ir_pacs_voice_analytics.py:36: in test_radiologist_login
+    greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_ir_pacs_voice_analytics.py:36: in &lt;genexpr&gt;
+    greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
+                                                                   ^^^^^
+E   AttributeError: 'str' object has no attribute 'get'</error></testcase><testcase classname="backend.tests.test_ir_pacs_voice_analytics.TestInterventionalRadiologyDashboard" name="test_get_sedation_records" time="0.000"><error message="failed on setup with &quot;AttributeError: 'str' object has no attribute 'get'&quot;">backend/tests/test_ir_pacs_voice_analytics.py:108: in radiologist_auth
+    return test.test_radiologist_login()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_ir_pacs_voice_analytics.py:36: in test_radiologist_login
+    greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_ir_pacs_voice_analytics.py:36: in &lt;genexpr&gt;
+    greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
+                                                                   ^^^^^
+E   AttributeError: 'str' object has no attribute 'get'</error></testcase><testcase classname="backend.tests.test_ir_pacs_voice_analytics.TestPACSIntegration" name="test_pacs_config" time="0.000"><error message="failed on setup with &quot;AttributeError: 'str' object has no attribute 'get'&quot;">backend/tests/test_ir_pacs_voice_analytics.py:108: in radiologist_auth
+    return test.test_radiologist_login()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_ir_pacs_voice_analytics.py:36: in test_radiologist_login
+    greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_ir_pacs_voice_analytics.py:36: in &lt;genexpr&gt;
+    greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
+                                                                   ^^^^^
+E   AttributeError: 'str' object has no attribute 'get'</error></testcase><testcase classname="backend.tests.test_ir_pacs_voice_analytics.TestPACSIntegration" name="test_pacs_status" time="0.000"><error message="failed on setup with &quot;AttributeError: 'str' object has no attribute 'get'&quot;">backend/tests/test_ir_pacs_voice_analytics.py:108: in radiologist_auth
+    return test.test_radiologist_login()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_ir_pacs_voice_analytics.py:36: in test_radiologist_login
+    greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_ir_pacs_voice_analytics.py:36: in &lt;genexpr&gt;
+    greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
+                                                                   ^^^^^
+E   AttributeError: 'str' object has no attribute 'get'</error></testcase><testcase classname="backend.tests.test_ir_pacs_voice_analytics.TestPACSIntegration" name="test_pacs_study_search" time="0.000"><error message="failed on setup with &quot;AttributeError: 'str' object has no attribute 'get'&quot;">backend/tests/test_ir_pacs_voice_analytics.py:108: in radiologist_auth
+    return test.test_radiologist_login()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_ir_pacs_voice_analytics.py:36: in test_radiologist_login
+    greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_ir_pacs_voice_analytics.py:36: in &lt;genexpr&gt;
+    greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
+                                                                   ^^^^^
+E   AttributeError: 'str' object has no attribute 'get'</error></testcase><testcase classname="backend.tests.test_ir_pacs_voice_analytics.TestPACSIntegration" name="test_pacs_viewer_url" time="0.000"><error message="failed on setup with &quot;AttributeError: 'str' object has no attribute 'get'&quot;">backend/tests/test_ir_pacs_voice_analytics.py:108: in radiologist_auth
+    return test.test_radiologist_login()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_ir_pacs_voice_analytics.py:36: in test_radiologist_login
+    greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_ir_pacs_voice_analytics.py:36: in &lt;genexpr&gt;
+    greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
+                                                                   ^^^^^
+E   AttributeError: 'str' object has no attribute 'get'</error></testcase><testcase classname="backend.tests.test_ir_pacs_voice_analytics.TestPACSIntegration" name="test_pacs_worklist" time="0.000"><error message="failed on setup with &quot;AttributeError: 'str' object has no attribute 'get'&quot;">backend/tests/test_ir_pacs_voice_analytics.py:108: in radiologist_auth
+    return test.test_radiologist_login()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_ir_pacs_voice_analytics.py:36: in test_radiologist_login
+    greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_ir_pacs_voice_analytics.py:36: in &lt;genexpr&gt;
+    greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
+                                                                   ^^^^^
+E   AttributeError: 'str' object has no attribute 'get'</error></testcase><testcase classname="backend.tests.test_ir_pacs_voice_analytics.TestPACSIntegration" name="test_pacs_hl7_adt" time="0.000"><error message="failed on setup with &quot;AttributeError: 'str' object has no attribute 'get'&quot;">backend/tests/test_ir_pacs_voice_analytics.py:108: in radiologist_auth
+    return test.test_radiologist_login()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_ir_pacs_voice_analytics.py:36: in test_radiologist_login
+    greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_ir_pacs_voice_analytics.py:36: in &lt;genexpr&gt;
+    greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
+                                                                   ^^^^^
+E   AttributeError: 'str' object has no attribute 'get'</error></testcase><testcase classname="backend.tests.test_ir_pacs_voice_analytics.TestPACSIntegration" name="test_pacs_hl7_orm" time="0.000"><error message="failed on setup with &quot;AttributeError: 'str' object has no attribute 'get'&quot;">backend/tests/test_ir_pacs_voice_analytics.py:108: in radiologist_auth
+    return test.test_radiologist_login()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_ir_pacs_voice_analytics.py:36: in test_radiologist_login
+    greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_ir_pacs_voice_analytics.py:36: in &lt;genexpr&gt;
+    greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
+                                                                   ^^^^^
+E   AttributeError: 'str' object has no attribute 'get'</error></testcase><testcase classname="backend.tests.test_ir_pacs_voice_analytics.TestVoiceDictationAnalytics" name="test_voice_analytics_admin_access" time="0.061"><error message="failed on setup with &quot;AttributeError: 'str' object has no attribute 'get'&quot;">backend/tests/test_ir_pacs_voice_analytics.py:115: in admin_auth
+    return test.test_super_admin_login()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_ir_pacs_voice_analytics.py:78: in test_super_admin_login
+    greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_ir_pacs_voice_analytics.py:78: in &lt;genexpr&gt;
+    greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
+                                                                   ^^^^^
+E   AttributeError: 'str' object has no attribute 'get'</error></testcase><testcase classname="backend.tests.test_ir_pacs_voice_analytics.TestVoiceDictationAnalytics" name="test_voice_analytics_non_admin_denied" time="0.000"><error message="failed on setup with &quot;AttributeError: 'str' object has no attribute 'get'&quot;">backend/tests/test_ir_pacs_voice_analytics.py:108: in radiologist_auth
+    return test.test_radiologist_login()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_ir_pacs_voice_analytics.py:36: in test_radiologist_login
+    greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_ir_pacs_voice_analytics.py:36: in &lt;genexpr&gt;
+    greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
+                                                                   ^^^^^
+E   AttributeError: 'str' object has no attribute 'get'</error></testcase><testcase classname="backend.tests.test_ir_pacs_voice_analytics.TestVoiceDictationAnalytics" name="test_voice_audit_logs_admin_access" time="0.000"><error message="failed on setup with &quot;AttributeError: 'str' object has no attribute 'get'&quot;">backend/tests/test_ir_pacs_voice_analytics.py:115: in admin_auth
+    return test.test_super_admin_login()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_ir_pacs_voice_analytics.py:78: in test_super_admin_login
+    greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_ir_pacs_voice_analytics.py:78: in &lt;genexpr&gt;
+    greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
+                                                                   ^^^^^
+E   AttributeError: 'str' object has no attribute 'get'</error></testcase><testcase classname="backend.tests.test_ir_pacs_voice_analytics.TestVoiceDictationAnalytics" name="test_voice_audit_logs_non_admin_denied" time="0.000"><error message="failed on setup with &quot;AttributeError: 'str' object has no attribute 'get'&quot;">backend/tests/test_ir_pacs_voice_analytics.py:108: in radiologist_auth
+    return test.test_radiologist_login()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_ir_pacs_voice_analytics.py:36: in test_radiologist_login
+    greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_ir_pacs_voice_analytics.py:36: in &lt;genexpr&gt;
+    greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
+                                                                   ^^^^^
+E   AttributeError: 'str' object has no attribute 'get'</error></testcase><testcase classname="backend.tests.test_ir_pacs_voice_analytics.TestVoiceDictationAnalytics" name="test_voice_analytics_with_date_filter" time="0.000"><error message="failed on setup with &quot;AttributeError: 'str' object has no attribute 'get'&quot;">backend/tests/test_ir_pacs_voice_analytics.py:115: in admin_auth
+    return test.test_super_admin_login()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_ir_pacs_voice_analytics.py:78: in test_super_admin_login
+    greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_ir_pacs_voice_analytics.py:78: in &lt;genexpr&gt;
+    greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
+                                                                   ^^^^^
+E   AttributeError: 'str' object has no attribute 'get'</error></testcase><testcase classname="backend.tests.test_ir_pacs_voice_analytics.TestVoiceDictationAnalytics" name="test_voice_audit_logs_with_context_filter" time="0.000"><error message="failed on setup with &quot;AttributeError: 'str' object has no attribute 'get'&quot;">backend/tests/test_ir_pacs_voice_analytics.py:115: in admin_auth
+    return test.test_super_admin_login()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_ir_pacs_voice_analytics.py:78: in test_super_admin_login
+    greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_ir_pacs_voice_analytics.py:78: in &lt;genexpr&gt;
+    greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
+                                                                   ^^^^^
+E   AttributeError: 'str' object has no attribute 'get'</error></testcase><testcase classname="backend.tests.test_ir_pacs_voice_analytics.TestCleanup" name="test_cleanup_test_procedures" time="0.000"><error message="failed on setup with &quot;AttributeError: 'str' object has no attribute 'get'&quot;">backend/tests/test_ir_pacs_voice_analytics.py:108: in radiologist_auth
+    return test.test_radiologist_login()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_ir_pacs_voice_analytics.py:36: in test_radiologist_login
+    greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_ir_pacs_voice_analytics.py:36: in &lt;genexpr&gt;
+    greater_accra = next((r for r in regions if "Greater Accra" in r.get("name", "")), None)
+                                                                   ^^^^^
+E   AttributeError: 'str' object has no attribute 'get'</error></testcase></testsuite></testsuites>
