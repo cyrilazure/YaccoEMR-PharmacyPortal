@@ -56,7 +56,7 @@ export default function BillingPage() {
   const [loadingAdminData, setLoadingAdminData] = useState(false);
   
   // Check if user is admin
-  const isAdmin = ['hospital_admin', 'finance_manager', 'admin'].includes(user?.role);
+  const isAdmin = ['hospital_admin', 'hospital_it_admin', 'finance_manager', 'admin'].includes(user?.role);
   const [activeTab, setActiveTab] = useState('invoices');
   
   // Invoice creation state
