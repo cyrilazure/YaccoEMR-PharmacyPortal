@@ -527,6 +527,7 @@ export const billingShiftsAPI = {
   
   // Dashboards
   getBillerDashboard: () => api.get('/billing-shifts/dashboard/biller'),
+  getSeniorBillerDashboard: () => api.get('/billing-shifts/dashboard/senior-biller'),
   getAdminDashboard: () => api.get('/billing-shifts/dashboard/admin'),
   
   // Admin Controls
