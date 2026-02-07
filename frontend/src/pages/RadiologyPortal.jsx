@@ -31,9 +31,10 @@ import {
   AlertTriangle, Loader2, Scan, Monitor, ZoomIn, ZoomOut,
   RotateCw, Move, Maximize2, Minimize2, Contrast, Ruler,
   PenTool, Save, Send, MessageSquare, Phone, History,
-  ChevronRight, Activity, Clipboard, Plus, Edit2, Check, X
+  ChevronRight, Activity, Clipboard, Plus, Edit2, Check, X, Mic
 } from 'lucide-react';
 import api from '@/lib/api';
+import VoiceDictation from '@/components/VoiceDictation';
 
 const radiologyAPI = {
   // Queue and Orders
