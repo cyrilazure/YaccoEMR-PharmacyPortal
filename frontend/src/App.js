@@ -53,6 +53,11 @@ import VoiceDictationAnalytics from "@/pages/VoiceDictationAnalytics";
 import InterventionalRadiologyPortal from "@/pages/InterventionalRadiologyPortal";
 import IRStatusBoardPage from "@/pages/IRStatusBoardPage";
 
+// Pharmacy Portal (Standalone)
+import PharmacyLanding from "@/pages/PharmacyLanding";
+import PharmacyDashboard from "@/pages/PharmacyDashboard";
+import PharmacyProfile from "@/pages/PharmacyProfile";
+
 // Role-based redirect component
 function RoleBasedRedirect() {
   const { user } = useAuth();
