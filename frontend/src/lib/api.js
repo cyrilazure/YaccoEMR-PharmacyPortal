@@ -517,6 +517,27 @@ export const adminAPI = {
   getPlatformStats: () => api.get('/admin/system/stats'),
 };
 
+// Billing Shifts API (Shift-based billing controls)
+export const billingShiftsAPI = {
+  // Shift Management
+  clockIn: (data) => api.post('/billing-shifts/clock-in', data),
+  clockOut: (data) => api.post('/billing-shifts/clock-out', data),
+  getActiveShift: () => api.get('/billing-shifts/active'),
+  getMyShifts: (limit = 10) => api.get('/billing-shifts/my-shifts', { params: { limit } }),
+  
+  // Dashboards
+  getBillerDashboard: () => api.get('/billing-shifts/dashboard/biller'),
+  getAdminDashboard: () => api.get('/billing-shifts/dashboard/admin'),
+  
+  // Admin Controls
+  getAllShifts: (params) => api.get('/billing-shifts/all-shifts', { params }),
+  reconcileShift: (shiftId, actualCash, notes) => api.post(`/billing-shifts/shifts/${shiftId}/reconcile`, null, { params: { actual_cash: actualCash, notes } }),
+  flagShift: (shiftId, reason) => api.post(`/billing-shifts/shifts/${shiftId}/flag`, null, { params: { reason } }),
+  
+  // Audit Logs
+  getAuditLogs: (params) => api.get('/billing-shifts/audit-logs', { params }),
+};
+
 // Region & Hospital Discovery APIs (Ghana)
 export const regionAPI = {
   // Public Discovery (no auth required)
