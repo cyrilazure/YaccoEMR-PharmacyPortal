@@ -445,7 +445,7 @@ export default function BillingPage() {
           </TabsTrigger>
           <TabsTrigger value="nhis" className="gap-2">
             <Heart className="w-4 h-4" />
-            NHIS Lookup
+            Insurance Lookup
           </TabsTrigger>
         </TabsList>
 
