@@ -1964,6 +1964,7 @@ export default function BillingPage() {
                   </div>
                 </div>
               </div>
+            </div>
 
               {/* Print Button */}
               <DialogFooter className="mt-4">
