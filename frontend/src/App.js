@@ -51,6 +51,7 @@ import NHISClaimsPortal from "@/pages/NHISClaimsPortal";
 import SupplyChainPortal from "@/pages/SupplyChainPortal";
 import VoiceDictationAnalytics from "@/pages/VoiceDictationAnalytics";
 import InterventionalRadiologyPortal from "@/pages/InterventionalRadiologyPortal";
+import IRStatusBoardPage from "@/pages/IRStatusBoardPage";
 
 // Role-based redirect component
 function RoleBasedRedirect() {
