@@ -745,8 +745,10 @@ export const radiologyAPI = {
 
 // Bed Management APIs
 export const bedManagementAPI = {
-  // Census
+  // Census / Dashboard
   getCensus: () => api.get('/beds/census'),
+  getDashboard: () => api.get('/beds/census'), // Alias for getCensus
+  listWards: (params) => api.get('/beds/wards', { params }),
   
   // Wards
   getWards: (params) => api.get('/beds/wards', { params }),
