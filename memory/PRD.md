@@ -351,6 +351,8 @@ GET  /api/billing-shifts/audit-logs      - Billing audit logs
 - [x] ~~Supply Chain Inventory Module~~ ✅ DONE
 - [x] ~~Nurse Supervisor Portal Enhancements~~ ✅ DONE (Feb 7, 2026)
 - [x] ~~Billing Shift-Based Financial Controls~~ ✅ DONE (Feb 7, 2026)
+- [x] ~~Senior Biller Dashboard & Reconciliation UI~~ ✅ DONE (Feb 7, 2026)
+- [x] ~~Hospital Logo on Receipts~~ ✅ DONE (Feb 7, 2026)
 
 ### P1 (High Priority)
 - [ ] Real Ghana FDA API integration (replace mock data)
@@ -358,25 +360,29 @@ GET  /api/billing-shifts/audit-logs      - Billing audit logs
 - [ ] Complete PatientChart refactoring (remaining tabs: Overview, Notes, Orders, Imaging, Pharmacy)
 - [x] ~~Notifications for prescription updates~~ ✅ DONE
 - [x] ~~Stock alerts for pharmacists~~ ✅ DONE
+- [ ] Audit & Compliance Logging UI (view detailed audit logs for financial actions)
+- [ ] Advanced Admin Dashboard Widgets (graphs/charts for daily, weekly, monthly revenue trends)
 
 ### P2 (Medium Priority)
 - [ ] Integration with other payment gateways (Flutterwave, Hubtel)
 - [ ] Email notifications (Resend integration ready)
+- [ ] Real-time notifications via Resend
+- [ ] Component refactoring (BillingPage.jsx, NursingSupervisorDashboard.jsx)
 
 ### P3 (Future)
 - [ ] National e-Pharmacy platform integration
 - [ ] Mobile apps
-- [ ] Email notifications (Resend integration ready)
 
 ## Test Credentials
 - **Super Admin**: ygtnetworks@gmail.com / test123
 - **Hospital IT Admin**: it_admin@yacco.health / test123
 - **Nursing Supervisor**: nursing_supervisor@yacco.health / test123
-- **Biller**: billing@yacco.health / test123
+- **Biller**: biller@yacco.health / test123
 - **Bed Manager**: bed_manager@yacco.health / test123
 - **Radiologist**: radiologist@yacco.health / test123
 - **Radiology Staff**: radiology_staff@yacco.health / test123
 - **Nurse**: test_nurse@yacco.health / test123
+- **Pharmacist**: pharmacist@yacco.health / test123
 
 ## Mocked/Simulated APIs
 - **Ghana FDA API**: Using seed data in `fda_module.py` (29 registered drugs) - NOT actual Ghana FDA API
