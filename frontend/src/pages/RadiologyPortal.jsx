@@ -1267,7 +1267,7 @@ export default function RadiologyPortal() {
                               {report.status}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-sm">{new Date(report.reported_at).toLocaleString()}</TableCell>
+                          <TableCell className="text-sm">{new Date(report.finalized_at || report.created_at).toLocaleString()}</TableCell>
                           <TableCell>
                             {report.critical_finding && (
                               <Badge className="bg-red-100 text-red-700">
