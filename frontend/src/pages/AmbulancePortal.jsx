@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/lib/auth';
 import { getErrorMessage } from '@/lib/utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,8 +12,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from 'sonner';
-import { Ambulance, Plus, RefreshCw, Clock, CheckCircle, XCircle, Car, Users, Activity, TrendingUp, Loader2, MapPin, FileText, AlertTriangle } from 'lucide-react';
-import api from '@/lib/api';
+import { Ambulance, Plus, RefreshCw, Clock, CheckCircle, XCircle, Car, Users, Activity, TrendingUp, Loader2, MapPin, FileText, AlertTriangle, Search, User } from 'lucide-react';
+import api, { patientAPI } from '@/lib/api';
 
 const ambulanceAPI = {
   getVehicles: (params) => api.get('/ambulance/vehicles', { params }),
