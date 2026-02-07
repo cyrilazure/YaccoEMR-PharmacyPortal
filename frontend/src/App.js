@@ -229,6 +229,12 @@ function App() {
 
 
             <Route path="audit-logs" element={<AuditLogs />} />
+            
+            {/* Voice Dictation Analytics (Admin Only) */}
+            <Route path="voice-analytics" element={<VoiceDictationAnalytics />} />
+            
+            {/* Interventional Radiology Portal */}
+            <Route path="interventional-radiology" element={<InterventionalRadiologyPortal />} />
           </Route>
           
           {/* Catch-all redirect to landing page */}
