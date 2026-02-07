@@ -252,27 +252,34 @@ export default function PatientScanner({ onPatientFound, buttonLabel = "Scan Pat
 
             {/* Patient Found */}
             {scannedPatient && (
-              <Card className="border-emerald-300 bg-emerald-50">
+              <Card className={scannedPatient.notInDatabase ? "border-amber-300 bg-amber-50" : "border-emerald-300 bg-emerald-50"}>
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-emerald-800 flex items-center gap-2">
+                    <CardTitle className={`${scannedPatient.notInDatabase ? 'text-amber-800' : 'text-emerald-800'} flex items-center gap-2`}>
                       <CheckCircle className="w-5 h-5" />
-                      Patient Verified
+                      {scannedPatient.notInDatabase ? 'Patient Scanned' : 'Patient Verified'}
                     </CardTitle>
-                    <Badge className="bg-emerald-600">CONFIRMED</Badge>
+                    <Badge className={scannedPatient.notInDatabase ? 'bg-amber-600' : 'bg-emerald-600'}>
+                      {scannedPatient.notInDatabase ? 'FROM QR CODE' : 'CONFIRMED'}
+                    </Badge>
                   </div>
+                  {scannedPatient.notInDatabase && (
+                    <p className="text-sm text-amber-700 mt-1">
+                      Patient not found in local database. Displaying scanned QR data.
+                    </p>
+                  )}
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {/* Patient Identity */}
                   <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-full bg-emerald-200 text-emerald-700 flex items-center justify-center text-xl font-bold">
+                    <div className={`w-16 h-16 rounded-full ${scannedPatient.notInDatabase ? 'bg-amber-200 text-amber-700' : 'bg-emerald-200 text-emerald-700'} flex items-center justify-center text-xl font-bold`}>
                       {scannedPatient.first_name?.[0]}{scannedPatient.last_name?.[0]}
                     </div>
                     <div>
                       <p className="text-xl font-bold text-slate-900">
                         {scannedPatient.first_name} {scannedPatient.last_name}
                       </p>
-                      <p className="text-lg font-mono font-semibold text-emerald-700">
+                      <p className={`text-lg font-mono font-semibold ${scannedPatient.notInDatabase ? 'text-amber-700' : 'text-emerald-700'}`}>
                         MRN: {scannedPatient.mrn}
                       </p>
                     </div>
@@ -305,25 +312,42 @@ export default function PatientScanner({ onPatientFound, buttonLabel = "Scan Pat
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <Phone className="w-4 h-4 text-slate-400" />
-                      <div>
-                        <p className="text-slate-500">Phone</p>
-                        <p className="font-medium">{scannedPatient.phone || 'N/A'}</p>
-                      </div>
-                    </div>
+                    {!scannedPatient.notInDatabase && (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <Phone className="w-4 h-4 text-slate-400" />
+                          <div>
+                            <p className="text-slate-500">Phone</p>
+                            <p className="font-medium">{scannedPatient.phone || 'N/A'}</p>
+                          </div>
+                        </div>
 
-                    <div className="flex items-center gap-2">
-                      <Mail className="w-4 h-4 text-slate-400" />
-                      <div>
-                        <p className="text-slate-500">Email</p>
-                        <p className="font-medium truncate">{scannedPatient.email || 'N/A'}</p>
-                      </div>
-                    </div>
+                        <div className="flex items-center gap-2">
+                          <Mail className="w-4 h-4 text-slate-400" />
+                          <div>
+                            <p className="text-slate-500">Email</p>
+                            <p className="font-medium truncate">{scannedPatient.email || 'N/A'}</p>
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
 
+                  {/* Physician Assignment (from QR code) */}
+                  {scannedPatient.physician && (
+                    <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                      <p className="text-sm font-medium text-purple-800 flex items-center gap-2">
+                        <User className="w-4 h-4" />
+                        Assigned Physician
+                      </p>
+                      <p className="text-sm font-semibold text-purple-900 mt-1">
+                        {scannedPatient.physician}
+                      </p>
+                    </div>
+                  )}
+
                   {/* Address */}
-                  {scannedPatient.address && (
+                  {scannedPatient.address && !scannedPatient.notInDatabase && (
                     <div className="flex items-start gap-2 text-sm">
                       <MapPin className="w-4 h-4 text-slate-400 mt-0.5" />
                       <div>
@@ -334,7 +358,7 @@ export default function PatientScanner({ onPatientFound, buttonLabel = "Scan Pat
                   )}
 
                   {/* Emergency Contact */}
-                  {(scannedPatient.emergency_contact_name || scannedPatient.emergency_contact_phone) && (
+                  {!scannedPatient.notInDatabase && (scannedPatient.emergency_contact_name || scannedPatient.emergency_contact_phone) && (
                     <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
                       <p className="text-sm font-medium text-red-800 flex items-center gap-2 mb-1">
                         <AlertCircle className="w-4 h-4" />
@@ -347,7 +371,7 @@ export default function PatientScanner({ onPatientFound, buttonLabel = "Scan Pat
                   )}
 
                   {/* Insurance */}
-                  {(scannedPatient.insurance_provider || scannedPatient.insurance_id) && (
+                  {!scannedPatient.notInDatabase && (scannedPatient.insurance_provider || scannedPatient.insurance_id) && (
                     <div className="p-3 bg-sky-50 border border-sky-200 rounded-lg">
                       <p className="text-sm font-medium text-sky-800 flex items-center gap-2 mb-1">
                         <Shield className="w-4 h-4" />
@@ -373,9 +397,9 @@ export default function PatientScanner({ onPatientFound, buttonLabel = "Scan Pat
                     </Button>
                     <Button 
                       onClick={closeDialog}
-                      className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+                      className={`flex-1 ${scannedPatient.notInDatabase ? 'bg-amber-600 hover:bg-amber-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
                     >
-                      Confirm & Close
+                      {scannedPatient.notInDatabase ? 'Close' : 'Confirm & Close'}
                     </Button>
                   </div>
                 </CardContent>
