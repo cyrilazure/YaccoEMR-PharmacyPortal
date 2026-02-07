@@ -503,6 +503,11 @@ export default function InterventionalRadiologyPortal() {
           </TabsTrigger>
         </TabsList>
 
+        {/* Status Board Tab */}
+        <TabsContent value="status-board">
+          <IRStatusBoard refreshInterval={15000} />
+        </TabsContent>
+
         {/* Dashboard Tab */}
         <TabsContent value="dashboard" className="space-y-6">
           <div className="grid md:grid-cols-2 gap-6">
