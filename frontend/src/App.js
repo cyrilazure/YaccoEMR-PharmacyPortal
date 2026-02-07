@@ -109,6 +109,11 @@ function App() {
           {/* Landing Page - Main Entry Point */}
           <Route path="/" element={<EMRLandingPage />} />
           
+          {/* ========== PHARMACY PORTAL (PUBLIC ROUTES) ========== */}
+          <Route path="/pharmacy" element={<PharmacyLanding />} />
+          <Route path="/pharmacy/:pharmacyId" element={<PharmacyProfile />} />
+          <Route path="/pharmacy/dashboard" element={<PharmacyDashboard />} />
+          
           {/* Ghana Region-Based Staff Login */}
           <Route path="/login" element={<RegionHospitalLogin />} />
           
