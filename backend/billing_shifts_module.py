@@ -329,7 +329,7 @@ def create_billing_shifts_router(db, get_current_user):
     @router.get("/dashboard/senior-biller")
     async def get_senior_biller_dashboard(current_user: dict = Depends(get_current_user)):
         """Get department-wide financial dashboard for senior billers"""
-        allowed_roles = ['senior_biller', 'hospital_admin', 'finance_manager', 'admin']
+        allowed_roles = ['senior_biller', 'hospital_admin', 'hospital_it_admin', 'finance_manager', 'admin']
         if current_user.get('role') not in allowed_roles:
             raise HTTPException(status_code=403, detail="Not authorized to view senior biller dashboard")
         
