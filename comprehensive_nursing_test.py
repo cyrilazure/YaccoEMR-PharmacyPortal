@@ -9,7 +9,7 @@ import sys
 
 class NursingPortalTester:
     def __init__(self):
-        self.base_url = "https://ghana-emr.preview.emergentagent.com/api"
+        self.base_url = "https://xrayportal-1.preview.emergentagent.com/api"
         self.token = None
         self.tests_run = 0
         self.tests_passed = 0
