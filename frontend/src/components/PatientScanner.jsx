@@ -47,8 +47,10 @@ export default function PatientScanner({ onPatientFound, buttonLabel = "Scan Pat
     try {
       // Try to parse as JSON (QR code format)
       let patientData;
+      let isQRCode = false;
       try {
         patientData = JSON.parse(data);
+        isQRCode = true;
       } catch {
         // If not JSON, treat as MRN directly
         patientData = { mrn: data };
@@ -64,17 +66,55 @@ export default function PatientScanner({ onPatientFound, buttonLabel = "Scan Pat
       const patient = patients.find(p => p.mrn === mrn);
       
       if (patient) {
-        setScannedPatient(patient);
+        // Patient found in database - use full database record
+        setScannedPatient({
+          ...patient,
+          physician: patientData.physician || 'Not Assigned',
+          fromQR: isQRCode
+        });
         toast.success(`Patient found: ${patient.first_name} ${patient.last_name}`);
         if (onPatientFound) {
           onPatientFound(patient);
         }
+      } else if (isQRCode && patientData.firstName && patientData.lastName) {
+        // Patient not in database but we have QR data - display QR info
+        setScannedPatient({
+          mrn: patientData.mrn,
+          first_name: patientData.firstName,
+          last_name: patientData.lastName,
+          date_of_birth: patientData.dob,
+          physician: patientData.physician || 'Not Assigned',
+          fromQR: true,
+          notInDatabase: true
+        });
+        toast.warning('Patient scanned but not found in local database');
       } else {
         setError(`No patient found with MRN: ${mrn}`);
         toast.error('Patient not found');
       }
     } catch (err) {
       console.error('Search error:', err);
+      
+      // Even if search fails, try to display QR data if available
+      try {
+        const patientData = JSON.parse(data);
+        if (patientData.firstName && patientData.lastName) {
+          setScannedPatient({
+            mrn: patientData.mrn,
+            first_name: patientData.firstName,
+            last_name: patientData.lastName,
+            date_of_birth: patientData.dob,
+            physician: patientData.physician || 'Not Assigned',
+            fromQR: true,
+            notInDatabase: true
+          });
+          toast.warning('Displaying scanned data (database unavailable)');
+          return;
+        }
+      } catch {
+        // Not valid JSON
+      }
+      
       setError('Failed to search for patient');
       toast.error('Failed to search for patient');
     } finally {
