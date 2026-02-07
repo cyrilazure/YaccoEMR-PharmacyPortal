@@ -581,6 +581,9 @@ GET  /api/billing-shifts/audit-logs      - Billing audit logs
 - [x] ~~PACS/DICOM Integration (Demo Mode)~~ ✅ DONE (Feb 7, 2026)
 - [x] ~~Pharmacy Landing Zone - Phase 1~~ ✅ DONE (Feb 7, 2026)
   - Landing page, Region selection, Directory, Profile, Registration, Dashboard
+- [x] ~~Unified Landing Page (EMR + Pharmacy)~~ ✅ DONE (Feb 7, 2026)
+  - Single entry point at root URL (/) with two portal cards: Yacco EMR & Yacco Pharm
+  - Navigation to /login for EMR, /pharmacy for Pharm portal
 
 ### P1 (High Priority)
 - [ ] Real Ghana FDA API integration (replace mock data)
