@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { billingAPI, patientAPI } from '@/lib/api';
@@ -14,11 +14,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import {
   CreditCard, DollarSign, FileText, Receipt, Plus, Send, Eye,
   TrendingUp, Clock, CheckCircle, XCircle, AlertCircle, Building2,
-  Shield, Search, IdCard, Heart
+  Shield, Search, IdCard, Heart, Printer
 } from 'lucide-react';
 
 export default function BillingPage() {
