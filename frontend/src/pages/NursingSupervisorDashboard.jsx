@@ -193,7 +193,7 @@ export default function NursingSupervisorDashboard() {
       
       // Check supervisor's own shift status
       try {
-        const shiftRes = await nurseAPI.getActiveShift();
+        const shiftRes = await nurseAPI.getCurrentShift();
         setMyActiveShift(shiftRes.data || null);
       } catch (shiftErr) {
         // No active shift or error
