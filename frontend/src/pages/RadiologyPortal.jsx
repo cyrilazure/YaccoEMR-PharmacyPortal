@@ -1564,11 +1564,22 @@ export default function RadiologyPortal() {
             </div>
             
             <div className="space-y-2">
-              <Label>Content *</Label>
+              <div className="flex items-center justify-between">
+                <Label>Content *</Label>
+                <VoiceDictation
+                  onTranscriptionComplete={(text) => setNoteForm({...noteForm, content: text})}
+                  context="radiology"
+                  targetField="note content"
+                  appendMode={!!noteForm.content}
+                  currentValue={noteForm.content}
+                  buttonVariant="outline"
+                  buttonSize="sm"
+                />
+              </div>
               <Textarea
                 value={noteForm.content}
                 onChange={(e) => setNoteForm({...noteForm, content: e.target.value})}
-                placeholder="Enter note content..."
+                placeholder="Enter note content... or use voice dictation"
                 rows={4}
               />
             </div>
