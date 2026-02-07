@@ -51,6 +51,12 @@ export default function SchedulerDashboard() {
   const [viewPatientInfo, setViewPatientInfo] = useState(null);
   const [patientSearchTerm, setPatientSearchTerm] = useState('');
   
+  // QR Code / Patient Label State
+  const [registeredPatient, setRegisteredPatient] = useState(null);
+  const [selectedPhysician, setSelectedPhysician] = useState('');
+  const [qrDialogOpen, setQrDialogOpen] = useState(false);
+  const qrPrintRef = useRef(null);
+  
   const [newAppointment, setNewAppointment] = useState({
     patient_id: '', provider_id: '', appointment_type: 'follow_up',
     date: '', start_time: '', end_time: '', reason: '', notes: ''
