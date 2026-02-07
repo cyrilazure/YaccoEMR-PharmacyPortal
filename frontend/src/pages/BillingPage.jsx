@@ -98,6 +98,14 @@ export default function BillingPage() {
   const [printReceiptOpen, setPrintReceiptOpen] = useState(false);
   const [receiptInvoice, setReceiptInvoice] = useState(null);
   const receiptRef = useRef(null);
+  
+  // Reconciliation State
+  const [reconcileShift, setReconcileShift] = useState(null);
+  const [actualCashAmount, setActualCashAmount] = useState('');
+  const [reconcileNotes, setReconcileNotes] = useState('');
+  const [flagReason, setFlagReason] = useState('');
+  const [reconciling, setReconciling] = useState(false);
+  const [closedShifts, setClosedShifts] = useState([]);
 
   useEffect(() => {
     loadData();
