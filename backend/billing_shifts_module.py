@@ -681,7 +681,7 @@ def create_billing_shifts_router(db, get_current_user):
         current_user: dict = Depends(get_current_user)
     ):
         """Get billing audit logs"""
-        allowed_roles = ['hospital_admin', 'finance_manager', 'admin']
+        allowed_roles = ['hospital_admin', 'hospital_it_admin', 'finance_manager', 'admin', 'senior_biller']
         if current_user.get('role') not in allowed_roles:
             raise HTTPException(status_code=403, detail="Not authorized to view audit logs")
         
