@@ -445,6 +445,65 @@ export default function NursingSupervisorDashboard() {
         </div>
       </div>
 
+      {/* Clock In/Out Status Card */}
+      <Card className={myActiveShift ? "border-emerald-200 bg-emerald-50/50" : "border-amber-200 bg-amber-50/50"}>
+        <CardContent className="py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center ${myActiveShift ? 'bg-emerald-100' : 'bg-amber-100'}`}>
+                {myActiveShift ? (
+                  <Timer className="w-6 h-6 text-emerald-600" />
+                ) : (
+                  <Clock className="w-6 h-6 text-amber-600" />
+                )}
+              </div>
+              <div>
+                {myActiveShift ? (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-emerald-500">ON SHIFT</Badge>
+                      <span className="text-sm font-medium text-emerald-700">
+                        {myActiveShift.shift_type?.toUpperCase()} Shift
+                      </span>
+                    </div>
+                    <p className="text-sm text-slate-600 mt-1">
+                      Started: {new Date(myActiveShift.clock_in_time).toLocaleTimeString()} • 
+                      Duration: <span className="font-semibold">{getShiftDuration(myActiveShift.clock_in_time)}</span>
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="font-medium text-amber-700">Not Clocked In</p>
+                    <p className="text-sm text-slate-500">Clock in to start your shift</p>
+                  </>
+                )}
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              {myActiveShift ? (
+                <Button 
+                  onClick={() => setClockOutOpen(true)}
+                  variant="outline"
+                  className="border-red-300 text-red-600 hover:bg-red-50"
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Clock Out
+                </Button>
+              ) : (
+                <Button 
+                  onClick={() => setClockInOpen(true)}
+                  className="bg-emerald-600 hover:bg-emerald-700"
+                >
+                  <LogIn className="w-4 h-4 mr-2" />
+                  Clock In
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Patient Search Bar */}
       <Card>
         <CardContent className="pt-4">
