@@ -592,6 +592,145 @@ export default function NursingSupervisorDashboard() {
           </Card>
         </TabsContent>
 
+        {/* Patients Tab */}
+        <TabsContent value="patients" className="mt-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="w-5 h-5 text-emerald-600" />
+                  All Patients
+                </CardTitle>
+                <CardDescription>View and manage assigned patients</CardDescription>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Input
+                    placeholder="Search patients..."
+                    value={patientSearchQuery}
+                    onChange={(e) => handlePatientSearch(e.target.value)}
+                    className="pl-10 w-64"
+                  />
+                </div>
+                <Button onClick={() => setAddPatientOpen(true)} size="sm">
+                  <Plus className="w-4 h-4 mr-1" />
+                  Add Patient
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Patient Name</TableHead>
+                      <TableHead>MRN</TableHead>
+                      <TableHead>Age/Gender</TableHead>
+                      <TableHead>Insurance</TableHead>
+                      <TableHead>Assigned Nurse</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(patientSearchQuery.length >= 2 ? patientSearchResults : allPatients).length > 0 ? (
+                      (patientSearchQuery.length >= 2 ? patientSearchResults : allPatients).map((patient) => (
+                        <TableRow key={patient.id}>
+                          <TableCell className="font-medium">
+                            <div className="flex items-center gap-2">
+                              <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-semibold text-sm">
+                                {patient.first_name?.[0]}{patient.last_name?.[0]}
+                              </div>
+                              {patient.first_name} {patient.last_name}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{patient.mrn || 'N/A'}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            {patient.date_of_birth ? (
+                              <>
+                                {Math.floor((new Date() - new Date(patient.date_of_birth)) / (365.25 * 24 * 60 * 60 * 1000))}y
+                                <span className="text-muted-foreground ml-1">/ {patient.gender?.[0]?.toUpperCase()}</span>
+                              </>
+                            ) : (
+                              <span className="text-muted-foreground">{patient.gender || 'N/A'}</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {patient.insurance_provider ? (
+                              <Badge variant="secondary">{patient.insurance_provider}</Badge>
+                            ) : (
+                              <Badge variant="outline">Cash</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {patient.assigned_nurse ? (
+                              <span className="text-emerald-600">{patient.assigned_nurse}</span>
+                            ) : (
+                              <span className="text-amber-600 text-sm">Unassigned</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={patient.status === 'admitted' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}>
+                              {patient.status || 'Active'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => navigate(`/patients/${patient.id}`)}
+                              >
+                                <Eye className="w-4 h-4 mr-1" />
+                                View
+                              </Button>
+                              {!patient.assigned_nurse && (
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => {
+                                    setSelectedPatient(patient);
+                                    setAssignmentForm({...assignmentForm, patient_id: patient.id});
+                                    setAssignPatientOpen(true);
+                                  }}
+                                >
+                                  <UserPlus className="w-4 h-4 mr-1" />
+                                  Assign
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                          {loading ? (
+                            <div className="flex items-center justify-center gap-2">
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              Loading patients...
+                            </div>
+                          ) : patientSearchQuery.length >= 2 ? (
+                            'No patients found matching your search'
+                          ) : (
+                            'No patients registered yet'
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+              <div className="mt-4 text-sm text-muted-foreground">
+                Showing {(patientSearchQuery.length >= 2 ? patientSearchResults : allPatients).length} patients
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         {/* Current Shifts Tab */}
         <TabsContent value="shifts" className="mt-6">
           <Card>
