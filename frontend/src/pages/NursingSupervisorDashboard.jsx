@@ -118,6 +118,15 @@ export default function NursingSupervisorDashboard() {
   const [viewHandoffOpen, setViewHandoffOpen] = useState(false);
   const [selectedHandoff, setSelectedHandoff] = useState(null);
   
+  // Clock In/Out for Supervisor
+  const [myActiveShift, setMyActiveShift] = useState(null);
+  const [clockInOpen, setClockInOpen] = useState(false);
+  const [clockOutOpen, setClockOutOpen] = useState(false);
+  const [shiftType, setShiftType] = useState('day');
+  const [clockOutNotes, setClockOutNotes] = useState('');
+  const [clockingIn, setClockingIn] = useState(false);
+  const [clockingOut, setClockingOut] = useState(false);
+  
   // Patient Search and Add Patient
   const [allPatients, setAllPatients] = useState([]);
   const [patientSearchQuery, setPatientSearchQuery] = useState('');
