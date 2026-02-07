@@ -32,6 +32,7 @@ import {
   Settings,
   Volume2,
   AlertCircle,
+  Sparkles,
 } from 'lucide-react';
 import api from '@/lib/api';
 import { cn } from '@/lib/utils';
@@ -42,6 +43,9 @@ const voiceAPI = {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
   correctTerminology: (data) => api.post('/voice-dictation/correct-terminology', data),
+  aiExpand: (text, noteType, context) => api.post('/voice-dictation/ai-expand', null, {
+    params: { text, note_type: noteType, context }
+  }),
 };
 
 /**
