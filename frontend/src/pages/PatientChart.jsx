@@ -40,6 +40,7 @@ import {
   Building2, Phone, MapPin, Clock, Shield, Truck, Search, ExternalLink, CheckCircle, XCircle, Package, X, Mic
 } from 'lucide-react';
 import VoiceDictation from '@/components/VoiceDictation';
+import DicomViewer from '@/components/DicomViewer';
 
 export default function PatientChart() {
   const { id } = useParams();
