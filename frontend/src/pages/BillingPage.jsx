@@ -1747,6 +1747,225 @@ export default function BillingPage() {
             </div>
           </TabsContent>
         )}
+
+        {/* Audit Logs Tab - Admin/Senior Biller Only */}
+        {(isAdmin || isSeniorBiller) && (
+          <TabsContent value="audit" className="mt-4">
+            <div className="space-y-4">
+              {/* Audit Header */}
+              <Alert className="bg-slate-50 border-slate-200">
+                <FileSearch className="w-4 h-4" />
+                <AlertTitle>Audit & Compliance Log</AlertTitle>
+                <AlertDescription>
+                  Track all billing actions including invoice creation, payments, refunds, and shift events for compliance.
+                </AlertDescription>
+              </Alert>
+
+              {/* Filters */}
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex flex-wrap gap-4 items-center">
+                    <div className="flex-1 min-w-[200px]">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <Input
+                          placeholder="Search by user, invoice, or action..."
+                          value={auditSearchTerm}
+                          onChange={(e) => setAuditSearchTerm(e.target.value)}
+                          className="pl-10"
+                        />
+                      </div>
+                    </div>
+                    <Select value={auditFilter} onValueChange={setAuditFilter}>
+                      <SelectTrigger className="w-[200px]">
+                        <SelectValue placeholder="Filter by action" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Actions</SelectItem>
+                        <SelectItem value="shift_clock_in">Shift Clock In</SelectItem>
+                        <SelectItem value="shift_clock_out">Shift Clock Out</SelectItem>
+                        <SelectItem value="invoice_created">Invoice Created</SelectItem>
+                        <SelectItem value="payment_received">Payment Received</SelectItem>
+                        <SelectItem value="invoice_voided">Invoice Voided</SelectItem>
+                        <SelectItem value="shift_reconciled">Shift Reconciled</SelectItem>
+                        <SelectItem value="shift_flagged">Shift Flagged</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button 
+                      variant="outline" 
+                      onClick={loadAuditLogs}
+                      disabled={auditLoading}
+                    >
+                      <RefreshCw className={`w-4 h-4 mr-2 ${auditLoading ? 'animate-spin' : ''}`} />
+                      Refresh
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Audit Log Timeline */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                      <Activity className="w-5 h-5" />
+                      Activity Log
+                    </span>
+                    <Badge variant="outline">{auditLogs.length} entries</Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {auditLoading ? (
+                    <div className="flex items-center justify-center py-12">
+                      <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+                    </div>
+                  ) : auditLogs.length > 0 ? (
+                    <div className="space-y-3 max-h-[600px] overflow-y-auto">
+                      {auditLogs
+                        .filter(log => {
+                          if (!auditSearchTerm) return true;
+                          const search = auditSearchTerm.toLowerCase();
+                          return (
+                            log.user_name?.toLowerCase().includes(search) ||
+                            log.action?.toLowerCase().includes(search) ||
+                            log.invoice_number?.toLowerCase().includes(search) ||
+                            JSON.stringify(log.details || {}).toLowerCase().includes(search)
+                          );
+                        })
+                        .map((log) => {
+                          const actionConfig = {
+                            shift_clock_in: { icon: LogIn, color: 'emerald', label: 'Clocked In' },
+                            shift_clock_out: { icon: LogOut, color: 'blue', label: 'Clocked Out' },
+                            invoice_created: { icon: FileText, color: 'purple', label: 'Invoice Created' },
+                            payment_received: { icon: DollarSign, color: 'green', label: 'Payment Received' },
+                            invoice_voided: { icon: XCircle, color: 'red', label: 'Invoice Voided' },
+                            shift_reconciled: { icon: CheckCircle, color: 'teal', label: 'Shift Reconciled' },
+                            shift_flagged: { icon: Flag, color: 'amber', label: 'Shift Flagged' },
+                            refund_issued: { icon: ArrowDown, color: 'orange', label: 'Refund Issued' }
+                          };
+                          const config = actionConfig[log.action] || { icon: Activity, color: 'slate', label: log.action };
+                          const Icon = config.icon;
+                          
+                          return (
+                            <div 
+                              key={log.id} 
+                              className="flex gap-4 p-4 border rounded-lg hover:bg-slate-50 transition-colors"
+                            >
+                              <div className={`flex-shrink-0 w-10 h-10 rounded-full bg-${config.color}-100 flex items-center justify-center`}>
+                                <Icon className={`w-5 h-5 text-${config.color}-600`} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div>
+                                    <p className="font-medium text-slate-900">{config.label}</p>
+                                    <p className="text-sm text-slate-600">
+                                      by <span className="font-medium">{log.user_name || 'System'}</span>
+                                    </p>
+                                  </div>
+                                  <div className="text-right text-sm text-slate-500 flex-shrink-0">
+                                    <p>{new Date(log.timestamp).toLocaleDateString()}</p>
+                                    <p>{new Date(log.timestamp).toLocaleTimeString()}</p>
+                                  </div>
+                                </div>
+                                
+                                {/* Details */}
+                                {log.details && Object.keys(log.details).length > 0 && (
+                                  <div className="mt-2 p-2 bg-slate-50 rounded text-sm">
+                                    {log.details.amount && (
+                                      <p className="text-emerald-600 font-medium">Amount: ₵{log.details.amount.toLocaleString()}</p>
+                                    )}
+                                    {log.details.payment_method && (
+                                      <p>Method: {log.details.payment_method.replace('_', ' ')}</p>
+                                    )}
+                                    {log.details.shift_type && (
+                                      <p>Shift: {log.details.shift_type.toUpperCase()}</p>
+                                    )}
+                                    {log.details.total_collections !== undefined && (
+                                      <p>Total Collections: ₵{log.details.total_collections.toLocaleString()}</p>
+                                    )}
+                                    {log.details.reason && (
+                                      <p className="text-amber-600">Reason: {log.details.reason}</p>
+                                    )}
+                                    {log.invoice_number && (
+                                      <p>Invoice: {log.invoice_number}</p>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 text-slate-500">
+                      <FileSearch className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p>No audit logs found</p>
+                      <p className="text-sm mt-2">Billing actions will be logged here for compliance</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Summary Stats */}
+              {auditLogs.length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
+                          <LogIn className="w-5 h-5 text-emerald-600" />
+                        </div>
+                        <div>
+                          <p className="text-2xl font-bold">{auditLogs.filter(l => l.action === 'shift_clock_in').length}</p>
+                          <p className="text-sm text-slate-500">Clock Ins</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
+                          <FileText className="w-5 h-5 text-purple-600" />
+                        </div>
+                        <div>
+                          <p className="text-2xl font-bold">{auditLogs.filter(l => l.action === 'invoice_created').length}</p>
+                          <p className="text-sm text-slate-500">Invoices</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                          <DollarSign className="w-5 h-5 text-green-600" />
+                        </div>
+                        <div>
+                          <p className="text-2xl font-bold">{auditLogs.filter(l => l.action === 'payment_received').length}</p>
+                          <p className="text-sm text-slate-500">Payments</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
+                          <Flag className="w-5 h-5 text-amber-600" />
+                        </div>
+                        <div>
+                          <p className="text-2xl font-bold">{auditLogs.filter(l => l.action === 'shift_flagged').length}</p>
+                          <p className="text-sm text-slate-500">Flagged</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+        )}
       </Tabs>
 
       {/* Create Invoice Dialog */}
