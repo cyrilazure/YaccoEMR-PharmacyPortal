@@ -1321,6 +1321,8 @@ export default function NursingSupervisorDashboard() {
                   currentValue={assignmentForm.notes}
                   buttonVariant="outline"
                   buttonSize="sm"
+                  noteType="nursing_assessment"
+                  enableAiExpand={true}
                 />
               </div>
               <Textarea 
