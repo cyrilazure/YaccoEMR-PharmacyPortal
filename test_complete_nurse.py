@@ -26,7 +26,7 @@ def test_endpoint(method, url, data=None, headers=None):
         return None
 
 def main():
-    base_url = "https://medrecords-gh-1.preview.emergentagent.com/api"
+    base_url = "https://ghana-emr.preview.emergentagent.com/api"
     
     print("🧪 Testing Complete Nurse Workflow")
     print("=" * 60)
