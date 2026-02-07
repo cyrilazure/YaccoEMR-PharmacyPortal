@@ -82,6 +82,13 @@ export default function AmbulancePortal() {
     estimated_arrival: '',
     notes: ''
   });
+  
+  // Patient search state
+  const [patientSearchQuery, setPatientSearchQuery] = useState('');
+  const [patientSearchResults, setPatientSearchResults] = useState([]);
+  const [searchingPatients, setSearchingPatients] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState(null);
+  const [entryMode, setEntryMode] = useState('search'); // 'search' or 'manual'
 
   useEffect(() => {
     fetchData();
