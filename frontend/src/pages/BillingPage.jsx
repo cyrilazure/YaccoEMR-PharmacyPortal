@@ -110,6 +110,12 @@ export default function BillingPage() {
   const [flagReason, setFlagReason] = useState('');
   const [reconciling, setReconciling] = useState(false);
   const [closedShifts, setClosedShifts] = useState([]);
+  
+  // Audit Logs State
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [auditLoading, setAuditLoading] = useState(false);
+  const [auditFilter, setAuditFilter] = useState('all');
+  const [auditSearchTerm, setAuditSearchTerm] = useState('');
 
   useEffect(() => {
     loadData();
