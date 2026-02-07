@@ -2107,6 +2107,20 @@ export default function PatientChart() {
               )}
             </CardContent>
           </Card>
+
+          {/* DICOM Viewer */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Scan className="w-5 h-5 text-purple-600" />
+                DICOM Viewer
+              </CardTitle>
+              <CardDescription>View radiology images from PACS</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <DicomViewer patientId={patient?.mrn} embedded={true} />
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Pharmacy Tab - e-Prescription Routing */}
