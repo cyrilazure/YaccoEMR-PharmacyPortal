@@ -874,3 +874,12 @@ export const prescriptionRoutingAPI = {
   trackPrescription: (rxNumber) => api.get(`/prescriptions/tracking/${rxNumber}`),
 };
 
+// Voice Dictation APIs
+export const voiceDictationAPI = {
+  transcribe: (formData) => api.post('/voice-dictation/transcribe', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  correctTerminology: (data) => api.post('/voice-dictation/correct-terminology', data),
+  getMedicalTerms: () => api.get('/voice-dictation/medical-terms'),
+};
+
