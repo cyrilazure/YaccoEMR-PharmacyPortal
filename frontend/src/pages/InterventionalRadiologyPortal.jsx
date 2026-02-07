@@ -36,6 +36,7 @@ import {
 } from 'lucide-react';
 import api from '@/lib/api';
 import VoiceDictation from '@/components/VoiceDictation';
+import IRStatusBoard from '@/components/IRStatusBoard';
 
 // IR API
 const irAPI = {
