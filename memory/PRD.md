@@ -286,6 +286,36 @@ POST /api/billing/paystack/initialize    - Initialize Paystack payment
 GET  /api/finance/bank-accounts          - Manage hospital bank accounts
 ```
 
+### Billing Shifts & Financial Controls (February 7, 2026)
+```
+POST /api/billing-shifts/clock-in        - Start billing shift
+POST /api/billing-shifts/clock-out       - End billing shift
+GET  /api/billing-shifts/active          - Get active shift
+GET  /api/billing-shifts/my-shifts       - Get shift history
+GET  /api/billing-shifts/dashboard/biller - Biller shift-scoped dashboard
+GET  /api/billing-shifts/dashboard/admin  - Admin full financial dashboard
+GET  /api/billing-shifts/all-shifts      - All shifts (admin only)
+POST /api/billing-shifts/shifts/{id}/reconcile - Reconcile shift
+POST /api/billing-shifts/shifts/{id}/flag - Flag shift discrepancy
+GET  /api/billing-shifts/audit-logs      - Billing audit logs
+```
+
+**Features Implemented:**
+- [x] **Shift Clock-In/Out**: Billers clock in to track shift-specific collections
+- [x] **Shift-Scoped KPIs**: Invoices generated, payments received, cash/MoMo/card/insurance breakdown
+- [x] **Admin Financial Dashboard**: Daily/Weekly/Monthly revenue, payment mode distribution
+- [x] **Outstanding Balances (Persistent)**: Unpaid invoices, pending insurance - NOT reset with shifts
+- [x] **Shift Reconciliation**: Admin can reconcile shifts, flag discrepancies
+- [x] **Billing Audit Logs**: Track invoice creation, payments, shift events
+- [x] **Print Receipt**: Generate and print payment receipts for patients
+
+**Data Visibility Rules:**
+| Role | Own Shift | All Shifts | Daily/Weekly/Monthly | Outstanding |
+|------|-----------|------------|---------------------|-------------|
+| Biller | ✅ | ❌ | ❌ | ✅ |
+| Hospital Admin | ✅ | ✅ | ✅ | ✅ |
+| Finance Manager | ✅ | ✅ | ✅ | ✅ |
+
 ### Nurse Supervisor Portal Enhancements (February 7, 2026)
 - [x] **Bed Management Tab**: Integrated bed census display in Nursing Supervisor Dashboard
   - Shows Total Beds, Available, Occupied, Reserved, Occupancy %
