@@ -172,6 +172,56 @@ Build a comprehensive Electronic Medical Records (EMR) system similar to Epic EM
 - [x] Patient admission, transfer, and discharge workflows
 - [x] Census dashboard
 
+### Radiologist Portal & Radiology Workflow (February 7, 2026) - NEW
+- [x] **Radiologist Workstation Dashboard** (`/radiology`):
+  - Stats: My Assigned, Pending Review, STAT Pending, My Reports Today, Critical Pending, Under Review, Total Queue
+  - Tabs: Worklist, STAT Studies, Critical Findings, My Reports
+- [x] **Imaging Order Worklist**:
+  - Columns: Accession, Patient, Study, Modality, Priority, Status, Assigned To, Actions
+  - Filters: Search (patient/accession/MRN), Modality, Priority, Status, "My Assigned Only" toggle
+  - Actions: View Images, View Details, Timeline, Claim, Report, Add Note
+- [x] **Study Assignment (Claim)**:
+  - Radiologist can claim unassigned completed studies
+  - Updates status to "under_review" and records assignment
+  - Audit logging for compliance
+- [x] **Structured Radiology Reporting**:
+  - Sections: Study Information (Quality, Comparison, Technique), Clinical Information (Indication, History), Findings, Impression, Recommendations & Follow-up, Critical Finding toggle
+  - Save Draft / Finalize & Sign buttons
+  - Auto-notification to ordering physician on finalization
+- [x] **PACS/DICOM Image Viewer (Placeholder)**:
+  - Toolbar: Zoom In/Out, Rotate, Pan, Contrast/Window-Level, Ruler, Annotation
+  - Mock image area with study info (Connect to PACS server for real images)
+- [x] **Critical Findings Workflow**:
+  - Critical finding flag during report creation
+  - Critical Findings tab shows unreported critical findings
+  - "Document Communication" dialog: Communicated To, Method (Phone/Page/In Person/Verbal), Notes
+  - Audit logging for compliance
+- [x] **Radiologist Notes**:
+  - Note types: Progress Note, Addendum, Procedure Note, Communication Note
+  - Urgency levels: Routine, Urgent, Critical
+  - Notes attached to order/report and appear in patient chart
+- [x] **Order Status Timeline**:
+  - Visual timeline showing: Ordered → Scheduled → In Progress → Completed → Under Review → Reported
+  - Each event shows timestamp, user, and details
+- [x] **RBAC for Radiologist Role**:
+  - Read-only access to clinical history
+  - Can create/edit/finalize reports
+  - Cannot prescribe medications
+  - Cannot access billing
+- [x] **New API Endpoints**:
+  - `GET /api/radiology/dashboard/radiologist` - Dashboard stats and worklist
+  - `POST /api/radiology/orders/{id}/assign` - Assign study to radiologist
+  - `GET /api/radiology/worklist` - Filtered worklist with advanced options
+  - `POST /api/radiology/reports/create` - Create structured report
+  - `PUT /api/radiology/reports/{id}` - Update report
+  - `POST /api/radiology/reports/{id}/finalize` - Finalize and sign report
+  - `GET /api/radiology/reports/{id}` - Get report with notes
+  - `GET /api/radiology/reports/patient/{id}` - Get patient's reports
+  - `POST /api/radiology/reports/{id}/communicate-critical` - Document critical communication
+  - `POST /api/radiology/notes/create` - Create radiologist note
+  - `GET /api/radiology/notes/patient/{id}` - Get patient's radiology notes
+  - `GET /api/radiology/orders/{id}/timeline` - Get order status timeline
+
 ### Radiology Module
 - [x] Imaging order creation from patient chart
 - [x] Radiology queue for staff
