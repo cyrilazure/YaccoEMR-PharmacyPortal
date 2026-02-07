@@ -881,5 +881,10 @@ export const voiceDictationAPI = {
   }),
   correctTerminology: (data) => api.post('/voice-dictation/correct-terminology', data),
   getMedicalTerms: () => api.get('/voice-dictation/medical-terms'),
+  aiExpand: (text, noteType, context) => api.post('/voice-dictation/ai-expand', null, {
+    params: { text, note_type: noteType, context }
+  }),
+  getAnalytics: (params) => api.get('/voice-dictation/analytics', { params }),
+  getAuditLogs: (params) => api.get('/voice-dictation/audit-logs', { params }),
 };
 
