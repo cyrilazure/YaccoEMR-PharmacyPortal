@@ -10,7 +10,7 @@ import json
 from datetime import datetime
 
 # Backend URL
-BASE_URL = "https://carecloud-3.preview.emergentagent.com/api"
+BASE_URL = "https://healthfusion-gh.preview.emergentagent.com/api"
 
 # Test credentials
 BILLER_EMAIL = "biller@yacco.health"
