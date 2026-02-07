@@ -38,7 +38,7 @@ const STATUS_ICONS = {
 };
 
 // Procedure Room Card
-function ProcedureRoomCard({ procedure, latestVitals }) {
+function ProcedureRoomCard({ procedure, latestVitals, onSelect }) {
   const status = procedure?.status || 'empty';
   const colors = STATUS_COLORS[status] || STATUS_COLORS.scheduled;
   const StatusIcon = STATUS_ICONS[status] || Clock;
@@ -57,12 +57,16 @@ function ProcedureRoomCard({ procedure, latestVitals }) {
   }
 
   return (
-    <Card className={cn(
-      "h-full border-2 transition-all",
-      colors.border,
-      colors.bg,
-      colors.pulse && "animate-pulse"
-    )}>
+    <Card 
+      className={cn(
+        "h-full border-2 transition-all cursor-pointer hover:shadow-lg",
+        colors.border,
+        colors.bg,
+        colors.pulse && "animate-pulse"
+      )}
+      onClick={() => onSelect?.(procedure)}
+      data-testid={`room-card-${procedure.id}`}
+    >
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <Badge className={cn(colors.bg, colors.text, "border", colors.border)}>
