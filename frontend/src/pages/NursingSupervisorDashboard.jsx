@@ -1894,6 +1894,137 @@ export default function NursingSupervisorDashboard() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Clock In Dialog */}
+      <Dialog open={clockInOpen} onOpenChange={setClockInOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <LogIn className="w-5 h-5 text-emerald-600" />
+              Clock In to Shift
+            </DialogTitle>
+            <DialogDescription>
+              Start your shift as Nursing Supervisor
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Select Shift Type</Label>
+              <Select value={shiftType} onValueChange={setShiftType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select shift type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="day">Day Shift (7AM - 3PM)</SelectItem>
+                  <SelectItem value="evening">Evening Shift (3PM - 11PM)</SelectItem>
+                  <SelectItem value="night">Night Shift (11PM - 7AM)</SelectItem>
+                  <SelectItem value="12hr_day">12-Hour Day (7AM - 7PM)</SelectItem>
+                  <SelectItem value="12hr_night">12-Hour Night (7PM - 7AM)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Alert>
+              <Clock className="w-4 h-4" />
+              <AlertTitle>Current Time</AlertTitle>
+              <AlertDescription>
+                {new Date().toLocaleString()}
+              </AlertDescription>
+            </Alert>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setClockInOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleClockIn} 
+              disabled={clockingIn}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              {clockingIn ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Clocking In...
+                </>
+              ) : (
+                <>
+                  <LogIn className="w-4 h-4 mr-2" />
+                  Clock In
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Clock Out Dialog */}
+      <Dialog open={clockOutOpen} onOpenChange={setClockOutOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <LogOut className="w-5 h-5 text-red-600" />
+              Clock Out
+            </DialogTitle>
+            <DialogDescription>
+              End your current shift
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {myActiveShift && (
+              <div className="p-4 bg-slate-50 rounded-lg">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-slate-500">Shift Type</p>
+                    <p className="font-medium">{myActiveShift.shift_type?.toUpperCase()}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500">Started At</p>
+                    <p className="font-medium">{new Date(myActiveShift.clock_in_time).toLocaleTimeString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500">Duration</p>
+                    <p className="font-medium text-emerald-600">{getShiftDuration(myActiveShift.clock_in_time)}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500">Current Time</p>
+                    <p className="font-medium">{new Date().toLocaleTimeString()}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label>Handoff Notes (Optional)</Label>
+              <Textarea
+                placeholder="Any notes for the next shift supervisor..."
+                value={clockOutNotes}
+                onChange={(e) => setClockOutNotes(e.target.value)}
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setClockOutOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleClockOut}
+              disabled={clockingOut}
+              variant="destructive"
+            >
+              {clockingOut ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Clocking Out...
+                </>
+              ) : (
+                <>
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Clock Out
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
