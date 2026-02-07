@@ -435,7 +435,12 @@ export default function SchedulerDashboard() {
                 {appointments.map((appt) => (
                   <div 
                     key={appt.id} 
-                    className="flex items-center justify-between p-4 rounded-lg border border-slate-200 hover:border-sky-200 transition-colors"
+                    className={`flex items-center justify-between p-4 rounded-lg border transition-colors ${
+                      appt.status === 'checked_in' ? 'border-blue-300 bg-blue-50' :
+                      appt.status === 'in_progress' ? 'border-amber-300 bg-amber-50' :
+                      appt.status === 'completed' ? 'border-emerald-300 bg-emerald-50' :
+                      'border-slate-200 hover:border-sky-200'
+                    }`}
                   >
                     <div className="flex gap-4">
                       <div className="text-center min-w-[80px]">
@@ -451,18 +456,42 @@ export default function SchedulerDashboard() {
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                       <Badge className={getStatusColor(appt.status)}>{appt.status.replace('_', ' ')}</Badge>
+                      
+                      {/* Quick Check-In/Out Buttons */}
+                      {appt.status === 'scheduled' && (
+                        <Button 
+                          size="sm" 
+                          className="bg-blue-600 hover:bg-blue-700 gap-1"
+                          onClick={() => handleStatusChange(appt.id, 'checked_in')}
+                        >
+                          <LogIn className="w-3 h-3" />
+                          Check In
+                        </Button>
+                      )}
+                      {(appt.status === 'checked_in' || appt.status === 'in_progress') && (
+                        <Button 
+                          size="sm" 
+                          className="bg-emerald-600 hover:bg-emerald-700 gap-1"
+                          onClick={() => handleStatusChange(appt.id, 'completed')}
+                        >
+                          <LogOut className="w-3 h-3" />
+                          Check Out
+                        </Button>
+                      )}
+                      
+                      {/* More Options Dropdown */}
                       <Select onValueChange={(v) => handleStatusChange(appt.id, v)}>
-                        <SelectTrigger className="w-[120px] h-8 text-sm">
-                          <SelectValue placeholder="Update" />
+                        <SelectTrigger className="w-[100px] h-8 text-sm">
+                          <SelectValue placeholder="More..." />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="scheduled">Scheduled</SelectItem>
-                          <SelectItem value="checked_in">Check In</SelectItem>
+                          <SelectItem value="checked_in">Checked In</SelectItem>
                           <SelectItem value="in_progress">In Progress</SelectItem>
-                          <SelectItem value="completed">Complete</SelectItem>
-                          <SelectItem value="cancelled">Cancel</SelectItem>
+                          <SelectItem value="completed">Completed</SelectItem>
+                          <SelectItem value="cancelled">Cancelled</SelectItem>
                           <SelectItem value="no_show">No Show</SelectItem>
                         </SelectContent>
                       </Select>
