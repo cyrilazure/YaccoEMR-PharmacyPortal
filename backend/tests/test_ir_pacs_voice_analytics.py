@@ -16,8 +16,8 @@ BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 # Test credentials
 RADIOLOGIST_EMAIL = "radiologist@yacco.health"
 RADIOLOGIST_PASSWORD = "test123"
-SUPER_ADMIN_EMAIL = "ygtnetworks@gmail.com"
-SUPER_ADMIN_PASSWORD = "test123"
+ADMIN_EMAIL = "it_admin@yacco.health"  # hospital_it_admin has access to voice analytics
+ADMIN_PASSWORD = "test123"
 
 
 class TestAuthentication:
