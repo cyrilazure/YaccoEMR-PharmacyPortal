@@ -589,16 +589,21 @@ export default function BillingPage() {
                       <thead className="bg-slate-50 border-b">
                         <tr>
                           <th className="text-left p-4 font-medium text-slate-600">Patient Name</th>
-                          <th className="text-left p-4 font-medium text-slate-600">NHIS ID</th>
+                          <th className="text-left p-4 font-medium text-slate-600">Insurance ID</th>
                           <th className="text-left p-4 font-medium text-slate-600">Phone</th>
                           <th className="text-left p-4 font-medium text-slate-600">Insurance Provider</th>
                           <th className="text-center p-4 font-medium text-slate-600">Status</th>
+                          <th className="text-center p-4 font-medium text-slate-600">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y">
                         {nhisResults.map((patient) => (
-                          <tr key={patient.id} className="hover:bg-slate-50">
-                            <td className="p-4 font-medium">
+                          <tr 
+                            key={patient.id} 
+                            className="hover:bg-blue-50 cursor-pointer transition-colors"
+                            onClick={() => navigate(`/patients/${patient.id}`)}
+                          >
+                            <td className="p-4 font-medium text-blue-600 hover:text-blue-800">
                               {patient.first_name} {patient.last_name}
                             </td>
                             <td className="p-4 font-mono">
@@ -611,6 +616,32 @@ export default function BillingPage() {
                                 <CheckCircle className="w-3 h-3 mr-1" />
                                 Active
                               </Badge>
+                            </td>
+                            <td className="p-4 text-center">
+                              <div className="flex items-center justify-center gap-2">
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/patients/${patient.id}`);
+                                  }}
+                                >
+                                  <Eye className="w-4 h-4 mr-1" />
+                                  View
+                                </Button>
+                                <Button 
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedPatient(patient.id);
+                                    setShowCreateInvoice(true);
+                                  }}
+                                >
+                                  <Receipt className="w-4 h-4 mr-1" />
+                                  Bill
+                                </Button>
+                              </div>
                             </td>
                           </tr>
                         ))}
