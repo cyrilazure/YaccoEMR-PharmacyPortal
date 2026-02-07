@@ -174,8 +174,14 @@ export default function BillingPage() {
         const adminRes = await billingShiftsAPI.getAdminDashboard();
         setAdminDashboard(adminRes.data);
         
-        const shiftsRes = await billingShiftsAPI.getAllShifts({ limit: 20 });
+        const shiftsRes = await billingShiftsAPI.getAllShifts({ limit: 50 });
         setAllShifts(shiftsRes.data.shifts || []);
+        
+        // Get closed shifts for reconciliation (completed or flagged)
+        const closed = (shiftsRes.data.shifts || []).filter(s => 
+          s.status === 'completed' || s.status === 'flagged'
+        );
+        setClosedShifts(closed);
       }
       
       if (isSeniorBiller) {
@@ -183,8 +189,14 @@ export default function BillingPage() {
         const seniorRes = await billingShiftsAPI.getSeniorBillerDashboard();
         setSeniorBillerDashboard(seniorRes.data);
         
-        const shiftsRes = await billingShiftsAPI.getAllShifts({ limit: 20 });
+        const shiftsRes = await billingShiftsAPI.getAllShifts({ limit: 50 });
         setAllShifts(shiftsRes.data.shifts || []);
+        
+        // Get closed shifts for reconciliation
+        const closed = (shiftsRes.data.shifts || []).filter(s => 
+          s.status === 'completed' || s.status === 'flagged'
+        );
+        setClosedShifts(closed);
       }
       
       // All billers get their shift data
