@@ -170,6 +170,15 @@ export default function BillingPage() {
         setAllShifts(shiftsRes.data.shifts || []);
       }
       
+      if (isSeniorBiller) {
+        // Senior biller gets department-wide view
+        const seniorRes = await billingShiftsAPI.getSeniorBillerDashboard();
+        setSeniorBillerDashboard(seniorRes.data);
+        
+        const shiftsRes = await billingShiftsAPI.getAllShifts({ limit: 20 });
+        setAllShifts(shiftsRes.data.shifts || []);
+      }
+      
       // All billers get their shift data
       const billerRes = await billingShiftsAPI.getBillerDashboard();
       if (billerRes.data.has_active_shift) {
@@ -185,7 +194,7 @@ export default function BillingPage() {
     } catch (err) {
       console.error('Error loading shift data:', err);
     }
-  }, [isAdmin]);
+  }, [isAdmin, isSeniorBiller]);
   
   // Clock In Handler
   const handleClockIn = async () => {
