@@ -435,7 +435,7 @@ export default function PharmacyPortal() {
             {inventoryDashboard?.inventory?.low_stock > 0 && <Badge className="ml-1 bg-amber-500">{inventoryDashboard.inventory.low_stock}</Badge>}
           </TabsTrigger>
           <TabsTrigger value="nhis" className="gap-2" data-testid="tab-nhis">
-            <CreditCard className="w-4 h-4" /> NHIS Claims
+            <CreditCard className="w-4 h-4" /> Insurance Claims
           </TabsTrigger>
           <TabsTrigger value="directory" className="gap-2" data-testid="tab-directory">
             <Building className="w-4 h-4" /> Directory
