@@ -1981,17 +1981,21 @@ export default function BillingPage() {
           <div className="space-y-6">
             {/* Patient Selection */}
             <div className="space-y-2">
-              <Label>Patient</Label>
+              <Label>Patient ({patients.length} available)</Label>
               <Select value={selectedPatient} onValueChange={setSelectedPatient}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select patient" />
                 </SelectTrigger>
                 <SelectContent>
-                  {patients.map((patient) => (
-                    <SelectItem key={patient.id} value={patient.id}>
-                      {patient.first_name} {patient.last_name} ({patient.mrn})
-                    </SelectItem>
-                  ))}
+                  {patients.length === 0 ? (
+                    <SelectItem value="_empty" disabled>No patients found</SelectItem>
+                  ) : (
+                    patients.map((patient) => (
+                      <SelectItem key={patient.id} value={patient.id}>
+                        {patient.first_name} {patient.last_name} ({patient.mrn})
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
