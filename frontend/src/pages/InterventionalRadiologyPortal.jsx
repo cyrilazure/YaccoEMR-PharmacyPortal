@@ -491,6 +491,9 @@ export default function InterventionalRadiologyPortal() {
           <TabsTrigger value="dashboard" className="gap-2">
             <Activity className="w-4 h-4" /> Dashboard
           </TabsTrigger>
+          <TabsTrigger value="status-board" className="gap-2">
+            <Monitor className="w-4 h-4" /> Status Board
+          </TabsTrigger>
           <TabsTrigger value="schedule" className="gap-2">
             <Calendar className="w-4 h-4" /> Schedule
           </TabsTrigger>
