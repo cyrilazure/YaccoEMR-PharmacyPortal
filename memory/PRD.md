@@ -587,6 +587,9 @@ GET  /api/billing-shifts/audit-logs      - Billing audit logs
 - [ ] Real NHIS API integration (replace mock data)
 - [ ] Real PACS/dcm4chee server integration (replace demo mode)
 - [ ] Complete PatientChart refactoring (remaining tabs: Overview, Notes, Orders, Imaging, Pharmacy)
+- [ ] Pharmacy Portal Phase 2 - Insurance Claim Routing from Pharmacy
+- [ ] Pharmacy Portal Phase 3 - Automated Stock Reorder System
+- [ ] Admin Pharmacy Approval Workflow
 - [x] ~~Notifications for prescription updates~~ ✅ DONE
 - [x] ~~Stock alerts for pharmacists~~ ✅ DONE
 - [x] ~~Advanced Admin Dashboard Widgets (graphs/charts for revenue trends)~~ ✅ DONE (Feb 7, 2026)
