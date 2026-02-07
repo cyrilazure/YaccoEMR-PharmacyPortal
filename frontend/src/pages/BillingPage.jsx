@@ -254,6 +254,7 @@ export default function BillingPage() {
             body { font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; max-width: 400px; margin: 0 auto; }
             .receipt { border: 2px solid #000; padding: 20px; }
             .header { text-align: center; border-bottom: 2px dashed #000; padding-bottom: 15px; margin-bottom: 15px; }
+            .header img { height: 48px; width: auto; margin: 0 auto 8px; display: block; object-fit: contain; }
             .hospital-name { font-size: 18px; font-weight: bold; margin-bottom: 5px; }
             .hospital-info { font-size: 11px; color: #555; }
             .receipt-title { font-size: 16px; font-weight: bold; margin: 15px 0; text-align: center; background: #f0f0f0; padding: 8px; }
