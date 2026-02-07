@@ -105,12 +105,22 @@ export default function SchedulerDashboard() {
     e.preventDefault();
     setSaving(true);
     try {
-      await patientAPI.create(newPatient);
-      toast.success('Patient registered');
+      const response = await patientAPI.create(newPatient);
+      const createdPatient = response.data;
+      toast.success(
+        <div>
+          <p className="font-semibold">Patient Registered Successfully!</p>
+          <p className="text-sm">MRN: <span className="font-mono font-bold">{createdPatient.mrn || 'Generated'}</span></p>
+          <p className="text-sm">{createdPatient.first_name} {createdPatient.last_name}</p>
+        </div>,
+        { duration: 6000 }
+      );
       setPatientDialogOpen(false);
       setNewPatient({
         first_name: '', last_name: '', date_of_birth: '', gender: 'male',
-        email: '', phone: '', insurance_provider: '', insurance_id: ''
+        email: '', phone: '', address: '',
+        emergency_contact_name: '', emergency_contact_phone: '',
+        insurance_provider: '', insurance_id: ''
       });
       fetchData();
     } catch (err) {
@@ -123,7 +133,14 @@ export default function SchedulerDashboard() {
   const handleStatusChange = async (apptId, newStatus) => {
     try {
       await appointmentsAPI.updateStatus(apptId, newStatus);
-      toast.success('Status updated');
+      const statusMessages = {
+        checked_in: 'Patient checked in successfully',
+        completed: 'Patient checked out - Visit completed',
+        in_progress: 'Patient is now with provider',
+        cancelled: 'Appointment cancelled',
+        no_show: 'Patient marked as no-show'
+      };
+      toast.success(statusMessages[newStatus] || 'Status updated');
       fetchData();
     } catch (err) {
       toast.error('Failed to update status');
