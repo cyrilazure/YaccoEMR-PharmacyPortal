@@ -1198,6 +1198,16 @@ from voice_dictation_module import create_voice_dictation_router
 voice_dictation_router = create_voice_dictation_router(db, get_current_user)
 app.include_router(voice_dictation_router)
 
+# PACS/DICOM Integration Module
+from pacs_integration_module import create_pacs_integration_router
+pacs_router = create_pacs_integration_router(db, get_current_user)
+app.include_router(pacs_router)
+
+# Interventional Radiology Module
+from interventional_radiology_module import create_ir_module_router
+ir_router = create_ir_module_router(db, get_current_user)
+app.include_router(ir_router)
+
 
 app.add_middleware(
     CORSMiddleware,
