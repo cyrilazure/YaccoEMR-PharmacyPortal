@@ -293,6 +293,7 @@ POST /api/billing-shifts/clock-out       - End billing shift
 GET  /api/billing-shifts/active          - Get active shift
 GET  /api/billing-shifts/my-shifts       - Get shift history
 GET  /api/billing-shifts/dashboard/biller - Biller shift-scoped dashboard
+GET  /api/billing-shifts/dashboard/senior-biller - Senior biller department dashboard (NEW)
 GET  /api/billing-shifts/dashboard/admin  - Admin full financial dashboard
 GET  /api/billing-shifts/all-shifts      - All shifts (admin only)
 POST /api/billing-shifts/shifts/{id}/reconcile - Reconcile shift
@@ -305,14 +306,17 @@ GET  /api/billing-shifts/audit-logs      - Billing audit logs
 - [x] **Shift-Scoped KPIs**: Invoices generated, payments received, cash/MoMo/card/insurance breakdown
 - [x] **Admin Financial Dashboard**: Daily/Weekly/Monthly revenue, payment mode distribution
 - [x] **Outstanding Balances (Persistent)**: Unpaid invoices, pending insurance - NOT reset with shifts
-- [x] **Shift Reconciliation**: Admin can reconcile shifts, flag discrepancies
+- [x] **Shift Reconciliation UI**: Admins can reconcile shifts with actual cash verification
+- [x] **Shift Flagging**: Flag shifts with discrepancies for investigation
 - [x] **Billing Audit Logs**: Track invoice creation, payments, shift events
-- [x] **Print Receipt**: Generate and print payment receipts for patients
+- [x] **Print Receipt with Hospital Logo**: Generate receipts with hospital name, address, logo (Feb 7)
+- [x] **Senior Biller Dashboard**: Department-wide view for senior billers showing all active shifts (Feb 7)
 
 **Data Visibility Rules:**
 | Role | Own Shift | All Shifts | Daily/Weekly/Monthly | Outstanding |
 |------|-----------|------------|---------------------|-------------|
 | Biller | ✅ | ❌ | ❌ | ✅ |
+| Senior Biller | ✅ | ✅ (dept) | ❌ | ✅ |
 | Hospital Admin | ✅ | ✅ | ✅ | ✅ |
 | Finance Manager | ✅ | ✅ | ✅ | ✅ |
 
