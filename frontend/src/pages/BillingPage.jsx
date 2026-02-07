@@ -312,6 +312,31 @@ export default function BillingPage() {
     }
   };
 
+  // Load Audit Logs
+  const loadAuditLogs = useCallback(async () => {
+    if (!isAdmin && !isSeniorBiller) return;
+    setAuditLoading(true);
+    try {
+      const params = { limit: 200 };
+      if (auditFilter !== 'all') {
+        params.action = auditFilter;
+      }
+      const res = await billingShiftsAPI.getAuditLogs(params);
+      setAuditLogs(res.data.logs || []);
+    } catch (err) {
+      console.error('Error loading audit logs:', err);
+    } finally {
+      setAuditLoading(false);
+    }
+  }, [isAdmin, isSeniorBiller, auditFilter]);
+
+  // Load audit logs when tab is selected
+  useEffect(() => {
+    if (activeTab === 'audit' && (isAdmin || isSeniorBiller)) {
+      loadAuditLogs();
+    }
+  }, [activeTab, loadAuditLogs, isAdmin, isSeniorBiller]);
+
   // Print Receipt Handler
   const handlePrintReceipt = (invoice) => {
     setReceiptInvoice(invoice);
