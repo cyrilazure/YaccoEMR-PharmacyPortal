@@ -658,25 +658,25 @@ export default function NursingSupervisorDashboard() {
               </Card>
               <Card className="bg-green-50 border-green-200">
                 <CardContent className="p-4 text-center">
-                  <p className="text-2xl font-bold text-green-700">{bedCensus.summary?.available_beds || 0}</p>
+                  <p className="text-2xl font-bold text-green-700">{bedCensus.summary?.available || bedCensus.summary?.available_beds || 0}</p>
                   <p className="text-sm text-green-600">Available</p>
                 </CardContent>
               </Card>
               <Card className="bg-blue-50 border-blue-200">
                 <CardContent className="p-4 text-center">
-                  <p className="text-2xl font-bold text-blue-700">{bedCensus.summary?.occupied_beds || 0}</p>
+                  <p className="text-2xl font-bold text-blue-700">{bedCensus.summary?.occupied || bedCensus.summary?.occupied_beds || 0}</p>
                   <p className="text-sm text-blue-600">Occupied</p>
                 </CardContent>
               </Card>
               <Card className="bg-amber-50 border-amber-200">
                 <CardContent className="p-4 text-center">
-                  <p className="text-2xl font-bold text-amber-700">{bedCensus.summary?.reserved_beds || 0}</p>
+                  <p className="text-2xl font-bold text-amber-700">{bedCensus.summary?.reserved || bedCensus.summary?.reserved_beds || 0}</p>
                   <p className="text-sm text-amber-600">Reserved</p>
                 </CardContent>
               </Card>
               <Card className="bg-purple-50 border-purple-200">
                 <CardContent className="p-4 text-center">
-                  <p className="text-2xl font-bold text-purple-700">{bedCensus.summary?.occupancy_rate ? `${Math.round(bedCensus.summary.occupancy_rate)}%` : '0%'}</p>
+                  <p className="text-2xl font-bold text-purple-700">{bedCensus.summary?.overall_occupancy !== undefined ? `${Math.round(bedCensus.summary.overall_occupancy)}%` : (bedCensus.summary?.occupancy_rate ? `${Math.round(bedCensus.summary.occupancy_rate)}%` : '0%')}</p>
                   <p className="text-sm text-purple-600">Occupancy</p>
                 </CardContent>
               </Card>
