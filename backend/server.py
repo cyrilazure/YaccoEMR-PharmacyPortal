@@ -807,7 +807,8 @@ async def get_hospital_info(current_user: dict = Depends(get_current_user)):
                 "district": hospital.get("district"),
                 "location": hospital.get("location"),
                 "type": hospital.get("type"),
-                "nhis_accredited": hospital.get("nhis_accredited", False)
+                "nhis_accredited": hospital.get("nhis_accredited", False),
+                "logo_url": hospital.get("logo_url")
             }
     
     # Fallback - check locations table
@@ -822,7 +823,8 @@ async def get_hospital_info(current_user: dict = Depends(get_current_user)):
                 "phone": location.get("phone"),
                 "email": location.get("email"),
                 "region": location.get("region"),
-                "district": location.get("district")
+                "district": location.get("district"),
+                "logo_url": location.get("logo_url")
             }
     
     # Last fallback - use organization info
@@ -837,10 +839,11 @@ async def get_hospital_info(current_user: dict = Depends(get_current_user)):
                 "phone": org.get("phone"),
                 "email": org.get("email"),
                 "region": org.get("region"),
-                "district": org.get("district")
+                "district": org.get("district"),
+                "logo_url": org.get("logo_url")
             }
     
-    return {"name": "Hospital", "address": "", "phone": "", "email": "", "region": "", "district": ""}
+    return {"name": "Hospital", "address": "", "phone": "", "email": "", "region": "", "district": "", "logo_url": None}
 
 @api_router.post("/appointments")
 async def create_appointment(appt_data: AppointmentCreate, current_user: dict = Depends(get_current_user)):

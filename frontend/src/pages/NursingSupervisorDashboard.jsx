@@ -1994,7 +1994,7 @@ export default function NursingSupervisorDashboard() {
 
       {/* Clock Out Dialog */}
       <Dialog open={clockOutOpen} onOpenChange={setClockOutOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <LogOut className="w-5 h-5 text-red-600" />
