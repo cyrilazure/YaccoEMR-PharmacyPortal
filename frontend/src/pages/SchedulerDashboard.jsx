@@ -217,6 +217,24 @@ export default function SchedulerDashboard() {
                     <Input type="email" value={newPatient.email} onChange={(e) => setNewPatient({ ...newPatient, email: e.target.value })} />
                   </div>
                 </div>
+                <div className="space-y-2">
+                  <Label>Address</Label>
+                  <Input value={newPatient.address} onChange={(e) => setNewPatient({ ...newPatient, address: e.target.value })} placeholder="Street address, city" />
+                </div>
+                <Separator />
+                <p className="text-sm font-medium text-slate-700">Emergency Contact</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Contact Name</Label>
+                    <Input value={newPatient.emergency_contact_name} onChange={(e) => setNewPatient({ ...newPatient, emergency_contact_name: e.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Contact Phone</Label>
+                    <Input value={newPatient.emergency_contact_phone} onChange={(e) => setNewPatient({ ...newPatient, emergency_contact_phone: e.target.value })} />
+                  </div>
+                </div>
+                <Separator />
+                <p className="text-sm font-medium text-slate-700">Insurance Information</p>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Insurance Provider</Label>
