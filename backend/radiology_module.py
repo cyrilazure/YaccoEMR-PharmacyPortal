@@ -504,25 +504,25 @@ def create_radiology_endpoints(db, get_current_user):
             "status": {"$in": ["ordered", "scheduled", "in_progress", "completed"]}
         }, {"_id": 0}).sort("created_at", 1).to_list(50)
         
-        # Get recently finalized reports by this radiologist
-        my_reports = await db["radiology_results"].find({
+        # Get recently finalized reports by this radiologist (from radiology_reports collection)
+        my_reports = await db["radiology_reports"].find({
             "radiologist_id": user_id
-        }, {"_id": 0}).sort("reported_at", -1).limit(20).to_list(20)
+        }, {"_id": 0}).sort("created_at", -1).limit(20).to_list(20)
         
-        # Get critical findings requiring communication
-        critical_findings = await db["radiology_results"].find({
+        # Get critical findings requiring communication (from radiology_reports collection)
+        critical_findings = await db["radiology_reports"].find({
             "organization_id": org_id,
             "critical_finding": True,
             "critical_communicated": {"$ne": True}
-        }, {"_id": 0}).sort("reported_at", -1).to_list(20)
+        }, {"_id": 0}).sort("created_at", -1).to_list(20)
         
         # Stats
         today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
         
         all_orders = await db["radiology_orders"].find({"organization_id": org_id}, {"status": 1, "priority": 1}).to_list(1000)
-        my_daily_reports = await db["radiology_results"].count_documents({
+        my_daily_reports = await db["radiology_reports"].count_documents({
             "radiologist_id": user_id,
-            "reported_at": {"$regex": f"^{today}"}
+            "created_at": {"$regex": f"^{today}"}
         })
         
         stats = {
