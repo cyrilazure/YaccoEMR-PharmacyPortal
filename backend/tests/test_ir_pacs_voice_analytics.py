@@ -69,8 +69,8 @@ class TestAuthentication:
         print(f"SUCCESS: Radiologist logged in - {data['user']['first_name']} {data['user']['last_name']}")
         return data["token"], hospital_id
     
-    def test_super_admin_login(self):
-        """Test super admin login flow"""
+    def test_admin_login(self):
+        """Test admin login flow (hospital_it_admin has voice analytics access)"""
         # Step 1: Get regions
         response = requests.get(f"{BASE_URL}/api/regions/")
         assert response.status_code == 200
@@ -92,16 +92,16 @@ class TestAuthentication:
         
         # Step 3: Login
         login_data = {
-            "email": SUPER_ADMIN_EMAIL,
-            "password": SUPER_ADMIN_PASSWORD,
+            "email": ADMIN_EMAIL,
+            "password": ADMIN_PASSWORD,
             "hospital_id": hospital_id
         }
         response = requests.post(f"{BASE_URL}/api/regions/auth/login", json=login_data)
         assert response.status_code == 200, f"Login failed: {response.text}"
         data = response.json()
         assert "token" in data
-        assert data["user"]["role"] == "super_admin"
-        print(f"SUCCESS: Super Admin logged in - {data['user']['first_name']} {data['user']['last_name']}")
+        assert data["user"]["role"] in ["hospital_it_admin", "hospital_admin", "super_admin"]
+        print(f"SUCCESS: Admin logged in - {data['user']['first_name']} {data['user']['last_name']} ({data['user']['role']})")
         return data["token"], hospital_id
 
 
