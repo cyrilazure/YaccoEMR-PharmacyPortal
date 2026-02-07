@@ -625,39 +625,124 @@ export default function NursingSupervisorDashboard() {
         {/* Bed Management Tab */}
         <TabsContent value="beds" className="mt-6">
           <div className="space-y-4">
-            <div className="flex gap-2">
-              <Button 
-                onClick={() => navigate('/bed-management')}
-                className="gap-2 bg-sky-600 hover:bg-sky-700"
-              >
-                <Bed className="w-4 h-4" /> Open Full Bed Management
-              </Button>
-              <Button 
-                onClick={() => navigate('/patients')}
-                variant="outline"
-                className="gap-2"
-              >
-                <Users className="w-4 h-4" /> View All Patients
-              </Button>
-              <Button 
-                onClick={() => navigate('/scheduling')}
-                variant="outline"
-                className="gap-2"
-              >
-                <Calendar className="w-4 h-4" /> Appointments
+            <div className="flex justify-between items-center">
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => navigate('/bed-management')}
+                  className="gap-2 bg-sky-600 hover:bg-sky-700"
+                >
+                  <Bed className="w-4 h-4" /> Full Bed Management
+                </Button>
+                <Button 
+                  onClick={() => navigate('/patients')}
+                  variant="outline"
+                  className="gap-2"
+                >
+                  <Users className="w-4 h-4" /> View All Patients
+                </Button>
+              </div>
+              <Button variant="outline" onClick={fetchData} size="sm">
+                <RefreshCw className="w-4 h-4 mr-2" /> Refresh
               </Button>
             </div>
             
+            {/* Bed Census Summary */}
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              <Card className="bg-slate-50">
+                <CardContent className="p-4 text-center">
+                  <p className="text-2xl font-bold text-slate-800">{bedCensus.summary?.total_beds || 0}</p>
+                  <p className="text-sm text-slate-500">Total Beds</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-green-50 border-green-200">
+                <CardContent className="p-4 text-center">
+                  <p className="text-2xl font-bold text-green-700">{bedCensus.summary?.available_beds || 0}</p>
+                  <p className="text-sm text-green-600">Available</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-blue-50 border-blue-200">
+                <CardContent className="p-4 text-center">
+                  <p className="text-2xl font-bold text-blue-700">{bedCensus.summary?.occupied_beds || 0}</p>
+                  <p className="text-sm text-blue-600">Occupied</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-amber-50 border-amber-200">
+                <CardContent className="p-4 text-center">
+                  <p className="text-2xl font-bold text-amber-700">{bedCensus.summary?.reserved_beds || 0}</p>
+                  <p className="text-sm text-amber-600">Reserved</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-purple-50 border-purple-200">
+                <CardContent className="p-4 text-center">
+                  <p className="text-2xl font-bold text-purple-700">{bedCensus.summary?.occupancy_rate ? `${Math.round(bedCensus.summary.occupancy_rate)}%` : '0%'}</p>
+                  <p className="text-sm text-purple-600">Occupancy</p>
+                </CardContent>
+              </Card>
+            </div>
+            
+            {/* Ward Overview */}
             <Card>
               <CardHeader>
-                <CardTitle>Quick Bed Census</CardTitle>
-                <CardDescription>Real-time bed availability overview</CardDescription>
+                <CardTitle className="flex items-center gap-2">
+                  <Bed className="w-5 h-5 text-sky-600" />
+                  Ward Census
+                </CardTitle>
+                <CardDescription>Real-time bed availability by ward</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-slate-500 text-center py-8">
-                  Use the "Open Full Bed Management" button above to access complete bed management features including:
-                  ward census, patient admissions, transfers, discharges, and bed assignments.
-                </p>
+                {wards.length > 0 ? (
+                  <div className="space-y-3">
+                    {wards.map((ward) => {
+                      const occupancy = ward.total_beds > 0 ? ((ward.occupied_beds || 0) / ward.total_beds * 100) : 0;
+                      const statusColor = occupancy >= 90 ? 'bg-red-500' : occupancy >= 70 ? 'bg-amber-500' : 'bg-green-500';
+                      
+                      return (
+                        <div key={ward.id} className="p-4 border rounded-lg hover:bg-slate-50">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-3 h-3 rounded-full ${statusColor}`} />
+                              <div>
+                                <p className="font-medium">{ward.name}</p>
+                                <p className="text-sm text-slate-500">
+                                  {ward.ward_type || 'General'} • {ward.specialty || 'Mixed'}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-semibold">
+                                {ward.available_beds || (ward.total_beds - (ward.occupied_beds || 0))} / {ward.total_beds || 0}
+                              </p>
+                              <p className="text-xs text-slate-500">Available Beds</p>
+                            </div>
+                          </div>
+                          <div className="w-full bg-slate-200 rounded-full h-2">
+                            <div 
+                              className={`h-2 rounded-full ${statusColor}`} 
+                              style={{ width: `${occupancy}%` }}
+                            />
+                          </div>
+                          <div className="flex justify-between mt-2 text-xs text-slate-500">
+                            <span>Occupied: {ward.occupied_beds || 0}</span>
+                            <span>Reserved: {ward.reserved_beds || 0}</span>
+                            <span>{Math.round(occupancy)}% Full</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-slate-500">
+                    <Bed className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                    <p>No wards configured yet.</p>
+                    <Button 
+                      variant="link" 
+                      onClick={() => navigate('/bed-management')}
+                      className="mt-2"
+                    >
+                      Set up wards in Bed Management →
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
