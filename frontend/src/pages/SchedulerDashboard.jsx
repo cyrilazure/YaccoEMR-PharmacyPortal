@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 import {
   Dialog,
   DialogContent,
@@ -25,10 +26,11 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { formatTime, getStatusColor } from '@/lib/utils';
+import { formatTime, getStatusColor, calculateAge, formatDate } from '@/lib/utils';
 import { 
   Calendar, Plus, Clock, User, ChevronLeft, ChevronRight, 
-  UserPlus, CheckCircle, XCircle, Users, CalendarDays
+  UserPlus, CheckCircle, XCircle, Users, CalendarDays, Eye,
+  Phone, Mail, MapPin, Shield, AlertCircle, LogIn, LogOut, Search
 } from 'lucide-react';
 
 export default function SchedulerDashboard() {
