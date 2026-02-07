@@ -327,8 +327,8 @@ def create_voice_dictation_router(db, get_current_user) -> APIRouter:
         
         # Calculate stats
         total_transcriptions = len(logs)
-        total_duration = sum(l.get("duration_seconds", 0) or 0 for l in logs)
-        total_corrections = sum(l.get("corrections_count", 0) for l in logs)
+        total_duration = sum(log_entry.get("duration_seconds", 0) or 0 for log_entry in logs)
+        total_corrections = sum(log_entry.get("corrections_count", 0) for log_entry in logs)
         
         # Usage by role
         role_usage = {}
