@@ -996,11 +996,28 @@ export default function NursingSupervisorDashboard() {
               >
                 <SelectTrigger><SelectValue placeholder="Select nurse" /></SelectTrigger>
                 <SelectContent>
-                  {nurses.filter(n => n.active_shift).map((n) => (
-                    <SelectItem key={n.id} value={n.id}>
-                      {n.first_name} {n.last_name}
-                    </SelectItem>
-                  ))}
+                  {nurses.length > 0 ? (
+                    <>
+                      {nurses.filter(n => n.active_shift).map((n) => (
+                        <SelectItem key={n.id} value={n.id}>
+                          <span className="flex items-center gap-2">
+                            <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                            {n.first_name} {n.last_name}
+                          </span>
+                        </SelectItem>
+                      ))}
+                      {nurses.filter(n => !n.active_shift).map((n) => (
+                        <SelectItem key={n.id} value={n.id}>
+                          <span className="flex items-center gap-2">
+                            <span className="w-2 h-2 bg-slate-300 rounded-full"></span>
+                            {n.first_name} {n.last_name}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </>
+                  ) : (
+                    <div className="px-3 py-2 text-sm text-slate-500">No nurses available</div>
+                  )}
                 </SelectContent>
               </Select>
             </div>
