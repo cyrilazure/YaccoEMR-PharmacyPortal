@@ -324,6 +324,78 @@ def create_billing_shifts_router(db, get_current_user):
             "recent_payments": [{k: v for k, v in p.items() if k != '_id'} for p in recent_payments]
         }
     
+    # ============ SENIOR BILLER DEPARTMENT VIEW ============
+    
+    @router.get("/dashboard/senior-biller")
+    async def get_senior_biller_dashboard(current_user: dict = Depends(get_current_user)):
+        """Get department-wide financial dashboard for senior billers"""
+        allowed_roles = ['senior_biller', 'hospital_admin', 'finance_manager', 'admin']
+        if current_user.get('role') not in allowed_roles:
+            raise HTTPException(status_code=403, detail="Not authorized to view senior biller dashboard")
+        
+        hospital_id = current_user.get('hospital_id')
+        department = current_user.get('department')
+        now = datetime.now(timezone.utc)
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
+        
+        # Get all active shifts in the hospital/department
+        shift_query = {"hospital_id": hospital_id, "status": ShiftStatus.ACTIVE.value}
+        active_shifts = await db.billing_shifts.find(shift_query).to_list(length=None)
+        
+        # Get all shifts today (active + completed)
+        all_shifts_today = await db.billing_shifts.find({
+            "hospital_id": hospital_id,
+            "start_time": {"$gte": today_start}
+        }).to_list(length=None)
+        
+        # Aggregate metrics from all shifts today
+        total_invoices = sum(s.get('total_invoices', 0) for s in all_shifts_today)
+        total_invoice_amount = sum(s.get('total_invoice_amount', 0.0) for s in all_shifts_today)
+        total_payments = sum(s.get('total_payments', 0) for s in all_shifts_today)
+        total_payments_amount = sum(s.get('total_payments_amount', 0.0) for s in all_shifts_today)
+        
+        # Payment mode breakdown
+        cash_total = sum(s.get('cash_collected', 0.0) for s in all_shifts_today)
+        mobile_money_total = sum(s.get('mobile_money_collected', 0.0) for s in all_shifts_today)
+        card_total = sum(s.get('card_payments', 0.0) for s in all_shifts_today)
+        insurance_total = sum(s.get('insurance_billed', 0.0) for s in all_shifts_today)
+        bank_transfer_total = sum(s.get('bank_transfers', 0.0) for s in all_shifts_today)
+        
+        # Get recent payments across all billers today
+        recent_payments = await db.billing_payments.find({
+            "hospital_id": hospital_id,
+            "created_at": {"$gte": today_start}
+        }).sort("created_at", -1).limit(20).to_list(length=20)
+        
+        return {
+            "department": department or "All Departments",
+            "today_summary": {
+                "active_billers": len(active_shifts),
+                "total_shifts": len(all_shifts_today),
+                "total_invoices": total_invoices,
+                "total_invoice_amount": total_invoice_amount,
+                "total_payments": total_payments,
+                "total_payments_amount": total_payments_amount
+            },
+            "payment_breakdown": {
+                "cash": cash_total,
+                "mobile_money": mobile_money_total,
+                "card": card_total,
+                "insurance": insurance_total,
+                "bank_transfer": bank_transfer_total
+            },
+            "active_shifts": [{
+                "id": s['id'],
+                "biller_name": s.get('biller_name', 'Unknown'),
+                "shift_type": s.get('shift_type', 'day'),
+                "start_time": s.get('start_time'),
+                "payments_collected": s.get('total_payments_amount', 0.0),
+                "invoices_count": s.get('total_invoices', 0)
+            } for s in active_shifts],
+            "outstanding": await get_outstanding_balances(db, hospital_id),
+            "recent_payments": [{k: v for k, v in p.items() if k != '_id'} for p in recent_payments]
+        }
+    
     # ============ ADMIN FINANCIAL DASHBOARD ============
     
     @router.get("/dashboard/admin")
