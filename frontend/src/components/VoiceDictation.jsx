@@ -79,16 +79,21 @@ export default function VoiceDictation({
   buttonSize = 'sm',
   showLabel = true,
   disabled = false,
+  noteType = 'progress_note', // For AI expansion: progress_note, soap_note, radiology_report, nursing_assessment
+  enableAiExpand = true, // Enable AI expansion feature
 }) {
   // State
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isExpanding, setIsExpanding] = useState(false);
   const [transcribedText, setTranscribedText] = useState('');
   const [correctedText, setCorrectedText] = useState('');
+  const [expandedText, setExpandedText] = useState('');
   const [corrections, setCorrections] = useState([]);
   const [showResultDialog, setShowResultDialog] = useState(false);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [useExpanded, setUseExpanded] = useState(false);
   
   // Settings
   const [settings, setSettings] = useState({
