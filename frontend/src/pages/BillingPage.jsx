@@ -266,6 +266,42 @@ export default function BillingPage() {
     return `${hours}h ${minutes}m`;
   };
 
+  // Reconciliation Handlers
+  const handleReconcileShift = async () => {
+    if (!reconcileShift) return;
+    setReconciling(true);
+    try {
+      const actualCash = actualCashAmount ? parseFloat(actualCashAmount) : null;
+      await billingShiftsAPI.reconcileShift(reconcileShift.id, actualCash, reconcileNotes);
+      toast.success('Shift reconciled successfully!');
+      setReconcileShift(null);
+      setActualCashAmount('');
+      setReconcileNotes('');
+      await loadShiftData();
+    } catch (err) {
+      console.error('Reconciliation error:', err);
+      toast.error(err.response?.data?.detail || 'Failed to reconcile shift');
+    } finally {
+      setReconciling(false);
+    }
+  };
+
+  const handleFlagShift = async (shift) => {
+    if (!flagReason) {
+      toast.error('Please provide a reason for flagging');
+      return;
+    }
+    try {
+      await billingShiftsAPI.flagShift(shift.id, flagReason);
+      toast.success('Shift flagged for review');
+      setFlagReason('');
+      await loadShiftData();
+    } catch (err) {
+      console.error('Flag shift error:', err);
+      toast.error(err.response?.data?.detail || 'Failed to flag shift');
+    }
+  };
+
   // Print Receipt Handler
   const handlePrintReceipt = (invoice) => {
     setReceiptInvoice(invoice);
