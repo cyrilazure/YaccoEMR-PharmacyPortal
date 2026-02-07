@@ -759,7 +759,7 @@ def create_radiology_endpoints(db, get_current_user):
         # Audit log
         await db["audit_logs"].insert_one({
             "id": str(uuid.uuid4()),
-            "action": f"radiology_report_updated",
+            "action": "radiology_report_updated",
             "resource_type": "radiology_report",
             "resource_id": report_id,
             "user_id": user.get("id"),
