@@ -211,6 +211,14 @@ const navItems = [
     roles: ['hospital_admin'],
     color: 'text-slate-500'
   },
+  { 
+    to: '/voice-analytics', 
+    icon: Mic, 
+    label: 'Voice Analytics', 
+    roles: ['hospital_admin', 'super_admin', 'hospital_it_admin'],
+    description: 'Voice dictation usage stats',
+    color: 'text-purple-500'
+  },
 ];
 
 // Loading skeleton component
