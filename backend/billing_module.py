@@ -979,7 +979,7 @@ def generate_mock_837(claim_data, invoice, claim_number, current_user):
     segments.append("HL*1**20*1~")
     
     # NM1 - Billing Provider
-    segments.append(f"NM1*85*2*YACCO MEDICAL CENTER*****XX*1234567890~")
+    segments.append("NM1*85*2*YACCO MEDICAL CENTER*****XX*1234567890~")
     segments.append("N3*123 HEALTHCARE DRIVE~")
     segments.append("N4*MEDICAL CITY*ST*12345~")
     
@@ -987,7 +987,7 @@ def generate_mock_837(claim_data, invoice, claim_number, current_user):
     segments.append("HL*2*1*22*0~")
     
     # SBR - Subscriber Information
-    segments.append(f"SBR*P*18*******CI~")
+    segments.append("SBR*P*18*******CI~")
     
     # NM1 - Subscriber Name
     segments.append(f"NM1*IL*1*{claim_data.subscriber_name.split()[-1] if ' ' in claim_data.subscriber_name else claim_data.subscriber_name}*{claim_data.subscriber_name.split()[0] if ' ' in claim_data.subscriber_name else ''}****MI*{claim_data.subscriber_id}~")
