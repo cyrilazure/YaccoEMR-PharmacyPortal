@@ -1,0 +1,1305 @@
+"""
+Ghana National Pharmacy Portal Module
+====================================
+Standalone pharmacy authentication and management system.
+Separate from hospital EMR - pharmacy-specific operations only.
+
+Features:
+- Independent pharmacy authentication
+- Pharmacy IT Admin portal for staff management
+- Drug inventory management
+- e-Prescription receiving & dispensing
+- Sales to hospitals & individuals
+- NHIS claim routing
+- Automated stock reorder system
+"""
+
+import uuid
+import os
+from datetime import datetime, timezone, timedelta
+from typing import Optional, List, Dict, Any
+from fastapi import APIRouter, HTTPException, Depends, Query, Body
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from pydantic import BaseModel, EmailStr
+from enum import Enum
+import jwt
+from passlib.context import CryptContext
+from dotenv import load_dotenv
+
+load_dotenv()
+
+pharmacy_portal_router = APIRouter(prefix="/api/pharmacy-portal", tags=["Pharmacy Portal"])
+
+# Security
+security = HTTPBearer()
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+JWT_SECRET = os.getenv("JWT_SECRET", "pharmacy-portal-secret-key")
+JWT_ALGORITHM = "HS256"
+
+
+# ============== Enums ==============
+
+class PharmacyStaffRole(str, Enum):
+    PHARMACY_OWNER = "pharmacy_owner"
+    PHARMACY_IT_ADMIN = "pharmacy_it_admin"
+    SUPERINTENDENT_PHARMACIST = "superintendent_pharmacist"
+    PHARMACIST = "pharmacist"
+    PHARMACY_TECHNICIAN = "pharmacy_technician"
+    PHARMACY_ASSISTANT = "pharmacy_assistant"
+    CASHIER = "cashier"
+    INVENTORY_MANAGER = "inventory_manager"
+    DELIVERY_STAFF = "delivery_staff"
+
+
+class PharmacyDepartment(str, Enum):
+    DISPENSARY = "dispensary"
+    INVENTORY = "inventory"
+    PROCUREMENT = "procurement"
+    SALES = "sales"
+    DELIVERY = "delivery"
+    ADMINISTRATION = "administration"
+    COMPOUNDING = "compounding"
+    CLINICAL_SERVICES = "clinical_services"
+
+
+class PharmacyRegistrationStatus(str, Enum):
+    PENDING = "pending"
+    UNDER_REVIEW = "under_review"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    SUSPENDED = "suspended"
+
+
+class DrugCategory(str, Enum):
+    PRESCRIPTION_ONLY = "prescription_only"
+    OVER_THE_COUNTER = "over_the_counter"
+    CONTROLLED_SUBSTANCE = "controlled_substance"
+    PHARMACY_ONLY = "pharmacy_only"
+    GENERAL_SALE = "general_sale"
+
+
+class DosageForm(str, Enum):
+    TABLET = "tablet"
+    CAPSULE = "capsule"
+    SYRUP = "syrup"
+    SUSPENSION = "suspension"
+    INJECTION = "injection"
+    CREAM = "cream"
+    OINTMENT = "ointment"
+    GEL = "gel"
+    DROPS = "drops"
+    INHALER = "inhaler"
+    SUPPOSITORY = "suppository"
+    PATCH = "patch"
+    POWDER = "powder"
+    SOLUTION = "solution"
+    SPRAY = "spray"
+    LOTION = "lotion"
+
+
+class SaleType(str, Enum):
+    RETAIL = "retail"  # Individual customer
+    WHOLESALE = "wholesale"  # To other pharmacies
+    HOSPITAL = "hospital"  # To hospitals
+    NHIS = "nhis"  # NHIS covered
+    INSURANCE = "insurance"  # Private insurance
+
+
+# ============== Pydantic Models ==============
+
+class PharmacyRegistration(BaseModel):
+    pharmacy_name: str
+    license_number: str
+    region: str
+    district: str
+    town: str
+    address: str
+    gps_address: Optional[str] = None
+    phone: str
+    email: EmailStr
+    superintendent_pharmacist_name: str
+    superintendent_license_number: str
+    ownership_type: str = "retail"
+    operating_hours: str = "Mon-Sat 8AM-8PM"
+    password: str
+    has_nhis_accreditation: bool = False
+
+
+class PharmacyStaffCreate(BaseModel):
+    email: EmailStr
+    first_name: str
+    last_name: str
+    phone: str
+    role: PharmacyStaffRole
+    department: PharmacyDepartment
+    license_number: Optional[str] = None  # For pharmacists
+
+
+class PharmacyStaffResponse(BaseModel):
+    id: str
+    email: str
+    first_name: str
+    last_name: str
+    phone: str
+    role: PharmacyStaffRole
+    department: PharmacyDepartment
+    pharmacy_id: str
+    pharmacy_name: str
+    is_active: bool
+    created_at: str
+
+
+class PharmacyLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class DrugCreate(BaseModel):
+    generic_name: str
+    brand_name: Optional[str] = None
+    manufacturer: str
+    strength: str
+    dosage_form: DosageForm
+    category: DrugCategory
+    unit_price: float
+    pack_size: int = 1
+    reorder_level: int = 10
+    description: Optional[str] = None
+    side_effects: Optional[str] = None
+    contraindications: Optional[str] = None
+    storage_conditions: Optional[str] = None
+
+
+class InventoryItem(BaseModel):
+    drug_id: str
+    batch_number: str
+    quantity: int
+    cost_price: float
+    selling_price: float
+    expiry_date: str
+    supplier: Optional[str] = None
+
+
+class SaleCreate(BaseModel):
+    items: List[Dict[str, Any]]  # [{drug_id, quantity, unit_price, discount}]
+    sale_type: SaleType
+    customer_name: Optional[str] = None
+    customer_phone: Optional[str] = None
+    hospital_id: Optional[str] = None
+    prescription_id: Optional[str] = None
+    nhis_member_id: Optional[str] = None
+    payment_method: str = "cash"
+    notes: Optional[str] = None
+
+
+class InsuranceClaimCreate(BaseModel):
+    sale_id: str
+    insurance_provider: str  # "NHIS" or private insurer name
+    member_id: str
+    member_name: str
+    claim_amount: float
+    items: List[Dict[str, Any]]
+
+
+# ============== Helper Functions ==============
+
+def hash_password(password: str) -> str:
+    return pwd_context.hash(password)
+
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return pwd_context.verify(plain_password, hashed_password)
+
+
+def create_pharmacy_token(user_data: dict, expires_hours: int = 24) -> str:
+    payload = {
+        **user_data,
+        "exp": datetime.now(timezone.utc) + timedelta(hours=expires_hours),
+        "iat": datetime.now(timezone.utc),
+        "type": "pharmacy_portal"
+    }
+    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+
+# ============== Module Factory ==============
+
+def create_pharmacy_portal_router(db) -> APIRouter:
+    router = APIRouter(prefix="/api/pharmacy-portal", tags=["Pharmacy Portal"])
+    
+    # ============== Authentication Dependency ==============
+    
+    async def get_current_pharmacy_user(
+        credentials: HTTPAuthorizationCredentials = Depends(security)
+    ) -> dict:
+        """Verify pharmacy portal JWT token"""
+        try:
+            token = credentials.credentials
+            payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+            
+            if payload.get("type") != "pharmacy_portal":
+                raise HTTPException(status_code=401, detail="Invalid token type")
+            
+            user_id = payload.get("user_id")
+            user = await db["pharmacy_staff"].find_one({"id": user_id}, {"_id": 0})
+            
+            if not user:
+                raise HTTPException(status_code=401, detail="User not found")
+            if not user.get("is_active"):
+                raise HTTPException(status_code=401, detail="Account deactivated")
+            
+            return user
+        except jwt.ExpiredSignatureError:
+            raise HTTPException(status_code=401, detail="Token expired")
+        except jwt.InvalidTokenError:
+            raise HTTPException(status_code=401, detail="Invalid token")
+    
+    def require_roles(*roles: PharmacyStaffRole):
+        """Decorator to require specific pharmacy roles"""
+        async def role_checker(user: dict = Depends(get_current_pharmacy_user)):
+            if user.get("role") not in [r.value for r in roles]:
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"Access denied. Required roles: {[r.value for r in roles]}"
+                )
+            return user
+        return role_checker
+    
+    # ============== PUBLIC ENDPOINTS (No Auth) ==============
+    
+    @router.get("/public/regions")
+    async def get_regions_with_pharmacy_counts():
+        """Get all Ghana regions with pharmacy counts - PUBLIC"""
+        regions = [
+            "Greater Accra", "Ashanti", "Central", "Eastern", "Western",
+            "Western North", "Volta", "Oti", "Northern", "Savannah",
+            "North East", "Upper East", "Upper West", "Bono", "Bono East", "Ahafo"
+        ]
+        
+        result = []
+        for region in regions:
+            count = await db["pharmacies"].count_documents({"region": region})
+            result.append({
+                "region": region,
+                "pharmacy_count": count,
+                "region_code": region.lower().replace(" ", "_")
+            })
+        
+        return {"regions": result, "total_pharmacies": sum(r["pharmacy_count"] for r in result)}
+    
+    @router.get("/public/pharmacies")
+    async def search_pharmacies_public(
+        region: Optional[str] = None,
+        district: Optional[str] = None,
+        search: Optional[str] = None,
+        license_number: Optional[str] = None,
+        has_nhis: Optional[bool] = None,
+        has_24hr: Optional[bool] = None,
+        ownership_type: Optional[str] = None,
+        limit: int = 50,
+        skip: int = 0
+    ):
+        """Search pharmacies - PUBLIC endpoint"""
+        query = {"status": {"$in": ["active", "approved"]}}
+        
+        if region:
+            query["region"] = {"$regex": region, "$options": "i"}
+        if district:
+            query["district"] = {"$regex": district, "$options": "i"}
+        if license_number:
+            query["license_number"] = {"$regex": license_number, "$options": "i"}
+        if has_nhis is not None:
+            query["has_nhis"] = has_nhis
+        if has_24hr is not None:
+            query["has_24hr_service"] = has_24hr
+        if ownership_type:
+            query["ownership_type"] = ownership_type
+        if search:
+            query["$or"] = [
+                {"name": {"$regex": search, "$options": "i"}},
+                {"city": {"$regex": search, "$options": "i"}},
+                {"town": {"$regex": search, "$options": "i"}},
+                {"address": {"$regex": search, "$options": "i"}}
+            ]
+        
+        pharmacies = await db["pharmacies"].find(
+            query, 
+            {"_id": 0, "password": 0}
+        ).sort("name", 1).skip(skip).limit(limit).to_list(limit)
+        
+        total = await db["pharmacies"].count_documents(query)
+        
+        return {
+            "pharmacies": pharmacies,
+            "total": total,
+            "limit": limit,
+            "skip": skip
+        }
+    
+    @router.get("/public/pharmacies/{pharmacy_id}")
+    async def get_pharmacy_profile_public(pharmacy_id: str):
+        """Get pharmacy profile - PUBLIC"""
+        pharmacy = await db["pharmacies"].find_one(
+            {"id": pharmacy_id},
+            {"_id": 0, "password": 0}
+        )
+        
+        if not pharmacy:
+            raise HTTPException(status_code=404, detail="Pharmacy not found")
+        
+        # Get services offered
+        services = await db["pharmacy_services"].find(
+            {"pharmacy_id": pharmacy_id},
+            {"_id": 0}
+        ).to_list(50)
+        
+        return {
+            "pharmacy": pharmacy,
+            "services": services
+        }
+    
+    # ============== PHARMACY REGISTRATION ==============
+    
+    @router.post("/register")
+    async def register_pharmacy(registration: PharmacyRegistration):
+        """Register a new pharmacy - requires approval"""
+        
+        # Check if license number already registered
+        existing = await db["pharmacies"].find_one({
+            "$or": [
+                {"license_number": registration.license_number},
+                {"email": registration.email}
+            ]
+        })
+        
+        if existing:
+            raise HTTPException(
+                status_code=400,
+                detail="Pharmacy with this license number or email already exists"
+            )
+        
+        pharmacy_id = str(uuid.uuid4())
+        now = datetime.now(timezone.utc).isoformat()
+        
+        # Create pharmacy record
+        pharmacy = {
+            "id": pharmacy_id,
+            "name": registration.pharmacy_name,
+            "license_number": registration.license_number,
+            "region": registration.region,
+            "district": registration.district,
+            "town": registration.town,
+            "city": registration.town,  # Alias
+            "address": registration.address,
+            "gps_address": registration.gps_address,
+            "phone": registration.phone,
+            "email": registration.email,
+            "superintendent_pharmacist_name": registration.superintendent_pharmacist_name,
+            "superintendent_license_number": registration.superintendent_license_number,
+            "ownership_type": registration.ownership_type,
+            "operating_hours": registration.operating_hours,
+            "has_nhis": registration.has_nhis_accreditation,
+            "has_nhis_accreditation": registration.has_nhis_accreditation,
+            "has_24hr_service": False,
+            "has_delivery": False,
+            "status": PharmacyRegistrationStatus.PENDING.value,
+            "registration_status": PharmacyRegistrationStatus.PENDING.value,
+            "created_at": now,
+            "updated_at": now
+        }
+        
+        await db["pharmacies"].insert_one(pharmacy)
+        
+        # Create superintendent pharmacist as first staff (IT Admin)
+        staff_id = str(uuid.uuid4())
+        superintendent = {
+            "id": staff_id,
+            "pharmacy_id": pharmacy_id,
+            "pharmacy_name": registration.pharmacy_name,
+            "email": registration.email,
+            "password": hash_password(registration.password),
+            "first_name": registration.superintendent_pharmacist_name.split()[0],
+            "last_name": " ".join(registration.superintendent_pharmacist_name.split()[1:]) or "Pharmacist",
+            "phone": registration.phone,
+            "role": PharmacyStaffRole.PHARMACY_IT_ADMIN.value,
+            "department": PharmacyDepartment.ADMINISTRATION.value,
+            "license_number": registration.superintendent_license_number,
+            "is_active": True,
+            "is_superintendent": True,
+            "created_at": now
+        }
+        
+        await db["pharmacy_staff"].insert_one(superintendent)
+        
+        # Create audit log
+        await db["pharmacy_audit_logs"].insert_one({
+            "id": str(uuid.uuid4()),
+            "pharmacy_id": pharmacy_id,
+            "action": "pharmacy_registration",
+            "details": f"New pharmacy registered: {registration.pharmacy_name}",
+            "performed_by": staff_id,
+            "timestamp": now
+        })
+        
+        return {
+            "message": "Pharmacy registration submitted successfully",
+            "pharmacy_id": pharmacy_id,
+            "status": "pending",
+            "note": "Your registration is pending approval. You will be notified once approved."
+        }
+    
+    # ============== PHARMACY AUTHENTICATION ==============
+    
+    @router.post("/auth/login")
+    async def pharmacy_login(credentials: PharmacyLogin):
+        """Pharmacy staff login"""
+        user = await db["pharmacy_staff"].find_one({"email": credentials.email})
+        
+        if not user:
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+        
+        if not verify_password(credentials.password, user.get("password", "")):
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+        
+        if not user.get("is_active"):
+            raise HTTPException(status_code=401, detail="Account deactivated")
+        
+        # Check pharmacy status
+        pharmacy = await db["pharmacies"].find_one({"id": user.get("pharmacy_id")})
+        if not pharmacy:
+            raise HTTPException(status_code=401, detail="Pharmacy not found")
+        
+        if pharmacy.get("status") not in ["active", "approved"]:
+            raise HTTPException(
+                status_code=401,
+                detail=f"Pharmacy registration status: {pharmacy.get('status')}. Please wait for approval."
+            )
+        
+        # Create token
+        token = create_pharmacy_token({
+            "user_id": user["id"],
+            "pharmacy_id": user["pharmacy_id"],
+            "role": user["role"],
+            "email": user["email"]
+        })
+        
+        # Update last login
+        await db["pharmacy_staff"].update_one(
+            {"id": user["id"]},
+            {"$set": {"last_login": datetime.now(timezone.utc).isoformat()}}
+        )
+        
+        return {
+            "token": token,
+            "user": {
+                "id": user["id"],
+                "email": user["email"],
+                "first_name": user["first_name"],
+                "last_name": user["last_name"],
+                "role": user["role"],
+                "department": user.get("department"),
+                "pharmacy_id": user["pharmacy_id"],
+                "pharmacy_name": user.get("pharmacy_name")
+            },
+            "pharmacy": {
+                "id": pharmacy["id"],
+                "name": pharmacy["name"],
+                "region": pharmacy.get("region"),
+                "status": pharmacy.get("status")
+            }
+        }
+    
+    @router.get("/auth/me")
+    async def get_current_user_info(user: dict = Depends(get_current_pharmacy_user)):
+        """Get current logged-in pharmacy user info"""
+        pharmacy = await db["pharmacies"].find_one(
+            {"id": user.get("pharmacy_id")},
+            {"_id": 0, "password": 0}
+        )
+        
+        return {
+            "user": {
+                "id": user["id"],
+                "email": user["email"],
+                "first_name": user["first_name"],
+                "last_name": user["last_name"],
+                "role": user["role"],
+                "department": user.get("department"),
+                "pharmacy_id": user["pharmacy_id"]
+            },
+            "pharmacy": pharmacy
+        }
+    
+    # ============== PHARMACY IT ADMIN - STAFF MANAGEMENT ==============
+    
+    @router.post("/admin/staff")
+    async def create_pharmacy_staff(
+        staff: PharmacyStaffCreate,
+        user: dict = Depends(require_roles(
+            PharmacyStaffRole.PHARMACY_IT_ADMIN,
+            PharmacyStaffRole.PHARMACY_OWNER
+        ))
+    ):
+        """Create new pharmacy staff member"""
+        pharmacy_id = user.get("pharmacy_id")
+        
+        # Check if email exists
+        existing = await db["pharmacy_staff"].find_one({"email": staff.email})
+        if existing:
+            raise HTTPException(status_code=400, detail="Email already registered")
+        
+        pharmacy = await db["pharmacies"].find_one({"id": pharmacy_id})
+        
+        staff_id = str(uuid.uuid4())
+        now = datetime.now(timezone.utc).isoformat()
+        
+        # Default password is phone number
+        default_password = staff.phone.replace("+", "").replace(" ", "")[-8:]
+        
+        new_staff = {
+            "id": staff_id,
+            "pharmacy_id": pharmacy_id,
+            "pharmacy_name": pharmacy.get("name"),
+            "email": staff.email,
+            "password": hash_password(default_password),
+            "first_name": staff.first_name,
+            "last_name": staff.last_name,
+            "phone": staff.phone,
+            "role": staff.role.value,
+            "department": staff.department.value,
+            "license_number": staff.license_number,
+            "is_active": True,
+            "is_temp_password": True,
+            "created_at": now,
+            "created_by": user["id"]
+        }
+        
+        await db["pharmacy_staff"].insert_one(new_staff)
+        
+        # Audit log
+        await db["pharmacy_audit_logs"].insert_one({
+            "id": str(uuid.uuid4()),
+            "pharmacy_id": pharmacy_id,
+            "action": "staff_created",
+            "details": f"New staff created: {staff.first_name} {staff.last_name} ({staff.role.value})",
+            "performed_by": user["id"],
+            "timestamp": now
+        })
+        
+        return {
+            "message": "Staff member created successfully",
+            "staff_id": staff_id,
+            "default_password": default_password,
+            "note": "Please share the temporary password with the staff member securely"
+        }
+    
+    @router.get("/admin/staff")
+    async def list_pharmacy_staff(
+        department: Optional[str] = None,
+        role: Optional[str] = None,
+        user: dict = Depends(require_roles(
+            PharmacyStaffRole.PHARMACY_IT_ADMIN,
+            PharmacyStaffRole.PHARMACY_OWNER,
+            PharmacyStaffRole.SUPERINTENDENT_PHARMACIST
+        ))
+    ):
+        """List all pharmacy staff"""
+        pharmacy_id = user.get("pharmacy_id")
+        
+        query = {"pharmacy_id": pharmacy_id}
+        if department:
+            query["department"] = department
+        if role:
+            query["role"] = role
+        
+        staff = await db["pharmacy_staff"].find(
+            query,
+            {"_id": 0, "password": 0}
+        ).to_list(100)
+        
+        return {"staff": staff, "total": len(staff)}
+    
+    @router.put("/admin/staff/{staff_id}/status")
+    async def update_staff_status(
+        staff_id: str,
+        is_active: bool,
+        user: dict = Depends(require_roles(
+            PharmacyStaffRole.PHARMACY_IT_ADMIN,
+            PharmacyStaffRole.PHARMACY_OWNER
+        ))
+    ):
+        """Activate or deactivate staff member"""
+        pharmacy_id = user.get("pharmacy_id")
+        
+        result = await db["pharmacy_staff"].update_one(
+            {"id": staff_id, "pharmacy_id": pharmacy_id},
+            {"$set": {"is_active": is_active, "updated_at": datetime.now(timezone.utc).isoformat()}}
+        )
+        
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="Staff member not found")
+        
+        return {"message": f"Staff member {'activated' if is_active else 'deactivated'}"}
+    
+    @router.get("/admin/departments")
+    async def get_pharmacy_departments(user: dict = Depends(get_current_pharmacy_user)):
+        """Get all pharmacy department types"""
+        return {
+            "departments": [
+                {"code": d.value, "name": d.value.replace("_", " ").title()}
+                for d in PharmacyDepartment
+            ]
+        }
+    
+    @router.get("/admin/roles")
+    async def get_pharmacy_roles(user: dict = Depends(get_current_pharmacy_user)):
+        """Get all pharmacy staff roles"""
+        return {
+            "roles": [
+                {"code": r.value, "name": r.value.replace("_", " ").title()}
+                for r in PharmacyStaffRole
+            ]
+        }
+    
+    # ============== DRUG CATALOG MANAGEMENT ==============
+    
+    @router.post("/drugs")
+    async def add_drug_to_catalog(
+        drug: DrugCreate,
+        user: dict = Depends(require_roles(
+            PharmacyStaffRole.PHARMACY_IT_ADMIN,
+            PharmacyStaffRole.SUPERINTENDENT_PHARMACIST,
+            PharmacyStaffRole.INVENTORY_MANAGER
+        ))
+    ):
+        """Add a new drug to the pharmacy catalog"""
+        pharmacy_id = user.get("pharmacy_id")
+        
+        drug_id = str(uuid.uuid4())
+        now = datetime.now(timezone.utc).isoformat()
+        
+        drug_record = {
+            "id": drug_id,
+            "pharmacy_id": pharmacy_id,
+            **drug.dict(),
+            "current_stock": 0,
+            "is_active": True,
+            "created_at": now,
+            "created_by": user["id"]
+        }
+        
+        await db["pharmacy_drugs"].insert_one(drug_record)
+        
+        return {"message": "Drug added to catalog", "drug_id": drug_id}
+    
+    @router.get("/drugs")
+    async def list_pharmacy_drugs(
+        search: Optional[str] = None,
+        category: Optional[str] = None,
+        low_stock: bool = False,
+        user: dict = Depends(get_current_pharmacy_user)
+    ):
+        """List drugs in pharmacy catalog"""
+        pharmacy_id = user.get("pharmacy_id")
+        
+        query = {"pharmacy_id": pharmacy_id, "is_active": True}
+        
+        if search:
+            query["$or"] = [
+                {"generic_name": {"$regex": search, "$options": "i"}},
+                {"brand_name": {"$regex": search, "$options": "i"}},
+                {"manufacturer": {"$regex": search, "$options": "i"}}
+            ]
+        if category:
+            query["category"] = category
+        if low_stock:
+            query["$expr"] = {"$lte": ["$current_stock", "$reorder_level"]}
+        
+        drugs = await db["pharmacy_drugs"].find(query, {"_id": 0}).to_list(500)
+        
+        return {"drugs": drugs, "total": len(drugs)}
+    
+    # ============== INVENTORY MANAGEMENT ==============
+    
+    @router.post("/inventory/receive")
+    async def receive_inventory(
+        item: InventoryItem,
+        user: dict = Depends(require_roles(
+            PharmacyStaffRole.INVENTORY_MANAGER,
+            PharmacyStaffRole.SUPERINTENDENT_PHARMACIST,
+            PharmacyStaffRole.PHARMACY_IT_ADMIN
+        ))
+    ):
+        """Receive new inventory stock"""
+        pharmacy_id = user.get("pharmacy_id")
+        
+        # Verify drug exists
+        drug = await db["pharmacy_drugs"].find_one({
+            "id": item.drug_id,
+            "pharmacy_id": pharmacy_id
+        })
+        
+        if not drug:
+            raise HTTPException(status_code=404, detail="Drug not found in catalog")
+        
+        inventory_id = str(uuid.uuid4())
+        now = datetime.now(timezone.utc).isoformat()
+        
+        inventory_record = {
+            "id": inventory_id,
+            "pharmacy_id": pharmacy_id,
+            "drug_id": item.drug_id,
+            "drug_name": drug.get("generic_name"),
+            "brand_name": drug.get("brand_name"),
+            "batch_number": item.batch_number,
+            "quantity_received": item.quantity,
+            "quantity_remaining": item.quantity,
+            "cost_price": item.cost_price,
+            "selling_price": item.selling_price,
+            "expiry_date": item.expiry_date,
+            "supplier": item.supplier,
+            "received_at": now,
+            "received_by": user["id"]
+        }
+        
+        await db["pharmacy_inventory"].insert_one(inventory_record)
+        
+        # Update drug stock
+        await db["pharmacy_drugs"].update_one(
+            {"id": item.drug_id},
+            {"$inc": {"current_stock": item.quantity}}
+        )
+        
+        # Audit log
+        await db["pharmacy_audit_logs"].insert_one({
+            "id": str(uuid.uuid4()),
+            "pharmacy_id": pharmacy_id,
+            "action": "inventory_received",
+            "details": f"Received {item.quantity} units of {drug.get('generic_name')} (Batch: {item.batch_number})",
+            "performed_by": user["id"],
+            "timestamp": now
+        })
+        
+        return {"message": "Inventory received successfully", "inventory_id": inventory_id}
+    
+    @router.get("/inventory")
+    async def get_inventory(
+        low_stock: bool = False,
+        expiring_soon: bool = False,
+        user: dict = Depends(get_current_pharmacy_user)
+    ):
+        """Get current inventory with optional filters"""
+        pharmacy_id = user.get("pharmacy_id")
+        
+        query = {"pharmacy_id": pharmacy_id, "quantity_remaining": {"$gt": 0}}
+        
+        if expiring_soon:
+            # Items expiring within 90 days
+            ninety_days = (datetime.now(timezone.utc) + timedelta(days=90)).isoformat()[:10]
+            query["expiry_date"] = {"$lte": ninety_days}
+        
+        inventory = await db["pharmacy_inventory"].find(query, {"_id": 0}).to_list(500)
+        
+        # Get low stock items
+        if low_stock:
+            low_stock_drugs = await db["pharmacy_drugs"].find(
+                {
+                    "pharmacy_id": pharmacy_id,
+                    "$expr": {"$lte": ["$current_stock", "$reorder_level"]}
+                },
+                {"_id": 0}
+            ).to_list(100)
+            return {"inventory": inventory, "low_stock_items": low_stock_drugs}
+        
+        return {"inventory": inventory, "total": len(inventory)}
+    
+    @router.get("/inventory/alerts")
+    async def get_inventory_alerts(user: dict = Depends(get_current_pharmacy_user)):
+        """Get inventory alerts (low stock, expiring soon)"""
+        pharmacy_id = user.get("pharmacy_id")
+        
+        # Low stock
+        low_stock = await db["pharmacy_drugs"].find(
+            {
+                "pharmacy_id": pharmacy_id,
+                "$expr": {"$lte": ["$current_stock", "$reorder_level"]}
+            },
+            {"_id": 0}
+        ).to_list(100)
+        
+        # Expiring within 90 days
+        ninety_days = (datetime.now(timezone.utc) + timedelta(days=90)).isoformat()[:10]
+        expiring = await db["pharmacy_inventory"].find(
+            {
+                "pharmacy_id": pharmacy_id,
+                "quantity_remaining": {"$gt": 0},
+                "expiry_date": {"$lte": ninety_days}
+            },
+            {"_id": 0}
+        ).to_list(100)
+        
+        # Expired items
+        today = datetime.now(timezone.utc).isoformat()[:10]
+        expired = await db["pharmacy_inventory"].find(
+            {
+                "pharmacy_id": pharmacy_id,
+                "quantity_remaining": {"$gt": 0},
+                "expiry_date": {"$lt": today}
+            },
+            {"_id": 0}
+        ).to_list(100)
+        
+        return {
+            "low_stock": low_stock,
+            "low_stock_count": len(low_stock),
+            "expiring_soon": expiring,
+            "expiring_soon_count": len(expiring),
+            "expired": expired,
+            "expired_count": len(expired)
+        }
+    
+    # ============== SALES ==============
+    
+    @router.post("/sales")
+    async def create_sale(
+        sale: SaleCreate,
+        user: dict = Depends(require_roles(
+            PharmacyStaffRole.PHARMACIST,
+            PharmacyStaffRole.PHARMACY_TECHNICIAN,
+            PharmacyStaffRole.CASHIER,
+            PharmacyStaffRole.SUPERINTENDENT_PHARMACIST
+        ))
+    ):
+        """Create a new sale/dispensing record"""
+        pharmacy_id = user.get("pharmacy_id")
+        
+        sale_id = str(uuid.uuid4())
+        now = datetime.now(timezone.utc).isoformat()
+        
+        total_amount = 0
+        sale_items = []
+        
+        for item in sale.items:
+            drug = await db["pharmacy_drugs"].find_one({
+                "id": item["drug_id"],
+                "pharmacy_id": pharmacy_id
+            })
+            
+            if not drug:
+                raise HTTPException(status_code=404, detail=f"Drug {item['drug_id']} not found")
+            
+            if drug.get("current_stock", 0) < item["quantity"]:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Insufficient stock for {drug.get('generic_name')}"
+                )
+            
+            item_total = item["quantity"] * item.get("unit_price", drug.get("unit_price", 0))
+            discount = item.get("discount", 0)
+            item_total -= discount
+            total_amount += item_total
+            
+            sale_items.append({
+                "drug_id": item["drug_id"],
+                "drug_name": drug.get("generic_name"),
+                "brand_name": drug.get("brand_name"),
+                "quantity": item["quantity"],
+                "unit_price": item.get("unit_price", drug.get("unit_price", 0)),
+                "discount": discount,
+                "total": item_total
+            })
+            
+            # Deduct from inventory (FIFO - oldest batch first)
+            remaining_qty = item["quantity"]
+            inventory_batches = await db["pharmacy_inventory"].find(
+                {
+                    "pharmacy_id": pharmacy_id,
+                    "drug_id": item["drug_id"],
+                    "quantity_remaining": {"$gt": 0}
+                }
+            ).sort("expiry_date", 1).to_list(10)
+            
+            for batch in inventory_batches:
+                if remaining_qty <= 0:
+                    break
+                deduct = min(remaining_qty, batch["quantity_remaining"])
+                await db["pharmacy_inventory"].update_one(
+                    {"id": batch["id"]},
+                    {"$inc": {"quantity_remaining": -deduct}}
+                )
+                remaining_qty -= deduct
+            
+            # Update drug stock
+            await db["pharmacy_drugs"].update_one(
+                {"id": item["drug_id"]},
+                {"$inc": {"current_stock": -item["quantity"]}}
+            )
+        
+        # Create sale record
+        sale_record = {
+            "id": sale_id,
+            "pharmacy_id": pharmacy_id,
+            "sale_type": sale.sale_type.value,
+            "items": sale_items,
+            "total_amount": total_amount,
+            "customer_name": sale.customer_name,
+            "customer_phone": sale.customer_phone,
+            "hospital_id": sale.hospital_id,
+            "prescription_id": sale.prescription_id,
+            "nhis_member_id": sale.nhis_member_id,
+            "payment_method": sale.payment_method,
+            "payment_status": "paid" if sale.payment_method != "credit" else "pending",
+            "notes": sale.notes,
+            "created_at": now,
+            "created_by": user["id"],
+            "cashier_name": f"{user.get('first_name')} {user.get('last_name')}"
+        }
+        
+        await db["pharmacy_sales"].insert_one(sale_record)
+        
+        # Audit log
+        await db["pharmacy_audit_logs"].insert_one({
+            "id": str(uuid.uuid4()),
+            "pharmacy_id": pharmacy_id,
+            "action": "sale_created",
+            "details": f"Sale #{sale_id[:8]} - {len(sale_items)} items, Total: {total_amount}",
+            "performed_by": user["id"],
+            "timestamp": now
+        })
+        
+        return {
+            "message": "Sale completed successfully",
+            "sale_id": sale_id,
+            "total_amount": total_amount,
+            "items_count": len(sale_items)
+        }
+    
+    @router.get("/sales")
+    async def get_sales(
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
+        sale_type: Optional[str] = None,
+        limit: int = 50,
+        user: dict = Depends(get_current_pharmacy_user)
+    ):
+        """Get sales history"""
+        pharmacy_id = user.get("pharmacy_id")
+        
+        query = {"pharmacy_id": pharmacy_id}
+        
+        if start_date:
+            query["created_at"] = {"$gte": start_date}
+        if end_date:
+            query.setdefault("created_at", {})["$lte"] = end_date
+        if sale_type:
+            query["sale_type"] = sale_type
+        
+        sales = await db["pharmacy_sales"].find(
+            query, {"_id": 0}
+        ).sort("created_at", -1).limit(limit).to_list(limit)
+        
+        # Calculate totals
+        total_revenue = sum(s.get("total_amount", 0) for s in sales)
+        
+        return {
+            "sales": sales,
+            "total": len(sales),
+            "total_revenue": total_revenue
+        }
+    
+    # ============== E-PRESCRIPTION RECEIVING ==============
+    
+    @router.get("/prescriptions/incoming")
+    async def get_incoming_prescriptions(
+        status: Optional[str] = None,
+        user: dict = Depends(get_current_pharmacy_user)
+    ):
+        """Get e-prescriptions routed to this pharmacy"""
+        pharmacy_id = user.get("pharmacy_id")
+        
+        query = {"pharmacy_id": pharmacy_id}
+        if status:
+            query["status"] = status
+        
+        prescriptions = await db["prescription_routing"].find(
+            query, {"_id": 0}
+        ).sort("created_at", -1).to_list(100)
+        
+        return {"prescriptions": prescriptions, "total": len(prescriptions)}
+    
+    @router.put("/prescriptions/{routing_id}/accept")
+    async def accept_prescription(
+        routing_id: str,
+        user: dict = Depends(require_roles(
+            PharmacyStaffRole.PHARMACIST,
+            PharmacyStaffRole.SUPERINTENDENT_PHARMACIST
+        ))
+    ):
+        """Accept an incoming e-prescription"""
+        pharmacy_id = user.get("pharmacy_id")
+        now = datetime.now(timezone.utc).isoformat()
+        
+        result = await db["prescription_routing"].update_one(
+            {"id": routing_id, "pharmacy_id": pharmacy_id},
+            {
+                "$set": {
+                    "status": "accepted",
+                    "accepted_at": now,
+                    "accepted_by": user["id"]
+                }
+            }
+        )
+        
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="Prescription not found")
+        
+        return {"message": "Prescription accepted"}
+    
+    @router.put("/prescriptions/{routing_id}/dispense")
+    async def dispense_prescription(
+        routing_id: str,
+        user: dict = Depends(require_roles(
+            PharmacyStaffRole.PHARMACIST,
+            PharmacyStaffRole.SUPERINTENDENT_PHARMACIST
+        ))
+    ):
+        """Mark prescription as dispensed"""
+        pharmacy_id = user.get("pharmacy_id")
+        now = datetime.now(timezone.utc).isoformat()
+        
+        result = await db["prescription_routing"].update_one(
+            {"id": routing_id, "pharmacy_id": pharmacy_id},
+            {
+                "$set": {
+                    "status": "dispensed",
+                    "dispensed_at": now,
+                    "dispensed_by": user["id"]
+                }
+            }
+        )
+        
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="Prescription not found")
+        
+        return {"message": "Prescription marked as dispensed"}
+    
+    # ============== INSURANCE CLAIMS ==============
+    
+    @router.post("/insurance/claims")
+    async def submit_insurance_claim(
+        claim: InsuranceClaimCreate,
+        user: dict = Depends(require_roles(
+            PharmacyStaffRole.PHARMACIST,
+            PharmacyStaffRole.SUPERINTENDENT_PHARMACIST,
+            PharmacyStaffRole.PHARMACY_IT_ADMIN
+        ))
+    ):
+        """Submit an insurance claim (NHIS or private)"""
+        pharmacy_id = user.get("pharmacy_id")
+        pharmacy = await db["pharmacies"].find_one({"id": pharmacy_id})
+        
+        claim_id = str(uuid.uuid4())
+        now = datetime.now(timezone.utc).isoformat()
+        
+        claim_record = {
+            "id": claim_id,
+            "pharmacy_id": pharmacy_id,
+            "pharmacy_name": pharmacy.get("name"),
+            "sale_id": claim.sale_id,
+            "insurance_provider": claim.insurance_provider,
+            "member_id": claim.member_id,
+            "member_name": claim.member_name,
+            "claim_amount": claim.claim_amount,
+            "items": claim.items,
+            "status": "submitted",
+            "submitted_at": now,
+            "submitted_by": user["id"]
+        }
+        
+        await db["pharmacy_insurance_claims"].insert_one(claim_record)
+        
+        return {
+            "message": "Insurance claim submitted",
+            "claim_id": claim_id,
+            "status": "submitted"
+        }
+    
+    @router.get("/insurance/claims")
+    async def get_insurance_claims(
+        status: Optional[str] = None,
+        provider: Optional[str] = None,
+        user: dict = Depends(get_current_pharmacy_user)
+    ):
+        """Get insurance claims"""
+        pharmacy_id = user.get("pharmacy_id")
+        
+        query = {"pharmacy_id": pharmacy_id}
+        if status:
+            query["status"] = status
+        if provider:
+            query["insurance_provider"] = provider
+        
+        claims = await db["pharmacy_insurance_claims"].find(
+            query, {"_id": 0}
+        ).sort("submitted_at", -1).to_list(100)
+        
+        return {"claims": claims, "total": len(claims)}
+    
+    # ============== DASHBOARD & ANALYTICS ==============
+    
+    @router.get("/dashboard")
+    async def get_pharmacy_dashboard(user: dict = Depends(get_current_pharmacy_user)):
+        """Get pharmacy dashboard data"""
+        pharmacy_id = user.get("pharmacy_id")
+        today = datetime.now(timezone.utc).isoformat()[:10]
+        
+        # Today's sales
+        today_sales = await db["pharmacy_sales"].find(
+            {"pharmacy_id": pharmacy_id, "created_at": {"$gte": today}}
+        ).to_list(100)
+        
+        today_revenue = sum(s.get("total_amount", 0) for s in today_sales)
+        
+        # Pending prescriptions
+        pending_rx = await db["prescription_routing"].count_documents({
+            "pharmacy_id": pharmacy_id,
+            "status": "sent"
+        })
+        
+        # Low stock count
+        low_stock = await db["pharmacy_drugs"].count_documents({
+            "pharmacy_id": pharmacy_id,
+            "$expr": {"$lte": ["$current_stock", "$reorder_level"]}
+        })
+        
+        # Expiring soon (30 days)
+        thirty_days = (datetime.now(timezone.utc) + timedelta(days=30)).isoformat()[:10]
+        expiring = await db["pharmacy_inventory"].count_documents({
+            "pharmacy_id": pharmacy_id,
+            "quantity_remaining": {"$gt": 0},
+            "expiry_date": {"$lte": thirty_days}
+        })
+        
+        # Total drugs in catalog
+        total_drugs = await db["pharmacy_drugs"].count_documents({
+            "pharmacy_id": pharmacy_id,
+            "is_active": True
+        })
+        
+        # Pending insurance claims
+        pending_claims = await db["pharmacy_insurance_claims"].count_documents({
+            "pharmacy_id": pharmacy_id,
+            "status": "submitted"
+        })
+        
+        return {
+            "today_sales_count": len(today_sales),
+            "today_revenue": today_revenue,
+            "pending_prescriptions": pending_rx,
+            "low_stock_count": low_stock,
+            "expiring_soon_count": expiring,
+            "total_drugs": total_drugs,
+            "pending_insurance_claims": pending_claims
+        }
+    
+    # ============== AUDIT LOGS ==============
+    
+    @router.get("/audit-logs")
+    async def get_audit_logs(
+        action: Optional[str] = None,
+        start_date: Optional[str] = None,
+        limit: int = 100,
+        user: dict = Depends(require_roles(
+            PharmacyStaffRole.PHARMACY_IT_ADMIN,
+            PharmacyStaffRole.PHARMACY_OWNER,
+            PharmacyStaffRole.SUPERINTENDENT_PHARMACIST
+        ))
+    ):
+        """Get pharmacy audit logs"""
+        pharmacy_id = user.get("pharmacy_id")
+        
+        query = {"pharmacy_id": pharmacy_id}
+        if action:
+            query["action"] = action
+        if start_date:
+            query["timestamp"] = {"$gte": start_date}
+        
+        logs = await db["pharmacy_audit_logs"].find(
+            query, {"_id": 0}
+        ).sort("timestamp", -1).limit(limit).to_list(limit)
+        
+        return {"logs": logs, "total": len(logs)}
+    
+    # ============== REORDER SYSTEM ==============
+    
+    @router.get("/reorder/suggestions")
+    async def get_reorder_suggestions(user: dict = Depends(get_current_pharmacy_user)):
+        """Get automatic reorder suggestions based on stock levels"""
+        pharmacy_id = user.get("pharmacy_id")
+        
+        # Get items below reorder level
+        low_stock_drugs = await db["pharmacy_drugs"].find(
+            {
+                "pharmacy_id": pharmacy_id,
+                "$expr": {"$lte": ["$current_stock", "$reorder_level"]}
+            },
+            {"_id": 0}
+        ).to_list(100)
+        
+        suggestions = []
+        for drug in low_stock_drugs:
+            # Suggest ordering enough to meet 2x reorder level
+            suggested_qty = (drug.get("reorder_level", 10) * 2) - drug.get("current_stock", 0)
+            suggestions.append({
+                "drug_id": drug["id"],
+                "drug_name": drug.get("generic_name"),
+                "brand_name": drug.get("brand_name"),
+                "current_stock": drug.get("current_stock", 0),
+                "reorder_level": drug.get("reorder_level", 10),
+                "suggested_quantity": max(suggested_qty, drug.get("pack_size", 1)),
+                "estimated_cost": suggested_qty * drug.get("unit_price", 0),
+                "priority": "high" if drug.get("current_stock", 0) == 0 else "medium"
+            })
+        
+        return {
+            "suggestions": sorted(suggestions, key=lambda x: x["priority"]),
+            "total_items": len(suggestions)
+        }
+    
+    @router.post("/reorder/create-order")
+    async def create_purchase_order(
+        items: List[Dict[str, Any]] = Body(...),
+        supplier: str = Body(...),
+        user: dict = Depends(require_roles(
+            PharmacyStaffRole.INVENTORY_MANAGER,
+            PharmacyStaffRole.SUPERINTENDENT_PHARMACIST,
+            PharmacyStaffRole.PHARMACY_IT_ADMIN
+        ))
+    ):
+        """Create a purchase order from reorder suggestions"""
+        pharmacy_id = user.get("pharmacy_id")
+        
+        order_id = str(uuid.uuid4())
+        now = datetime.now(timezone.utc).isoformat()
+        
+        total_amount = sum(item.get("quantity", 0) * item.get("unit_price", 0) for item in items)
+        
+        purchase_order = {
+            "id": order_id,
+            "pharmacy_id": pharmacy_id,
+            "supplier": supplier,
+            "items": items,
+            "total_amount": total_amount,
+            "status": "pending",
+            "created_at": now,
+            "created_by": user["id"]
+        }
+        
+        await db["pharmacy_purchase_orders"].insert_one(purchase_order)
+        
+        return {
+            "message": "Purchase order created",
+            "order_id": order_id,
+            "total_amount": total_amount
+        }
+    
+    return router
