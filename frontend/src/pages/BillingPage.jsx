@@ -123,12 +123,95 @@ export default function BillingPage() {
       } catch (err) {
         console.log('Bank account info not available');
       }
+      
+      // Load shift data
+      await loadShiftData();
+      
     } catch (err) {
       console.error('Error loading billing data:', err);
       toast.error('Failed to load billing data');
     } finally {
       setLoading(false);
     }
+  };
+  
+  // Load shift-based dashboard data
+  const loadShiftData = useCallback(async () => {
+    try {
+      if (isAdmin) {
+        // Admin gets full dashboard
+        const adminRes = await billingShiftsAPI.getAdminDashboard();
+        setAdminDashboard(adminRes.data);
+        
+        const shiftsRes = await billingShiftsAPI.getAllShifts({ limit: 20 });
+        setAllShifts(shiftsRes.data.shifts || []);
+      }
+      
+      // All billers get their shift data
+      const billerRes = await billingShiftsAPI.getBillerDashboard();
+      if (billerRes.data.has_active_shift) {
+        setActiveShift(billerRes.data.shift);
+        setShiftMetrics(billerRes.data.shift_metrics);
+      } else {
+        setActiveShift(null);
+        setShiftMetrics(null);
+      }
+      setOutstanding(billerRes.data.outstanding);
+      setRecentPayments(billerRes.data.recent_payments || []);
+      
+    } catch (err) {
+      console.error('Error loading shift data:', err);
+    }
+  }, [isAdmin]);
+  
+  // Clock In Handler
+  const handleClockIn = async () => {
+    setClockingIn(true);
+    try {
+      await billingShiftsAPI.clockIn({ shift_type: shiftType });
+      toast.success('Shift started successfully!');
+      setClockInOpen(false);
+      await loadShiftData();
+      loadData();
+    } catch (err) {
+      console.error('Clock in error:', err);
+      toast.error(err.response?.data?.detail || 'Failed to clock in');
+    } finally {
+      setClockingIn(false);
+    }
+  };
+  
+  // Clock Out Handler
+  const handleClockOut = async () => {
+    setClockingOut(true);
+    try {
+      await billingShiftsAPI.clockOut({
+        closing_notes: closingNotes,
+        actual_cash: actualCash ? parseFloat(actualCash) : null
+      });
+      toast.success('Shift closed successfully!');
+      setClockOutOpen(false);
+      setClosingNotes('');
+      setActualCash('');
+      await loadShiftData();
+      loadData();
+    } catch (err) {
+      console.error('Clock out error:', err);
+      toast.error(err.response?.data?.detail || 'Failed to clock out');
+    } finally {
+      setClockingOut(false);
+    }
+  };
+  
+  // Calculate shift duration
+  const getShiftDuration = (startTime) => {
+    if (!startTime) return '0h 0m';
+    const start = new Date(startTime);
+    const now = new Date();
+    const diff = Math.floor((now - start) / 1000 / 60);
+    const hours = Math.floor(diff / 60);
+    const minutes = diff % 60;
+    return `${hours}h ${minutes}m`;
   };
 
   // Print Receipt Handler
