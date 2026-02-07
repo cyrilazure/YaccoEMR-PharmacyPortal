@@ -376,7 +376,7 @@ export default function BillingPage() {
                 <div>
                   <p className="text-sm text-slate-500">Total Billed</p>
                   <p className="text-2xl font-bold text-slate-900">
-                    ${stats.total_billed?.toLocaleString() || '0'}
+                    ₵{stats.total_billed?.toLocaleString() || '0'}
                   </p>
                 </div>
                 <div className="w-10 h-10 rounded-lg bg-sky-100 flex items-center justify-center">
@@ -392,7 +392,7 @@ export default function BillingPage() {
                 <div>
                   <p className="text-sm text-slate-500">Collected</p>
                   <p className="text-2xl font-bold text-green-600">
-                    ${stats.total_collected?.toLocaleString() || '0'}
+                    ₵{stats.total_collected?.toLocaleString() || '0'}
                   </p>
                 </div>
                 <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
@@ -408,7 +408,7 @@ export default function BillingPage() {
                 <div>
                   <p className="text-sm text-slate-500">Outstanding</p>
                   <p className="text-2xl font-bold text-amber-600">
-                    ${stats.total_outstanding?.toLocaleString() || '0'}
+                    ₵{stats.total_outstanding?.toLocaleString() || '0'}
                   </p>
                 </div>
                 <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
