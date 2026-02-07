@@ -888,3 +888,26 @@ export const voiceDictationAPI = {
   getAuditLogs: (params) => api.get('/voice-dictation/audit-logs', { params }),
 };
 
+// PACS Integration APIs
+export const pacsAPI = {
+  // Configuration
+  getConfig: () => api.get('/pacs/config'),
+  getStatus: () => api.get('/pacs/status'),
+  
+  // Study Search & Retrieval (QIDO-RS)
+  searchStudies: (data) => api.post('/pacs/studies/search', data),
+  getStudy: (studyUid) => api.get(`/pacs/studies/${studyUid}`),
+  getThumbnail: (studyUid) => api.get(`/pacs/studies/${studyUid}/thumbnail`),
+  
+  // Viewer Integration
+  getViewerUrl: (studyUid, accessionNumber, patientId) => 
+    api.get('/pacs/viewer/url', { params: { study_uid: studyUid, accession_number: accessionNumber, patient_id: patientId } }),
+  
+  // Worklist
+  getWorklist: (params) => api.get('/pacs/worklist', { params }),
+  
+  // HL7 Integration
+  sendAdtMessage: (data) => api.post('/pacs/hl7/adt', data),
+  sendOrmMessage: (data) => api.post('/pacs/hl7/orm', data),
+};
+
