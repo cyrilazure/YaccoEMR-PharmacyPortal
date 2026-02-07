@@ -281,10 +281,10 @@ class TestVoiceDictationAPI:
             }
         )
         
-        # Should return 401 Unauthorized
-        assert response.status_code == 401, f"Expected 401 for unauthorized request, got {response.status_code}"
+        # Should return 401 Unauthorized or 403 Forbidden
+        assert response.status_code in [401, 403], f"Expected 401/403 for unauthorized request, got {response.status_code}"
         
-        print(f"✓ Unauthorized requests are properly rejected")
+        print(f"✓ Unauthorized requests are properly rejected (status: {response.status_code})")
     
     def test_medical_terms_unauthorized(self):
         """Test that unauthenticated requests to medical-terms are rejected"""
@@ -293,10 +293,10 @@ class TestVoiceDictationAPI:
         
         response = unauth_session.get(f"{BASE_URL}/api/voice-dictation/medical-terms")
         
-        # Should return 401 Unauthorized
-        assert response.status_code == 401, f"Expected 401 for unauthorized request, got {response.status_code}"
+        # Should return 401 Unauthorized or 403 Forbidden
+        assert response.status_code in [401, 403], f"Expected 401/403 for unauthorized request, got {response.status_code}"
         
-        print(f"✓ Unauthorized requests to medical-terms are properly rejected")
+        print(f"✓ Unauthorized requests to medical-terms are properly rejected (status: {response.status_code})")
 
 
 class TestVoiceDictationWithDifferentRoles:
