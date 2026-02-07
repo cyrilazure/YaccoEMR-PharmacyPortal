@@ -58,8 +58,12 @@ export default function BillingPage() {
   // Hospital Info for receipts
   const [hospitalInfo, setHospitalInfo] = useState(null);
   
-  // Check if user is admin
+  // Senior Biller Dashboard State
+  const [seniorBillerDashboard, setSeniorBillerDashboard] = useState(null);
+  
+  // Check user roles
   const isAdmin = ['hospital_admin', 'hospital_it_admin', 'finance_manager', 'admin'].includes(user?.role);
+  const isSeniorBiller = user?.role === 'senior_biller';
   const [activeTab, setActiveTab] = useState('invoices');
   
   // Invoice creation state
