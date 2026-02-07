@@ -790,6 +790,130 @@ export default function BillingPage() {
         </div>
       )}
 
+      {/* Senior Biller Department Dashboard */}
+      {isSeniorBiller && seniorBillerDashboard && (
+        <div className="space-y-4">
+          {/* Department Header */}
+          <Alert className="bg-indigo-50 border-indigo-200">
+            <Users className="w-4 h-4 text-indigo-600" />
+            <AlertTitle className="text-indigo-800">Senior Biller Dashboard</AlertTitle>
+            <AlertDescription className="text-indigo-700">
+              Viewing all billing activity for: {seniorBillerDashboard.department || 'All Departments'}
+            </AlertDescription>
+          </Alert>
+
+          {/* Today's Summary */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card className="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-indigo-100 text-sm">Active Billers</p>
+                    <p className="text-3xl font-bold">{seniorBillerDashboard.today_summary?.active_billers || 0}</p>
+                  </div>
+                  <Users className="w-10 h-10 opacity-50" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-emerald-100 text-sm">Today's Revenue</p>
+                    <p className="text-3xl font-bold">₵{seniorBillerDashboard.today_summary?.total_payments_amount?.toLocaleString() || '0'}</p>
+                  </div>
+                  <DollarSign className="w-10 h-10 opacity-50" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-blue-100 text-sm">Invoices Today</p>
+                    <p className="text-3xl font-bold">{seniorBillerDashboard.today_summary?.total_invoices || 0}</p>
+                    <p className="text-blue-200 text-sm">₵{seniorBillerDashboard.today_summary?.total_invoice_amount?.toLocaleString() || '0'}</p>
+                  </div>
+                  <FileText className="w-10 h-10 opacity-50" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-purple-100 text-sm">Payments Today</p>
+                    <p className="text-3xl font-bold">{seniorBillerDashboard.today_summary?.total_payments || 0}</p>
+                  </div>
+                  <Receipt className="w-10 h-10 opacity-50" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Payment Breakdown and Active Shifts */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg">Payment Methods (Today)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {Object.entries(seniorBillerDashboard.payment_breakdown || {}).map(([mode, amount]) => {
+                    const icons = { cash: Banknote, mobile_money: Smartphone, card: CreditCard, insurance: Shield, bank_transfer: Building2 };
+                    const colors = { cash: 'emerald', mobile_money: 'purple', card: 'blue', insurance: 'teal', bank_transfer: 'slate' };
+                    const Icon = icons[mode] || Wallet;
+                    const color = colors[mode] || 'gray';
+                    return (
+                      <div key={mode} className="flex items-center gap-3 justify-between p-2 bg-slate-50 rounded">
+                        <div className="flex items-center gap-2">
+                          <Icon className={`w-5 h-5 text-${color}-500`} />
+                          <span className="capitalize">{mode.replace('_', ' ')}</span>
+                        </div>
+                        <span className="font-semibold">₵{(amount || 0).toLocaleString()}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg flex items-center justify-between">
+                  Active Shifts
+                  <Badge className="bg-emerald-500">{seniorBillerDashboard.active_shifts?.length || 0} Active</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {seniorBillerDashboard.active_shifts?.length > 0 ? (
+                    seniorBillerDashboard.active_shifts.map((shift) => (
+                      <div key={shift.id} className="p-3 border rounded-lg hover:bg-slate-50">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium">{shift.biller_name}</p>
+                            <p className="text-xs text-slate-500">
+                              {shift.shift_type?.toUpperCase()} • Started {new Date(shift.start_time).toLocaleTimeString()}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-semibold text-emerald-600">₵{(shift.payments_collected || 0).toLocaleString()}</p>
+                            <p className="text-xs text-slate-500">{shift.invoices_count || 0} invoices</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-center text-slate-500 py-4">No active shifts</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )}
+
       {/* Outstanding Balances (Persistent - Shows for all) */}
       {outstanding && (outstanding.total_outstanding > 0 || outstanding.pending_insurance_value > 0) && (
         <Card className="border-amber-200 bg-amber-50/30">
