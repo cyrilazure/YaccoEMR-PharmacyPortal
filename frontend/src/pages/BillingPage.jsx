@@ -656,8 +656,8 @@ export default function BillingPage() {
               {nhisResults.length === 0 && !nhisSearching && (
                 <div className="text-center py-12 text-slate-500">
                   <Shield className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>Search for patients to verify NHIS coverage</p>
-                  <p className="text-sm mt-2">Enter NHIS ID, patient name, or phone number</p>
+                  <p>Search for patients to verify insurance coverage</p>
+                  <p className="text-sm mt-2">Enter Insurance ID, patient name, or phone number</p>
                 </div>
               )}
             </CardContent>
