@@ -335,6 +335,13 @@ GET  /api/billing-shifts/audit-logs      - Billing audit logs
 - [x] **Ambulance Vehicle Registration**: Nursing Supervisors can now register ambulance vehicles
   - Added `nursing_supervisor` to allowed_roles in ambulance_module.py
   - No more "Access denied" error for vehicle registration
+- [x] **Clock In/Out for Supervisors**: Supervisors can now clock in/out their own shifts (Feb 7)
+- [x] **Scrollable Dialogs**: Clock-out and Force Clock-out dialogs now scroll properly (Feb 7)
+
+### Hospital Info Enhancements (February 7, 2026)
+- [x] `/api/hospital/info` endpoint now returns `logo_url` field
+- [x] Print Receipt displays hospital logo if available
+- [x] Receipt shows hospital name, address, contact info dynamically
 
 ## Prioritized Backlog
 
