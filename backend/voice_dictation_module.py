@@ -298,4 +298,228 @@ def create_voice_dictation_router(db, get_current_user) -> APIRouter:
             "categories": ["cardiology", "pulmonology", "radiology", "general", "medications"]
         }
     
+    # ============== VOICE DICTATION ANALYTICS ==============
+    
+    @router.get("/analytics")
+    async def get_voice_dictation_analytics(
+        date_from: Optional[str] = None,
+        date_to: Optional[str] = None,
+        user: dict = Depends(get_current_user)
+    ):
+        """Get voice dictation usage analytics for the organization."""
+        allowed_roles = ["hospital_admin", "super_admin", "hospital_it_admin"]
+        if user.get("role") not in allowed_roles:
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        org_id = user.get("organization_id")
+        query = {"organization_id": org_id} if org_id else {}
+        
+        if date_from:
+            query["timestamp"] = {"$gte": date_from}
+        if date_to:
+            if "timestamp" in query:
+                query["timestamp"]["$lte"] = date_to + "T23:59:59"
+            else:
+                query["timestamp"] = {"$lte": date_to + "T23:59:59"}
+        
+        # Get all logs
+        logs = await db["voice_dictation_logs"].find(query, {"_id": 0}).to_list(10000)
+        
+        # Calculate stats
+        total_transcriptions = len(logs)
+        total_duration = sum(l.get("duration_seconds", 0) or 0 for l in logs)
+        total_corrections = sum(l.get("corrections_count", 0) for l in logs)
+        
+        # Usage by role
+        role_usage = {}
+        for log in logs:
+            role = log.get("user_role", "unknown")
+            if role not in role_usage:
+                role_usage[role] = {"count": 0, "duration": 0}
+            role_usage[role]["count"] += 1
+            role_usage[role]["duration"] += log.get("duration_seconds", 0) or 0
+        
+        # Usage by context
+        context_usage = {}
+        for log in logs:
+            ctx = log.get("context", "general")
+            if ctx not in context_usage:
+                context_usage[ctx] = 0
+            context_usage[ctx] += 1
+        
+        # Top users
+        user_usage = {}
+        for log in logs:
+            uid = log.get("user_id")
+            uname = log.get("user_name", "Unknown")
+            if uid not in user_usage:
+                user_usage[uid] = {"name": uname, "count": 0, "duration": 0}
+            user_usage[uid]["count"] += 1
+            user_usage[uid]["duration"] += log.get("duration_seconds", 0) or 0
+        
+        top_users = sorted(user_usage.values(), key=lambda x: x["count"], reverse=True)[:10]
+        
+        # Daily usage (last 30 days)
+        from collections import defaultdict
+        daily_usage = defaultdict(int)
+        for log in logs:
+            ts = log.get("timestamp", "")
+            if ts:
+                day = ts[:10]  # YYYY-MM-DD
+                daily_usage[day] += 1
+        
+        return {
+            "summary": {
+                "total_transcriptions": total_transcriptions,
+                "total_duration_minutes": round(total_duration / 60, 2),
+                "total_corrections_made": total_corrections,
+                "avg_duration_seconds": round(total_duration / total_transcriptions, 2) if total_transcriptions > 0 else 0
+            },
+            "usage_by_role": role_usage,
+            "usage_by_context": context_usage,
+            "top_users": top_users,
+            "daily_usage": dict(sorted(daily_usage.items())[-30:])
+        }
+    
+    @router.get("/audit-logs")
+    async def get_voice_dictation_audit_logs(
+        limit: int = 100,
+        skip: int = 0,
+        user_id: Optional[str] = None,
+        context: Optional[str] = None,
+        user: dict = Depends(get_current_user)
+    ):
+        """Get detailed voice dictation audit logs."""
+        allowed_roles = ["hospital_admin", "super_admin", "hospital_it_admin"]
+        if user.get("role") not in allowed_roles:
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        org_id = user.get("organization_id")
+        query = {"organization_id": org_id} if org_id else {}
+        
+        if user_id:
+            query["user_id"] = user_id
+        if context:
+            query["context"] = context
+        
+        logs = await db["voice_dictation_logs"].find(
+            query, {"_id": 0}
+        ).sort("timestamp", -1).skip(skip).limit(limit).to_list(limit)
+        
+        total = await db["voice_dictation_logs"].count_documents(query)
+        
+        return {
+            "logs": logs,
+            "total": total,
+            "limit": limit,
+            "skip": skip
+        }
+    
+    # ============== AI REPORT AUTO-GENERATION ==============
+    
+    @router.post("/ai-expand")
+    async def ai_expand_dictation(
+        text: str,
+        note_type: str = "progress_note",  # progress_note, soap_note, radiology_report, nursing_assessment
+        context: Optional[str] = None,
+        user: dict = Depends(get_current_user)
+    ):
+        """
+        Use AI to expand brief dictation into structured clinical notes.
+        
+        Note types:
+        - progress_note: General clinical progress note
+        - soap_note: Structured SOAP format
+        - radiology_report: Structured radiology findings
+        - nursing_assessment: Nursing assessment format
+        """
+        api_key = os.getenv("EMERGENT_LLM_KEY")
+        if not api_key:
+            raise HTTPException(status_code=500, detail="AI service not configured")
+        
+        try:
+            from emergentintegrations.llm.openai import OpenAIChat
+            
+            # Define prompts for different note types
+            system_prompts = {
+                "progress_note": """You are a medical documentation assistant. Expand the brief clinical dictation into a well-structured progress note. Include:
+- Chief complaint / Reason for visit
+- History of present illness (HPI)
+- Relevant findings
+- Assessment
+- Plan
+Use professional medical language. Be concise but thorough.""",
+                
+                "soap_note": """You are a medical documentation assistant. Convert the brief dictation into a structured SOAP note format:
+S (Subjective): Patient's reported symptoms and history
+O (Objective): Physical exam findings, vitals, test results
+A (Assessment): Diagnosis or differential diagnoses
+P (Plan): Treatment plan, medications, follow-up
+
+Use professional medical language. Be concise but thorough.""",
+                
+                "radiology_report": """You are a radiology report assistant. Expand the brief dictation into a structured radiology report with:
+- TECHNIQUE: Imaging technique used
+- COMPARISON: Prior studies if mentioned
+- FINDINGS: Detailed findings organized by anatomical region
+- IMPRESSION: Summary diagnosis with numbered conclusions if multiple
+
+Use standard radiology terminology. Be precise and thorough.""",
+                
+                "nursing_assessment": """You are a nursing documentation assistant. Expand the brief dictation into a structured nursing assessment:
+- Patient status / Chief concern
+- Vital signs assessment
+- System-by-system assessment
+- Patient response to interventions
+- Nursing diagnosis / Problems identified
+- Nursing plan / Interventions
+
+Use professional nursing terminology. Be clear and thorough."""
+            }
+            
+            system_prompt = system_prompts.get(note_type, system_prompts["progress_note"])
+            
+            if context:
+                system_prompt += f"\n\nAdditional context: {context}"
+            
+            chat = OpenAIChat(api_key=api_key)
+            
+            response = await chat.chat(
+                model="gpt-4o",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": f"Expand this brief dictation into a complete {note_type.replace('_', ' ')}:\n\n{text}"}
+                ],
+                temperature=0.3,
+                max_tokens=2000
+            )
+            
+            expanded_text = response.choices[0].message.content
+            
+            # Log AI expansion
+            await db["voice_dictation_logs"].insert_one({
+                "id": str(uuid.uuid4()),
+                "user_id": user.get("id"),
+                "user_name": f"{user.get('first_name', '')} {user.get('last_name', '')}",
+                "user_role": user.get("role"),
+                "organization_id": user.get("organization_id"),
+                "context": f"ai_expand_{note_type}",
+                "action": "ai_expand",
+                "input_length": len(text),
+                "output_length": len(expanded_text),
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            })
+            
+            return {
+                "original_text": text,
+                "expanded_text": expanded_text,
+                "note_type": note_type,
+                "word_count": len(expanded_text.split())
+            }
+            
+        except ImportError:
+            raise HTTPException(status_code=500, detail="AI library not installed")
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"AI expansion failed: {str(e)}")
+    
     return router
