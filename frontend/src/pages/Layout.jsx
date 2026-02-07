@@ -155,7 +155,7 @@ const navItems = [
     to: '/patients', 
     icon: Users, 
     label: 'Patients', 
-    roles: ['physician', 'nurse', 'nursing_supervisor', 'floor_supervisor', 'scheduler', 'hospital_admin', 'records_officer'],
+    roles: ['physician', 'nurse', 'nursing_supervisor', 'floor_supervisor', 'hospital_admin', 'records_officer'],
     color: 'text-sky-500'
   },
   { 
