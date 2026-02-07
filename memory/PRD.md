@@ -559,15 +559,25 @@ GET  /api/billing-shifts/audit-logs      - Billing audit logs
 - [ ] Mobile apps
 
 ## Test Credentials
-- **Super Admin**: ygtnetworks@gmail.com / test123
-- **Hospital IT Admin**: it_admin@yacco.health / test123
-- **Nursing Supervisor**: nursing_supervisor@yacco.health / test123
-- **Biller**: biller@yacco.health / test123
-- **Bed Manager**: bed_manager@yacco.health / test123
-- **Radiologist**: radiologist@yacco.health / test123
-- **Radiology Staff**: radiology_staff@yacco.health / test123
-- **Nurse**: test_nurse@yacco.health / test123
-- **Pharmacist**: pharmacist@yacco.health / test123
+All passwords are: `test123`
+
+| Email | Role | Hospital |
+|-------|------|----------|
+| ygtnetworks@gmail.com | super_admin | N/A (Platform) |
+| hospital_admin@yacco.health | hospital_admin | ygtworks Health Center |
+| it_admin@yacco.health | hospital_it_admin | ygtworks Health Center |
+| physician@yacco.health | physician | ygtworks Health Center |
+| radiologist@yacco.health | radiologist | ygtworks Health Center |
+| radiology_staff@yacco.health | radiology_staff | ygtworks Health Center |
+| nursing_supervisor@yacco.health | nursing_supervisor | ygtworks Health Center |
+| floor_supervisor@yacco.health | floor_supervisor | ygtworks Health Center |
+| test_nurse@yacco.health | nurse | ygtworks Health Center |
+| pharmacist@yacco.health | pharmacist | ygtworks Health Center |
+| biller@yacco.health | biller | ygtworks Health Center |
+| bed_manager@yacco.health | bed_manager | ygtworks Health Center |
+| scheduler@yacco.health | scheduler | ygtworks Health Center |
+
+**Login Flow:** Select Region (Greater Accra) → Select Hospital (ygtworks Health Center) → Enter credentials
 
 ## Mocked/Simulated APIs
 - **Ghana FDA API**: Using seed data in `fda_module.py` (29 registered drugs) - NOT actual Ghana FDA API
