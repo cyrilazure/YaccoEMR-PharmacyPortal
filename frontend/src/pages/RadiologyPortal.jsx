@@ -280,11 +280,22 @@ function StructuredReportDialog({ open, onOpenChange, order, onSubmit }) {
             
             {/* Findings */}
             <div className="bg-purple-50 rounded-lg p-4">
-              <h3 className="font-semibold text-purple-700 mb-3">Findings *</h3>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-purple-700">Findings *</h3>
+                <VoiceDictation
+                  onTranscriptionComplete={(text) => setReportForm({...reportForm, findings_text: text})}
+                  context="radiology"
+                  targetField="findings"
+                  appendMode={!!reportForm.findings_text}
+                  currentValue={reportForm.findings_text}
+                  buttonVariant="outline"
+                  buttonSize="sm"
+                />
+              </div>
               <Textarea
                 value={reportForm.findings_text}
                 onChange={(e) => setReportForm({...reportForm, findings_text: e.target.value})}
-                placeholder="Describe the imaging findings in detail..."
+                placeholder="Describe the imaging findings in detail... or use voice dictation"
                 rows={6}
                 className="bg-white"
               />
@@ -292,11 +303,22 @@ function StructuredReportDialog({ open, onOpenChange, order, onSubmit }) {
             
             {/* Impression */}
             <div className="bg-emerald-50 rounded-lg p-4">
-              <h3 className="font-semibold text-emerald-700 mb-3">Impression *</h3>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-emerald-700">Impression *</h3>
+                <VoiceDictation
+                  onTranscriptionComplete={(text) => setReportForm({...reportForm, impression: text})}
+                  context="radiology"
+                  targetField="impression"
+                  appendMode={!!reportForm.impression}
+                  currentValue={reportForm.impression}
+                  buttonVariant="outline"
+                  buttonSize="sm"
+                />
+              </div>
               <Textarea
                 value={reportForm.impression}
                 onChange={(e) => setReportForm({...reportForm, impression: e.target.value})}
-                placeholder="Summary impression and diagnosis..."
+                placeholder="Summary impression and diagnosis... or use voice dictation"
                 rows={3}
                 className="bg-white"
               />
