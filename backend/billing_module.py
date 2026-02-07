@@ -450,14 +450,16 @@ def setup_routes(db, get_current_user):
         await db.invoices.update_one({"id": invoice_id}, {"$set": update_data})
         
         # Audit log
-        await db.audit_logs.insert_one({
+        await db.billing_audit_logs.insert_one({
             "id": str(uuid.uuid4()),
             "action": "payment_method_changed",
             "resource_type": "invoice",
             "resource_id": invoice_id,
             "user_id": current_user["id"],
             "user_name": f"{current_user.get('first_name', '')} {current_user.get('last_name', '')}",
+            "hospital_id": current_user.get("hospital_id"),
             "organization_id": current_user.get("organization_id"),
+            "invoice_number": invoice["invoice_number"],
             "details": {"invoice_number": invoice["invoice_number"], "old_method": old_method, "new_method": new_method},
             "timestamp": datetime.now(timezone.utc).isoformat()
         })
