@@ -617,7 +617,7 @@ export default function AmbulancePortal() {
       </Dialog>
 
       {/* Request Ambulance Dialog */}
-      <Dialog open={requestAmbulanceOpen} onOpenChange={setRequestAmbulanceOpen}>
+      <Dialog open={requestAmbulanceOpen} onOpenChange={handleRequestDialogClose}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>Request Ambulance/Patient Transfer</DialogTitle>
@@ -625,16 +625,120 @@ export default function AmbulancePortal() {
           </DialogHeader>
           <div className="overflow-y-auto pr-2" style={{ maxHeight: 'calc(85vh - 160px)' }}>
           <form onSubmit={handleRequestAmbulance} className="space-y-4 mt-2">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Patient Name *</Label>
-                <Input value={requestForm.patient_name} onChange={(e) => setRequestForm({...requestForm, patient_name: e.target.value})} required />
-              </div>
-              <div className="space-y-2">
-                <Label>MRN Number *</Label>
-                <Input value={requestForm.patient_mrn} onChange={(e) => setRequestForm({...requestForm, patient_mrn: e.target.value})} placeholder="Medical record number" required />
-              </div>
+            
+            {/* Patient Selection Mode Toggle */}
+            <div className="flex gap-2 p-1 bg-slate-100 rounded-lg">
+              <Button
+                type="button"
+                variant={entryMode === 'search' ? 'default' : 'ghost'}
+                size="sm"
+                className="flex-1"
+                onClick={() => { setEntryMode('search'); handleClearPatient(); }}
+              >
+                <Search className="w-4 h-4 mr-2" />
+                Search Existing Patient
+              </Button>
+              <Button
+                type="button"
+                variant={entryMode === 'manual' ? 'default' : 'ghost'}
+                size="sm"
+                className="flex-1"
+                onClick={() => { setEntryMode('manual'); handleClearPatient(); }}
+              >
+                <User className="w-4 h-4 mr-2" />
+                Manual Entry (New Patient)
+              </Button>
             </div>
+            
+            {/* Patient Search Mode */}
+            {entryMode === 'search' && !selectedPatient && (
+              <div className="space-y-3 p-4 border rounded-lg bg-slate-50">
+                <Label className="text-sm font-medium">Search for Patient</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Input
+                    placeholder="Search by name or MRN..."
+                    value={patientSearchQuery}
+                    onChange={(e) => handlePatientSearch(e.target.value)}
+                    className="pl-10"
+                  />
+                  {searchingPatients && (
+                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-gray-400" />
+                  )}
+                </div>
+                
+                {/* Search Results */}
+                {patientSearchResults.length > 0 && (
+                  <div className="border rounded-lg bg-white max-h-48 overflow-y-auto">
+                    {patientSearchResults.slice(0, 5).map((patient) => (
+                      <div
+                        key={patient.id}
+                        onClick={() => handleSelectPatient(patient)}
+                        className="p-3 border-b last:border-b-0 hover:bg-blue-50 cursor-pointer flex items-center justify-between"
+                      >
+                        <div>
+                          <p className="font-medium">{patient.first_name} {patient.last_name}</p>
+                          <p className="text-xs text-gray-500">
+                            MRN: {patient.mrn || 'N/A'} • DOB: {patient.date_of_birth}
+                          </p>
+                        </div>
+                        <Badge variant="outline">{patient.gender}</Badge>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {patientSearchQuery.length >= 2 && patientSearchResults.length === 0 && !searchingPatients && (
+                  <p className="text-sm text-gray-500 text-center py-2">
+                    No patients found. <button type="button" onClick={() => setEntryMode('manual')} className="text-blue-600 underline">Enter manually</button>
+                  </p>
+                )}
+              </div>
+            )}
+            
+            {/* Selected Patient Display */}
+            {selectedPatient && (
+              <div className="p-4 border rounded-lg bg-green-50 border-green-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center text-white font-bold">
+                      {selectedPatient.first_name?.[0]}{selectedPatient.last_name?.[0]}
+                    </div>
+                    <div>
+                      <p className="font-medium">{selectedPatient.first_name} {selectedPatient.last_name}</p>
+                      <p className="text-xs text-green-700">MRN: {selectedPatient.mrn} • {selectedPatient.gender}</p>
+                    </div>
+                  </div>
+                  <Button type="button" variant="ghost" size="sm" onClick={handleClearPatient}>
+                    Change Patient
+                  </Button>
+                </div>
+              </div>
+            )}
+            
+            {/* Manual Entry Fields */}
+            {entryMode === 'manual' && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Patient Name *</Label>
+                  <Input 
+                    value={requestForm.patient_name} 
+                    onChange={(e) => setRequestForm({...requestForm, patient_name: e.target.value})} 
+                    placeholder="Full name"
+                    required 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>MRN Number (if known)</Label>
+                  <Input 
+                    value={requestForm.patient_mrn} 
+                    onChange={(e) => setRequestForm({...requestForm, patient_mrn: e.target.value})} 
+                    placeholder="Medical record number" 
+                  />
+                </div>
+              </div>
+            )}
+            
             <div className="space-y-2">
               <Label>Pickup Location *</Label>
               <Input value={requestForm.pickup_location} onChange={(e) => setRequestForm({...requestForm, pickup_location: e.target.value})} placeholder="Ward, department, or address" required />
@@ -677,8 +781,15 @@ export default function AmbulancePortal() {
               </div>
             </div>
             <DialogFooter className="mt-4">
-              <Button type="button" variant="outline" onClick={() => setRequestAmbulanceOpen(false)}>Cancel</Button>
-              <Button type="submit" disabled={saving} className="bg-red-600 hover:bg-red-700">{saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Submit Request</Button>
+              <Button type="button" variant="outline" onClick={() => handleRequestDialogClose(false)}>Cancel</Button>
+              <Button 
+                type="submit" 
+                disabled={saving || (entryMode === 'search' && !selectedPatient) || (entryMode === 'manual' && !requestForm.patient_name)} 
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Submit Request
+              </Button>
             </DialogFooter>
           </form>
           </div>
