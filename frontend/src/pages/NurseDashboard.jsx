@@ -564,9 +564,20 @@ export default function NurseDashboard() {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label>Handoff Notes</Label>
+                      <div className="flex items-center justify-between">
+                        <Label>Handoff Notes</Label>
+                        <VoiceDictation
+                          onTranscriptionComplete={(text) => setHandoffNotes(text)}
+                          context="nursing"
+                          targetField="handoff notes"
+                          appendMode={!!handoffNotes}
+                          currentValue={handoffNotes}
+                          buttonVariant="outline"
+                          buttonSize="sm"
+                        />
+                      </div>
                       <Textarea 
-                        placeholder="Critical info for incoming shift..." 
+                        placeholder="Critical info for incoming shift... or use voice dictation" 
                         value={handoffNotes} 
                         onChange={(e) => setHandoffNotes(e.target.value)} 
                         rows={4} 
