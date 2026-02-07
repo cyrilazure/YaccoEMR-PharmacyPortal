@@ -24,6 +24,10 @@ import {
   Wallet, Smartphone, Banknote, BarChart3, Users, RefreshCw, Loader2,
   Calendar, ArrowUp, ArrowDown, Minus, Flag
 } from 'lucide-react';
+import {
+  AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
+} from 'recharts';
 
 export default function BillingPage() {
   const { user } = useAuth();
