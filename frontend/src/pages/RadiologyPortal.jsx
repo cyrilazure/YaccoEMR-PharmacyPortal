@@ -290,6 +290,8 @@ function StructuredReportDialog({ open, onOpenChange, order, onSubmit }) {
                   currentValue={reportForm.findings_text}
                   buttonVariant="outline"
                   buttonSize="sm"
+                  noteType="radiology_report"
+                  enableAiExpand={true}
                 />
               </div>
               <Textarea
@@ -313,6 +315,8 @@ function StructuredReportDialog({ open, onOpenChange, order, onSubmit }) {
                   currentValue={reportForm.impression}
                   buttonVariant="outline"
                   buttonSize="sm"
+                  noteType="radiology_report"
+                  enableAiExpand={true}
                 />
               </div>
               <Textarea
