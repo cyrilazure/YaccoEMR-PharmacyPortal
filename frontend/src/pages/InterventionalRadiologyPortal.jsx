@@ -505,7 +505,14 @@ export default function InterventionalRadiologyPortal() {
 
         {/* Status Board Tab */}
         <TabsContent value="status-board">
-          <IRStatusBoard refreshInterval={15000} />
+          <IRStatusBoard 
+            refreshInterval={15000} 
+            onSelectProcedure={(proc) => {
+              setSelectedProcedure(proc);
+              setActiveTab('dashboard');
+              openProcedureDetails(proc);
+            }}
+          />
         </TabsContent>
 
         {/* Dashboard Tab */}
