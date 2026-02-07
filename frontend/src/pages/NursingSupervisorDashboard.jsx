@@ -213,6 +213,51 @@ export default function NursingSupervisorDashboard() {
     return () => clearInterval(interval);
   }, [fetchData]);
 
+  // Clock In Handler
+  const handleClockIn = async () => {
+    setClockingIn(true);
+    try {
+      await nurseAPI.clockIn({ shift_type: shiftType });
+      toast.success('Successfully clocked in!');
+      setClockInOpen(false);
+      fetchData(); // Refresh to get updated shift status
+    } catch (err) {
+      console.error('Clock in error:', err);
+      toast.error(getErrorMessage(err) || 'Failed to clock in');
+    } finally {
+      setClockingIn(false);
+    }
+  };
+  
+  // Clock Out Handler
+  const handleClockOut = async () => {
+    setClockingOut(true);
+    try {
+      await nurseAPI.clockOut(clockOutNotes || 'Shift completed');
+      toast.success('Successfully clocked out!');
+      setClockOutOpen(false);
+      setClockOutNotes('');
+      setMyActiveShift(null);
+      fetchData(); // Refresh
+    } catch (err) {
+      console.error('Clock out error:', err);
+      toast.error(getErrorMessage(err) || 'Failed to clock out');
+    } finally {
+      setClockingOut(false);
+    }
+  };
+  
+  // Calculate shift duration
+  const getShiftDuration = (startTime) => {
+    if (!startTime) return '0h 0m';
+    const start = new Date(startTime);
+    const now = new Date();
+    const diff = Math.floor((now - start) / 1000 / 60); // in minutes
+    const hours = Math.floor(diff / 60);
+    const minutes = diff % 60;
+    return `${hours}h ${minutes}m`;
+  };
+
   // Patient Search
   const handlePatientSearch = async (query) => {
     setPatientSearchQuery(query);
