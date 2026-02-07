@@ -1126,6 +1126,11 @@ from supply_chain_module import supply_chain_router, create_supply_chain_endpoin
 supply_chain_api_router = create_supply_chain_endpoints(db, get_current_user)
 app.include_router(supply_chain_router)
 
+# Include Billing Shifts Module (Shift-based billing controls)
+from billing_shifts_module import router as billing_shifts_router, create_billing_shifts_router
+billing_shifts_api_router = create_billing_shifts_router(db, get_current_user)
+app.include_router(billing_shifts_router)
+
 app.include_router(finance_router)
 
 
