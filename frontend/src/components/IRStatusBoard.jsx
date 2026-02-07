@@ -165,7 +165,8 @@ function RecoveryPatientCard({ procedure }) {
 // Main Status Board Component
 export default function IRStatusBoard({ 
   fullScreen = false,
-  refreshInterval = 15000  // 15 seconds default
+  refreshInterval = 15000,  // 15 seconds default
+  onSelectProcedure  // callback when a procedure is clicked
 }) {
   const [loading, setLoading] = useState(true);
   const [dashboard, setDashboard] = useState(null);
