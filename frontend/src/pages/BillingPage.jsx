@@ -1326,6 +1326,217 @@ export default function BillingPage() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* Reconciliation Tab - Admin/Senior Biller Only */}
+        {(isAdmin || isSeniorBiller) && (
+          <TabsContent value="reconciliation" className="mt-4">
+            <div className="space-y-4">
+              {/* Reconciliation Header */}
+              <Alert className="bg-slate-50 border-slate-200">
+                <CheckCircle className="w-4 h-4" />
+                <AlertTitle>Shift Reconciliation</AlertTitle>
+                <AlertDescription>
+                  Review and reconcile closed shifts. Compare expected cash vs actual to identify discrepancies.
+                </AlertDescription>
+              </Alert>
+
+              {/* Closed Shifts for Reconciliation */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                      <Clock className="w-5 h-5" />
+                      Closed Shifts Awaiting Review
+                    </span>
+                    <Badge variant="outline">{closedShifts.length} shifts</Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {closedShifts.length > 0 ? (
+                    <div className="space-y-3">
+                      {closedShifts.map((shift) => {
+                        const expectedCash = shift.cash_collected || 0;
+                        const actualCashReported = shift.actual_cash_submitted;
+                        const variance = actualCashReported !== null ? actualCashReported - expectedCash : null;
+                        const hasVariance = variance !== null && Math.abs(variance) > 0.01;
+                        
+                        return (
+                          <div 
+                            key={shift.id} 
+                            className={`p-4 border rounded-lg ${shift.status === 'flagged' ? 'border-red-300 bg-red-50' : hasVariance ? 'border-amber-300 bg-amber-50' : 'border-emerald-300 bg-emerald-50'}`}
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <p className="font-semibold text-slate-900">{shift.biller_name}</p>
+                                  <Badge className={shift.status === 'flagged' ? 'bg-red-500' : shift.status === 'reconciled' ? 'bg-emerald-500' : 'bg-slate-500'}>
+                                    {shift.status}
+                                  </Badge>
+                                  {hasVariance && <Badge variant="outline" className="text-amber-700 border-amber-400">Variance Detected</Badge>}
+                                </div>
+                                <p className="text-sm text-slate-600 mt-1">
+                                  {shift.shift_type?.toUpperCase()} Shift • {new Date(shift.start_time).toLocaleDateString()} 
+                                  {shift.end_time && ` • ${new Date(shift.start_time).toLocaleTimeString()} - ${new Date(shift.end_time).toLocaleTimeString()}`}
+                                </p>
+                                
+                                {/* Shift Summary */}
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
+                                  <div className="p-2 bg-white rounded border">
+                                    <p className="text-xs text-slate-500">Invoices</p>
+                                    <p className="font-semibold">{shift.total_invoices || 0}</p>
+                                  </div>
+                                  <div className="p-2 bg-white rounded border">
+                                    <p className="text-xs text-slate-500">Total Collected</p>
+                                    <p className="font-semibold text-emerald-600">₵{(shift.total_payments_amount || 0).toLocaleString()}</p>
+                                  </div>
+                                  <div className="p-2 bg-white rounded border">
+                                    <p className="text-xs text-slate-500">Expected Cash</p>
+                                    <p className="font-semibold">₵{expectedCash.toLocaleString()}</p>
+                                  </div>
+                                  <div className="p-2 bg-white rounded border">
+                                    <p className="text-xs text-slate-500">Reported Cash</p>
+                                    <p className={`font-semibold ${hasVariance ? 'text-amber-600' : 'text-slate-900'}`}>
+                                      {actualCashReported !== null ? `₵${actualCashReported.toLocaleString()}` : 'Not reported'}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                {/* Variance Alert */}
+                                {hasVariance && (
+                                  <Alert className="mt-3 bg-amber-100 border-amber-300">
+                                    <AlertCircle className="w-4 h-4 text-amber-600" />
+                                    <AlertDescription className="text-amber-700">
+                                      Cash variance of <strong>₵{Math.abs(variance).toLocaleString()}</strong> ({variance > 0 ? 'overage' : 'shortage'}) detected.
+                                    </AlertDescription>
+                                  </Alert>
+                                )}
+
+                                {/* Closing Notes */}
+                                {shift.closing_notes && (
+                                  <p className="text-sm text-slate-600 mt-2 italic">Notes: "{shift.closing_notes}"</p>
+                                )}
+                              </div>
+
+                              {/* Action Buttons */}
+                              <div className="flex flex-col gap-2 ml-4">
+                                {shift.status !== 'reconciled' && (
+                                  <Button
+                                    size="sm"
+                                    onClick={() => {
+                                      setReconcileShift(shift);
+                                      setActualCashAmount(shift.actual_cash_submitted?.toString() || '');
+                                    }}
+                                    className="bg-emerald-600 hover:bg-emerald-700"
+                                  >
+                                    <CheckCircle className="w-4 h-4 mr-1" />
+                                    Reconcile
+                                  </Button>
+                                )}
+                                {shift.status !== 'flagged' && (
+                                  <Dialog>
+                                    <DialogTrigger asChild>
+                                      <Button size="sm" variant="outline" className="text-red-600 border-red-300 hover:bg-red-50">
+                                        <Flag className="w-4 h-4 mr-1" />
+                                        Flag
+                                      </Button>
+                                    </DialogTrigger>
+                                    <DialogContent>
+                                      <DialogHeader>
+                                        <DialogTitle>Flag Shift for Review</DialogTitle>
+                                        <DialogDescription>
+                                          Flag this shift if there are discrepancies that need investigation.
+                                        </DialogDescription>
+                                      </DialogHeader>
+                                      <div className="space-y-4 py-4">
+                                        <div>
+                                          <Label>Reason for Flagging</Label>
+                                          <Textarea
+                                            placeholder="Describe the issue..."
+                                            value={flagReason}
+                                            onChange={(e) => setFlagReason(e.target.value)}
+                                            className="mt-2"
+                                          />
+                                        </div>
+                                      </div>
+                                      <DialogFooter>
+                                        <Button 
+                                          variant="destructive"
+                                          onClick={() => handleFlagShift(shift)}
+                                          disabled={!flagReason}
+                                        >
+                                          Flag Shift
+                                        </Button>
+                                      </DialogFooter>
+                                    </DialogContent>
+                                  </Dialog>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 text-slate-500">
+                      <CheckCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p>No shifts awaiting reconciliation</p>
+                      <p className="text-sm mt-2">All shifts have been reviewed</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* All Shifts Table */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Clock className="w-5 h-5" />
+                    All Shifts History
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-slate-50 border-b">
+                        <tr>
+                          <th className="text-left p-3 font-medium text-slate-600">Biller</th>
+                          <th className="text-left p-3 font-medium text-slate-600">Date</th>
+                          <th className="text-left p-3 font-medium text-slate-600">Shift</th>
+                          <th className="text-right p-3 font-medium text-slate-600">Invoices</th>
+                          <th className="text-right p-3 font-medium text-slate-600">Total</th>
+                          <th className="text-center p-3 font-medium text-slate-600">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y">
+                        {allShifts.slice(0, 20).map((shift) => (
+                          <tr key={shift.id} className="hover:bg-slate-50">
+                            <td className="p-3">{shift.biller_name}</td>
+                            <td className="p-3 text-sm">{new Date(shift.start_time).toLocaleDateString()}</td>
+                            <td className="p-3">
+                              <Badge variant="outline">{shift.shift_type?.toUpperCase()}</Badge>
+                            </td>
+                            <td className="p-3 text-right">{shift.total_invoices || 0}</td>
+                            <td className="p-3 text-right font-medium">₵{(shift.total_payments_amount || 0).toLocaleString()}</td>
+                            <td className="p-3 text-center">
+                              <Badge className={
+                                shift.status === 'active' ? 'bg-emerald-500' :
+                                shift.status === 'completed' ? 'bg-blue-500' :
+                                shift.status === 'reconciled' ? 'bg-purple-500' :
+                                shift.status === 'flagged' ? 'bg-red-500' : 'bg-slate-500'
+                              }>
+                                {shift.status}
+                              </Badge>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        )}
       </Tabs>
 
       {/* Create Invoice Dialog */}
