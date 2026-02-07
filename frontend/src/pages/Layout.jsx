@@ -129,7 +129,7 @@ const navItems = [
     to: '/bed-management', 
     icon: Bed, 
     label: 'Bed Management', 
-    roles: ['bed_manager', 'nurse', 'hospital_admin'],
+    roles: ['bed_manager', 'nurse', 'nursing_supervisor', 'floor_supervisor', 'hospital_admin'],
     description: 'Ward census & admissions',
     color: 'text-sky-500'
   },
