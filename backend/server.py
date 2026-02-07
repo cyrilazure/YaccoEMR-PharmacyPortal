@@ -789,6 +789,59 @@ async def add_order_result(order_id: str, result: str, current_user: dict = Depe
 
 # ============ APPOINTMENTS ROUTES ============
 
+@api_router.get("/hospital/info")
+async def get_hospital_info(current_user: dict = Depends(get_current_user)):
+    """Get hospital information for the current user's hospital"""
+    hospital_id = current_user.get("hospital_id")
+    
+    if hospital_id:
+        hospital = await db.hospitals.find_one({"id": hospital_id}, {"_id": 0})
+        if hospital:
+            return {
+                "id": hospital.get("id"),
+                "name": hospital.get("name"),
+                "address": hospital.get("address"),
+                "phone": hospital.get("phone"),
+                "email": hospital.get("email"),
+                "region": hospital.get("region"),
+                "district": hospital.get("district"),
+                "location": hospital.get("location"),
+                "type": hospital.get("type"),
+                "nhis_accredited": hospital.get("nhis_accredited", False)
+            }
+    
+    # Fallback - check locations table
+    location_id = current_user.get("location_id")
+    if location_id:
+        location = await db.locations.find_one({"id": location_id}, {"_id": 0})
+        if location:
+            return {
+                "id": location.get("id"),
+                "name": location.get("name"),
+                "address": location.get("address"),
+                "phone": location.get("phone"),
+                "email": location.get("email"),
+                "region": location.get("region"),
+                "district": location.get("district")
+            }
+    
+    # Last fallback - use organization info
+    org_id = current_user.get("organization_id")
+    if org_id:
+        org = await db.organizations.find_one({"id": org_id}, {"_id": 0})
+        if org:
+            return {
+                "id": org.get("id"),
+                "name": org.get("name"),
+                "address": org.get("address"),
+                "phone": org.get("phone"),
+                "email": org.get("email"),
+                "region": org.get("region"),
+                "district": org.get("district")
+            }
+    
+    return {"name": "Hospital", "address": "", "phone": "", "email": "", "region": "", "district": ""}
+
 @api_router.post("/appointments")
 async def create_appointment(appt_data: AppointmentCreate, current_user: dict = Depends(get_current_user)):
     appt = Appointment(**appt_data.model_dump())
