@@ -607,7 +607,10 @@ export default function BillingPage() {
                           <tr 
                             key={patient.id} 
                             className="hover:bg-blue-50 cursor-pointer transition-colors"
-                            onClick={() => navigate(`/patients/${patient.id}`)}
+                            onClick={() => {
+                              setSelectedInsurancePatient(patient);
+                              setViewInsuranceOpen(true);
+                            }}
                           >
                             <td className="p-4 font-medium text-blue-600 hover:text-blue-800">
                               {patient.first_name} {patient.last_name}
@@ -630,11 +633,12 @@ export default function BillingPage() {
                                   variant="outline"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    navigate(`/patients/${patient.id}`);
+                                    setSelectedInsurancePatient(patient);
+                                    setViewInsuranceOpen(true);
                                   }}
                                 >
                                   <Eye className="w-4 h-4 mr-1" />
-                                  View
+                                  View Insurance
                                 </Button>
                                 <Button 
                                   size="sm"
