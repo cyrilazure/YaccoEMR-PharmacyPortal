@@ -772,6 +772,108 @@ export default function SchedulerDashboard() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* QR Code / Patient Label Dialog */}
+      <Dialog open={qrDialogOpen} onOpenChange={setQrDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <QrCode className="w-5 h-5 text-sky-600" />
+              Patient Registered Successfully!
+            </DialogTitle>
+            <DialogDescription>
+              Print a patient label with QR code for easy identification
+            </DialogDescription>
+          </DialogHeader>
+          
+          {registeredPatient && (
+            <div className="space-y-4 py-2">
+              {/* Success Message */}
+              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                <p className="text-emerald-800 font-medium">
+                  MRN: <span className="font-mono text-lg">{registeredPatient.mrn}</span>
+                </p>
+                <p className="text-emerald-700">
+                  {registeredPatient.first_name} {registeredPatient.last_name}
+                </p>
+              </div>
+              
+              {/* Select Physician */}
+              <div className="space-y-2">
+                <Label>Assign Physician (for label)</Label>
+                <Select value={selectedPhysician} onValueChange={setSelectedPhysician}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select physician..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {providers.filter(p => p.role === 'physician').map((doc) => (
+                      <SelectItem key={doc.id} value={doc.id}>
+                        Dr. {doc.first_name} {doc.last_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {/* Printable Label Preview */}
+              <div className="border-2 border-dashed border-slate-300 rounded-lg p-4 bg-white">
+                <div ref={qrPrintRef}>
+                  <div className="label">
+                    <div className="header">
+                      <div className="hospital-name">YACCO HEALTH CENTER</div>
+                    </div>
+                    
+                    <div className="mrn" style={{ textAlign: 'center', fontSize: '18px', fontFamily: 'monospace', fontWeight: 'bold' }}>
+                      MRN: {registeredPatient.mrn}
+                    </div>
+                    
+                    <div className="qr-container" style={{ textAlign: 'center', margin: '12px 0' }}>
+                      <QRCodeSVG 
+                        value={getQRData()} 
+                        size={120}
+                        level="M"
+                        includeMargin={true}
+                      />
+                    </div>
+                    
+                    <div className="patient-name" style={{ textAlign: 'center', fontSize: '16px', fontWeight: 'bold' }}>
+                      {registeredPatient.first_name} {registeredPatient.last_name}
+                    </div>
+                    
+                    <div className="info-row" style={{ textAlign: 'center', fontSize: '12px', marginTop: '4px' }}>
+                      DOB: {formatDate(registeredPatient.date_of_birth)}
+                    </div>
+                    
+                    {selectedPhysician && (
+                      <div className="physician" style={{ textAlign: 'center', fontSize: '12px', marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed #ccc' }}>
+                        Physician: Dr. {providers.find(p => p.id === selectedPhysician)?.first_name} {providers.find(p => p.id === selectedPhysician)?.last_name}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              {/* Action Buttons */}
+              <DialogFooter className="gap-2">
+                <Button variant="outline" onClick={() => {
+                  setQrDialogOpen(false);
+                  setRegisteredPatient(null);
+                  setSelectedPhysician('');
+                }}>
+                  Skip
+                </Button>
+                <Button 
+                  onClick={handlePrintQR}
+                  className="bg-sky-600 hover:bg-sky-700 gap-2"
+                >
+                  <Printer className="w-4 h-4" />
+                  Print Label
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
