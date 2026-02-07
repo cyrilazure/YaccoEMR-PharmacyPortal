@@ -504,11 +504,13 @@ GET  /api/billing-shifts/audit-logs      - Billing audit logs
 ### P1 (High Priority)
 - [ ] Real Ghana FDA API integration (replace mock data)
 - [ ] Real NHIS API integration (replace mock data)
+- [ ] Real PACS/dcm4chee server integration (replace demo mode)
 - [ ] Complete PatientChart refactoring (remaining tabs: Overview, Notes, Orders, Imaging, Pharmacy)
 - [x] ~~Notifications for prescription updates~~ ✅ DONE
 - [x] ~~Stock alerts for pharmacists~~ ✅ DONE
 - [x] ~~Advanced Admin Dashboard Widgets (graphs/charts for revenue trends)~~ ✅ DONE (Feb 7, 2026)
 - [x] ~~Audit & Compliance Logging UI (view detailed audit logs for financial actions)~~ ✅ DONE (Feb 7, 2026)
+- [ ] IR Procedure E-Signature Integration (consent forms)
 
 ### P2 (Medium Priority)
 - [ ] Integration with other payment gateways (Flutterwave, Hubtel)
