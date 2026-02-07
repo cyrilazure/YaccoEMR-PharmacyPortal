@@ -565,6 +565,26 @@ GET  /api/billing-shifts/audit-logs      - Billing audit logs
   - Auth: `/api/pharmacy-portal/auth/login`, `/api/pharmacy-portal/register`
   - Protected: `/api/pharmacy-portal/dashboard`, `/api/pharmacy-portal/drugs`, etc.
 
+### Unified Landing Page - EMR + Pharmacy (February 7, 2026)
+- [x] **Single Entry Point** (`/`): Unified landing page for both portals
+  - Branded as "Yacco Health - Ghana Healthcare Network"
+  - Hero section with gradient background and healthcare platform messaging
+  - Two prominent portal cards: Yacco EMR (green theme) and Yacco Pharm (blue theme)
+- [x] **Yacco EMR Portal Card**:
+  - Green gradient accent, Heart icon
+  - Features: Secure & Compliant, Multi-Facility, Role-Based Access, Clinical Tools
+  - "Hospital Staff Login" button → navigates to `/login`
+- [x] **Yacco Pharm Portal Card**:
+  - Blue gradient accent, Pill icon
+  - Features: e-Prescription, NHIS Claims, Inventory, Nationwide
+  - "Pharmacy Portal" button → navigates to `/pharmacy`
+- [x] **Platform Statistics**: 16 Regions, 200+ Facilities, 133+ Pharmacies, 24/7 Emergency
+- [x] **Ghana Regions Grid**: All 16 regions displayed with capitals
+- [x] **Facility Types Section**: Teaching Hospital, Regional Hospital, District Hospital, Pharmacies
+- [x] **Help Section**: Support contact info, Platform Admin Access link
+- [x] **Responsive Design**: Mobile menu toggle, stacked cards on small screens
+- [x] **Footer**: Portal links, legal links, iOS/Android coming soon badges
+
 ## Prioritized Backlog
 
 ### P0 (Critical)
