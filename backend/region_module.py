@@ -558,7 +558,7 @@ def create_region_endpoints(db, get_current_user, hash_password):
         )
         
         # Generate and send OTP
-        otp_session = await generate_otp_session(request.user_id, request.phone_number, db)
+        otp_session = await create_otp_session(request.user_id, request.phone_number, db)
         await send_otp_sms(request.phone_number, otp_session["otp"])
         
         # Mask phone number
