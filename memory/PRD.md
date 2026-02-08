@@ -745,6 +745,23 @@ GET  /api/billing-shifts/audit-logs      - Billing audit logs
   - Root cause: Frontend was calling pharmacy-admin endpoints requiring pharmacy auth
   - Solution: Created new platform-owner endpoints that work without pharmacy auth
 
+### Pharmacy Staff Credentials Dialog (December 2025) - NEW
+- [x] **CredentialsDialog Component**: New dialog component in PharmacyDashboard.jsx (Lines 500-584)
+  - Displays after staff creation or password reset
+  - Shows email and temporary password clearly
+  - Copy buttons for both email and password fields
+  - Warning message: "Important: Save these credentials now!"
+  - Note: "The staff member will be required to change this password on first login."
+  - Must be explicitly dismissed with "Done - I've Saved the Credentials" button
+- [x] **Staff Creation UX Fix**: After creating staff, CredentialsDialog shows:
+  - Staff email address
+  - Temporary password (last 8 digits of phone number)
+- [x] **Password Reset UX Fix**: After resetting password, CredentialsDialog shows:
+  - Staff email address
+  - New temporary password
+- [x] **Bug Fix**: Password/credentials were not displayed clearly (only in toast notifications)
+  - Solution: Added persistent modal dialog that users must explicitly dismiss
+
 ## Prioritized Backlog
 
 ### P0 (Critical)
