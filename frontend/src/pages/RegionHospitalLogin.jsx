@@ -65,7 +65,17 @@ const STEPS = {
 };
 
 export default function RegionHospitalLogin() {
-  const { user, login: authLogin } = useAuth();
+  const { 
+    user, 
+    login: authLogin,
+    requiresOTP,
+    requiresPhone,
+    otpPhoneMasked,
+    submitPhoneNumber,
+    completeOTPLogin,
+    resendOTP,
+    cancelOTP
+  } = useAuth();
   const navigate = useNavigate();
   
   // Step state
@@ -88,6 +98,11 @@ export default function RegionHospitalLogin() {
   const [totpCode, setTotpCode] = useState('');
   const [show2FADialog, setShow2FADialog] = useState(false);
   const [pendingLogin, setPendingLogin] = useState(null);
+  
+  // OTP states
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [resending, setResending] = useState(false);
 
   // Load regions on mount
   useEffect(() => {
