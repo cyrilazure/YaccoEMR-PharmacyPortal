@@ -1184,8 +1184,277 @@ export default function PlatformOwnerPortal() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* Pharmacies Tab - Pharmacy Approval Workflow */}
+          <TabsContent value="pharmacies">
+            <div className="space-y-6">
+              {/* Pending Approvals Section */}
+              <Card className="border-amber-200 bg-amber-50/30">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2 text-amber-800">
+                        <Clock className="w-5 h-5" />
+                        Pending Pharmacy Approvals ({pendingPharmacies.length})
+                      </CardTitle>
+                      <CardDescription>Review and approve pharmacy registrations</CardDescription>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={fetchPharmacies} disabled={pharmacyLoading}>
+                      <RefreshCw className={`w-4 h-4 mr-2 ${pharmacyLoading ? 'animate-spin' : ''}`} />
+                      Refresh
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {pharmacyLoading ? (
+                    <div className="flex items-center justify-center py-12">
+                      <Loader2 className="w-8 h-8 animate-spin text-amber-600" />
+                    </div>
+                  ) : pendingPharmacies.length === 0 ? (
+                    <div className="text-center py-12 text-slate-500">
+                      <CheckCircle className="w-16 h-16 mx-auto mb-4 text-emerald-400" />
+                      <p className="font-medium">All caught up!</p>
+                      <p className="text-sm">No pending pharmacy registrations to review</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {pendingPharmacies.map((pharmacy) => (
+                        <div key={pharmacy.id} className="p-4 bg-white rounded-lg border border-amber-200 hover:border-amber-300 transition-colors">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
+                                  <Store className="w-5 h-5 text-amber-600" />
+                                </div>
+                                <div>
+                                  <h4 className="font-semibold text-slate-900">{pharmacy.name}</h4>
+                                  <p className="text-sm text-slate-500">
+                                    License: {pharmacy.license_number}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                                <div>
+                                  <p className="text-slate-400">Region</p>
+                                  <p className="font-medium">{pharmacy.region}</p>
+                                </div>
+                                <div>
+                                  <p className="text-slate-400">District</p>
+                                  <p className="font-medium">{pharmacy.district || '-'}</p>
+                                </div>
+                                <div>
+                                  <p className="text-slate-400">Town</p>
+                                  <p className="font-medium">{pharmacy.town || '-'}</p>
+                                </div>
+                                <div>
+                                  <p className="text-slate-400">NHIS</p>
+                                  <Badge className={pharmacy.has_nhis_accreditation ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}>
+                                    {pharmacy.has_nhis_accreditation ? 'Accredited' : 'Not Accredited'}
+                                  </Badge>
+                                </div>
+                              </div>
+                              <p className="mt-2 text-xs text-slate-400">
+                                Registered: {new Date(pharmacy.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <div className="flex gap-2 ml-4">
+                              <Button variant="outline" size="sm" onClick={() => openPharmacyDetails(pharmacy)}>
+                                <Eye className="w-4 h-4 mr-1" /> Review
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                className="bg-emerald-600 hover:bg-emerald-700"
+                                onClick={() => handleApprovePharmacy(pharmacy.id)}
+                              >
+                                <CheckCircle className="w-4 h-4 mr-1" /> Approve
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Approved Pharmacies Section */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CheckCircle className="w-5 h-5 text-emerald-600" />
+                    Approved Pharmacies ({approvedPharmacies.length})
+                  </CardTitle>
+                  <CardDescription>Pharmacies currently active in the network</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {approvedPharmacies.length === 0 ? (
+                    <div className="text-center py-8 text-slate-500">
+                      <Store className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+                      <p>No approved pharmacies yet</p>
+                    </div>
+                  ) : (
+                    <ScrollArea className="h-[400px]">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Pharmacy Name</TableHead>
+                            <TableHead>License #</TableHead>
+                            <TableHead>Region</TableHead>
+                            <TableHead>District</TableHead>
+                            <TableHead>NHIS</TableHead>
+                            <TableHead>Status</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {approvedPharmacies.map((pharmacy) => (
+                            <TableRow key={pharmacy.id}>
+                              <TableCell className="font-medium">{pharmacy.name}</TableCell>
+                              <TableCell className="font-mono text-sm">{pharmacy.license_number}</TableCell>
+                              <TableCell>{pharmacy.region}</TableCell>
+                              <TableCell>{pharmacy.district || '-'}</TableCell>
+                              <TableCell>
+                                {pharmacy.has_nhis_accreditation ? (
+                                  <Badge className="bg-green-100 text-green-700">Yes</Badge>
+                                ) : (
+                                  <Badge variant="outline">No</Badge>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <Badge className="bg-emerald-100 text-emerald-700">Active</Badge>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </ScrollArea>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
         </Tabs>
       </div>
+
+      {/* Pharmacy Details Dialog */}
+      <Dialog open={pharmacyDetailsOpen} onOpenChange={setPharmacyDetailsOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Store className="w-5 h-5 text-blue-600" />
+              Pharmacy Registration Details
+            </DialogTitle>
+            <DialogDescription>
+              Review the pharmacy registration details before approval
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedPharmacyDetails && (
+            <div className="space-y-4">
+              {/* Basic Info */}
+              <div className="p-4 bg-slate-50 rounded-lg">
+                <h4 className="font-semibold text-slate-800 mb-3">Basic Information</h4>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-slate-400">Pharmacy Name</p>
+                    <p className="font-medium">{selectedPharmacyDetails.name}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-400">License Number</p>
+                    <p className="font-medium font-mono">{selectedPharmacyDetails.license_number}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-400">Ownership Type</p>
+                    <p className="font-medium">{selectedPharmacyDetails.ownership_type?.replace(/_/g, ' ') || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-400">Registration Date</p>
+                    <p className="font-medium">{new Date(selectedPharmacyDetails.created_at).toLocaleDateString()}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Location */}
+              <div className="p-4 bg-slate-50 rounded-lg">
+                <h4 className="font-semibold text-slate-800 mb-3">Location</h4>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-slate-400">Region</p>
+                    <p className="font-medium">{selectedPharmacyDetails.region}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-400">District</p>
+                    <p className="font-medium">{selectedPharmacyDetails.district || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-400">Town</p>
+                    <p className="font-medium">{selectedPharmacyDetails.town || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-400">Address</p>
+                    <p className="font-medium">{selectedPharmacyDetails.address || '-'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Contact */}
+              <div className="p-4 bg-slate-50 rounded-lg">
+                <h4 className="font-semibold text-slate-800 mb-3">Contact Information</h4>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-slate-400">Phone</p>
+                    <p className="font-medium">{selectedPharmacyDetails.phone || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-400">Email</p>
+                    <p className="font-medium">{selectedPharmacyDetails.email || '-'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Accreditation */}
+              <div className="p-4 bg-slate-50 rounded-lg">
+                <h4 className="font-semibold text-slate-800 mb-3">Accreditation & Services</h4>
+                <div className="flex gap-4">
+                  <Badge className={selectedPharmacyDetails.has_nhis_accreditation ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}>
+                    {selectedPharmacyDetails.has_nhis_accreditation ? '✓ NHIS Accredited' : '✗ No NHIS'}
+                  </Badge>
+                  <Badge className={selectedPharmacyDetails.has_24hr_service ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-500'}>
+                    {selectedPharmacyDetails.has_24hr_service ? '✓ 24hr Service' : '✗ Not 24hr'}
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Approval Notes */}
+              <div className="space-y-2">
+                <Label>Admin Notes (optional for approval, required for rejection)</Label>
+                <Input
+                  placeholder="Add notes about this approval/rejection..."
+                  value={approvalNotes}
+                  onChange={(e) => setApprovalNotes(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="flex gap-2">
+            <Button variant="outline" onClick={() => setPharmacyDetailsOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => selectedPharmacyDetails && handleRejectPharmacy(selectedPharmacyDetails.id)}
+            >
+              <XCircle className="w-4 h-4 mr-1" /> Reject
+            </Button>
+            <Button
+              className="bg-emerald-600 hover:bg-emerald-700"
+              onClick={() => selectedPharmacyDetails && handleApprovePharmacy(selectedPharmacyDetails.id)}
+            >
+              <CheckCircle className="w-4 h-4 mr-1" /> Approve
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Hospital Dialog */}
       <Dialog open={deleteHospitalOpen} onOpenChange={setDeleteHospitalOpen}>
