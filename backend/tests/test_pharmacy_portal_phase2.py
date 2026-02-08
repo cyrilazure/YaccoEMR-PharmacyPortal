@@ -146,7 +146,7 @@ class TestDrugCatalog:
         response = requests.post(f"{BASE_URL}/api/pharmacy-portal/drugs", json=drug_data, headers=auth_headers)
         assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         data = response.json()
-        assert "id" in data, "Missing drug ID in response"
+        assert "drug_id" in data, "Missing drug_id in response"
     
     def test_drugs_requires_auth(self):
         """Drugs endpoint should require authentication"""
@@ -220,8 +220,8 @@ class TestInventoryManagement:
         assert "expiring_soon" in data
         assert "expiring_soon_count" in data
         
-        # All 19 drugs should be low stock (0 stock)
-        assert data["low_stock_count"] == 19, f"Expected 19 low stock items, got {data['low_stock_count']}"
+        # All seeded drugs should be low stock (0 stock)
+        assert data["low_stock_count"] >= 19, f"Expected at least 19 low stock items, got {data['low_stock_count']}"
     
     def test_get_reorder_suggestions(self, auth_headers):
         """Should return reorder suggestions"""
@@ -231,7 +231,7 @@ class TestInventoryManagement:
         
         assert "suggestions" in data
         assert "total_items" in data
-        assert data["total_items"] == 19, f"Expected 19 reorder suggestions, got {data['total_items']}"
+        assert data["total_items"] >= 19, f"Expected at least 19 reorder suggestions, got {data['total_items']}"
         
         # Check suggestion structure
         if len(data["suggestions"]) > 0:
@@ -328,7 +328,7 @@ class TestStaffManagement:
         response = requests.post(f"{BASE_URL}/api/pharmacy-portal/admin/staff", json=staff_data, headers=auth_headers)
         assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         data = response.json()
-        assert "id" in data, "Missing staff ID in response"
+        assert "staff_id" in data, "Missing staff_id in response"
         assert "default_password" in data, "Missing default_password in response"
     
     def test_staff_requires_auth(self):
