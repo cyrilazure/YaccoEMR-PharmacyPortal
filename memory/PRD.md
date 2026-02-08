@@ -667,6 +667,29 @@ GET  /api/billing-shifts/audit-logs      - Billing audit logs
   - Outgoing requests: Table view with status badges
   - Network: Grid of pharmacies with NHIS/24hr badges
 
+### Admin Pharmacy Approval Workflow (February 8, 2026)
+- [x] **Pharmacies Tab in Platform Owner Portal**:
+  - New tab with pending count badge showing unreviewed registrations
+  - Section layout: Pending Pharmacy Approvals, Approved Pharmacies
+- [x] **Pending Pharmacy Approvals Section**:
+  - Pharmacy cards with: name, license, region, district, town, NHIS status, registered date
+  - Action buttons: Review (opens details dialog), Approve (quick approve)
+  - Amber/yellow themed section to highlight pending items
+- [x] **Pharmacy Details Dialog**:
+  - Basic Info: name, license, ownership type, registration date
+  - Location: region, district, town, address
+  - Contact: phone, email
+  - Accreditation: NHIS status, 24hr service badges
+  - Admin Notes field (optional for approval, required for rejection)
+  - Actions: Cancel, Reject (red), Approve (green)
+- [x] **Approved Pharmacies Table**:
+  - Columns: Pharmacy Name, License #, Region, District, NHIS, Status
+  - Scrollable area with all approved/active pharmacies
+- [x] **Prescription Module Enhanced**:
+  - `GET /api/prescriptions/pharmacies/ghana` - Returns real pharmacies from database (with fallback to mock)
+  - `POST /api/prescriptions/send-to-network-pharmacy` - Routes prescriptions to network pharmacies
+  - Creates prescription_routing record for pharmacy portal
+
 ## Prioritized Backlog
 
 ### P0 (Critical)
