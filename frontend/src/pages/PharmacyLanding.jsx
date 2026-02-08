@@ -19,7 +19,8 @@ import { toast } from 'sonner';
 import {
   Pill, Search, MapPin, Building2, Clock, Phone, Mail,
   LogIn, UserPlus, ChevronRight, Shield, Loader2,
-  Hospital, Store, Truck, CheckCircle, Globe, FileText
+  Hospital, Store, Truck, CheckCircle, Globe, FileText,
+  Smartphone, Send
 } from 'lucide-react';
 import api from '@/lib/api';
 
