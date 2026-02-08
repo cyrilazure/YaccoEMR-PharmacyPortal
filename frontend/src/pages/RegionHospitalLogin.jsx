@@ -71,10 +71,11 @@ export default function RegionHospitalLogin() {
     requiresOTP,
     requiresPhone,
     otpPhoneMasked,
-    submitPhoneNumber,
-    completeOTPLogin,
-    resendOTP,
-    cancelOTP
+    cancelOTP,
+    // Region-specific methods
+    regionLogin,
+    submitPhoneForRegion,
+    completeRegionOTPLogin
   } = useAuth();
   const navigate = useNavigate();
   
