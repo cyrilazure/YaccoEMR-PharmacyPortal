@@ -387,38 +387,35 @@ export default function PlatformOwnerPortal() {
     setPharmacyDetailsOpen(true);
   };
 
-  // Fetch Pharmacy Staff
+  // Fetch Pharmacy Staff (using public pharmacy data to extract admin info)
   const fetchPharmacyStaff = async () => {
     try {
       setPharmacyLoading(true);
-      const response = await api.get('/pharmacy-portal/admin/staff', { params: { limit: 200 } });
-      setPharmacyStaff(response.data.staff || response.data || []);
+      // Use public pharmacies endpoint to get pharmacy admin info
+      const response = await api.get('/pharmacy-portal/public/pharmacies', { params: { limit: 200 } });
+      const allStaff = [];
+      for (const pharmacy of (response.data.pharmacies || [])) {
+        // Add pharmacy admin as staff
+        if (pharmacy.admin_email || pharmacy.email) {
+          allStaff.push({
+            id: pharmacy.id + '_admin',
+            pharmacy_id: pharmacy.id,
+            pharmacy_name: pharmacy.name,
+            email: pharmacy.admin_email || pharmacy.email,
+            first_name: pharmacy.admin_first_name || pharmacy.owner_name?.split(' ')[0] || 'Admin',
+            last_name: pharmacy.admin_last_name || pharmacy.owner_name?.split(' ').slice(1).join(' ') || '',
+            role: 'pharmacy_it_admin',
+            status: pharmacy.status || pharmacy.registration_status || 'active',
+            phone: pharmacy.admin_phone || pharmacy.phone,
+            created_at: pharmacy.created_at
+          });
+        }
+      }
+      setPharmacyStaff(allStaff);
     } catch (err) {
       console.error('Failed to fetch pharmacy staff:', err);
-      // Try alternative endpoint
-      try {
-        const altResponse = await api.get('/pharmacy-portal/public/pharmacies', { params: { limit: 100 } });
-        // Extract staff from pharmacies if available
-        const allStaff = [];
-        for (const pharmacy of (altResponse.data.pharmacies || [])) {
-          if (pharmacy.admin_email) {
-            allStaff.push({
-              id: pharmacy.id + '_admin',
-              pharmacy_id: pharmacy.id,
-              pharmacy_name: pharmacy.name,
-              email: pharmacy.admin_email,
-              first_name: pharmacy.admin_first_name || 'Admin',
-              last_name: pharmacy.admin_last_name || '',
-              role: 'pharmacy_it_admin',
-              status: pharmacy.status || 'active',
-              phone: pharmacy.admin_phone || pharmacy.phone
-            });
-          }
-        }
-        setPharmacyStaff(allStaff);
-      } catch (altErr) {
-        console.error('Alternative fetch also failed:', altErr);
-      }
+      // Don't let this error propagate to cause redirect
+      setPharmacyStaff([]);
     } finally {
       setPharmacyLoading(false);
     }
