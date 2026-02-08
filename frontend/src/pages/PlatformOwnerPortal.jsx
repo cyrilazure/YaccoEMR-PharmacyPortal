@@ -253,7 +253,7 @@ export default function PlatformOwnerPortal() {
   const handleApproveHospital = async (hospitalId) => {
     try {
       setSaving(true);
-      await organizationAPI.approve(hospitalId);
+      await organizationAPI.approve(hospitalId, {});
       toast.success('Hospital approved successfully!');
       fetchData();
     } catch (err) {
