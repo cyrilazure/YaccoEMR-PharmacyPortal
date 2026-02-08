@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
-import { regionAPI, adminAPI } from '@/lib/api';
+import { regionAPI, adminAPI, organizationAPI } from '@/lib/api';
 import { hasPermission, PERMISSIONS } from '@/lib/permissions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
