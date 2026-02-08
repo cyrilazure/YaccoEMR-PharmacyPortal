@@ -4,7 +4,7 @@ Supports:
 - Ghana's 16 administrative regions
 - Hospital discovery by region
 - Multi-location hospitals
-- Location-aware authentication
+- Location-aware authentication with OTP
 - Role-based redirection
 """
 
@@ -17,6 +17,9 @@ import uuid
 import secrets
 import bcrypt
 import jwt
+
+# Import OTP module
+from otp_module import generate_otp_session, send_otp_sms, verify_otp
 
 region_router = APIRouter(prefix="/api/regions", tags=["Regions & Discovery"])
 
