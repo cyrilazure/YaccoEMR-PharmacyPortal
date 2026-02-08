@@ -153,9 +153,33 @@ export default function PlatformOwnerPortal() {
     }
   }, [selectedRegion, isSuperAdmin]);
 
+  // Fetch pharmacies data
+  const fetchPharmacies = useCallback(async () => {
+    if (!isSuperAdmin) return;
+    try {
+      setPharmacyLoading(true);
+      const [pendingRes, allRes] = await Promise.all([
+        api.get('/pharmacy-portal/admin/pharmacies/pending'),
+        api.get('/pharmacy-portal/public/pharmacies', { params: { limit: 100 } })
+      ]);
+      setPendingPharmacies(pendingRes.data.pharmacies || []);
+      setApprovedPharmacies(allRes.data.pharmacies?.filter(p => p.status === 'approved') || []);
+    } catch (err) {
+      console.error('Error fetching pharmacies:', err);
+    } finally {
+      setPharmacyLoading(false);
+    }
+  }, [isSuperAdmin]);
+
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  useEffect(() => {
+    if (activeTab === 'pharmacies') {
+      fetchPharmacies();
+    }
+  }, [activeTab, fetchPharmacies]);
 
   // Check if user is super admin (after all hooks are declared)
   if (!isSuperAdmin) {
