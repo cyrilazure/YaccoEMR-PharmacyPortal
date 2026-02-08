@@ -259,6 +259,19 @@ export default function EMRLandingPage() {
                 <p className="text-center text-xs text-slate-500 mt-3">
                   Physicians, Nurses, Schedulers, Administrators
                 </p>
+                <Button 
+                  variant="link"
+                  className="w-full mt-2 text-emerald-600 hover:text-emerald-700"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate('/register-hospital');
+                  }}
+                  data-testid="register-hospital-btn"
+                >
+                  <Hospital className="w-4 h-4 mr-2" />
+                  Register Your Hospital
+                  <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
               </CardContent>
             </Card>
 
