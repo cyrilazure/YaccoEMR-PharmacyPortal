@@ -460,7 +460,7 @@ def create_pharmacy_portal_router(db) -> APIRouter:
     
     @router.post("/auth/login/init")
     async def pharmacy_login_init(credentials: PharmacyLogin):
-        """Step 1: Validate credentials and send OTP"""
+        """Step 1: Validate credentials and send OTP (or request phone if missing)"""
         from otp_module import create_otp_session
         
         user = await db["pharmacy_staff"].find_one({"email": credentials.email})
