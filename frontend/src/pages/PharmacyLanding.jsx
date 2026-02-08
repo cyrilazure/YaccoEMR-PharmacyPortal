@@ -130,22 +130,40 @@ function PharmacyCard({ pharmacy, onClick }) {
   );
 }
 
-// Login Dialog Component
+// Login Dialog Component with OTP
 function LoginDialog({ open, onOpenChange, onSuccess }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  // OTP States
+  const [otpStep, setOtpStep] = useState(false);
+  const [otpSessionId, setOtpSessionId] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [phoneMasked, setPhoneMasked] = useState('');
+  const [resending, setResending] = useState(false);
 
-  const handleLogin = async (e) => {
+  const handleLoginInit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await pharmacyAPI.login({ email, password });
-      localStorage.setItem('pharmacy_token', response.data.token);
-      localStorage.setItem('pharmacy_user', JSON.stringify(response.data.user));
-      localStorage.setItem('pharmacy_info', JSON.stringify(response.data.pharmacy));
-      toast.success(`Welcome back, ${response.data.user.first_name}!`);
-      onSuccess(response.data);
+      const response = await pharmacyAPI.loginInit({ email, password });
+      
+      if (response.data.otp_required) {
+        // OTP is required, show OTP input
+        setOtpSessionId(response.data.otp_session_id);
+        setPhoneMasked(response.data.phone_masked);
+        setOtpStep(true);
+        toast.success('OTP sent to your phone');
+      } else {
+        // No OTP required (no phone number), direct login
+        localStorage.setItem('pharmacy_token', response.data.token);
+        localStorage.setItem('pharmacy_user', JSON.stringify(response.data.user));
+        localStorage.setItem('pharmacy_info', JSON.stringify(response.data.pharmacy));
+        toast.success(`Welcome back, ${response.data.user.first_name}!`);
+        onSuccess(response.data);
+        resetForm();
+      }
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Login failed');
     } finally {
@@ -153,44 +171,143 @@ function LoginDialog({ open, onOpenChange, onSuccess }) {
     }
   };
 
+  const handleOTPVerify = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const response = await pharmacyAPI.loginVerify({
+        otp_session_id: otpSessionId,
+        otp_code: otpCode
+      });
+      
+      localStorage.setItem('pharmacy_token', response.data.token);
+      localStorage.setItem('pharmacy_user', JSON.stringify(response.data.user));
+      localStorage.setItem('pharmacy_info', JSON.stringify(response.data.pharmacy));
+      toast.success(`Welcome back, ${response.data.user.first_name}!`);
+      onSuccess(response.data);
+      resetForm();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Invalid OTP');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendOTP = async () => {
+    setResending(true);
+    try {
+      const response = await pharmacyAPI.resendOTP(otpSessionId);
+      toast.success('OTP resent successfully');
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to resend OTP');
+    } finally {
+      setResending(false);
+    }
+  };
+
+  const resetForm = () => {
+    setEmail('');
+    setPassword('');
+    setOtpStep(false);
+    setOtpSessionId('');
+    setOtpCode('');
+    setPhoneMasked('');
+  };
+
+  const handleClose = (open) => {
+    if (!open) {
+      resetForm();
+    }
+    onOpenChange(open);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <LogIn className="w-5 h-5 text-blue-600" />
-            Pharmacy Login
+            <LogIn className="w-5 h-5 text-emerald-600" />
+            {otpStep ? 'Verify OTP' : 'Pharmacy Login'}
           </DialogTitle>
           <DialogDescription>
-            Sign in to access your pharmacy dashboard
+            {otpStep 
+              ? `Enter the 6-digit code sent to ${phoneMasked}`
+              : 'Sign in to access your pharmacy dashboard'
+            }
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleLogin} className="space-y-4">
-          <div className="space-y-2">
-            <Label>Email</Label>
-            <Input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="pharmacy@example.com"
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Password</Label>
-            <Input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-            />
-          </div>
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <LogIn className="w-4 h-4 mr-2" />}
-            Sign In
-          </Button>
-        </form>
+        
+        {!otpStep ? (
+          <form onSubmit={handleLoginInit} className="space-y-4">
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="pharmacy@example.com"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Password</Label>
+              <Input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+              />
+            </div>
+            <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700" disabled={loading}>
+              {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <LogIn className="w-4 h-4 mr-2" />}
+              Continue
+            </Button>
+          </form>
+        ) : (
+          <form onSubmit={handleOTPVerify} className="space-y-4">
+            <div className="space-y-2">
+              <Label>Enter OTP Code</Label>
+              <Input
+                type="text"
+                value={otpCode}
+                onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                placeholder="000000"
+                maxLength={6}
+                className="text-center text-2xl tracking-widest font-mono"
+                required
+                autoFocus
+              />
+              <p className="text-xs text-slate-500 text-center">
+                Code sent to {phoneMasked}
+              </p>
+            </div>
+            <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700" disabled={loading || otpCode.length !== 6}>
+              {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Shield className="w-4 h-4 mr-2" />}
+              Verify & Login
+            </Button>
+            <div className="flex items-center justify-between text-sm">
+              <Button 
+                type="button" 
+                variant="ghost" 
+                size="sm"
+                onClick={() => setOtpStep(false)}
+              >
+                ← Back
+              </Button>
+              <Button 
+                type="button" 
+                variant="ghost" 
+                size="sm"
+                onClick={handleResendOTP}
+                disabled={resending}
+              >
+                {resending ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
+                Resend OTP
+              </Button>
+            </div>
+          </form>
+        )}
       </DialogContent>
     </Dialog>
   );
