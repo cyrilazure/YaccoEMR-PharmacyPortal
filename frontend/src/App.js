@@ -58,6 +58,9 @@ import PharmacyLanding from "@/pages/PharmacyLanding";
 import PharmacyDashboard from "@/pages/PharmacyDashboard";
 import PharmacyProfile from "@/pages/PharmacyProfile";
 
+// Prescription Tracking (Patient-facing)
+import PrescriptionTracking from "@/pages/PrescriptionTracking";
+
 // Role-based redirect component
 function RoleBasedRedirect() {
   const { user } = useAuth();
