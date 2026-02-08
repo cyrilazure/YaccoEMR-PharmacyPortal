@@ -687,6 +687,7 @@ export default function PharmacyLanding() {
   const [showLogin, setShowLogin] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
   const [totalPharmacies, setTotalPharmacies] = useState(0);
+  const [activeTab, setActiveTab] = useState('regions');
 
   // Fetch regions with pharmacy counts
   useEffect(() => {
@@ -717,6 +718,10 @@ export default function PharmacyLanding() {
         
         const response = await pharmacyAPI.searchPharmacies(params);
         setPharmacies(response.data.pharmacies || []);
+        // Auto-switch to results tab when search has results
+        if (searchQuery && response.data.pharmacies?.length > 0) {
+          setActiveTab('results');
+        }
       } catch (error) {
         console.error('Failed to fetch pharmacies:', error);
       } finally {
