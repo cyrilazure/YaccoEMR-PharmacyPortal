@@ -226,6 +226,10 @@ def create_pharmacy_token(user_data: dict, expires_hours: int = 24) -> str:
 def create_pharmacy_portal_router(db) -> APIRouter:
     router = APIRouter(prefix="/api/pharmacy-portal", tags=["Pharmacy Portal"])
     
+    # Initialize SMS Notifier
+    from sms_notification_module import SMSNotifier
+    sms_notifier = SMSNotifier(db)
+    
     # ============== Authentication Dependency ==============
     
     async def get_current_pharmacy_user(
