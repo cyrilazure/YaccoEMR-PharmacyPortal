@@ -2043,7 +2043,7 @@ def create_pharmacy_portal_router(db) -> APIRouter:
     # ============== AUDIT LOG VIEWING ==============
     
     @router.get("/audit-logs")
-    async def get_audit_logs(
+    async def get_pharmacy_audit_logs(
         action: Optional[str] = None,
         entity_type: Optional[str] = None,
         start_date: Optional[str] = None,
