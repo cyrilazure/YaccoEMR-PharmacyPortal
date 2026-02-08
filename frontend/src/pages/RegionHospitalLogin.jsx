@@ -759,6 +759,98 @@ export default function RegionHospitalLogin() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Phone Number Dialog for OTP */}
+      <Dialog open={requiresPhone} onOpenChange={() => {}}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Phone className="w-5 h-5 text-emerald-600" />
+              Phone Verification Required
+            </DialogTitle>
+            <DialogDescription>
+              Enter your phone number to receive a one-time verification code
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handlePhoneSubmit} className="space-y-4">
+            <div>
+              <Label htmlFor="phone">Phone Number</Label>
+              <Input
+                id="phone"
+                type="tel"
+                placeholder="0241234567"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                className="mt-1"
+              />
+              <p className="text-xs text-slate-500 mt-1">
+                Enter your Ghana mobile number (e.g., 0241234567)
+              </p>
+            </div>
+            
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={handleCancelOTP} className="flex-1">
+                Cancel
+              </Button>
+              <Button type="submit" disabled={loading} className="flex-1 bg-emerald-600 hover:bg-emerald-700">
+                {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                Send OTP
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* OTP Verification Dialog */}
+      <Dialog open={requiresOTP && !requiresPhone} onOpenChange={() => {}}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Shield className="w-5 h-5 text-emerald-600" />
+              Enter Verification Code
+            </DialogTitle>
+            <DialogDescription>
+              We sent a 6-digit code to {otpPhoneMasked}
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleOTPSubmit} className="space-y-4">
+            <div>
+              <Label htmlFor="otp">Verification Code</Label>
+              <Input
+                id="otp"
+                type="text"
+                placeholder="123456"
+                value={otpCode}
+                onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                className="mt-1 text-center text-2xl tracking-widest"
+                maxLength={6}
+              />
+            </div>
+            
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={handleCancelOTP} className="flex-1">
+                Cancel
+              </Button>
+              <Button type="submit" disabled={loading || otpCode.length !== 6} className="flex-1 bg-emerald-600 hover:bg-emerald-700">
+                {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                Verify
+              </Button>
+            </div>
+            
+            <div className="text-center">
+              <Button
+                type="button"
+                variant="link"
+                onClick={handleResendOTP}
+                disabled={resending}
+                className="text-sm"
+              >
+                {resending ? 'Resending...' : "Didn't receive code? Resend"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
