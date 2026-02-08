@@ -458,9 +458,159 @@ def create_pharmacy_portal_router(db) -> APIRouter:
     
     # ============== PHARMACY AUTHENTICATION ==============
     
+    @router.post("/auth/login/init")
+    async def pharmacy_login_init(credentials: PharmacyLogin):
+        """Step 1: Validate credentials and send OTP"""
+        from otp_module import create_otp_session
+        
+        user = await db["pharmacy_staff"].find_one({"email": credentials.email})
+        
+        if not user:
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+        
+        if not verify_password(credentials.password, user.get("password", "")):
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+        
+        if not user.get("is_active"):
+            raise HTTPException(status_code=401, detail="Account deactivated")
+        
+        # Check pharmacy status
+        pharmacy = await db["pharmacies"].find_one({"id": user.get("pharmacy_id")})
+        if not pharmacy:
+            raise HTTPException(status_code=401, detail="Pharmacy not found")
+        
+        if pharmacy.get("status") not in ["active", "approved"]:
+            raise HTTPException(
+                status_code=401,
+                detail=f"Pharmacy registration status: {pharmacy.get('status')}. Please wait for approval."
+            )
+        
+        # Get phone number
+        phone_number = user.get("phone") or user.get("phone_number")
+        
+        if not phone_number:
+            # If no phone, skip OTP and return token directly (legacy support)
+            token = create_pharmacy_token({
+                "user_id": user["id"],
+                "pharmacy_id": user["pharmacy_id"],
+                "role": user["role"],
+                "email": user["email"]
+            })
+            
+            return {
+                "otp_required": False,
+                "token": token,
+                "user": {
+                    "id": user["id"],
+                    "email": user["email"],
+                    "first_name": user["first_name"],
+                    "last_name": user["last_name"],
+                    "role": user["role"],
+                    "pharmacy_id": user["pharmacy_id"]
+                },
+                "pharmacy": {
+                    "id": pharmacy["id"],
+                    "name": pharmacy.get("name") or pharmacy.get("pharmacy_name"),
+                    "region": pharmacy.get("region"),
+                    "status": pharmacy.get("status")
+                }
+            }
+        
+        # Create OTP session and send SMS
+        otp_result = await create_otp_session(
+            db,
+            user_id=user["id"],
+            phone_number=phone_number,
+            platform="pharmacy",
+            user_name=f"{user.get('first_name', '')} {user.get('last_name', '')}"
+        )
+        
+        return {
+            "otp_required": True,
+            "otp_session_id": otp_result["session_id"],
+            "phone_masked": otp_result["phone_masked"],
+            "expires_at": otp_result["expires_at"],
+            "sms_sent": otp_result["sms_sent"],
+            "user_id": user["id"],
+            "pharmacy_id": user["pharmacy_id"],
+            "message": "OTP sent to your registered phone number"
+        }
+    
+    @router.post("/auth/login/verify")
+    async def pharmacy_login_verify(data: PharmacyLoginOTP):
+        """Step 2: Verify OTP and issue token"""
+        from otp_module import verify_otp, mark_otp_used
+        
+        # Verify OTP
+        result = await verify_otp(db, data.otp_session_id, data.otp_code)
+        
+        if not result["success"]:
+            raise HTTPException(status_code=401, detail=result["error"])
+        
+        # Get user
+        user = await db["pharmacy_staff"].find_one({"id": result["user_id"]})
+        if not user:
+            raise HTTPException(status_code=401, detail="User not found")
+        
+        # Get pharmacy
+        pharmacy = await db["pharmacies"].find_one({"id": user.get("pharmacy_id")})
+        
+        # Mark OTP as used
+        await mark_otp_used(db, data.otp_session_id)
+        
+        # Create token
+        token = create_pharmacy_token({
+            "user_id": user["id"],
+            "pharmacy_id": user["pharmacy_id"],
+            "role": user["role"],
+            "email": user["email"]
+        })
+        
+        # Update last login
+        await db["pharmacy_staff"].update_one(
+            {"id": user["id"]},
+            {"$set": {"last_login": datetime.now(timezone.utc).isoformat()}}
+        )
+        
+        return {
+            "token": token,
+            "user": {
+                "id": user["id"],
+                "email": user["email"],
+                "first_name": user["first_name"],
+                "last_name": user["last_name"],
+                "role": user["role"],
+                "department": user.get("department"),
+                "pharmacy_id": user["pharmacy_id"],
+                "pharmacy_name": user.get("pharmacy_name")
+            },
+            "pharmacy": {
+                "id": pharmacy["id"] if pharmacy else None,
+                "name": pharmacy.get("name") or pharmacy.get("pharmacy_name") if pharmacy else None,
+                "region": pharmacy.get("region") if pharmacy else None,
+                "status": pharmacy.get("status") if pharmacy else None
+            }
+        }
+    
+    @router.post("/auth/login/resend-otp")
+    async def pharmacy_resend_otp(otp_session_id: str = Body(..., embed=True)):
+        """Resend OTP for pharmacy login"""
+        from otp_module import resend_otp
+        
+        result = await resend_otp(db, otp_session_id)
+        
+        if not result["success"]:
+            raise HTTPException(status_code=400, detail=result["error"])
+        
+        return {
+            "message": "OTP resent successfully",
+            "phone_masked": result["phone_masked"],
+            "expires_at": result["expires_at"]
+        }
+    
     @router.post("/auth/login")
     async def pharmacy_login(credentials: PharmacyLogin):
-        """Pharmacy staff login"""
+        """Pharmacy staff login (legacy - redirects to new flow)"""
         user = await db["pharmacy_staff"].find_one({"email": credentials.email})
         
         if not user:
