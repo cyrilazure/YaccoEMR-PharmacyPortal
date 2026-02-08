@@ -68,6 +68,7 @@ export default function PlatformOwnerPortal() {
   const [overview, setOverview] = useState(null);
   const [hospitals, setHospitals] = useState([]);
   const [pendingHospitals, setPendingHospitals] = useState([]);
+  const [approvedOrganizations, setApprovedOrganizations] = useState([]);
   const [regions, setRegions] = useState([]);
   
   // Filters
