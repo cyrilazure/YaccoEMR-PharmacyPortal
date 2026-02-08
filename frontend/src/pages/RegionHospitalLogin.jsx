@@ -195,20 +195,22 @@ export default function RegionHospitalLogin() {
     
     setLoading(true);
     try {
-      // Use new OTP flow
-      const response = await regionAPI.locationLoginInit(
+      // Use new region OTP flow
+      const result = await regionLogin(
         loginForm.email,
         loginForm.password,
         selectedHospital.id,
         selectedLocation?.id || null
       );
       
-      if (response.data.phone_required) {
-        // Phone number is required - auth context will handle the dialog
+      if (result.phone_required) {
         toast.info('Please enter your phone number for verification');
-      } else if (response.data.otp_required) {
-        // OTP is required - auth context will handle the dialog
+      } else if (result.otp_required) {
         toast.success('OTP sent to your phone');
+      } else if (result.id) {
+        // Direct login (user returned)
+        toast.success('Welcome!');
+        navigate('/dashboard');
       }
       
     } catch (error) {
@@ -217,7 +219,9 @@ export default function RegionHospitalLogin() {
         setShow2FADialog(true);
         toast.info('Please enter your 2FA code');
       } else {
-        toast.error(error.response?.data?.detail || 'Login failed');
+        const detail = error.response?.data?.detail;
+        const errorMessage = typeof detail === 'string' ? detail : 'Login failed';
+        toast.error(errorMessage);
       }
     } finally {
       setLoading(false);
@@ -233,7 +237,7 @@ export default function RegionHospitalLogin() {
     
     setLoading(true);
     try {
-      await submitPhoneNumber(phoneNumber);
+      await submitPhoneForRegion(phoneNumber);
       toast.success('OTP sent to your phone');
     } catch (err) {
       const detail = err.response?.data?.detail;
@@ -253,9 +257,9 @@ export default function RegionHospitalLogin() {
     
     setLoading(true);
     try {
-      const userData = await completeOTPLogin(otpCode);
+      const result = await completeRegionOTPLogin(otpCode);
       toast.success('Welcome back!');
-      const redirectPath = ROLE_REDIRECTS[userData.role] || '/dashboard';
+      const redirectPath = ROLE_REDIRECTS[result.user.role] || result.redirect_to || '/dashboard';
       navigate(redirectPath);
     } catch (err) {
       const detail = err.response?.data?.detail;
@@ -269,7 +273,13 @@ export default function RegionHospitalLogin() {
   const handleResendOTP = async () => {
     setResending(true);
     try {
-      await resendOTP();
+      // Re-trigger the login to get a new OTP
+      await regionLogin(
+        loginForm.email,
+        loginForm.password,
+        selectedHospital.id,
+        selectedLocation?.id || null
+      );
       toast.success('OTP resent successfully');
     } catch (err) {
       toast.error('Failed to resend OTP');
