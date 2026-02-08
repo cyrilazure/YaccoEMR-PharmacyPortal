@@ -1623,6 +1623,303 @@ export default function PharmacyDashboard() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* Supply Requests Tab */}
+          <TabsContent value="supply">
+            <div className="space-y-6">
+              {/* Incoming Requests */}
+              <Card className="border-blue-200">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2 text-blue-800">
+                      <ArrowDownLeft className="w-5 h-5" />
+                      Incoming Supply Requests ({incomingRequests.length})
+                    </CardTitle>
+                  </div>
+                  <CardDescription>Requests from other pharmacies in the network</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {incomingRequests.length === 0 ? (
+                    <div className="text-center py-8 text-slate-500">
+                      <Truck className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+                      <p>No incoming supply requests</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {incomingRequests.map((req) => (
+                        <Card key={req.id} className="border-l-4 border-l-blue-500">
+                          <CardContent className="pt-4">
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <p className="font-semibold">{req.requesting_pharmacy_name}</p>
+                                <p className="text-sm text-slate-500">
+                                  {req.items?.length || 0} items requested
+                                </p>
+                                <p className="text-xs text-slate-400 mt-1">
+                                  {new Date(req.created_at).toLocaleDateString()}
+                                </p>
+                              </div>
+                              <div className="flex gap-2">
+                                {req.status === 'pending' && (
+                                  <>
+                                    <Button size="sm" variant="outline" onClick={async () => {
+                                      try {
+                                        await pharmacyDashAPI.respondToSupplyRequest(req.id, 'rejected', 'Unable to fulfill');
+                                        toast.success('Request rejected');
+                                        const inRes = await pharmacyDashAPI.getIncomingSupplyRequests();
+                                        setIncomingRequests(inRes.data.requests || []);
+                                      } catch (error) {
+                                        toast.error('Failed to reject');
+                                      }
+                                    }}>
+                                      <XCircle className="w-4 h-4 mr-1" /> Reject
+                                    </Button>
+                                    <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={async () => {
+                                      try {
+                                        await pharmacyDashAPI.respondToSupplyRequest(req.id, 'accepted', 'Items available');
+                                        toast.success('Request accepted');
+                                        const inRes = await pharmacyDashAPI.getIncomingSupplyRequests();
+                                        setIncomingRequests(inRes.data.requests || []);
+                                      } catch (error) {
+                                        toast.error('Failed to accept');
+                                      }
+                                    }}>
+                                      <CheckCircle className="w-4 h-4 mr-1" /> Accept
+                                    </Button>
+                                  </>
+                                )}
+                                {(req.status === 'accepted' || req.status === 'partially_accepted') && (
+                                  <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={async () => {
+                                    try {
+                                      await pharmacyDashAPI.fulfillSupplyRequest(req.id, 'pickup', 'Ready for pickup');
+                                      toast.success('Request fulfilled');
+                                      const inRes = await pharmacyDashAPI.getIncomingSupplyRequests();
+                                      setIncomingRequests(inRes.data.requests || []);
+                                    } catch (error) {
+                                      toast.error('Failed to fulfill');
+                                    }
+                                  }}>
+                                    <Send className="w-4 h-4 mr-1" /> Mark Fulfilled
+                                  </Button>
+                                )}
+                                <Badge className={
+                                  req.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                                  req.status === 'accepted' ? 'bg-green-100 text-green-700' :
+                                  req.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                                  req.status === 'fulfilled' ? 'bg-blue-100 text-blue-700' :
+                                  'bg-slate-100 text-slate-700'
+                                }>
+                                  {req.status}
+                                </Badge>
+                              </div>
+                            </div>
+                            {req.items && req.items.length > 0 && (
+                              <div className="mt-3 pt-3 border-t">
+                                <p className="text-sm font-medium mb-2">Requested Items:</p>
+                                <div className="flex flex-wrap gap-2">
+                                  {req.items.map((item, idx) => (
+                                    <Badge key={idx} variant="outline">
+                                      {item.drug_name} x{item.quantity}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Outgoing Requests */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2">
+                      <ArrowUpRight className="w-5 h-5" />
+                      Outgoing Supply Requests ({outgoingRequests.length})
+                    </CardTitle>
+                    <Button size="sm" onClick={() => setShowSupplyRequest(true)}>
+                      <Plus className="w-4 h-4 mr-2" /> New Request
+                    </Button>
+                  </div>
+                  <CardDescription>Requests you've sent to other pharmacies</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {outgoingRequests.length === 0 ? (
+                    <div className="text-center py-8 text-slate-500">
+                      <Send className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+                      <p>No outgoing supply requests</p>
+                      <p className="text-sm mt-2">Request supplies from nearby pharmacies when stock is low</p>
+                    </div>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Target Pharmacy</TableHead>
+                          <TableHead>Items</TableHead>
+                          <TableHead>Created</TableHead>
+                          <TableHead>Status</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {outgoingRequests.map((req) => (
+                          <TableRow key={req.id}>
+                            <TableCell className="font-medium">{req.target_pharmacy_name}</TableCell>
+                            <TableCell>{req.items?.length || 0} items</TableCell>
+                            <TableCell>{new Date(req.created_at).toLocaleDateString()}</TableCell>
+                            <TableCell>
+                              <Badge className={
+                                req.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                                req.status === 'accepted' ? 'bg-green-100 text-green-700' :
+                                req.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                                req.status === 'fulfilled' ? 'bg-blue-100 text-blue-700' :
+                                'bg-slate-100 text-slate-700'
+                              }>
+                                {req.status}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Network Pharmacies */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Building2 className="w-5 h-5" />
+                    Pharmacy Network ({networkPharmacies.length})
+                  </CardTitle>
+                  <CardDescription>Other pharmacies you can request supplies from</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[300px]">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      {networkPharmacies.slice(0, 10).map((p) => (
+                        <Card key={p.id} className="border border-slate-200">
+                          <CardContent className="pt-4">
+                            <p className="font-medium">{p.name}</p>
+                            <p className="text-sm text-slate-500">{p.town}, {p.region}</p>
+                            <div className="flex gap-2 mt-2">
+                              {p.has_nhis_accreditation && (
+                                <Badge className="bg-green-100 text-green-700 text-xs">NHIS</Badge>
+                              )}
+                              {p.has_24hr_service && (
+                                <Badge className="bg-blue-100 text-blue-700 text-xs">24/7</Badge>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Audit Logs Tab */}
+          <TabsContent value="audit">
+            <div className="space-y-6">
+              {/* Audit Summary */}
+              {auditSummary && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <Card>
+                    <CardContent className="pt-6">
+                      <p className="text-sm text-slate-500">Total Activities (7d)</p>
+                      <p className="text-3xl font-bold text-slate-900">{auditSummary.total_activities}</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-6">
+                      <p className="text-sm text-slate-500">Top Action</p>
+                      <p className="text-xl font-semibold text-slate-900">
+                        {auditSummary.by_action?.[0]?.action?.replace(/_/g, ' ') || 'N/A'}
+                      </p>
+                      <p className="text-sm text-slate-400">{auditSummary.by_action?.[0]?.count || 0} times</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-6">
+                      <p className="text-sm text-slate-500">Top Entity</p>
+                      <p className="text-xl font-semibold text-slate-900">
+                        {auditSummary.by_entity?.[0]?.entity || 'N/A'}
+                      </p>
+                      <p className="text-sm text-slate-400">{auditSummary.by_entity?.[0]?.count || 0} activities</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-6">
+                      <p className="text-sm text-slate-500">Most Active User</p>
+                      <p className="text-xl font-semibold text-slate-900 truncate">
+                        {auditSummary.by_user?.[0]?.user || 'N/A'}
+                      </p>
+                      <p className="text-sm text-slate-400">{auditSummary.by_user?.[0]?.count || 0} actions</p>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {/* Audit Logs Table */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <ClipboardList className="w-5 h-5" />
+                    Activity Log
+                  </CardTitle>
+                  <CardDescription>Complete audit trail of all pharmacy activities</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {auditLogs.length === 0 ? (
+                    <div className="text-center py-12 text-slate-500">
+                      <History className="w-16 h-16 mx-auto mb-4 text-slate-300" />
+                      <p>No audit logs yet</p>
+                      <p className="text-sm mt-2">Activities will be logged as you use the system</p>
+                    </div>
+                  ) : (
+                    <ScrollArea className="h-[500px]">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Timestamp</TableHead>
+                            <TableHead>Action</TableHead>
+                            <TableHead>Entity</TableHead>
+                            <TableHead>User</TableHead>
+                            <TableHead>Details</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {auditLogs.map((log) => (
+                            <TableRow key={log.id}>
+                              <TableCell className="text-sm">
+                                {new Date(log.timestamp).toLocaleString()}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="text-xs">
+                                  {log.action?.replace(/_/g, ' ')}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-sm">{log.entity_type}</TableCell>
+                              <TableCell className="text-sm">{log.performed_by_name}</TableCell>
+                              <TableCell className="text-xs text-slate-500 max-w-[200px] truncate">
+                                {log.details ? JSON.stringify(log.details) : '-'}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </ScrollArea>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
         </Tabs>
       </main>
 
