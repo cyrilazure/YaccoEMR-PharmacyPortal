@@ -834,13 +834,13 @@ export default function PharmacyLanding() {
       {/* Main Content */}
       <section className="py-8 px-4">
         <div className="max-w-7xl mx-auto">
-          <Tabs defaultValue="regions" className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8">
               <TabsTrigger value="regions" className="gap-2">
                 <Globe className="w-4 h-4" /> Browse by Region
               </TabsTrigger>
               <TabsTrigger value="results" className="gap-2">
-                <Store className="w-4 h-4" /> Search Results
+                <Store className="w-4 h-4" /> Search Results {pharmacies.length > 0 && `(${pharmacies.length})`}
               </TabsTrigger>
             </TabsList>
 
