@@ -728,7 +728,7 @@ export default function PlatformOwnerPortal() {
                     <div>
                       <CardTitle className="flex items-center gap-2">
                         <CheckCircle className="w-5 h-5 text-emerald-600" />
-                        Approved Hospitals ({hospitals.length})
+                        Approved Hospitals ({hospitals.length + approvedOrganizations.length})
                       </CardTitle>
                       <CardDescription>Create and manage hospital accounts</CardDescription>
                     </div>
