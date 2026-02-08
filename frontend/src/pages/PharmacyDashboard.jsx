@@ -28,7 +28,8 @@ import {
   TrendingUp, Bell, Truck, Shield, Calendar, ArrowRight,
   Download, Edit, Trash2, Eye, Database, Hash, Send, History,
   Building2, ArrowUpRight, ArrowDownLeft, CheckCircle2, XOctagon,
-  ClipboardList, BellRing, Volume2
+  ClipboardList, BellRing, Volume2, MoreHorizontal, Key, Ban,
+  Unlock, MapPin, ShieldCheck, UserX, UserMinus
 } from 'lucide-react';
 import api from '@/lib/api';
 
