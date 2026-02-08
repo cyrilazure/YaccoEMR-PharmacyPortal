@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/lib/auth';
-import { adminAPI, organizationAPI } from '@/lib/api';
+import { adminAPI, organizationAPI, pharmacyAdminAPI } from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,7 +31,7 @@ import {
   Building2, Shield, Activity, TrendingUp, Server, Database,
   AlertTriangle, Users, Settings, Lock, CheckCircle2, XCircle,
   RefreshCw, Eye, Search, Globe, FileText, Clock, Zap,
-  ShieldCheck, ShieldAlert, AlertCircle, Play, Pause
+  ShieldCheck, ShieldAlert, AlertCircle, Play, Pause, Pill, Hospital
 } from 'lucide-react';
 
 const STATUS_COLORS = {
