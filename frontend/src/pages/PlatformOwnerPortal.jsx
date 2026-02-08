@@ -385,6 +385,131 @@ export default function PlatformOwnerPortal() {
     setPharmacyDetailsOpen(true);
   };
 
+  // Fetch Pharmacy Staff
+  const fetchPharmacyStaff = async () => {
+    try {
+      setPharmacyLoading(true);
+      const response = await api.get('/pharmacy-portal/admin/staff', { params: { limit: 200 } });
+      setPharmacyStaff(response.data.staff || response.data || []);
+    } catch (err) {
+      console.error('Failed to fetch pharmacy staff:', err);
+      // Try alternative endpoint
+      try {
+        const altResponse = await api.get('/pharmacy-portal/public/pharmacies', { params: { limit: 100 } });
+        // Extract staff from pharmacies if available
+        const allStaff = [];
+        for (const pharmacy of (altResponse.data.pharmacies || [])) {
+          if (pharmacy.admin_email) {
+            allStaff.push({
+              id: pharmacy.id + '_admin',
+              pharmacy_id: pharmacy.id,
+              pharmacy_name: pharmacy.name,
+              email: pharmacy.admin_email,
+              first_name: pharmacy.admin_first_name || 'Admin',
+              last_name: pharmacy.admin_last_name || '',
+              role: 'pharmacy_it_admin',
+              status: pharmacy.status || 'active',
+              phone: pharmacy.admin_phone || pharmacy.phone
+            });
+          }
+        }
+        setPharmacyStaff(allStaff);
+      } catch (altErr) {
+        console.error('Alternative fetch also failed:', altErr);
+      }
+    } finally {
+      setPharmacyLoading(false);
+    }
+  };
+
+  // Pharmacy Staff Action Handlers
+  const handleStaffAction = async (action, staffId) => {
+    setStaffActionLoading(true);
+    try {
+      switch (action) {
+        case 'suspend':
+          await api.put(`/pharmacy-portal/admin/staff/${staffId}/suspend`);
+          toast.success('Staff account suspended');
+          break;
+        case 'unlock':
+          await api.put(`/pharmacy-portal/admin/staff/${staffId}/unlock`);
+          toast.success('Staff account unlocked');
+          break;
+        case 'activate':
+          await api.put(`/pharmacy-portal/admin/staff/${staffId}/activate`);
+          toast.success('Staff account activated');
+          break;
+        case 'deactivate':
+          await api.put(`/pharmacy-portal/admin/staff/${staffId}/deactivate`);
+          toast.success('Staff account deactivated');
+          break;
+        case 'reset-password':
+          const resetResp = await api.put(`/pharmacy-portal/admin/staff/${staffId}/reset-password`);
+          toast.success(`Password reset! Temporary password: ${resetResp.data.temp_password}`);
+          break;
+        case 'delete':
+          await api.delete(`/pharmacy-portal/admin/staff/${staffId}`);
+          toast.success('Staff account deleted');
+          break;
+        default:
+          toast.error('Unknown action');
+      }
+      setStaffActionOpen(false);
+      setSelectedStaffMember(null);
+      fetchPharmacyStaff();
+      fetchPharmacies();
+    } catch (err) {
+      const detail = err.response?.data?.detail;
+      const errorMessage = typeof detail === 'string' ? detail : `Failed to ${action} staff`;
+      toast.error(errorMessage);
+    } finally {
+      setStaffActionLoading(false);
+    }
+  };
+
+  const handleEditStaff = async (e) => {
+    e.preventDefault();
+    if (!selectedStaffMember) return;
+    
+    setStaffActionLoading(true);
+    try {
+      await api.put(`/pharmacy-portal/admin/staff/${selectedStaffMember.id}`, editStaffForm);
+      toast.success('Staff information updated');
+      setEditStaffOpen(false);
+      setSelectedStaffMember(null);
+      fetchPharmacyStaff();
+    } catch (err) {
+      const detail = err.response?.data?.detail;
+      const errorMessage = typeof detail === 'string' ? detail : 'Failed to update staff';
+      toast.error(errorMessage);
+    } finally {
+      setStaffActionLoading(false);
+    }
+  };
+
+  const openStaffDetails = (staff) => {
+    setSelectedStaffMember(staff);
+    setStaffDetailsOpen(true);
+  };
+
+  const openEditStaff = (staff) => {
+    setSelectedStaffMember(staff);
+    setEditStaffForm({
+      first_name: staff.first_name || '',
+      last_name: staff.last_name || '',
+      email: staff.email || '',
+      phone: staff.phone || '',
+      role: staff.role || 'pharmacy_staff'
+    });
+    setEditStaffOpen(true);
+  };
+
+  const openStaffAction = (staff, action) => {
+    setSelectedStaffMember(staff);
+    setStaffActionType(action);
+    setStaffActionOpen(true);
+  };
+
   // Hospital Deletion (Soft Delete with Safeguards)
   const handleDeleteHospital = async () => {
     if (!hospitalToDelete) return;
