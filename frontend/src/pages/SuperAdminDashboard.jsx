@@ -755,7 +755,8 @@ export default function SuperAdminDashboard() {
         </TabsContent>
 
         {/* Pharmacies Tab */}
-        <TabsContent value="pharmacies" className="space-y-4">
+        <TabsContent value="pharmacies" className="space-y-6">
+          {/* Search */}
           <div className="flex items-center justify-between">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -771,97 +772,202 @@ export default function SuperAdminDashboard() {
             </Badge>
           </div>
 
-          <Card>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Pharmacy</TableHead>
-                  <TableHead>Region</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>License</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {pharmacies
-                  .filter(p => 
-                    !pharmacySearch || 
-                    p.name?.toLowerCase().includes(pharmacySearch.toLowerCase()) ||
-                    p.email?.toLowerCase().includes(pharmacySearch.toLowerCase()) ||
-                    p.license_number?.toLowerCase().includes(pharmacySearch.toLowerCase())
-                  )
-                  .map((pharmacy) => (
-                  <TableRow key={pharmacy.id}>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">{pharmacy.name}</p>
-                        <p className="text-sm text-slate-500">{pharmacy.email}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm">{pharmacy.region || '-'}</span>
-                      {pharmacy.city && <span className="text-xs text-slate-400 block">{pharmacy.city}</span>}
-                    </TableCell>
-                    <TableCell>
-                      <Badge style={{ backgroundColor: STATUS_COLORS[pharmacy.status] || STATUS_COLORS[pharmacy.registration_status] || '#6b7280' }} className="text-white">
-                        {pharmacy.status || pharmacy.registration_status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-sm">{pharmacy.license_number || '-'}</TableCell>
-                    <TableCell className="text-sm text-slate-500">
-                      {pharmacy.created_at ? formatDateTime(pharmacy.created_at) : '-'}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        {(pharmacy.status === 'pending' || pharmacy.registration_status === 'pending') && (
-                          <>
-                            <Button 
-                              size="sm" 
-                              className="bg-emerald-600 hover:bg-emerald-700"
-                              onClick={() => handlePharmacyAction(pharmacy.id, 'approve')}
-                            >
-                              Approve
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="destructive"
-                              onClick={() => handlePharmacyAction(pharmacy.id, 'reject')}
-                            >
-                              Reject
-                            </Button>
-                          </>
-                        )}
-                        {(pharmacy.status === 'active' || pharmacy.status === 'approved') && (
+          {/* Pending Pharmacy Approvals Section */}
+          <Card className="border-amber-200">
+            <CardHeader className="pb-3 bg-amber-50 rounded-t-lg">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg flex items-center gap-2 text-amber-800">
+                  <Clock className="w-5 h-5" />
+                  Pending Pharmacy Approvals
+                </CardTitle>
+                <Badge className="bg-amber-500 text-white">
+                  {pharmacies.filter(p => p.status === 'pending' || p.registration_status === 'pending').length} Pending
+                </Badge>
+              </div>
+              <CardDescription className="text-amber-700">
+                Review and approve new pharmacy registration requests
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-slate-50">
+                    <TableHead>Pharmacy</TableHead>
+                    <TableHead>Region</TableHead>
+                    <TableHead>Contact</TableHead>
+                    <TableHead>License</TableHead>
+                    <TableHead>Submitted</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pharmacies
+                    .filter(p => 
+                      (p.status === 'pending' || p.registration_status === 'pending') &&
+                      (!pharmacySearch || 
+                        p.name?.toLowerCase().includes(pharmacySearch.toLowerCase()) ||
+                        p.email?.toLowerCase().includes(pharmacySearch.toLowerCase()))
+                    )
+                    .map((pharmacy) => (
+                    <TableRow key={pharmacy.id} className="bg-amber-50/30">
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{pharmacy.name}</p>
+                          <p className="text-sm text-slate-500">{pharmacy.city || '-'}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm">{pharmacy.region || '-'}</span>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          <p>{pharmacy.email}</p>
+                          <p className="text-slate-500">{pharmacy.phone || '-'}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm">{pharmacy.license_number || '-'}</TableCell>
+                      <TableCell className="text-sm text-slate-500">
+                        {pharmacy.created_at ? formatDateTime(pharmacy.created_at) : '-'}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button 
+                            size="sm" 
+                            className="bg-emerald-600 hover:bg-emerald-700"
+                            onClick={() => handlePharmacyAction(pharmacy.id, 'approve')}
+                          >
+                            <CheckCircle2 className="w-4 h-4 mr-1" />
+                            Approve
+                          </Button>
                           <Button 
                             size="sm" 
                             variant="destructive"
-                            onClick={() => handlePharmacyAction(pharmacy.id, 'suspend')}
+                            onClick={() => handlePharmacyAction(pharmacy.id, 'reject')}
                           >
-                            Suspend
+                            <XCircle className="w-4 h-4 mr-1" />
+                            Reject
                           </Button>
-                        )}
-                        {pharmacy.status === 'suspended' && (
-                          <Button 
-                            size="sm"
-                            onClick={() => handlePharmacyAction(pharmacy.id, 'reactivate')}
-                          >
-                            Reactivate
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {pharmacies.filter(p => p.status === 'pending' || p.registration_status === 'pending').length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8 text-slate-500">
+                        <Clock className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+                        No pending pharmacy approvals
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          {/* Approved Pharmacies Section */}
+          <Card>
+            <CardHeader className="pb-3 bg-blue-50 rounded-t-lg">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg flex items-center gap-2 text-blue-800">
+                  <CheckCircle2 className="w-5 h-5" />
+                  Approved Pharmacies
+                </CardTitle>
+                <Badge className="bg-blue-500 text-white">
+                  {pharmacies.filter(p => p.status === 'approved' || p.status === 'active').length} Active
+                </Badge>
+              </div>
+              <CardDescription className="text-blue-700">
+                Manage approved pharmacies on the platform
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-slate-50">
+                    <TableHead>Pharmacy</TableHead>
+                    <TableHead>Region</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>License</TableHead>
+                    <TableHead>Approved</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ))}
-                {pharmacies.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-slate-500">
-                      No pharmacies found
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {pharmacies
+                    .filter(p => 
+                      p.status !== 'pending' && p.registration_status !== 'pending' &&
+                      (!pharmacySearch || 
+                        p.name?.toLowerCase().includes(pharmacySearch.toLowerCase()) ||
+                        p.email?.toLowerCase().includes(pharmacySearch.toLowerCase()))
+                    )
+                    .map((pharmacy) => (
+                    <TableRow key={pharmacy.id}>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{pharmacy.name}</p>
+                          <p className="text-sm text-slate-500">{pharmacy.email}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm">{pharmacy.region || '-'}</span>
+                        {pharmacy.city && <span className="text-xs text-slate-400 block">{pharmacy.city}</span>}
+                      </TableCell>
+                      <TableCell>
+                        <Badge style={{ backgroundColor: STATUS_COLORS[pharmacy.status] || STATUS_COLORS[pharmacy.registration_status] || '#6b7280' }} className="text-white">
+                          {pharmacy.status || pharmacy.registration_status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm">{pharmacy.license_number || '-'}</TableCell>
+                      <TableCell className="text-sm text-slate-500">
+                        {pharmacy.approved_at ? formatDateTime(pharmacy.approved_at) : pharmacy.created_at ? formatDateTime(pharmacy.created_at) : '-'}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          {(pharmacy.status === 'active' || pharmacy.status === 'approved') && (
+                            <Button 
+                              size="sm" 
+                              variant="destructive"
+                              onClick={() => handlePharmacyAction(pharmacy.id, 'suspend')}
+                            >
+                              <Pause className="w-4 h-4 mr-1" />
+                              Suspend
+                            </Button>
+                          )}
+                          {pharmacy.status === 'suspended' && (
+                            <Button 
+                              size="sm"
+                              className="bg-blue-600 hover:bg-blue-700"
+                              onClick={() => handlePharmacyAction(pharmacy.id, 'reactivate')}
+                            >
+                              <Play className="w-4 h-4 mr-1" />
+                              Reactivate
+                            </Button>
+                          )}
+                          {pharmacy.status === 'rejected' && (
+                            <Button 
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handlePharmacyAction(pharmacy.id, 'approve')}
+                            >
+                              <CheckCircle2 className="w-4 h-4 mr-1" />
+                              Reconsider
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {pharmacies.filter(p => p.status !== 'pending' && p.registration_status !== 'pending').length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8 text-slate-500">
+                        <Pill className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+                        No approved pharmacies yet
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
           </Card>
         </TabsContent>
 
