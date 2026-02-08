@@ -1256,6 +1256,160 @@ export default function PharmacyDashboard() {
     drug.brand_name?.toLowerCase().includes(drugSearch.toLowerCase())
   );
 
+  // Staff Management Functions
+  const refreshStaff = async () => {
+    try {
+      const staffRes = await pharmacyDashAPI.getStaff();
+      setStaff(staffRes.data.staff || []);
+    } catch (error) {
+      console.error('Failed to refresh staff:', error);
+    }
+  };
+
+  const handleViewStaffDetails = async (staffMember) => {
+    setSelectedStaff(staffMember);
+    setShowStaffDetails(true);
+  };
+
+  const handleResetPassword = async (staffMember) => {
+    setStaffActionLoading(true);
+    try {
+      const response = await pharmacyDashAPI.resetStaffPassword(staffMember.id);
+      toast.success(`Password reset! Temporary password: ${response.data.temp_password}`);
+      refreshStaff();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to reset password');
+    } finally {
+      setStaffActionLoading(false);
+    }
+  };
+
+  const handleSuspendStaff = async () => {
+    if (!suspendReason.trim()) {
+      toast.error('Please provide a reason for suspension');
+      return;
+    }
+    setStaffActionLoading(true);
+    try {
+      await pharmacyDashAPI.suspendStaff(selectedStaff.id, suspendReason);
+      toast.success('Staff member suspended');
+      setShowSuspendDialog(false);
+      setSuspendReason('');
+      setSelectedStaff(null);
+      refreshStaff();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to suspend staff');
+    } finally {
+      setStaffActionLoading(false);
+    }
+  };
+
+  const handleUnlockStaff = async (staffMember) => {
+    setStaffActionLoading(true);
+    try {
+      await pharmacyDashAPI.unlockStaff(staffMember.id);
+      toast.success('Staff member unlocked');
+      refreshStaff();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to unlock staff');
+    } finally {
+      setStaffActionLoading(false);
+    }
+  };
+
+  const handleDeactivateStaff = async (staffMember) => {
+    setStaffActionLoading(true);
+    try {
+      await pharmacyDashAPI.deactivateStaff(staffMember.id);
+      toast.success('Staff member deactivated');
+      refreshStaff();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to deactivate staff');
+    } finally {
+      setStaffActionLoading(false);
+    }
+  };
+
+  const handleUpdatePermissions = async () => {
+    setStaffActionLoading(true);
+    try {
+      await pharmacyDashAPI.updateStaffPermissions(selectedStaff.id, staffPermissions);
+      toast.success('Permissions updated');
+      setShowPermissionsDialog(false);
+      setSelectedStaff(null);
+      setStaffPermissions([]);
+      refreshStaff();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to update permissions');
+    } finally {
+      setStaffActionLoading(false);
+    }
+  };
+
+  const handleAssignLocation = async () => {
+    if (!staffLocation.trim()) {
+      toast.error('Please enter a location');
+      return;
+    }
+    setStaffActionLoading(true);
+    try {
+      await pharmacyDashAPI.assignStaffLocation(selectedStaff.id, staffLocation);
+      toast.success(`Staff assigned to ${staffLocation}`);
+      setShowLocationDialog(false);
+      setSelectedStaff(null);
+      setStaffLocation('');
+      refreshStaff();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to assign location');
+    } finally {
+      setStaffActionLoading(false);
+    }
+  };
+
+  const handleDeleteStaff = async () => {
+    setStaffActionLoading(true);
+    try {
+      await pharmacyDashAPI.deleteStaff(selectedStaff.id);
+      toast.success('Staff member deleted');
+      setShowDeleteConfirm(false);
+      setSelectedStaff(null);
+      refreshStaff();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to delete staff');
+    } finally {
+      setStaffActionLoading(false);
+    }
+  };
+
+  const openPermissionsDialog = (staffMember) => {
+    setSelectedStaff(staffMember);
+    setStaffPermissions(staffMember.permissions || []);
+    setShowPermissionsDialog(true);
+  };
+
+  const openLocationDialog = (staffMember) => {
+    setSelectedStaff(staffMember);
+    setStaffLocation(staffMember.assigned_location || '');
+    setShowLocationDialog(true);
+  };
+
+  const openSuspendDialog = (staffMember) => {
+    setSelectedStaff(staffMember);
+    setSuspendReason('');
+    setShowSuspendDialog(true);
+  };
+
+  const openDeleteConfirm = (staffMember) => {
+    setSelectedStaff(staffMember);
+    setShowDeleteConfirm(true);
+  };
+
+  const availablePermissions = [
+    'view_inventory', 'manage_inventory', 'view_sales', 'create_sales',
+    'view_prescriptions', 'dispense_prescriptions', 'view_staff', 'manage_staff',
+    'view_reports', 'view_audit_logs', 'manage_drugs', 'approve_supply_requests'
+  ];
+
   if (loading && !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
