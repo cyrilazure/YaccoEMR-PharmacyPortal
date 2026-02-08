@@ -489,31 +489,13 @@ def create_pharmacy_portal_router(db) -> APIRouter:
         phone_number = user.get("phone") or user.get("phone_number")
         
         if not phone_number:
-            # If no phone, skip OTP and return token directly (legacy support)
-            token = create_pharmacy_token({
+            # Phone number is required - ask user to provide one
+            return {
+                "otp_required": True,
+                "phone_required": True,
                 "user_id": user["id"],
                 "pharmacy_id": user["pharmacy_id"],
-                "role": user["role"],
-                "email": user["email"]
-            })
-            
-            return {
-                "otp_required": False,
-                "token": token,
-                "user": {
-                    "id": user["id"],
-                    "email": user["email"],
-                    "first_name": user["first_name"],
-                    "last_name": user["last_name"],
-                    "role": user["role"],
-                    "pharmacy_id": user["pharmacy_id"]
-                },
-                "pharmacy": {
-                    "id": pharmacy["id"],
-                    "name": pharmacy.get("name") or pharmacy.get("pharmacy_name"),
-                    "region": pharmacy.get("region"),
-                    "status": pharmacy.get("status")
-                }
+                "message": "Please enter your phone number to receive OTP"
             }
         
         # Create OTP session and send SMS
@@ -527,6 +509,7 @@ def create_pharmacy_portal_router(db) -> APIRouter:
         
         return {
             "otp_required": True,
+            "phone_required": False,
             "otp_session_id": otp_result["session_id"],
             "phone_masked": otp_result["phone_masked"],
             "expires_at": otp_result["expires_at"],
