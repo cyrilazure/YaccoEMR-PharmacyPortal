@@ -236,6 +236,19 @@ export default function PlatformOwnerPortal() {
     }
   };
 
+  // Helper to extract error message from API response
+  const getErrorMessage = (err, defaultMsg) => {
+    const detail = err.response?.data?.detail;
+    if (typeof detail === 'string') {
+      return detail;
+    } else if (Array.isArray(detail)) {
+      // Extract field names from validation errors
+      const fields = detail.map(e => e.loc?.[e.loc.length - 1] || 'field').join(', ');
+      return `Validation error: ${fields}`;
+    }
+    return defaultMsg;
+  };
+
   // Approve pending hospital registration
   const handleApproveHospital = async (hospitalId) => {
     try {
@@ -244,7 +257,7 @@ export default function PlatformOwnerPortal() {
       toast.success('Hospital approved successfully!');
       fetchData();
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Failed to approve hospital');
+      toast.error(getErrorMessage(err, 'Failed to approve hospital'));
     } finally {
       setSaving(false);
     }
@@ -258,7 +271,7 @@ export default function PlatformOwnerPortal() {
       toast.success('Hospital registration rejected');
       fetchData();
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Failed to reject hospital');
+      toast.error(getErrorMessage(err, 'Failed to reject hospital'));
     } finally {
       setSaving(false);
     }
