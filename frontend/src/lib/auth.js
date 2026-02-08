@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { authAPI } from './api';
+import { authAPI, regionAPI } from './api';
 
 const AuthContext = createContext(null);
 
@@ -8,6 +8,8 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [requires2FA, setRequires2FA] = useState(false);
   const [pendingCredentials, setPendingCredentials] = useState(null);
+  const [pendingHospitalId, setPendingHospitalId] = useState(null);
+  const [pendingLocationId, setPendingLocationId] = useState(null);
   
   // OTP States
   const [requiresOTP, setRequiresOTP] = useState(false);
