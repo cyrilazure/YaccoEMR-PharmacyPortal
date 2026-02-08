@@ -523,21 +523,18 @@ def create_region_endpoints(db, get_current_user, hash_password):
             }
         
         # Generate and send OTP
-        otp_session = await create_otp_session(user["id"], phone, db)
-        await send_otp_sms(phone, otp_session["otp"])
-        
-        # Mask phone number
-        masked_phone = "******" + phone[-4:] if len(phone) >= 4 else "****"
+        user_name = f"{user.get('first_name', '')} {user.get('last_name', '')}".strip() or "User"
+        otp_session = await create_otp_session(db, user["id"], phone, "emr", user_name)
         
         return {
             "otp_required": True,
             "phone_required": False,
             "otp_session_id": otp_session["session_id"],
-            "phone_masked": masked_phone,
+            "phone_masked": otp_session.get("phone_masked", mask_phone_number(phone)),
             "hospital_id": request.hospital_id,
             "location_id": request.location_id,
             "expires_at": otp_session["expires_at"],
-            "sms_sent": True,
+            "sms_sent": otp_session.get("sms_sent", True),
             "message": "OTP sent to your registered phone number"
         }
     
