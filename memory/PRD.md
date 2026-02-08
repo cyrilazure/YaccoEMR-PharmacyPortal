@@ -715,8 +715,13 @@ GET  /api/billing-shifts/audit-logs      - Billing audit logs
 - [ ] Real NHIS API integration (replace mock data)
 - [ ] Real PACS/dcm4chee server integration (replace demo mode)
 - [ ] Complete PatientChart refactoring (remaining tabs: Overview, Notes, Orders, Imaging, Pharmacy)
-- [ ] Admin Pharmacy Approval Workflow (Platform Admin UI for approving/rejecting)
-- [ ] Physician Portal E-Prescription UI - Add pharmacy selector to prescription workflow
+- [ ] Real-time Prescription Notifications (WebSocket for pharmacy alerts)
+- [x] ~~Physician Portal E-Prescription UI~~ ✅ Already implemented - PatientChart has pharmacy selector
+- [x] ~~Admin Pharmacy Approval Workflow~~ ✅ DONE (Feb 8, 2026)
+  - Platform Owner Portal Pharmacies tab with pending count badge
+  - Pending pharmacy cards with Review/Approve actions
+  - Pharmacy details dialog with Approve/Reject workflow
+  - Approved pharmacies table
 - [x] ~~Pharmacy Portal Phase 3 - Hospital Connection & Auditing~~ ✅ DONE (Feb 8, 2026)
   - E-prescription routing from hospital EMR to pharmacies
   - Supply request system for pharmacy-to-pharmacy requests
