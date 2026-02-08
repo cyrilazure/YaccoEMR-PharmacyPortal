@@ -1122,6 +1122,11 @@ export default function PharmacyDashboard() {
   const [staffPermissions, setStaffPermissions] = useState([]);
   const [staffActionLoading, setStaffActionLoading] = useState(false);
   
+  // Credentials Dialog State
+  const [showCredentialsDialog, setShowCredentialsDialog] = useState(false);
+  const [staffCredentials, setStaffCredentials] = useState(null);
+  const [credentialsStaffName, setCredentialsStaffName] = useState('');
+  
   // Phase 3: Supply Requests and Audit Logs
   const [outgoingRequests, setOutgoingRequests] = useState([]);
   const [incomingRequests, setIncomingRequests] = useState([]);
