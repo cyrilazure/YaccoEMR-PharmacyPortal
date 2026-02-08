@@ -38,7 +38,7 @@ import {
   Download, Edit, Trash2, Eye, Database, Hash, Send, History,
   Building2, ArrowUpRight, ArrowDownLeft, CheckCircle2, XOctagon,
   ClipboardList, BellRing, Volume2, MoreHorizontal, Key, Ban,
-  Unlock, MapPin, ShieldCheck, UserX, UserMinus
+  Unlock, MapPin, ShieldCheck, UserX, UserMinus, Copy, AlertCircle
 } from 'lucide-react';
 import api from '@/lib/api';
 
