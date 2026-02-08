@@ -575,8 +575,8 @@ def create_region_endpoints(db, get_current_user, hash_password):
         """
         # Verify OTP
         otp_result = await verify_otp(db, request.otp_session_id, request.otp_code)
-        if not otp_result["valid"]:
-            raise HTTPException(status_code=401, detail=otp_result.get("message", "Invalid OTP"))
+        if not otp_result.get("success"):
+            raise HTTPException(status_code=401, detail=otp_result.get("error", "Invalid OTP"))
         
         # Get user
         user = await db["users"].find_one({"id": otp_result["user_id"]}, {"_id": 0})
