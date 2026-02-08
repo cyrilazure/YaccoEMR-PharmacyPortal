@@ -1373,13 +1373,29 @@ export default function PharmacyDashboard() {
     setStaffActionLoading(true);
     try {
       const response = await pharmacyDashAPI.resetStaffPassword(staffMember.id);
-      toast.success(`Password reset! Temporary password: ${response.data.temp_password}`);
+      toast.success('Password reset successfully!');
+      
+      // Show credentials dialog with the new password
+      setStaffCredentials({
+        email: staffMember.email,
+        password: response.data.temp_password
+      });
+      setCredentialsStaffName(`${staffMember.first_name} ${staffMember.last_name}`);
+      setShowCredentialsDialog(true);
+      
       refreshStaff();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to reset password');
     } finally {
       setStaffActionLoading(false);
     }
+  };
+
+  // Handler to show credentials dialog from AddStaffDialog
+  const handleShowCredentials = (credentials, staffName) => {
+    setStaffCredentials(credentials);
+    setCredentialsStaffName(staffName);
+    setShowCredentialsDialog(true);
   };
 
   const handleSuspendStaff = async () => {
