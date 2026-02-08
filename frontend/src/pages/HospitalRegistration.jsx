@@ -97,7 +97,22 @@ export default function HospitalRegistration() {
       setRegistrationSuccess(true);
       toast.success('Registration submitted successfully!');
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Registration failed. Please try again.');
+      // Handle error - detail can be a string or array of validation errors
+      const errorDetail = error.response?.data?.detail;
+      let errorMessage = 'Registration failed. Please try again.';
+      
+      if (typeof errorDetail === 'string') {
+        errorMessage = errorDetail;
+      } else if (Array.isArray(errorDetail)) {
+        // Extract field names from validation errors
+        const missingFields = errorDetail.map(err => {
+          const field = err.loc?.[err.loc.length - 1] || 'Unknown';
+          return field.replace(/_/g, ' ');
+        });
+        errorMessage = `Please fill in required fields: ${missingFields.slice(0, 3).join(', ')}${missingFields.length > 3 ? '...' : ''}`;
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
