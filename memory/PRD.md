@@ -722,6 +722,29 @@ GET  /api/billing-shifts/audit-logs      - Billing audit logs
   - `POST /api/prescriptions/send-to-network-pharmacy` - Routes prescriptions to network pharmacies
   - Creates prescription_routing record for pharmacy portal
 
+### Platform Owner Pharmacy Staff Management (December 2025) - NEW
+- [x] **Platform Owner Staff Management Endpoints**:
+  - `GET /api/pharmacy-portal/platform-owner/staff` - List all pharmacy staff across all pharmacies
+  - `GET /api/pharmacy-portal/platform-owner/staff/{id}` - Get staff details with pharmacy info
+  - `PUT /api/pharmacy-portal/platform-owner/staff/{id}` - Update staff info (name, email, phone, role)
+  - `PUT /api/pharmacy-portal/platform-owner/staff/{id}/suspend` - Suspend staff account
+  - `PUT /api/pharmacy-portal/platform-owner/staff/{id}/activate` - Reactivate suspended staff
+  - `PUT /api/pharmacy-portal/platform-owner/staff/{id}/unlock` - Unlock locked staff account
+  - `PUT /api/pharmacy-portal/platform-owner/staff/{id}/deactivate` - Deactivate staff (soft delete)
+  - `PUT /api/pharmacy-portal/platform-owner/staff/{id}/reset-password` - Reset password, returns temp password
+  - `DELETE /api/pharmacy-portal/platform-owner/staff/{id}` - Permanently delete staff
+- [x] **Platform Owner Portal UI Updates**:
+  - Pharmacies tab now loads without redirect-to-login issue
+  - Pharmacy Staff Management section displays all pharmacy staff
+  - Staff table shows: Name, Email, Pharmacy, Role, Status, Actions
+  - Action buttons: View Details, Edit, Reset Password, Suspend/Activate/Unlock, Delete
+  - Staff Details Dialog with full information
+  - Edit Staff Dialog for updating staff information
+  - Staff Action Confirmation Dialog for all status change actions
+- [x] **Bug Fix**: Fixed redirect-to-login issue when Platform Owner accesses Pharmacies tab
+  - Root cause: Frontend was calling pharmacy-admin endpoints requiring pharmacy auth
+  - Solution: Created new platform-owner endpoints that work without pharmacy auth
+
 ## Prioritized Backlog
 
 ### P0 (Critical)
@@ -741,6 +764,9 @@ GET  /api/billing-shifts/audit-logs      - Billing audit logs
 - [x] ~~Unified Landing Page (EMR + Pharmacy)~~ ✅ DONE (Feb 7, 2026)
   - Single entry point at root URL (/) with two portal cards: Yacco EMR & Yacco Pharm
   - Navigation to /login for EMR, /pharmacy for Pharm portal
+- [x] ~~Platform Owner Pharmacy Staff Management~~ ✅ DONE (Dec 2025)
+  - 9 new API endpoints for managing pharmacy staff across all pharmacies
+  - UI in Platform Owner Portal with full CRUD operations
 
 ### Real-time Prescription Notifications - WebSocket System (February 8, 2026)
 - [x] **WebSocket Module** (`pharmacy_ws_module.py`):
