@@ -278,6 +278,47 @@ export default function PlatformOwnerPortal() {
     }
   };
 
+  // Pharmacy Approval/Rejection Handlers
+  const handleApprovePharmacy = async (pharmacyId) => {
+    try {
+      await api.put(`/pharmacy-portal/admin/pharmacies/${pharmacyId}/approve`, {
+        status: 'approved',
+        notes: approvalNotes || 'Approved by Platform Admin'
+      });
+      toast.success('Pharmacy approved successfully');
+      setPharmacyDetailsOpen(false);
+      setApprovalNotes('');
+      fetchPharmacies();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to approve pharmacy');
+    }
+  };
+
+  const handleRejectPharmacy = async (pharmacyId) => {
+    if (!approvalNotes) {
+      toast.error('Please provide a reason for rejection');
+      return;
+    }
+    try {
+      await api.put(`/pharmacy-portal/admin/pharmacies/${pharmacyId}/approve`, {
+        status: 'rejected',
+        notes: approvalNotes
+      });
+      toast.success('Pharmacy registration rejected');
+      setPharmacyDetailsOpen(false);
+      setApprovalNotes('');
+      fetchPharmacies();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to reject pharmacy');
+    }
+  };
+
+  const openPharmacyDetails = (pharmacy) => {
+    setSelectedPharmacyDetails(pharmacy);
+    setApprovalNotes('');
+    setPharmacyDetailsOpen(true);
+  };
+
   // Hospital Deletion (Soft Delete with Safeguards)
   const handleDeleteHospital = async () => {
     if (!hospitalToDelete) return;
