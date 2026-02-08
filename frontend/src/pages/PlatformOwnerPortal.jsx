@@ -983,12 +983,55 @@ export default function PlatformOwnerPortal() {
                             <TableHead>Hospital</TableHead>
                             <TableHead>Region</TableHead>
                             <TableHead>Admin</TableHead>
-                            <TableHead className="text-center">Locations</TableHead>
-                            <TableHead className="text-center">Users</TableHead>
+                            <TableHead>Source</TableHead>
+                            <TableHead className="text-center">Status</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
+                          {/* Approved Organizations from Registration */}
+                          {approvedOrganizations
+                            .filter(org => 
+                              !searchQuery || 
+                              org.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                              org.city?.toLowerCase().includes(searchQuery.toLowerCase())
+                            )
+                            .map((org) => (
+                            <TableRow key={org.id} className="bg-emerald-50/30">
+                              <TableCell>
+                                <div>
+                                  <p className="font-medium">{org.name}</p>
+                                  <p className="text-sm text-gray-500">{org.city || org.state || '-'}</p>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline">
+                                  {org.state || org.region || '-'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div>
+                                  <p className="text-sm">{org.admin_first_name} {org.admin_last_name}</p>
+                                  <p className="text-xs text-gray-500">{org.admin_email || org.email}</p>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge className="bg-emerald-100 text-emerald-700">Registration</Badge>
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <Badge className="bg-emerald-500 text-white">{org.status}</Badge>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex items-center justify-end gap-2">
+                                  <Button variant="outline" size="sm" disabled>
+                                    <LogIn className="w-4 h-4 mr-1" />
+                                    Login As
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                          {/* Existing Hospitals */}
                           {filteredHospitals.map((item) => (
                             <TableRow key={item.hospital.id}>
                               <TableCell>
@@ -1012,11 +1055,11 @@ export default function PlatformOwnerPortal() {
                                   <span className="text-gray-400">No admin</span>
                                 )}
                               </TableCell>
-                              <TableCell className="text-center">
-                                <Badge variant="secondary">{item.hospital.location_count}</Badge>
+                              <TableCell>
+                                <Badge className="bg-blue-100 text-blue-700">Platform</Badge>
                               </TableCell>
                               <TableCell className="text-center">
-                                <Badge variant="secondary">{item.hospital.user_count}</Badge>
+                                <Badge variant="secondary">{item.hospital.user_count} users</Badge>
                               </TableCell>
                               <TableCell className="text-right">
                                 <div className="flex items-center justify-end gap-2">
@@ -1055,7 +1098,7 @@ export default function PlatformOwnerPortal() {
                               </TableCell>
                             </TableRow>
                           ))}
-                          {filteredHospitals.length === 0 && (
+                          {filteredHospitals.length === 0 && approvedOrganizations.length === 0 && (
                             <TableRow>
                               <TableCell colSpan={6} className="text-center py-12 text-gray-500">
                                 No hospitals found
