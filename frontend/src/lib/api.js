@@ -566,7 +566,25 @@ export const regionAPI = {
   getHospitalDetails: (hospitalId) => api.get(`/regions/hospitals/${hospitalId}`),
   getHospitalLocations: (hospitalId) => api.get(`/regions/hospitals/${hospitalId}/locations`),
   
-  // Location-Aware Authentication
+  // Location-Aware Authentication with OTP
+  locationLoginInit: (email, password, hospitalId, locationId) => api.post('/regions/auth/login/init', {
+    email,
+    password,
+    hospital_id: hospitalId,
+    location_id: locationId
+  }),
+  locationLoginSubmitPhone: (userId, phoneNumber, hospitalId, locationId) => api.post('/regions/auth/login/submit-phone', {
+    user_id: userId,
+    phone_number: phoneNumber,
+    hospital_id: hospitalId,
+    location_id: locationId
+  }),
+  locationLoginVerify: (otpSessionId, otpCode) => api.post('/regions/auth/login/verify', {
+    otp_session_id: otpSessionId,
+    otp_code: otpCode
+  }),
+  
+  // Legacy Location-Aware Authentication (no OTP)
   locationLogin: (email, password, hospitalId, locationId, totpCode) => api.post('/regions/auth/login', {
     email,
     password,
