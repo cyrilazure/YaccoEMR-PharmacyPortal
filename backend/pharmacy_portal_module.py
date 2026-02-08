@@ -1968,6 +1968,15 @@ def create_pharmacy_portal_router(db) -> APIRouter:
         pharmacy_id = user.get("pharmacy_id")
         now = datetime.now(timezone.utc).isoformat()
         
+        # Get prescription details for SMS
+        prescription = await db["pharmacy_prescriptions"].find_one(
+            {"id": rx_id, "pharmacy_id": pharmacy_id, "status": "processing"},
+            {"_id": 0}
+        )
+        
+        if not prescription:
+            raise HTTPException(status_code=404, detail="Prescription not found or not in processing state")
+        
         result = await db["pharmacy_prescriptions"].update_one(
             {"id": rx_id, "pharmacy_id": pharmacy_id, "status": "processing"},
             {"$set": {
@@ -1978,9 +1987,32 @@ def create_pharmacy_portal_router(db) -> APIRouter:
         )
         
         if result.modified_count == 0:
-            raise HTTPException(status_code=404, detail="Prescription not found or not in processing state")
+            raise HTTPException(status_code=404, detail="Failed to update prescription")
         
-        return {"message": "Prescription ready for pickup", "status": "ready"}
+        # Get pharmacy details
+        pharmacy = await db["pharmacies"].find_one({"id": pharmacy_id}, {"_id": 0})
+        pharmacy_name = pharmacy.get("pharmacy_name", "Pharmacy") if pharmacy else "Pharmacy"
+        
+        # Send SMS notification to patient if phone available
+        patient_phone = prescription.get("patient_phone")
+        patient_name = prescription.get("patient_name", "Customer")
+        tracking_code = prescription.get("tracking_code", rx_id[:8].upper())
+        
+        sms_sent = False
+        if patient_phone:
+            try:
+                sms_result = await sms_notifier.notify_prescription_ready(
+                    patient_phone, patient_name, pharmacy_name, tracking_code
+                )
+                sms_sent = sms_result.get("success", False)
+            except Exception as e:
+                print(f"SMS notification failed: {e}")
+        
+        return {
+            "message": "Prescription ready for pickup", 
+            "status": "ready",
+            "sms_sent": sms_sent
+        }
     
     @router.put("/eprescription/{rx_id}/dispense")
     async def dispense_eprescription(
