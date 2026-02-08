@@ -1,22 +1,32 @@
 import { useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
+import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Globe, Shield, Lock, Eye, EyeOff, LogOut } from 'lucide-react';
+import { Globe, Shield, Lock, Eye, EyeOff, LogOut, Loader2, Smartphone, Send } from 'lucide-react';
 
 export default function SuperAdminLogin() {
   const navigate = useNavigate();
-  const { user, login, logout } = useAuth();
+  const { user, logout } = useAuth();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [credentials, setCredentials] = useState({
     email: '',
     password: ''
   });
+  
+  // OTP States
+  const [loginStep, setLoginStep] = useState('credentials'); // 'credentials', 'phone', 'otp'
+  const [pendingUserId, setPendingUserId] = useState('');
+  const [otpSessionId, setOtpSessionId] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [phoneMasked, setPhoneMasked] = useState('');
+  const [resending, setResending] = useState(false);
 
   // If already logged in as super_admin, redirect to dashboard
   if (user?.role === 'super_admin') {
@@ -57,23 +67,110 @@ export default function SuperAdminLogin() {
     setLoading(true);
     
     try {
-      const userData = await login(credentials.email, credentials.password);
+      // Use the direct API instead of useAuth to handle OTP flow
+      const response = await api.post('/auth/login/init', { 
+        email: credentials.email, 
+        password: credentials.password 
+      });
       
-      // Check if user is super_admin
-      if (userData.role !== 'super_admin') {
-        // Logout the user since they don't have access
-        logout();
-        toast.error('Access denied. This portal is for Platform Owners only.');
-        return;
+      if (response.data.phone_required) {
+        // Phone number is needed
+        setPendingUserId(response.data.user_id);
+        setLoginStep('phone');
+        toast.info('Please enter your phone number for verification');
+      } else if (response.data.otp_required) {
+        // OTP sent to existing phone
+        setOtpSessionId(response.data.otp_session_id);
+        setPhoneMasked(response.data.phone_masked);
+        setLoginStep('otp');
+        toast.success('OTP sent to your phone');
       }
       
-      toast.success('Welcome back, Platform Owner');
-      navigate('/platform/super-admin');
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Invalid credentials');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePhoneSubmit = async (e) => {
+    e.preventDefault();
+    if (phoneNumber.length < 9) {
+      toast.error('Please enter a valid phone number');
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const response = await api.post('/auth/login/submit-phone', { 
+        user_id: pendingUserId, 
+        phone_number: phoneNumber 
+      });
+      setOtpSessionId(response.data.otp_session_id);
+      setPhoneMasked(response.data.phone_masked);
+      setLoginStep('otp');
+      toast.success('OTP sent to your phone');
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to send OTP');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOTPVerify = async (e) => {
+    e.preventDefault();
+    if (otpCode.length !== 6) {
+      toast.error('Please enter a valid 6-digit OTP');
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const response = await api.post('/auth/login/verify', null, { 
+        params: { otp_session_id: otpSessionId, otp_code: otpCode }
+      });
+      
+      const { token, user: userData } = response.data;
+      
+      // Check if user is super_admin
+      if (userData.role !== 'super_admin') {
+        toast.error('Access denied. This portal is for Platform Owners only.');
+        setLoginStep('credentials');
+        return;
+      }
+      
+      // Store auth data
+      localStorage.setItem('yacco_token', token);
+      localStorage.setItem('yacco_user', JSON.stringify(userData));
+      
+      toast.success('Welcome back, Platform Owner!');
+      window.location.href = '/platform/super-admin';
+      
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Invalid OTP');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendOTP = async () => {
+    setResending(true);
+    try {
+      await api.post('/auth/login/resend-otp', null, { 
+        params: { otp_session_id: otpSessionId }
+      });
+      toast.success('OTP resent successfully');
+    } catch (err) {
+      toast.error('Failed to resend OTP');
+    } finally {
+      setResending(false);
+    }
+  };
+
+  const handleBack = () => {
+    setLoginStep('credentials');
+    setOtpCode('');
+    setPhoneNumber('');
   };
 
   return (
