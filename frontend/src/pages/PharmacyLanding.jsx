@@ -138,9 +138,11 @@ function LoginDialog({ open, onOpenChange, onSuccess }) {
   const [loading, setLoading] = useState(false);
   
   // OTP States
-  const [otpStep, setOtpStep] = useState(false);
+  const [loginStep, setLoginStep] = useState('credentials'); // 'credentials', 'phone', 'otp'
+  const [pendingUserId, setPendingUserId] = useState('');
   const [otpSessionId, setOtpSessionId] = useState('');
   const [otpCode, setOtpCode] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [phoneMasked, setPhoneMasked] = useState('');
   const [resending, setResending] = useState(false);
 
@@ -150,14 +152,19 @@ function LoginDialog({ open, onOpenChange, onSuccess }) {
     try {
       const response = await pharmacyAPI.loginInit({ email, password });
       
-      if (response.data.otp_required) {
-        // OTP is required, show OTP input
+      if (response.data.phone_required) {
+        // Phone number is needed
+        setPendingUserId(response.data.user_id);
+        setLoginStep('phone');
+        toast.info('Please enter your phone number for verification');
+      } else if (response.data.otp_required) {
+        // OTP sent to existing phone
         setOtpSessionId(response.data.otp_session_id);
         setPhoneMasked(response.data.phone_masked);
-        setOtpStep(true);
+        setLoginStep('otp');
         toast.success('OTP sent to your phone');
       } else {
-        // No OTP required (no phone number), direct login
+        // No OTP required (shouldn't happen now)
         localStorage.setItem('pharmacy_token', response.data.token);
         localStorage.setItem('pharmacy_user', JSON.stringify(response.data.user));
         localStorage.setItem('pharmacy_info', JSON.stringify(response.data.pharmacy));
@@ -167,6 +174,27 @@ function LoginDialog({ open, onOpenChange, onSuccess }) {
       }
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Login failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePhoneSubmit = async (e) => {
+    e.preventDefault();
+    if (phoneNumber.length < 9) {
+      toast.error('Please enter a valid phone number');
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const response = await pharmacyAPI.loginSubmitPhone(pendingUserId, phoneNumber);
+      setOtpSessionId(response.data.otp_session_id);
+      setPhoneMasked(response.data.phone_masked);
+      setLoginStep('otp');
+      toast.success('OTP sent to your phone');
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to send OTP');
     } finally {
       setLoading(false);
     }
@@ -209,9 +237,11 @@ function LoginDialog({ open, onOpenChange, onSuccess }) {
   const resetForm = () => {
     setEmail('');
     setPassword('');
-    setOtpStep(false);
+    setLoginStep('credentials');
+    setPendingUserId('');
     setOtpSessionId('');
     setOtpCode('');
+    setPhoneNumber('');
     setPhoneMasked('');
   };
 
@@ -222,23 +252,36 @@ function LoginDialog({ open, onOpenChange, onSuccess }) {
     onOpenChange(open);
   };
 
+  const handleBack = () => {
+    if (loginStep === 'otp') {
+      setLoginStep('credentials');
+      setOtpCode('');
+    } else if (loginStep === 'phone') {
+      setLoginStep('credentials');
+      setPhoneNumber('');
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <LogIn className="w-5 h-5 text-emerald-600" />
-            {otpStep ? 'Verify OTP' : 'Pharmacy Login'}
+            {loginStep === 'credentials' && <LogIn className="w-5 h-5 text-emerald-600" />}
+            {loginStep === 'phone' && <Smartphone className="w-5 h-5 text-emerald-600" />}
+            {loginStep === 'otp' && <Shield className="w-5 h-5 text-emerald-600" />}
+            {loginStep === 'credentials' && 'Pharmacy Login'}
+            {loginStep === 'phone' && 'Phone Verification'}
+            {loginStep === 'otp' && 'Verify OTP'}
           </DialogTitle>
           <DialogDescription>
-            {otpStep 
-              ? `Enter the 6-digit code sent to ${phoneMasked}`
-              : 'Sign in to access your pharmacy dashboard'
-            }
+            {loginStep === 'credentials' && 'Sign in to access your pharmacy dashboard'}
+            {loginStep === 'phone' && 'Enter your phone number to receive a verification code'}
+            {loginStep === 'otp' && `Enter the 6-digit code sent to ${phoneMasked}`}
           </DialogDescription>
         </DialogHeader>
         
-        {!otpStep ? (
+        {loginStep === 'credentials' && (
           <form onSubmit={handleLoginInit} className="space-y-4">
             <div className="space-y-2">
               <Label>Email</Label>
@@ -265,7 +308,35 @@ function LoginDialog({ open, onOpenChange, onSuccess }) {
               Continue
             </Button>
           </form>
-        ) : (
+        )}
+
+        {loginStep === 'phone' && (
+          <form onSubmit={handlePhoneSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label>Phone Number</Label>
+              <Input
+                type="tel"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value.replace(/[^\d+]/g, ''))}
+                placeholder="0241234567"
+                className="text-center text-lg"
+                autoFocus
+              />
+              <p className="text-xs text-slate-500 text-center">
+                Enter your Ghana phone number (e.g., 0241234567)
+              </p>
+            </div>
+            <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700" disabled={loading || phoneNumber.length < 9}>
+              {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />}
+              Send OTP
+            </Button>
+            <Button type="button" variant="ghost" className="w-full" onClick={handleBack}>
+              ← Back to Login
+            </Button>
+          </form>
+        )}
+
+        {loginStep === 'otp' && (
           <form onSubmit={handleOTPVerify} className="space-y-4">
             <div className="space-y-2">
               <Label>Enter OTP Code</Label>
@@ -292,7 +363,7 @@ function LoginDialog({ open, onOpenChange, onSuccess }) {
                 type="button" 
                 variant="ghost" 
                 size="sm"
-                onClick={() => setOtpStep(false)}
+                onClick={handleBack}
               >
                 ← Back
               </Button>
