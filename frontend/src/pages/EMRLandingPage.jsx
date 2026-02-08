@@ -318,6 +318,19 @@ export default function EMRLandingPage() {
                 <p className="text-center text-xs text-slate-500 mt-3">
                   Pharmacy Owners, Pharmacists, Dispensers
                 </p>
+                <Button 
+                  variant="link"
+                  className="w-full mt-2 text-blue-600 hover:text-blue-700"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate('/pharmacy');
+                  }}
+                  data-testid="register-pharmacy-btn"
+                >
+                  <Pill className="w-4 h-4 mr-2" />
+                  Register Your Pharmacy
+                  <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
               </CardContent>
             </Card>
           </div>
