@@ -114,6 +114,22 @@ export default function PlatformOwnerPortal() {
   const [pharmacyDetailsOpen, setPharmacyDetailsOpen] = useState(false);
   const [approvalNotes, setApprovalNotes] = useState('');
   
+  // Pharmacy Staff Management
+  const [pharmacyStaff, setPharmacyStaff] = useState([]);
+  const [selectedStaffMember, setSelectedStaffMember] = useState(null);
+  const [staffDetailsOpen, setStaffDetailsOpen] = useState(false);
+  const [staffActionOpen, setStaffActionOpen] = useState(false);
+  const [staffActionType, setStaffActionType] = useState('');
+  const [staffActionLoading, setStaffActionLoading] = useState(false);
+  const [editStaffOpen, setEditStaffOpen] = useState(false);
+  const [editStaffForm, setEditStaffForm] = useState({
+    first_name: '',
+    last_name: '',
+    email: '',
+    phone: '',
+    role: ''
+  });
+  
   // Forms
   const [newHospital, setNewHospital] = useState({
     name: '',
