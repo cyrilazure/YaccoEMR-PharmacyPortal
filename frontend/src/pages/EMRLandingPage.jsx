@@ -200,9 +200,9 @@ export default function EMRLandingPage() {
               Ghana Health Service Certified
             </Badge>
             
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-slate-900 mb-6 leading-tight">
-              Ghana's Integrated
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-emerald-500">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
+              <span className="text-emerald-700">Ghana's Integrated</span>
+              <span className="block text-emerald-600">
                 Healthcare Platform
               </span>
             </h1>
