@@ -30,13 +30,14 @@ const getRoleRedirect = (role) => {
 export default function LoginPage() {
   const { 
     user, login, requires2FA, complete2FALogin, cancel2FA,
-    requiresOTP, otpPhoneMasked, completeOTPLogin, resendOTP, cancelOTP
+    requiresOTP, requiresPhone, otpPhoneMasked, submitPhoneNumber, completeOTPLogin, resendOTP, cancelOTP
   } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [totpCode, setTotpCode] = useState('');
   const [otpCode, setOtpCode] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [resending, setResending] = useState(false);
 
   if (user) {
@@ -51,13 +52,33 @@ export default function LoginPage() {
       toast.success('Welcome back!');
       navigate(getRoleRedirect(userData.role));
     } catch (err) {
-      if (err.message === 'OTP_REQUIRED') {
+      if (err.message === 'PHONE_REQUIRED') {
+        toast.info('Please enter your phone number for verification');
+      } else if (err.message === 'OTP_REQUIRED') {
         toast.success('OTP sent to your phone');
       } else if (err.message === '2FA_REQUIRED') {
         toast.info('Please enter your 2FA code');
       } else {
         toast.error(err.response?.data?.detail || 'Login failed');
       }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePhoneSubmit = async (e) => {
+    e.preventDefault();
+    if (phoneNumber.length < 9) {
+      toast.error('Please enter a valid phone number');
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      await submitPhoneNumber(phoneNumber);
+      toast.success('OTP sent to your phone');
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to send OTP');
     } finally {
       setLoading(false);
     }
@@ -97,6 +118,7 @@ export default function LoginPage() {
   const handleCancelOTP = () => {
     cancelOTP();
     setOtpCode('');
+    setPhoneNumber('');
   };
 
   const handle2FASubmit = async (e) => {
