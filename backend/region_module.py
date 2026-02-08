@@ -20,7 +20,6 @@ import jwt
 
 # Import OTP module
 from otp_module import create_otp_session, verify_otp, mask_phone_number
-from sms_notification_module import send_otp_sms
 
 region_router = APIRouter(prefix="/api/regions", tags=["Regions & Discovery"])
 
