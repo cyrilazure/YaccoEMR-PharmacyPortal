@@ -2172,4 +2172,259 @@ def create_pharmacy_portal_router(db) -> APIRouter:
         
         return {"pharmacies": pharmacies, "total": len(pharmacies)}
     
+    # ============== PRESCRIPTION TRACKING (PATIENT-FACING) ==============
+    
+    @router.get("/public/prescription/track/{tracking_code}")
+    async def track_prescription_public(tracking_code: str):
+        """
+        Public endpoint for patients to track their prescription status.
+        Tracking code is the rx_number or a generated tracking code.
+        No authentication required.
+        """
+        # Look up prescription by rx_number or tracking code
+        prescription = await db["pharmacy_prescriptions"].find_one({
+            "$or": [
+                {"rx_number": tracking_code},
+                {"tracking_code": tracking_code},
+                {"id": tracking_code}
+            ]
+        }, {"_id": 0})
+        
+        if not prescription:
+            # Also check prescription_routing collection
+            prescription = await db["prescription_routing"].find_one({
+                "$or": [
+                    {"rx_number": tracking_code},
+                    {"tracking_code": tracking_code},
+                    {"id": tracking_code}
+                ]
+            }, {"_id": 0})
+        
+        if not prescription:
+            raise HTTPException(status_code=404, detail="Prescription not found. Please check your tracking code.")
+        
+        # Get pharmacy info
+        pharmacy = await db["pharmacies"].find_one(
+            {"id": prescription.get("pharmacy_id")},
+            {"_id": 0, "name": 1, "phone": 1, "address": 1, "town": 1, "region": 1}
+        )
+        
+        # Define status progression
+        status_flow = [
+            {"step": 1, "status": "sent", "label": "Sent to Pharmacy", "description": "Your prescription has been sent to the pharmacy"},
+            {"step": 2, "status": "received", "label": "Received", "description": "Pharmacy has received your prescription"},
+            {"step": 3, "status": "processing", "label": "Being Prepared", "description": "Your medications are being prepared"},
+            {"step": 4, "status": "ready", "label": "Ready for Pickup", "description": "Your prescription is ready!"},
+            {"step": 5, "status": "dispensed", "label": "Collected/Delivered", "description": "Your prescription has been collected or delivered"}
+        ]
+        
+        current_status = prescription.get("status", "sent")
+        current_step = 1
+        
+        for item in status_flow:
+            if item["status"] == current_status:
+                current_step = item["step"]
+                break
+        
+        # Build timeline with timestamps
+        timeline = []
+        status_timestamps = {
+            "sent": prescription.get("sent_at") or prescription.get("created_at"),
+            "received": prescription.get("received_at"),
+            "processing": prescription.get("accepted_at"),
+            "ready": prescription.get("ready_at"),
+            "dispensed": prescription.get("dispensed_at")
+        }
+        
+        for item in status_flow:
+            timestamp = status_timestamps.get(item["status"])
+            timeline.append({
+                "step": item["step"],
+                "status": item["status"],
+                "label": item["label"],
+                "description": item["description"],
+                "completed": item["step"] <= current_step,
+                "current": item["step"] == current_step,
+                "timestamp": timestamp
+            })
+        
+        return {
+            "tracking_code": tracking_code,
+            "rx_number": prescription.get("rx_number"),
+            "patient_name": prescription.get("patient_name"),
+            "current_status": current_status,
+            "current_step": current_step,
+            "total_steps": 5,
+            "timeline": timeline,
+            "pharmacy": pharmacy,
+            "medications": [
+                {
+                    "name": m.get("medication_name", m.get("name", "Unknown")),
+                    "dosage": m.get("dosage", ""),
+                    "quantity": m.get("quantity", 1)
+                }
+                for m in prescription.get("medications", [])
+            ],
+            "hospital_name": prescription.get("hospital_name"),
+            "prescriber_name": prescription.get("prescriber_name"),
+            "created_at": prescription.get("created_at"),
+            "estimated_ready_time": prescription.get("estimated_ready_time"),
+            "delivery_method": prescription.get("delivery_method", "pickup"),  # pickup, delivery
+            "delivery_address": prescription.get("delivery_address"),
+            "notes": prescription.get("dispensing_notes")
+        }
+    
+    @router.put("/prescription/{rx_id}/update-status")
+    async def update_prescription_status(
+        rx_id: str,
+        status: str = Body(...),
+        estimated_ready_time: Optional[str] = Body(None),
+        delivery_method: Optional[str] = Body(None),
+        delivery_address: Optional[str] = Body(None),
+        notes: Optional[str] = Body(None),
+        user: dict = Depends(require_roles(
+            PharmacyStaffRole.SUPERINTENDENT_PHARMACIST,
+            PharmacyStaffRole.PHARMACIST,
+            PharmacyStaffRole.PHARMACY_TECHNICIAN,
+            PharmacyStaffRole.PHARMACY_IT_ADMIN
+        ))
+    ):
+        """Update prescription status with optional delivery info"""
+        pharmacy_id = user.get("pharmacy_id")
+        now = datetime.now(timezone.utc).isoformat()
+        
+        valid_statuses = ["received", "processing", "ready", "out_for_delivery", "dispensed", "cancelled"]
+        if status not in valid_statuses:
+            raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: {valid_statuses}")
+        
+        # Update in pharmacy_prescriptions
+        update_data = {
+            "status": status,
+            f"{status}_at": now,
+            "updated_at": now,
+            "updated_by": user["id"]
+        }
+        
+        if estimated_ready_time:
+            update_data["estimated_ready_time"] = estimated_ready_time
+        if delivery_method:
+            update_data["delivery_method"] = delivery_method
+        if delivery_address:
+            update_data["delivery_address"] = delivery_address
+        if notes:
+            update_data["dispensing_notes"] = notes
+        
+        result = await db["pharmacy_prescriptions"].update_one(
+            {"id": rx_id, "pharmacy_id": pharmacy_id},
+            {"$set": update_data}
+        )
+        
+        # Also update prescription_routing if exists
+        await db["prescription_routing"].update_one(
+            {"id": rx_id},
+            {"$set": update_data}
+        )
+        
+        if result.modified_count == 0:
+            # Try updating by matching different ID fields
+            await db["pharmacy_prescriptions"].update_one(
+                {"prescription_id": rx_id, "pharmacy_id": pharmacy_id},
+                {"$set": update_data}
+            )
+        
+        # Send notification to patient if we have their contact
+        # (Future: SMS/push notification integration)
+        
+        # Audit log
+        await db["pharmacy_audit_logs"].insert_one({
+            "id": str(uuid.uuid4()),
+            "pharmacy_id": pharmacy_id,
+            "action": f"prescription_status_updated_{status}",
+            "entity_type": "prescription",
+            "entity_id": rx_id,
+            "details": {
+                "new_status": status,
+                "estimated_ready_time": estimated_ready_time,
+                "delivery_method": delivery_method
+            },
+            "performed_by": user["id"],
+            "performed_by_name": f"{user.get('first_name', '')} {user.get('last_name', '')}",
+            "timestamp": now
+        })
+        
+        return {
+            "message": f"Prescription status updated to {status}",
+            "status": status,
+            "updated_at": now
+        }
+    
+    @router.post("/prescription/{rx_id}/set-delivery")
+    async def set_prescription_delivery(
+        rx_id: str,
+        delivery_method: str = Body(...),  # pickup, delivery
+        delivery_address: Optional[str] = Body(None),
+        delivery_phone: Optional[str] = Body(None),
+        delivery_instructions: Optional[str] = Body(None),
+        user: dict = Depends(require_roles(
+            PharmacyStaffRole.SUPERINTENDENT_PHARMACIST,
+            PharmacyStaffRole.PHARMACIST,
+            PharmacyStaffRole.PHARMACY_TECHNICIAN,
+            PharmacyStaffRole.DELIVERY_STAFF,
+            PharmacyStaffRole.PHARMACY_IT_ADMIN
+        ))
+    ):
+        """Set delivery method for prescription"""
+        pharmacy_id = user.get("pharmacy_id")
+        now = datetime.now(timezone.utc).isoformat()
+        
+        if delivery_method not in ["pickup", "delivery"]:
+            raise HTTPException(status_code=400, detail="Delivery method must be 'pickup' or 'delivery'")
+        
+        if delivery_method == "delivery" and not delivery_address:
+            raise HTTPException(status_code=400, detail="Delivery address is required for delivery")
+        
+        update_data = {
+            "delivery_method": delivery_method,
+            "delivery_address": delivery_address,
+            "delivery_phone": delivery_phone,
+            "delivery_instructions": delivery_instructions,
+            "updated_at": now
+        }
+        
+        await db["pharmacy_prescriptions"].update_one(
+            {"id": rx_id, "pharmacy_id": pharmacy_id},
+            {"$set": update_data}
+        )
+        
+        return {"message": f"Delivery method set to {delivery_method}"}
+    
+    @router.get("/prescription/{rx_id}/tracking-qr")
+    async def get_prescription_tracking_qr(
+        rx_id: str,
+        user: dict = Depends(get_current_pharmacy_user)
+    ):
+        """Generate tracking QR code data for a prescription"""
+        pharmacy_id = user.get("pharmacy_id")
+        
+        prescription = await db["pharmacy_prescriptions"].find_one({
+            "id": rx_id,
+            "pharmacy_id": pharmacy_id
+        })
+        
+        if not prescription:
+            raise HTTPException(status_code=404, detail="Prescription not found")
+        
+        tracking_code = prescription.get("rx_number") or rx_id
+        
+        # Build tracking URL
+        tracking_url = f"/track/{tracking_code}"
+        
+        return {
+            "tracking_code": tracking_code,
+            "tracking_url": tracking_url,
+            "rx_number": prescription.get("rx_number"),
+            "patient_name": prescription.get("patient_name"),
+            "qr_data": tracking_url  # Frontend can use this with QR code library
+        }
+    
     return router
