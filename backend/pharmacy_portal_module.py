@@ -640,6 +640,269 @@ def create_pharmacy_portal_router(db) -> APIRouter:
         
         return {"message": f"Staff member {'activated' if is_active else 'deactivated'}"}
     
+    @router.get("/admin/staff/{staff_id}")
+    async def get_staff_details(
+        staff_id: str,
+        user: dict = Depends(require_roles(
+            PharmacyStaffRole.PHARMACY_IT_ADMIN,
+            PharmacyStaffRole.PHARMACY_OWNER,
+            PharmacyStaffRole.SUPERINTENDENT_PHARMACIST
+        ))
+    ):
+        """Get detailed information about a staff member"""
+        pharmacy_id = user.get("pharmacy_id")
+        
+        staff_member = await db["pharmacy_staff"].find_one(
+            {"id": staff_id, "pharmacy_id": pharmacy_id},
+            {"_id": 0, "password": 0}
+        )
+        
+        if not staff_member:
+            raise HTTPException(status_code=404, detail="Staff member not found")
+        
+        return {"staff": staff_member}
+    
+    @router.put("/admin/staff/{staff_id}/reset-password")
+    async def reset_staff_password(
+        staff_id: str,
+        user: dict = Depends(require_roles(
+            PharmacyStaffRole.PHARMACY_IT_ADMIN,
+            PharmacyStaffRole.PHARMACY_OWNER
+        ))
+    ):
+        """Reset staff member's password to default (last 8 digits of phone)"""
+        pharmacy_id = user.get("pharmacy_id")
+        
+        staff_member = await db["pharmacy_staff"].find_one(
+            {"id": staff_id, "pharmacy_id": pharmacy_id}
+        )
+        
+        if not staff_member:
+            raise HTTPException(status_code=404, detail="Staff member not found")
+        
+        # Default password is last 8 digits of phone
+        phone = staff_member.get("phone", "12345678")
+        new_password = phone.replace("+", "").replace(" ", "").replace("-", "")[-8:]
+        if len(new_password) < 6:
+            new_password = "temp1234"
+        
+        await db["pharmacy_staff"].update_one(
+            {"id": staff_id, "pharmacy_id": pharmacy_id},
+            {"$set": {
+                "password": hash_password(new_password),
+                "password_reset_required": True,
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+        
+        # Audit log
+        await db["pharmacy_audit_logs"].insert_one({
+            "id": str(uuid.uuid4()),
+            "pharmacy_id": pharmacy_id,
+            "action": "password_reset",
+            "entity_type": "staff",
+            "entity_id": staff_id,
+            "performed_by": user.get("id"),
+            "performed_by_name": f"{user.get('first_name', '')} {user.get('last_name', '')}",
+            "details": {"staff_name": f"{staff_member.get('first_name', '')} {staff_member.get('last_name', '')}"},
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        })
+        
+        return {"message": "Password reset successfully", "temp_password": new_password}
+    
+    @router.put("/admin/staff/{staff_id}/suspend")
+    async def suspend_staff(
+        staff_id: str,
+        reason: str = Body(..., embed=True),
+        user: dict = Depends(require_roles(
+            PharmacyStaffRole.PHARMACY_IT_ADMIN,
+            PharmacyStaffRole.PHARMACY_OWNER
+        ))
+    ):
+        """Suspend a staff member"""
+        pharmacy_id = user.get("pharmacy_id")
+        
+        result = await db["pharmacy_staff"].update_one(
+            {"id": staff_id, "pharmacy_id": pharmacy_id},
+            {"$set": {
+                "status": "suspended",
+                "is_active": False,
+                "suspension_reason": reason,
+                "suspended_at": datetime.now(timezone.utc).isoformat(),
+                "suspended_by": user.get("id"),
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+        
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="Staff member not found")
+        
+        # Audit log
+        await db["pharmacy_audit_logs"].insert_one({
+            "id": str(uuid.uuid4()),
+            "pharmacy_id": pharmacy_id,
+            "action": "staff_suspended",
+            "entity_type": "staff",
+            "entity_id": staff_id,
+            "performed_by": user.get("id"),
+            "performed_by_name": f"{user.get('first_name', '')} {user.get('last_name', '')}",
+            "details": {"reason": reason},
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        })
+        
+        return {"message": "Staff member suspended"}
+    
+    @router.put("/admin/staff/{staff_id}/unlock")
+    async def unlock_staff(
+        staff_id: str,
+        user: dict = Depends(require_roles(
+            PharmacyStaffRole.PHARMACY_IT_ADMIN,
+            PharmacyStaffRole.PHARMACY_OWNER
+        ))
+    ):
+        """Unlock/unsuspend a staff member"""
+        pharmacy_id = user.get("pharmacy_id")
+        
+        result = await db["pharmacy_staff"].update_one(
+            {"id": staff_id, "pharmacy_id": pharmacy_id},
+            {"$set": {
+                "status": "active",
+                "is_active": True,
+                "suspension_reason": None,
+                "suspended_at": None,
+                "suspended_by": None,
+                "unlocked_at": datetime.now(timezone.utc).isoformat(),
+                "unlocked_by": user.get("id"),
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+        
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="Staff member not found")
+        
+        return {"message": "Staff member unlocked"}
+    
+    @router.put("/admin/staff/{staff_id}/deactivate")
+    async def deactivate_staff(
+        staff_id: str,
+        user: dict = Depends(require_roles(
+            PharmacyStaffRole.PHARMACY_IT_ADMIN,
+            PharmacyStaffRole.PHARMACY_OWNER
+        ))
+    ):
+        """Deactivate a staff member (soft delete)"""
+        pharmacy_id = user.get("pharmacy_id")
+        
+        result = await db["pharmacy_staff"].update_one(
+            {"id": staff_id, "pharmacy_id": pharmacy_id},
+            {"$set": {
+                "status": "deactivated",
+                "is_active": False,
+                "deactivated_at": datetime.now(timezone.utc).isoformat(),
+                "deactivated_by": user.get("id"),
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+        
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="Staff member not found")
+        
+        return {"message": "Staff member deactivated"}
+    
+    @router.put("/admin/staff/{staff_id}/permissions")
+    async def update_staff_permissions(
+        staff_id: str,
+        permissions: List[str] = Body(..., embed=True),
+        user: dict = Depends(require_roles(
+            PharmacyStaffRole.PHARMACY_IT_ADMIN,
+            PharmacyStaffRole.PHARMACY_OWNER
+        ))
+    ):
+        """Update staff member's permissions"""
+        pharmacy_id = user.get("pharmacy_id")
+        
+        result = await db["pharmacy_staff"].update_one(
+            {"id": staff_id, "pharmacy_id": pharmacy_id},
+            {"$set": {
+                "permissions": permissions,
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+        
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="Staff member not found")
+        
+        return {"message": "Permissions updated", "permissions": permissions}
+    
+    @router.put("/admin/staff/{staff_id}/location")
+    async def assign_staff_location(
+        staff_id: str,
+        location: str = Body(..., embed=True),
+        user: dict = Depends(require_roles(
+            PharmacyStaffRole.PHARMACY_IT_ADMIN,
+            PharmacyStaffRole.PHARMACY_OWNER,
+            PharmacyStaffRole.SUPERINTENDENT_PHARMACIST
+        ))
+    ):
+        """Assign staff member to a specific location/branch"""
+        pharmacy_id = user.get("pharmacy_id")
+        
+        result = await db["pharmacy_staff"].update_one(
+            {"id": staff_id, "pharmacy_id": pharmacy_id},
+            {"$set": {
+                "assigned_location": location,
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+        
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="Staff member not found")
+        
+        return {"message": f"Staff assigned to {location}"}
+    
+    @router.delete("/admin/staff/{staff_id}")
+    async def delete_staff(
+        staff_id: str,
+        user: dict = Depends(require_roles(
+            PharmacyStaffRole.PHARMACY_IT_ADMIN,
+            PharmacyStaffRole.PHARMACY_OWNER
+        ))
+    ):
+        """Permanently delete a staff member"""
+        pharmacy_id = user.get("pharmacy_id")
+        
+        # Check if trying to delete self
+        if staff_id == user.get("id"):
+            raise HTTPException(status_code=400, detail="Cannot delete your own account")
+        
+        staff_member = await db["pharmacy_staff"].find_one(
+            {"id": staff_id, "pharmacy_id": pharmacy_id}
+        )
+        
+        if not staff_member:
+            raise HTTPException(status_code=404, detail="Staff member not found")
+        
+        # Delete the staff member
+        await db["pharmacy_staff"].delete_one({"id": staff_id, "pharmacy_id": pharmacy_id})
+        
+        # Audit log
+        await db["pharmacy_audit_logs"].insert_one({
+            "id": str(uuid.uuid4()),
+            "pharmacy_id": pharmacy_id,
+            "action": "staff_deleted",
+            "entity_type": "staff",
+            "entity_id": staff_id,
+            "performed_by": user.get("id"),
+            "performed_by_name": f"{user.get('first_name', '')} {user.get('last_name', '')}",
+            "details": {
+                "deleted_staff": f"{staff_member.get('first_name', '')} {staff_member.get('last_name', '')}",
+                "email": staff_member.get("email")
+            },
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        })
+        
+        return {"message": "Staff member deleted permanently"}
+    
     @router.get("/admin/departments")
     async def get_pharmacy_departments(user: dict = Depends(get_current_pharmacy_user)):
         """Get all pharmacy department types"""
