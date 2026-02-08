@@ -32,7 +32,8 @@ import {
   ChevronRight, ExternalLink, Eye, Copy, Check,
   AlertCircle, CheckCircle, Clock, Loader2,
   Hospital, UserCog, BarChart3, Trash2, AlertTriangle,
-  Ban, Power, XCircle, Pill, Store, FileText
+  Ban, Power, XCircle, Pill, Store, FileText,
+  Pencil, KeyRound, Unlock, User
 } from 'lucide-react';
 import api from '@/lib/api';
 
