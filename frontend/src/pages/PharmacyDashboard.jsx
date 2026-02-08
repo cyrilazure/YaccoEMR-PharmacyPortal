@@ -26,7 +26,9 @@ import {
   LogOut, BarChart3, AlertTriangle, Clock, Search, Plus,
   RefreshCw, Loader2, CheckCircle, XCircle, DollarSign,
   TrendingUp, Bell, Truck, Shield, Calendar, ArrowRight,
-  Download, Edit, Trash2, Eye, Database, Hash
+  Download, Edit, Trash2, Eye, Database, Hash, Send, History,
+  Building2, ArrowUpRight, ArrowDownLeft, CheckCircle2, XOctagon,
+  ClipboardList
 } from 'lucide-react';
 import api from '@/lib/api';
 
