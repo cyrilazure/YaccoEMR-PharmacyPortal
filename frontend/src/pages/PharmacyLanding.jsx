@@ -560,7 +560,7 @@ export default function PharmacyLanding() {
                 <Pill className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-slate-800">Yacco Pharm</h1>
+                <h1 className="text-xl font-bold text-emerald-700">Yacco Pharm</h1>
                 <p className="text-xs text-slate-500">Ghana National Pharmacy Network</p>
               </div>
             </div>
