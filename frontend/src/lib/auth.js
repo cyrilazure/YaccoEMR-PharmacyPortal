@@ -125,10 +125,87 @@ export const AuthProvider = ({ children }) => {
     setOtpSessionId(null);
     setOtpPhoneMasked('');
     setPendingCredentials(null);
+    setPendingHospitalId(null);
+    setPendingLocationId(null);
   };
 
   const cancelOTP = () => {
     resetOTPState();
+  };
+
+  // Region-based login with OTP (for EMR)
+  const regionLogin = async (email, password, hospitalId, locationId = null) => {
+    try {
+      const response = await regionAPI.locationLoginInit(email, password, hospitalId, locationId);
+      
+      if (response.data.phone_required) {
+        // Phone number is required - show phone input
+        setRequiresPhone(true);
+        setPendingUserId(response.data.user_id);
+        setPendingCredentials({ email, password });
+        setPendingHospitalId(hospitalId);
+        setPendingLocationId(locationId);
+        return { phone_required: true };
+      } else if (response.data.otp_required) {
+        // OTP is required, show OTP input
+        setRequiresOTP(true);
+        setOtpSessionId(response.data.otp_session_id);
+        setOtpPhoneMasked(response.data.phone_masked);
+        setPendingCredentials({ email, password });
+        setPendingHospitalId(hospitalId);
+        setPendingLocationId(locationId);
+        return { otp_required: true };
+      } else {
+        // Direct login (shouldn't happen)
+        const { token, user: userData } = response.data;
+        localStorage.setItem('yacco_token', token);
+        localStorage.setItem('yacco_user', JSON.stringify(userData));
+        setUser(userData);
+        resetOTPState();
+        return userData;
+      }
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  // Submit phone for region login
+  const submitPhoneForRegion = async (phoneNumber) => {
+    if (!pendingUserId || !pendingHospitalId) {
+      throw new Error('No pending login');
+    }
+    
+    const response = await regionAPI.locationLoginSubmitPhone(
+      pendingUserId, 
+      phoneNumber, 
+      pendingHospitalId, 
+      pendingLocationId
+    );
+    
+    setRequiresPhone(false);
+    setRequiresOTP(true);
+    setOtpSessionId(response.data.otp_session_id);
+    setOtpPhoneMasked(response.data.phone_masked);
+  };
+
+  // Complete OTP login for region
+  const completeRegionOTPLogin = async (otpCode) => {
+    if (!otpSessionId) {
+      throw new Error('No OTP session');
+    }
+    
+    const response = await regionAPI.locationLoginVerify(otpSessionId, otpCode);
+    const { token, user: userData, hospital, location, redirect_to } = response.data;
+    
+    localStorage.setItem('yacco_token', token);
+    localStorage.setItem('yacco_user', JSON.stringify(userData));
+    if (hospital) localStorage.setItem('yacco_hospital', JSON.stringify(hospital));
+    if (location) localStorage.setItem('yacco_location', JSON.stringify(location));
+    
+    setUser(userData);
+    resetOTPState();
+    
+    return { user: userData, redirect_to };
   };
 
   const complete2FALogin = async (totpCode) => {
