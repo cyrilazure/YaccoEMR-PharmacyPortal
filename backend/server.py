@@ -375,10 +375,10 @@ class UserLoginWith2FA(BaseModel):
     otp_session_id: Optional[str] = None
     otp_code: Optional[str] = None
 
-# Step 1: Initial login - validate credentials, send OTP
+# Step 1: Initial login - validate credentials, check phone, send OTP
 @api_router.post("/auth/login/init")
 async def login_init(credentials: UserLogin):
-    """Step 1: Validate credentials and send OTP"""
+    """Step 1: Validate credentials and send OTP (or request phone if missing)"""
     from otp_module import create_otp_session
     
     user = await db.users.find_one({"email": credentials.email}, {"_id": 0})
@@ -395,23 +395,12 @@ async def login_init(credentials: UserLogin):
     phone_number = user.get("phone") or user.get("phone_number")
     
     if not phone_number:
-        # If no phone, skip OTP and return token directly (legacy support)
-        token = create_token(user["id"], user["role"])
+        # Phone number is required - ask user to provide one
         return {
-            "otp_required": False,
-            "token": token,
-            "user": {
-                "id": user["id"],
-                "email": user["email"],
-                "first_name": user["first_name"],
-                "last_name": user["last_name"],
-                "role": user["role"],
-                "department": user.get("department"),
-                "specialty": user.get("specialty"),
-                "organization_id": user.get("organization_id"),
-                "created_at": user["created_at"],
-                "is_active": user["is_active"]
-            }
+            "otp_required": True,
+            "phone_required": True,
+            "user_id": user["id"],
+            "message": "Please enter your phone number to receive OTP"
         }
     
     # Create OTP session and send SMS
@@ -425,11 +414,52 @@ async def login_init(credentials: UserLogin):
     
     return {
         "otp_required": True,
+        "phone_required": False,
         "otp_session_id": otp_result["session_id"],
         "phone_masked": otp_result["phone_masked"],
         "expires_at": otp_result["expires_at"],
         "sms_sent": otp_result["sms_sent"],
         "message": "OTP sent to your registered phone number"
+    }
+
+
+# Step 1b: Submit phone number and send OTP
+@api_router.post("/auth/login/submit-phone")
+async def login_submit_phone(user_id: str = Body(...), phone_number: str = Body(...)):
+    """Submit phone number for user without one and send OTP"""
+    from otp_module import create_otp_session
+    
+    # Validate phone format (Ghana numbers)
+    clean_phone = ''.join(filter(str.isdigit, phone_number))
+    if len(clean_phone) < 9:
+        raise HTTPException(status_code=400, detail="Invalid phone number format")
+    
+    # Get user
+    user = await db.users.find_one({"id": user_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Update user's phone number
+    await db.users.update_one(
+        {"id": user_id},
+        {"$set": {"phone": phone_number, "phone_updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    # Create OTP session and send SMS
+    otp_result = await create_otp_session(
+        db,
+        user_id=user["id"],
+        phone_number=phone_number,
+        platform="emr",
+        user_name=f"{user.get('first_name', '')} {user.get('last_name', '')}"
+    )
+    
+    return {
+        "otp_session_id": otp_result["session_id"],
+        "phone_masked": otp_result["phone_masked"],
+        "expires_at": otp_result["expires_at"],
+        "sms_sent": otp_result["sms_sent"],
+        "message": "OTP sent to your phone number"
     }
 
 
