@@ -58,8 +58,8 @@ const pharmacyAPI = {
 function RegionCard({ region, count, onClick, selected }) {
   return (
     <Card 
-      className={`cursor-pointer transition-all hover:shadow-lg hover:border-blue-300 ${
-        selected ? 'ring-2 ring-blue-500 bg-blue-50' : ''
+      className={`cursor-pointer transition-all hover:shadow-lg hover:border-emerald-300 ${
+        selected ? 'ring-2 ring-emerald-500 bg-emerald-50' : ''
       }`}
       onClick={onClick}
       data-testid={`region-card-${region.name.toLowerCase().replace(/ /g, '-')}`}
@@ -70,7 +70,7 @@ function RegionCard({ region, count, onClick, selected }) {
             <h3 className="font-semibold text-slate-800">{region.name}</h3>
             <p className="text-xs text-slate-500">{region.capital}</p>
           </div>
-          <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+          <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">
             {count} pharmacies
           </Badge>
         </div>
