@@ -585,6 +585,57 @@ GET  /api/billing-shifts/audit-logs      - Billing audit logs
 - [x] **Responsive Design**: Mobile menu toggle, stacked cards on small screens
 - [x] **Footer**: Portal links, legal links, iOS/Android coming soon badges
 
+### Pharmacy Module - Phase 2: Drug Database & Full Dashboard (February 7, 2026)
+- [x] **Global Medication Database** (`medication_database.py`):
+  - 200+ medications from Ghana and worldwide
+  - Categories: Analgesics, NSAIDs, Antibiotics (Penicillins, Cephalosporins, Macrolides, Fluoroquinolones), Antimalarials, Antihypertensives, Antidiabetics, GI meds, Respiratory, Antihistamines, Vitamins & Supplements, Dermatological, Ophthalmic, Psychiatric, Cardiovascular, Antivirals/ARVs, Antifungals, Antiparasitics, Antitubercular, Hormones & Contraceptives
+  - Each medication includes: generic_name, brand_names[], category, dosage_forms[], strengths[]
+- [x] **Drug Seeding API** (`POST /api/pharmacy-portal/drugs/seed`):
+  - Import drugs from global database by category
+  - Automatic category mapping (POM, OTC, CD, P, GSL)
+  - Tracks added vs skipped (existing) drugs
+- [x] **Add Drug Dialog** (PharmacyDashboard.jsx):
+  - Search global medication database
+  - Auto-fill drug details from search selection
+  - Manual entry with dosage form and category selection
+  - Set pricing and reorder levels
+- [x] **Receive Stock Dialog**:
+  - Select drug from catalog
+  - Enter batch number, quantity, cost/selling price, expiry date, supplier
+  - Inventory batch tracking (FIFO for dispensing)
+- [x] **New Sale Dialog**:
+  - Sale types: Retail, Wholesale, Hospital Supply, NHIS Covered
+  - Payment methods: Cash, Mobile Money, Card, Credit
+  - Multi-item sales with quantity, price, discount per item
+  - Auto-deduct from inventory (FIFO)
+- [x] **Add Staff Dialog**:
+  - Roles: Superintendent Pharmacist, Pharmacist, Pharmacy Technician, Assistant, Cashier, Inventory Manager, Delivery Staff
+  - Departments: Dispensary, Inventory, Procurement, Sales, Delivery, Administration, Compounding, Clinical Services
+  - Auto-generate temp password from phone number
+- [x] **Seed Drugs Dialog**:
+  - Category group selection (Pain & Fever, Antibiotics, Antimalarials, Cardiovascular, Diabetes, GI, Respiratory, Vitamins)
+  - Batch import functionality
+  - Warning about prices needing manual update
+- [x] **Dashboard Enhancements**:
+  - Stats: Today's Sales (count + revenue), Pending Rx, Low Stock Count, Total Drugs
+  - Inventory Alerts: Low Stock, Expiring Soon (90 days), Expired
+  - Quick Actions: New Sale, View Prescriptions, Receive Stock, Import Drugs
+- [x] **Drugs Tab Enhancements**:
+  - Search bar for filtering drugs
+  - Empty state with "Import from Global Database" CTA
+  - Drug table with stock status badges (red/orange/green)
+- [x] **Inventory Tab**:
+  - Reorder suggestions with priority (high/medium)
+  - Inventory batches with batch#, quantity, cost, sell price, expiry
+- [x] **Backend Endpoints Added**:
+  - `GET /api/pharmacy-portal/medications/search` - Search global database
+  - `GET /api/pharmacy-portal/medications/categories` - Get medication categories
+  - `POST /api/pharmacy-portal/drugs/seed` - Seed drugs from global database
+  - `PUT /api/pharmacy-portal/drugs/{id}` - Update drug pricing/reorder level
+  - `POST /api/pharmacy-portal/drugs/batch-update-prices` - Batch price updates
+  - `PUT /api/pharmacy-portal/admin/pharmacies/{id}/approve` - Approve/reject pharmacy
+  - `GET /api/pharmacy-portal/admin/pharmacies/pending` - List pending pharmacies
+
 ## Prioritized Backlog
 
 ### P0 (Critical)
