@@ -160,13 +160,37 @@ export default function SuperAdminDashboard() {
     try {
       if (action === 'approve') {
         await organizationAPI.approve(orgId);
-        toast.success('Organization approved');
+        toast.success('Hospital approved');
       } else if (action === 'suspend') {
         await organizationAPI.suspend(orgId, 'Suspended by super admin');
-        toast.success('Organization suspended');
+        toast.success('Hospital suspended');
       } else if (action === 'reactivate') {
         await organizationAPI.reactivate(orgId);
-        toast.success('Organization reactivated');
+        toast.success('Hospital reactivated');
+      } else if (action === 'reject') {
+        await organizationAPI.reject(orgId, { reason: 'Rejected by super admin' });
+        toast.success('Hospital rejected');
+      }
+      fetchData();
+    } catch (err) {
+      toast.error('Action failed');
+    }
+  };
+
+  const handlePharmacyAction = async (pharmacyId, action) => {
+    try {
+      if (action === 'approve') {
+        await pharmacyAdminAPI.approve(pharmacyId, 'Approved by super admin');
+        toast.success('Pharmacy approved');
+      } else if (action === 'reject') {
+        await pharmacyAdminAPI.reject(pharmacyId, 'Rejected by super admin');
+        toast.success('Pharmacy rejected');
+      } else if (action === 'suspend') {
+        await pharmacyAdminAPI.suspend(pharmacyId, 'Suspended by super admin');
+        toast.success('Pharmacy suspended');
+      } else if (action === 'reactivate') {
+        await pharmacyAdminAPI.reactivate(pharmacyId);
+        toast.success('Pharmacy reactivated');
       }
       fetchData();
     } catch (err) {
