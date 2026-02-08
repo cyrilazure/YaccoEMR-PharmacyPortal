@@ -202,7 +202,7 @@ export default function EMRLandingPage() {
             
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-slate-900 mb-6 leading-tight">
               Ghana's Integrated
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-blue-600">
+              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-emerald-500">
                 Healthcare Platform
               </span>
             </h1>
