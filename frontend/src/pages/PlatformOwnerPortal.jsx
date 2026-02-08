@@ -407,33 +407,33 @@ export default function PlatformOwnerPortal() {
     }
   };
 
-  // Pharmacy Staff Action Handlers
+  // Pharmacy Staff Action Handlers (using Platform Owner endpoints)
   const handleStaffAction = async (action, staffId) => {
     setStaffActionLoading(true);
     try {
       switch (action) {
         case 'suspend':
-          await api.put(`/pharmacy-portal/admin/staff/${staffId}/suspend`);
+          await api.put(`/pharmacy-portal/platform-owner/staff/${staffId}/suspend`);
           toast.success('Staff account suspended');
           break;
         case 'unlock':
-          await api.put(`/pharmacy-portal/admin/staff/${staffId}/unlock`);
+          await api.put(`/pharmacy-portal/platform-owner/staff/${staffId}/unlock`);
           toast.success('Staff account unlocked');
           break;
         case 'activate':
-          await api.put(`/pharmacy-portal/admin/staff/${staffId}/activate`);
+          await api.put(`/pharmacy-portal/platform-owner/staff/${staffId}/activate`);
           toast.success('Staff account activated');
           break;
         case 'deactivate':
-          await api.put(`/pharmacy-portal/admin/staff/${staffId}/deactivate`);
+          await api.put(`/pharmacy-portal/platform-owner/staff/${staffId}/deactivate`);
           toast.success('Staff account deactivated');
           break;
         case 'reset-password':
-          const resetResp = await api.put(`/pharmacy-portal/admin/staff/${staffId}/reset-password`);
+          const resetResp = await api.put(`/pharmacy-portal/platform-owner/staff/${staffId}/reset-password`);
           toast.success(`Password reset! Temporary password: ${resetResp.data.temp_password}`);
           break;
         case 'delete':
-          await api.delete(`/pharmacy-portal/admin/staff/${staffId}`);
+          await api.delete(`/pharmacy-portal/platform-owner/staff/${staffId}`);
           toast.success('Staff account deleted');
           break;
         default:
