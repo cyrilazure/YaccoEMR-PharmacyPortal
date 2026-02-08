@@ -194,29 +194,21 @@ export default function RegionHospitalLogin() {
     
     setLoading(true);
     try {
-      const response = await regionAPI.locationLogin(
+      // Use new OTP flow
+      const response = await regionAPI.locationLoginInit(
         loginForm.email,
         loginForm.password,
         selectedHospital.id,
-        selectedLocation?.id || null,
-        null
+        selectedLocation?.id || null
       );
       
-      const { token, user: userData, redirect_to, hospital, location } = response.data;
-      
-      // Store auth data
-      localStorage.setItem('yacco_token', token);
-      localStorage.setItem('yacco_user', JSON.stringify(userData));
-      localStorage.setItem('yacco_hospital', JSON.stringify(hospital));
-      if (location) {
-        localStorage.setItem('yacco_location', JSON.stringify(location));
+      if (response.data.phone_required) {
+        // Phone number is required - auth context will handle the dialog
+        toast.info('Please enter your phone number for verification');
+      } else if (response.data.otp_required) {
+        // OTP is required - auth context will handle the dialog
+        toast.success('OTP sent to your phone');
       }
-      
-      toast.success(`Welcome to ${hospital.name}!`);
-      
-      // Use role-based redirect
-      const redirectPath = ROLE_REDIRECTS[userData.role] || redirect_to || '/dashboard';
-      window.location.href = redirectPath;
       
     } catch (error) {
       if (error.response?.data?.detail === '2FA_REQUIRED') {
@@ -229,6 +221,66 @@ export default function RegionHospitalLogin() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePhoneSubmit = async (e) => {
+    e.preventDefault();
+    if (phoneNumber.length < 9) {
+      toast.error('Please enter a valid phone number');
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      await submitPhoneNumber(phoneNumber);
+      toast.success('OTP sent to your phone');
+    } catch (err) {
+      const detail = err.response?.data?.detail;
+      const errorMessage = typeof detail === 'string' ? detail : 'Failed to send OTP';
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOTPSubmit = async (e) => {
+    e.preventDefault();
+    if (otpCode.length !== 6) {
+      toast.error('Please enter a valid 6-digit OTP');
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const userData = await completeOTPLogin(otpCode);
+      toast.success('Welcome back!');
+      const redirectPath = ROLE_REDIRECTS[userData.role] || '/dashboard';
+      navigate(redirectPath);
+    } catch (err) {
+      const detail = err.response?.data?.detail;
+      const errorMessage = typeof detail === 'string' ? detail : (err.message || 'Invalid OTP');
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendOTP = async () => {
+    setResending(true);
+    try {
+      await resendOTP();
+      toast.success('OTP resent successfully');
+    } catch (err) {
+      toast.error('Failed to resend OTP');
+    } finally {
+      setResending(false);
+    }
+  };
+
+  const handleCancelOTP = () => {
+    cancelOTP();
+    setOtpCode('');
+    setPhoneNumber('');
   };
 
   const handle2FASubmit = async (e) => {
