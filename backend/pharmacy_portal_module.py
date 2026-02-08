@@ -1716,7 +1716,7 @@ def create_pharmacy_portal_router(db) -> APIRouter:
         return {"message": "Prescription ready for pickup", "status": "ready"}
     
     @router.put("/eprescription/{rx_id}/dispense")
-    async def dispense_prescription(
+    async def dispense_eprescription(
         rx_id: str,
         dispensing_notes: Optional[str] = Body(None),
         user: dict = Depends(require_roles(
