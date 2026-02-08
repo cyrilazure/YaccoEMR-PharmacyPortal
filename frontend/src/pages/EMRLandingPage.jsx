@@ -443,7 +443,7 @@ export default function EMRLandingPage() {
             {/* Brand */}
             <div className="md:col-span-2">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center">
                   <Activity className="w-5 h-5" />
                 </div>
                 <span className="text-xl font-bold">Yacco Health</span>
