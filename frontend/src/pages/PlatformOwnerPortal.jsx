@@ -236,6 +236,34 @@ export default function PlatformOwnerPortal() {
     }
   };
 
+  // Approve pending hospital registration
+  const handleApproveHospital = async (hospitalId) => {
+    try {
+      setSaving(true);
+      await organizationAPI.approve(hospitalId);
+      toast.success('Hospital approved successfully!');
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to approve hospital');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Reject pending hospital registration
+  const handleRejectHospital = async (hospitalId) => {
+    try {
+      setSaving(true);
+      await organizationAPI.reject(hospitalId, { reason: 'Rejected by Platform Owner' });
+      toast.success('Hospital registration rejected');
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to reject hospital');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   // Create hospital staff
   const handleCreateStaff = async (e) => {
     e.preventDefault();
