@@ -1007,6 +1007,118 @@ export default function PharmacyDashboard() {
   const [networkPharmacies, setNetworkPharmacies] = useState([]);
   const [showSupplyRequest, setShowSupplyRequest] = useState(false);
 
+  // Real-time Notifications
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [wsConnected, setWsConnected] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const wsRef = useRef(null);
+  const notificationSoundRef = useRef(null);
+
+  // Initialize notification sound
+  useEffect(() => {
+    // Create audio element for notification sound
+    notificationSoundRef.current = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2teleToLZ7LO3Kx7ZDgAX6K7sntAF26M3e/htoaCSUhBdJXByblgXkxQc4ygs52UiXZkR0A8VYKfvLKdjH5xX0ZFPVx2pauZkIV5a2k8OVVwiJOgnZqFcl9SQkdhf5Wklox8bGVQPT5PcICXoZiNfnJpW0lUWX+QnZmQgXlsYlRHTFZ2kamXkIN3a2JXRUlSaoWYm5OIe3JmXE9RWHF+jJKOhHpya2JaWVlrf4qQi4V8dHBqZGJlbXmDiIqGgHt2cW1ra25zeYKGhoOAe3h0cG5ub3J4fYOGhoN/fHl1c3Fyc3R3fIGEhIKAfnp3dXR0dXZ4e36BgoGAfn15d3Z1dXZ3eXt+gIGAgH99e3l4d3Z3d3l7fX9/f359fHt5eHd3d3h5ent9fn5+fX18e3p5eHh4eXl6e3x9fX19fHx7enp5eXl5enp7fHx9fX19fHx7e3p6enp6ent7fHx9fX19fXx8fHt7e3t7e3t8fHx9fX19fX19fHx8fHx8fHx8fH19fX19fX19fX19fHx8fHx8fHx8fH19fX19fX19');
+  }, []);
+
+  // Play notification sound
+  const playNotificationSound = useCallback(() => {
+    if (soundEnabled && notificationSoundRef.current) {
+      notificationSoundRef.current.play().catch(() => {});
+    }
+  }, [soundEnabled]);
+
+  // WebSocket connection for real-time notifications
+  useEffect(() => {
+    if (!pharmacy?.id) return;
+
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${wsProtocol}//${API_BASE.replace(/^https?:\/\//, '').replace(/\/api$/, '')}/api/pharmacy-ws/connect/${pharmacy.id}`;
+    
+    console.log('[WS] Connecting to:', wsUrl);
+    
+    const connectWebSocket = () => {
+      try {
+        wsRef.current = new WebSocket(wsUrl);
+        
+        wsRef.current.onopen = () => {
+          console.log('[WS] Connected');
+          setWsConnected(true);
+        };
+        
+        wsRef.current.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            console.log('[WS] Message:', data);
+            
+            if (data.type === 'connected') {
+              console.log('[WS] Connection confirmed');
+            } else if (data.type === 'notification') {
+              // Handle incoming notification
+              const notification = data.notification;
+              
+              setNotifications(prev => [notification, ...prev.slice(0, 49)]);
+              setUnreadCount(prev => prev + 1);
+              
+              // Play sound if enabled
+              if (notification.sound) {
+                playNotificationSound();
+              }
+              
+              // Show toast notification
+              toast.success(notification.title, {
+                description: notification.message,
+                duration: 8000,
+                action: notification.data?.prescription_id ? {
+                  label: 'View',
+                  onClick: () => setActiveTab('prescriptions')
+                } : undefined
+              });
+              
+              // Refresh prescriptions if it's a new prescription
+              if (notification.type === 'prescription_received') {
+                fetchData();
+              }
+            }
+          } catch (e) {
+            console.error('[WS] Parse error:', e);
+          }
+        };
+        
+        wsRef.current.onclose = () => {
+          console.log('[WS] Disconnected');
+          setWsConnected(false);
+          // Attempt to reconnect after 5 seconds
+          setTimeout(connectWebSocket, 5000);
+        };
+        
+        wsRef.current.onerror = (error) => {
+          console.error('[WS] Error:', error);
+          setWsConnected(false);
+        };
+      } catch (e) {
+        console.error('[WS] Connection failed:', e);
+        setTimeout(connectWebSocket, 5000);
+      }
+    };
+    
+    connectWebSocket();
+    
+    // Ping to keep connection alive
+    const pingInterval = setInterval(() => {
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({ type: 'ping' }));
+      }
+    }, 30000);
+    
+    return () => {
+      clearInterval(pingInterval);
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
+    };
+  }, [pharmacy?.id, playNotificationSound]);
+
   // Check auth on mount
   useEffect(() => {
     const token = localStorage.getItem('pharmacy_token');
