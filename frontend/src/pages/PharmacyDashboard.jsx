@@ -2343,6 +2343,231 @@ export default function PharmacyDashboard() {
         onOpenChange={setShowSeedDrugs}
         onSuccess={fetchData}
       />
+
+      {/* Staff Details Dialog */}
+      <Dialog open={showStaffDetails} onOpenChange={setShowStaffDetails}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5 text-emerald-600" />
+              Staff Details
+            </DialogTitle>
+          </DialogHeader>
+          {selectedStaff && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-slate-500 text-xs">Full Name</Label>
+                  <p className="font-medium">{selectedStaff.first_name} {selectedStaff.last_name}</p>
+                </div>
+                <div>
+                  <Label className="text-slate-500 text-xs">Email</Label>
+                  <p className="font-medium">{selectedStaff.email}</p>
+                </div>
+                <div>
+                  <Label className="text-slate-500 text-xs">Phone</Label>
+                  <p className="font-medium">{selectedStaff.phone || '-'}</p>
+                </div>
+                <div>
+                  <Label className="text-slate-500 text-xs">Role</Label>
+                  <Badge variant="outline">{selectedStaff.role?.replace(/_/g, ' ')}</Badge>
+                </div>
+                <div>
+                  <Label className="text-slate-500 text-xs">Department</Label>
+                  <p className="font-medium">{selectedStaff.department?.replace(/_/g, ' ') || '-'}</p>
+                </div>
+                <div>
+                  <Label className="text-slate-500 text-xs">Status</Label>
+                  <Badge className={
+                    selectedStaff.status === 'suspended' ? 'bg-orange-100 text-orange-700' :
+                    selectedStaff.status === 'deactivated' ? 'bg-red-100 text-red-700' :
+                    selectedStaff.is_active ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-700'
+                  }>
+                    {selectedStaff.status === 'suspended' ? 'Suspended' :
+                     selectedStaff.status === 'deactivated' ? 'Deactivated' :
+                     selectedStaff.is_active ? 'Active' : 'Inactive'}
+                  </Badge>
+                </div>
+                <div>
+                  <Label className="text-slate-500 text-xs">Assigned Location</Label>
+                  <p className="font-medium">{selectedStaff.assigned_location || 'Not assigned'}</p>
+                </div>
+                <div>
+                  <Label className="text-slate-500 text-xs">Created</Label>
+                  <p className="font-medium text-sm">{selectedStaff.created_at ? new Date(selectedStaff.created_at).toLocaleDateString() : '-'}</p>
+                </div>
+              </div>
+              {selectedStaff.permissions && selectedStaff.permissions.length > 0 && (
+                <div>
+                  <Label className="text-slate-500 text-xs">Permissions</Label>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {selectedStaff.permissions.map((perm) => (
+                      <Badge key={perm} variant="secondary" className="text-xs">{perm.replace(/_/g, ' ')}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {selectedStaff.suspension_reason && (
+                <div className="p-3 bg-orange-50 rounded-lg">
+                  <Label className="text-orange-700 text-xs">Suspension Reason</Label>
+                  <p className="text-orange-800">{selectedStaff.suspension_reason}</p>
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowStaffDetails(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Suspend Staff Dialog */}
+      <Dialog open={showSuspendDialog} onOpenChange={setShowSuspendDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-orange-600">
+              <Ban className="w-5 h-5" />
+              Suspend Staff Member
+            </DialogTitle>
+            <DialogDescription>
+              Suspending {selectedStaff?.first_name} {selectedStaff?.last_name} will prevent them from accessing the system.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Reason for Suspension *</Label>
+              <Textarea
+                placeholder="Enter the reason for suspension..."
+                value={suspendReason}
+                onChange={(e) => setSuspendReason(e.target.value)}
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSuspendDialog(false)}>Cancel</Button>
+            <Button 
+              onClick={handleSuspendStaff} 
+              disabled={staffActionLoading}
+              className="bg-orange-600 hover:bg-orange-700"
+            >
+              {staffActionLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Suspend Staff
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Manage Permissions Dialog */}
+      <Dialog open={showPermissionsDialog} onOpenChange={setShowPermissionsDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5 text-emerald-600" />
+              Manage Permissions
+            </DialogTitle>
+            <DialogDescription>
+              Set permissions for {selectedStaff?.first_name} {selectedStaff?.last_name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-2 max-h-[300px] overflow-y-auto">
+              {availablePermissions.map((perm) => (
+                <label key={perm} className="flex items-center gap-2 p-2 rounded hover:bg-slate-50 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={staffPermissions.includes(perm)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setStaffPermissions([...staffPermissions, perm]);
+                      } else {
+                        setStaffPermissions(staffPermissions.filter(p => p !== perm));
+                      }
+                    }}
+                    className="rounded border-slate-300"
+                  />
+                  <span className="text-sm">{perm.replace(/_/g, ' ')}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowPermissionsDialog(false)}>Cancel</Button>
+            <Button 
+              onClick={handleUpdatePermissions} 
+              disabled={staffActionLoading}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              {staffActionLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Save Permissions
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Assign Location Dialog */}
+      <Dialog open={showLocationDialog} onOpenChange={setShowLocationDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MapPin className="w-5 h-5 text-emerald-600" />
+              Assign Location
+            </DialogTitle>
+            <DialogDescription>
+              Assign {selectedStaff?.first_name} {selectedStaff?.last_name} to a specific branch or location
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Location / Branch *</Label>
+              <Input
+                placeholder="e.g., Main Branch, Accra Mall Branch"
+                value={staffLocation}
+                onChange={(e) => setStaffLocation(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowLocationDialog(false)}>Cancel</Button>
+            <Button 
+              onClick={handleAssignLocation} 
+              disabled={staffActionLoading}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              {staffActionLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Assign Location
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Staff Confirmation */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-red-600">
+              <Trash2 className="w-5 h-5" />
+              Delete Staff Member?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete{' '}
+              <span className="font-semibold">{selectedStaff?.first_name} {selectedStaff?.last_name}</span>'s 
+              account and remove all their data from the system.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteStaff}
+              disabled={staffActionLoading}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {staffActionLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Delete Permanently
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
