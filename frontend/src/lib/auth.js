@@ -276,7 +276,11 @@ export const AuthProvider = ({ children }) => {
       submitPhoneNumber,
       completeOTPLogin,
       resendOTP,
-      cancelOTP
+      cancelOTP,
+      // Region login methods
+      regionLogin,
+      submitPhoneForRegion,
+      completeRegionOTPLogin
     }}>
       {children}
     </AuthContext.Provider>
