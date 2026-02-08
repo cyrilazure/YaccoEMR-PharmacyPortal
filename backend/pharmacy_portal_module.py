@@ -1451,7 +1451,7 @@ def create_pharmacy_portal_router(db) -> APIRouter:
         })
         
         return {
-            "message": f"Drug catalog seeded successfully",
+            "message": "Drug catalog seeded successfully",
             "added": added_count,
             "skipped": skipped_count,
             "total_in_catalog": await db["pharmacy_drugs"].count_documents({"pharmacy_id": pharmacy_id})
