@@ -497,8 +497,94 @@ function ReceiveStockDialog({ open, onOpenChange, drugs, onSuccess }) {
   );
 }
 
+// Credentials Dialog Component - Shows email and password after creation/reset
+function CredentialsDialog({ open, onOpenChange, credentials, staffName }) {
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    toast.success('Copied to clipboard!');
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-emerald-600">
+            <CheckCircle className="w-5 h-5" />
+            Staff Credentials
+          </DialogTitle>
+          <DialogDescription>
+            {staffName ? `Credentials for ${staffName}` : 'Please save these credentials securely'}
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="space-y-4 py-4">
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+            <div className="flex items-center gap-2 text-amber-700 text-sm font-medium mb-2">
+              <AlertCircle className="w-4 h-4" />
+              Important: Save these credentials now!
+            </div>
+            <p className="text-amber-600 text-xs">
+              This is the only time the password will be displayed. Please share it securely with the staff member.
+            </p>
+          </div>
+          
+          {credentials?.email && (
+            <div className="space-y-1">
+              <Label className="text-slate-600 text-sm">Email</Label>
+              <div className="flex items-center gap-2">
+                <Input 
+                  value={credentials.email} 
+                  readOnly 
+                  className="bg-slate-50 font-mono"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => copyToClipboard(credentials.email)}
+                >
+                  <Copy className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+          
+          <div className="space-y-1">
+            <Label className="text-slate-600 text-sm">Temporary Password</Label>
+            <div className="flex items-center gap-2">
+              <Input 
+                value={credentials?.password || ''} 
+                readOnly 
+                className="bg-emerald-50 border-emerald-200 font-mono text-lg font-bold text-emerald-700"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => copyToClipboard(credentials?.password || '')}
+              >
+                <Copy className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+          
+          <p className="text-xs text-slate-500 mt-2">
+            The staff member will be required to change this password on first login.
+          </p>
+        </div>
+        
+        <DialogFooter>
+          <Button onClick={() => onOpenChange(false)} className="bg-emerald-600 hover:bg-emerald-700">
+            Done - I've Saved the Credentials
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // Add Staff Dialog Component
-function AddStaffDialog({ open, onOpenChange, onSuccess }) {
+function AddStaffDialog({ open, onOpenChange, onSuccess, onShowCredentials }) {
   const [formData, setFormData] = useState({
     email: '',
     first_name: '',
@@ -540,7 +626,14 @@ function AddStaffDialog({ open, onOpenChange, onSuccess }) {
     setLoading(true);
     try {
       const response = await pharmacyDashAPI.createStaff(formData);
-      toast.success(`Staff created. Temporary password: ${response.data.default_password}`);
+      toast.success('Staff member created successfully!');
+      
+      // Show credentials dialog with email and password
+      onShowCredentials({
+        email: formData.email,
+        password: response.data.default_password
+      }, `${formData.first_name} ${formData.last_name}`);
+      
       onSuccess();
       onOpenChange(false);
       setFormData({
