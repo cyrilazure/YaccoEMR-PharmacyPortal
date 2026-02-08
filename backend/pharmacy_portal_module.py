@@ -1742,7 +1742,7 @@ def create_pharmacy_portal_router(db) -> APIRouter:
             raise HTTPException(status_code=400, detail="Prescription must be in processing or ready state")
         
         # Update prescription
-        result = await db["pharmacy_prescriptions"].update_one(
+        await db["pharmacy_prescriptions"].update_one(
             {"id": rx_id, "pharmacy_id": pharmacy_id},
             {"$set": {
                 "status": "dispensed",
