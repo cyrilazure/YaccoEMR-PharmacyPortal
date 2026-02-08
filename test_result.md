@@ -1255,7 +1255,7 @@ user_problem_statement: |
   - POST /api/beds/wards/seed-defaults - Seed default wards
   - GET /api/beds/census - Get ward census
 
-  Backend URL: https://medconnect-222.preview.emergentagent.com
+  Backend URL: https://unified-health-8.preview.emergentagent.com
   Super Admin: ygtnetworks@gmail.com / test123
 
 backend:
@@ -2447,7 +2447,7 @@ agent_communication:
       
       **CREDENTIALS TESTED:**
       - Super Admin: ygtnetworks@gmail.com / test123 ✅ Working
-      - Backend URL: https://medconnect-222.preview.emergentagent.com ✅ Accessible
+      - Backend URL: https://unified-health-8.preview.emergentagent.com ✅ Accessible
       
       ✅ GHANA EMR FRONTEND UI TESTING COMPLETE - ALL CORE FLOWS WORKING (4/4 major flows tested - 100% success rate)
       
@@ -2660,7 +2660,7 @@ agent_communication:
       
       **CREDENTIALS VERIFIED:**
       - Super Admin: ygtnetworks@gmail.com / test123 ✅ Working with role=super_admin in JWT token
-      - Backend URL: https://medconnect-222.preview.emergentagent.com ✅ Accessible
+      - Backend URL: https://unified-health-8.preview.emergentagent.com ✅ Accessible
       
       **RECOMMENDATION:** 
       EMR Portal backend APIs are largely functional with 92.3% success rate. Core platform administration, IT admin functions, and access controls are working correctly. Main agent should investigate hospital admin authentication to ensure proper organization_id context is set during login for dashboard access.
@@ -4099,7 +4099,7 @@ agent_communication:
       
       **DEPARTMENT AUTO-SEEDING STATUS:** Fully functional and production-ready. The system correctly handles both new hospitals (creates departments) and existing hospitals (prevents duplicates) with appropriate messaging.
       
-      **TEST ENVIRONMENT:** Successfully tested against https://medconnect-222.preview.emergentagent.com/api
+      **TEST ENVIRONMENT:** Successfully tested against https://unified-health-8.preview.emergentagent.com/api
   - agent: "testing"
     message: |
       ✅ ALL REVIEW REQUEST TESTS COMPLETED SUCCESSFULLY - 8/8 TESTS PASSED (100% SUCCESS RATE)
@@ -4241,7 +4241,7 @@ user_problem_statement: |
   - Patient ID: 688a22b7-e785-4aeb-93aa-87ce5a5c3635 (patient Ghana)
   - There are already some test admissions in the system
 
-  **Backend URL:** https://medconnect-222.preview.emergentagent.com
+  **Backend URL:** https://unified-health-8.preview.emergentagent.com
 
 backend:
   - task: "Bed Manager Authentication"
@@ -4609,7 +4609,7 @@ agent_communication:
       🏥 **Bed Management Module for Yacco EMR - COMPREHENSIVE TEST RESULTS:**
       
       **Test Environment:**
-      - Backend URL: https://medconnect-222.preview.emergentagent.com
+      - Backend URL: https://unified-health-8.preview.emergentagent.com
       - Test User: bed_manager@yacco.health / test123
       - Role: bed_manager
       - Organization ID: 008cca73-b733-4224-afa3-992c02c045a4
@@ -5130,7 +5130,7 @@ agent_communication:
       - After selecting "Greater Accra Region", the hospital selection step does not display any hospitals
       - Expected hospital "ygtworks Health Center" does not appear in the list
       - This blocks ALL testing that requires user login (Features 3 & 4)
-      - Console shows 401 errors: "Failed to load resource: the server responded with a status of 401 () at https://medconnect-222.preview.emergentagent.com/api/regions/auth/login"
+      - Console shows 401 errors: "Failed to load resource: the server responded with a status of 401 () at https://unified-health-8.preview.emergentagent.com/api/regions/auth/login"
       
       **Impact:**
       - Cannot login as physician to test imaging order functionality
@@ -5208,7 +5208,7 @@ agent_communication:
 user_problem_statement: |
   Test Phase 1 enhancements for Ghana EMR Billing System.
   
-  **Backend URL:** https://medconnect-222.preview.emergentagent.com
+  **Backend URL:** https://unified-health-8.preview.emergentagent.com
   **Test User:** ygtnetworks@gmail.com / test123
   
   **Phase 1 Enhancements to Test:**
@@ -6222,7 +6222,7 @@ agent_communication:
 user_problem_statement: |
   Test Phase 3 - Ambulance Portal & Emergency Transport Module
   
-  **Backend URL:** https://medconnect-222.preview.emergentagent.com
+  **Backend URL:** https://unified-health-8.preview.emergentagent.com
   **Test User:** it_admin@yacco.health / test123 (Hospital IT Admin)
   
   ## **Phase 3: Ambulance Module Testing**
@@ -6519,7 +6519,7 @@ agent_communication:
 user_problem_statement: |
   Comprehensive Testing - All Phases (1, 2, 3) Complete System Verification
   
-  **Backend URL:** https://medconnect-222.preview.emergentagent.com
+  **Backend URL:** https://unified-health-8.preview.emergentagent.com
   
   **Test Users:**
   - Super Admin: ygtnetworks@gmail.com / test123

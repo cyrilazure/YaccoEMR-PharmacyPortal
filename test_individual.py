@@ -27,7 +27,7 @@ def test_endpoint(method, url, data=None, headers=None):
         return None
 
 def main():
-    base_url = "https://medconnect-222.preview.emergentagent.com/api"
+    base_url = "https://unified-health-8.preview.emergentagent.com/api"
     
     print("🧪 Testing Yacco EMR Backend - Review Request")
     print("=" * 60)

@@ -15,7 +15,7 @@ import json
 from datetime import datetime
 
 class BillingPhase1Tester:
-    def __init__(self, base_url="https://medconnect-222.preview.emergentagent.com"):
+    def __init__(self, base_url="https://unified-health-8.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_base = f"{base_url}/api"
         self.token = None
