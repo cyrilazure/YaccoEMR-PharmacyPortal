@@ -15,7 +15,7 @@ import os
 import uuid
 from datetime import datetime
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://healthfusion-gh.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://yacco-health.preview.emergentagent.com').rstrip('/')
 
 # Test credentials
 NURSING_SUPERVISOR_EMAIL = "nursing_supervisor@yacco.health"
