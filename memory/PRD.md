@@ -661,11 +661,13 @@ GET  /api/billing-shifts/audit-logs      - Billing audit logs
 - [ ] Real NHIS API integration (replace mock data)
 - [ ] Real PACS/dcm4chee server integration (replace demo mode)
 - [ ] Complete PatientChart refactoring (remaining tabs: Overview, Notes, Orders, Imaging, Pharmacy)
-- [ ] Pharmacy Portal Phase 3 - Hospital Connection & Auditing
-  - Integrate pharmacy directory into Physician Portal for e-prescription routing
-  - Hospital pharmacy units request supplies from network
-  - Detailed audit logging for pharmacy activities
 - [ ] Admin Pharmacy Approval Workflow (Platform Admin UI for approving/rejecting)
+- [ ] Physician Portal E-Prescription UI - Add pharmacy selector to prescription workflow
+- [x] ~~Pharmacy Portal Phase 3 - Hospital Connection & Auditing~~ ✅ DONE (Feb 8, 2026)
+  - E-prescription routing from hospital EMR to pharmacies
+  - Supply request system for pharmacy-to-pharmacy requests
+  - Enhanced audit logging with summary stats
+  - Pharmacy network directory for supply requests
 - [x] ~~Pharmacy Portal Phase 2 - Drug Database & Dashboard~~ ✅ DONE (Feb 7, 2026)
   - Global Medication Database with 200+ drugs (analgesics, antibiotics, antimalarials, etc.)
   - Drug seeding from global database into pharmacy catalog
