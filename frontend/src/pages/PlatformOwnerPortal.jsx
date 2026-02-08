@@ -608,351 +608,448 @@ export default function PlatformOwnerPortal() {
 
           {/* Hospitals Tab */}
           <TabsContent value="hospitals">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Hospital Management</CardTitle>
-                    <CardDescription>Create hospitals and manage access</CardDescription>
+            <div className="space-y-6">
+              {/* Pending Hospital Approvals Section */}
+              <Card className="border-amber-200 bg-amber-50/30">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2 text-amber-800">
+                        <Clock className="w-5 h-5" />
+                        Pending Hospital Approvals ({pendingHospitals.length})
+                      </CardTitle>
+                      <CardDescription>Review and approve hospital registrations</CardDescription>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}>
+                      <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                      Refresh
+                    </Button>
                   </div>
-                  <Dialog open={createHospitalOpen} onOpenChange={setCreateHospitalOpen}>
-                    <DialogTrigger asChild>
-                      <Button className="bg-emerald-600 hover:bg-emerald-700">
-                        <Plus className="w-4 h-4 mr-2" />
-                        Add Hospital
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                      <DialogHeader>
-                        <DialogTitle>Create New Hospital</DialogTitle>
-                        <DialogDescription>
-                          Register a new hospital in the Ghana Healthcare Network
-                        </DialogDescription>
-                      </DialogHeader>
-                      
-                      {createdHospital ? (
-                        <div className="space-y-4">
-                          <Alert className="bg-emerald-50 border-emerald-200">
-                            <CheckCircle className="h-4 w-4 text-emerald-600" />
-                            <AlertTitle className="text-emerald-800">Hospital Created Successfully!</AlertTitle>
-                            <AlertDescription className="text-emerald-700">
-                              Save the admin credentials below - the password cannot be retrieved later.
-                            </AlertDescription>
-                          </Alert>
-                          
-                          <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-                            <h4 className="font-semibold">Hospital Details</h4>
-                            <p><strong>Name:</strong> {createdHospital.hospital?.name}</p>
-                            <p><strong>ID:</strong> {createdHospital.hospital?.id}</p>
-                          </div>
-                          
-                          <div className="bg-blue-50 rounded-lg p-4 space-y-3">
-                            <h4 className="font-semibold text-blue-800">Admin Credentials</h4>
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <p><strong>Email:</strong> {createdHospital.admin?.email}</p>
-                                <p><strong>Password:</strong> {createdHospital.admin?.temp_password}</p>
+                </CardHeader>
+                <CardContent>
+                  {loading ? (
+                    <div className="flex items-center justify-center py-12">
+                      <Loader2 className="w-8 h-8 animate-spin text-amber-600" />
+                    </div>
+                  ) : pendingHospitals.length === 0 ? (
+                    <div className="text-center py-12 text-slate-500">
+                      <CheckCircle className="w-16 h-16 mx-auto mb-4 text-emerald-400" />
+                      <p className="font-medium">All caught up!</p>
+                      <p className="text-sm">No pending hospital registrations to review</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {pendingHospitals.map((hospital) => (
+                        <div key={hospital.id} className="p-4 bg-white rounded-lg border border-amber-200 hover:border-amber-300 transition-colors">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
+                                  <Hospital className="w-5 h-5 text-amber-600" />
+                                </div>
+                                <div>
+                                  <h4 className="font-semibold text-slate-900">{hospital.name}</h4>
+                                  <p className="text-sm text-slate-500">
+                                    License: {hospital.license_number || '-'}
+                                  </p>
+                                </div>
                               </div>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => copyToClipboard(
-                                  `Email: ${createdHospital.admin?.email}\nPassword: ${createdHospital.admin?.temp_password}`,
-                                  'new'
-                                )}
+                              <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                                <div>
+                                  <p className="text-slate-400">Type</p>
+                                  <p className="font-medium">{hospital.organization_type || hospital.type || 'Hospital'}</p>
+                                </div>
+                                <div>
+                                  <p className="text-slate-400">Region</p>
+                                  <p className="font-medium">{hospital.state || hospital.region || '-'}</p>
+                                </div>
+                                <div>
+                                  <p className="text-slate-400">City</p>
+                                  <p className="font-medium">{hospital.city || '-'}</p>
+                                </div>
+                                <div>
+                                  <p className="text-slate-400">Contact</p>
+                                  <p className="font-medium text-xs">{hospital.email || hospital.admin_email || '-'}</p>
+                                </div>
+                              </div>
+                              <p className="mt-2 text-xs text-slate-400">
+                                Registered: {hospital.created_at ? new Date(hospital.created_at).toLocaleDateString() : '-'}
+                              </p>
+                            </div>
+                            <div className="flex gap-2 ml-4">
+                              <Button 
+                                size="sm" 
+                                className="bg-emerald-600 hover:bg-emerald-700"
+                                onClick={() => handleApproveHospital(hospital.id)}
+                                disabled={saving}
                               >
-                                {copiedPassword === 'new' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                                <CheckCircle className="w-4 h-4 mr-1" /> Approve
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="destructive"
+                                onClick={() => handleRejectHospital(hospital.id)}
+                                disabled={saving}
+                              >
+                                <XCircle className="w-4 h-4 mr-1" /> Reject
                               </Button>
                             </div>
                           </div>
-                          
-                          <DialogFooter>
-                            <Button onClick={() => {
-                              setCreatedHospital(null);
-                              setCreateHospitalOpen(false);
-                              setNewHospital({
-                                name: '', region_id: '', address: '', city: '', phone: '', email: '',
-                                license_number: '', ghana_health_service_id: '',
-                                admin_first_name: '', admin_last_name: '', admin_email: '', admin_phone: ''
-                              });
-                            }}>
-                              Done
-                            </Button>
-                          </DialogFooter>
                         </div>
-                      ) : (
-                        <form onSubmit={handleCreateHospital} className="space-y-6">
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="col-span-2">
-                              <Label>Hospital Name *</Label>
-                              <Input
-                                value={newHospital.name}
-                                onChange={(e) => setNewHospital({...newHospital, name: e.target.value})}
-                                placeholder="e.g., Accra Regional Hospital"
-                                required
-                              />
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Approved Hospitals Section */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <CheckCircle className="w-5 h-5 text-emerald-600" />
+                        Approved Hospitals ({hospitals.length})
+                      </CardTitle>
+                      <CardDescription>Create and manage hospital accounts</CardDescription>
+                    </div>
+                    <Dialog open={createHospitalOpen} onOpenChange={setCreateHospitalOpen}>
+                      <DialogTrigger asChild>
+                        <Button className="bg-emerald-600 hover:bg-emerald-700">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Add Hospital
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                        <DialogHeader>
+                          <DialogTitle>Create New Hospital</DialogTitle>
+                          <DialogDescription>
+                            Register a new hospital in the Ghana Healthcare Network
+                          </DialogDescription>
+                        </DialogHeader>
+                        
+                        {createdHospital ? (
+                          <div className="space-y-4">
+                            <Alert className="bg-emerald-50 border-emerald-200">
+                              <CheckCircle className="h-4 w-4 text-emerald-600" />
+                              <AlertTitle className="text-emerald-800">Hospital Created Successfully!</AlertTitle>
+                              <AlertDescription className="text-emerald-700">
+                                Save the admin credentials below - the password cannot be retrieved later.
+                              </AlertDescription>
+                            </Alert>
+                            
+                            <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                              <h4 className="font-semibold">Hospital Details</h4>
+                              <p><strong>Name:</strong> {createdHospital.hospital?.name}</p>
+                              <p><strong>ID:</strong> {createdHospital.hospital?.id}</p>
                             </div>
                             
-                            <div>
-                              <Label>Region *</Label>
-                              <Select
-                                value={newHospital.region_id}
-                                onValueChange={(v) => setNewHospital({...newHospital, region_id: v})}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select region" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {GHANA_REGIONS.map((r) => (
-                                    <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                            <div className="bg-blue-50 rounded-lg p-4 space-y-3">
+                              <h4 className="font-semibold text-blue-800">Admin Credentials</h4>
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p><strong>Email:</strong> {createdHospital.admin?.email}</p>
+                                  <p><strong>Password:</strong> {createdHospital.admin?.temp_password}</p>
+                                </div>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => copyToClipboard(
+                                    `Email: ${createdHospital.admin?.email}\nPassword: ${createdHospital.admin?.temp_password}`,
+                                    'new'
+                                  )}
+                                >
+                                  {copiedPassword === 'new' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                                </Button>
+                              </div>
                             </div>
                             
-                            <div>
-                              <Label>City *</Label>
-                              <Input
-                                value={newHospital.city}
-                                onChange={(e) => setNewHospital({...newHospital, city: e.target.value})}
-                                placeholder="e.g., Accra"
-                                required
-                              />
-                            </div>
-                            
-                            <div className="col-span-2">
-                              <Label>Address *</Label>
-                              <Input
-                                value={newHospital.address}
-                                onChange={(e) => setNewHospital({...newHospital, address: e.target.value})}
-                                placeholder="Street address"
-                                required
-                              />
-                            </div>
-                            
-                            <div>
-                              <Label>Phone *</Label>
-                              <Input
-                                value={newHospital.phone}
-                                onChange={(e) => setNewHospital({...newHospital, phone: e.target.value})}
-                                placeholder="+233-XXX-XXXXXX"
-                                required
-                              />
-                            </div>
-                            
-                            <div>
-                              <Label>Email *</Label>
-                              <Input
-                                type="email"
-                                value={newHospital.email}
-                                onChange={(e) => setNewHospital({...newHospital, email: e.target.value})}
-                                placeholder="info@hospital.gov.gh"
-                                required
-                              />
-                            </div>
-                            
-                            <div>
-                              <Label>License Number *</Label>
-                              <Input
-                                value={newHospital.license_number}
-                                onChange={(e) => setNewHospital({...newHospital, license_number: e.target.value})}
-                                placeholder="GHS-XXX-XXXX"
-                                required
-                              />
-                            </div>
-                            
-                            <div>
-                              <Label>GHS ID (Optional)</Label>
-                              <Input
-                                value={newHospital.ghana_health_service_id}
-                                onChange={(e) => setNewHospital({...newHospital, ghana_health_service_id: e.target.value})}
-                                placeholder="Ghana Health Service ID"
-                              />
-                            </div>
+                            <DialogFooter>
+                              <Button onClick={() => {
+                                setCreatedHospital(null);
+                                setCreateHospitalOpen(false);
+                                setNewHospital({
+                                  name: '', region_id: '', address: '', city: '', phone: '', email: '',
+                                  license_number: '', ghana_health_service_id: '',
+                                  admin_first_name: '', admin_last_name: '', admin_email: '', admin_phone: ''
+                                });
+                              }}>
+                                Done
+                              </Button>
+                            </DialogFooter>
                           </div>
-                          
-                          <Separator />
-                          
-                          <div>
-                            <h4 className="font-semibold mb-3">Hospital Admin Details</h4>
+                        ) : (
+                          <form onSubmit={handleCreateHospital} className="space-y-6">
                             <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <Label>First Name *</Label>
+                              <div className="col-span-2">
+                                <Label>Hospital Name *</Label>
                                 <Input
-                                  value={newHospital.admin_first_name}
-                                  onChange={(e) => setNewHospital({...newHospital, admin_first_name: e.target.value})}
+                                  value={newHospital.name}
+                                  onChange={(e) => setNewHospital({...newHospital, name: e.target.value})}
+                                  placeholder="e.g., Accra Regional Hospital"
                                   required
                                 />
                               </div>
+                              
                               <div>
-                                <Label>Last Name *</Label>
+                                <Label>Region *</Label>
+                                <Select
+                                  value={newHospital.region_id}
+                                  onValueChange={(v) => setNewHospital({...newHospital, region_id: v})}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select region" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {GHANA_REGIONS.map((r) => (
+                                      <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              
+                              <div>
+                                <Label>City *</Label>
                                 <Input
-                                  value={newHospital.admin_last_name}
-                                  onChange={(e) => setNewHospital({...newHospital, admin_last_name: e.target.value})}
+                                  value={newHospital.city}
+                                  onChange={(e) => setNewHospital({...newHospital, city: e.target.value})}
+                                  placeholder="e.g., Accra"
                                   required
                                 />
                               </div>
+                              
+                              <div className="col-span-2">
+                                <Label>Address *</Label>
+                                <Input
+                                  value={newHospital.address}
+                                  onChange={(e) => setNewHospital({...newHospital, address: e.target.value})}
+                                  placeholder="Street address"
+                                  required
+                                />
+                              </div>
+                              
                               <div>
-                                <Label>Admin Email *</Label>
+                                <Label>Phone</Label>
+                                <Input
+                                  value={newHospital.phone}
+                                  onChange={(e) => setNewHospital({...newHospital, phone: e.target.value})}
+                                  placeholder="+233-XXX-XXXXXX"
+                                />
+                              </div>
+                              
+                              <div>
+                                <Label>Email</Label>
                                 <Input
                                   type="email"
-                                  value={newHospital.admin_email}
-                                  onChange={(e) => setNewHospital({...newHospital, admin_email: e.target.value})}
-                                  placeholder="admin@hospital.gov.gh"
+                                  value={newHospital.email}
+                                  onChange={(e) => setNewHospital({...newHospital, email: e.target.value})}
+                                  placeholder="hospital@domain.com"
+                                />
+                              </div>
+                              
+                              <div>
+                                <Label>License Number *</Label>
+                                <Input
+                                  value={newHospital.license_number}
+                                  onChange={(e) => setNewHospital({...newHospital, license_number: e.target.value})}
+                                  placeholder="HFR-XXXX-XXXX"
                                   required
                                 />
                               </div>
+                              
                               <div>
-                                <Label>Admin Phone *</Label>
+                                <Label>GHS ID</Label>
                                 <Input
-                                  value={newHospital.admin_phone}
-                                  onChange={(e) => setNewHospital({...newHospital, admin_phone: e.target.value})}
-                                  placeholder="+233-XXX-XXXXXX"
-                                  required
+                                  value={newHospital.ghana_health_service_id}
+                                  onChange={(e) => setNewHospital({...newHospital, ghana_health_service_id: e.target.value})}
+                                  placeholder="Ghana Health Service ID"
                                 />
                               </div>
                             </div>
-                          </div>
-                          
-                          <DialogFooter>
-                            <Button type="button" variant="outline" onClick={() => setCreateHospitalOpen(false)}>
-                              Cancel
-                            </Button>
-                            <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700" disabled={saving}>
-                              {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
-                              Create Hospital
-                            </Button>
-                          </DialogFooter>
-                        </form>
-                      )}
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              </CardHeader>
-              
-              <CardContent>
-                {/* Filters */}
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="relative flex-1 max-w-sm">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <Input
-                      placeholder="Search hospitals..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-9"
-                    />
-                  </div>
-                  <Select value={selectedRegion} onValueChange={setSelectedRegion}>
-                    <SelectTrigger className="w-[200px]">
-                      <SelectValue placeholder="Filter by region" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Regions</SelectItem>
-                      {GHANA_REGIONS.map((r) => (
-                        <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Hospitals Table */}
-                {loading ? (
-                  <div className="flex justify-center py-12">
-                    <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
-                  </div>
-                ) : (
-                  <div className="rounded-lg border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Hospital</TableHead>
-                          <TableHead>Region</TableHead>
-                          <TableHead>Admin</TableHead>
-                          <TableHead className="text-center">Locations</TableHead>
-                          <TableHead className="text-center">Users</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredHospitals.map((item) => (
-                          <TableRow key={item.hospital.id}>
-                            <TableCell>
-                              <div>
-                                <p className="font-medium">{item.hospital.name}</p>
-                                <p className="text-sm text-gray-500">{item.hospital.city}</p>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="outline">
-                                {GHANA_REGIONS.find(r => r.id === item.hospital.region_id)?.name?.replace(' Region', '') || item.hospital.region_id}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              {item.admin ? (
+                            
+                            <Separator />
+                            
+                            <div>
+                              <h4 className="font-medium mb-4">Hospital Administrator</h4>
+                              <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                  <p className="text-sm">{item.admin.name}</p>
-                                  <p className="text-xs text-gray-500">{item.admin.email}</p>
+                                  <Label>First Name *</Label>
+                                  <Input
+                                    value={newHospital.admin_first_name}
+                                    onChange={(e) => setNewHospital({...newHospital, admin_first_name: e.target.value})}
+                                    required
+                                  />
                                 </div>
-                              ) : (
-                                <span className="text-gray-400">No admin</span>
-                              )}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <Badge variant="secondary">{item.hospital.location_count}</Badge>
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <Badge variant="secondary">{item.hospital.user_count}</Badge>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex items-center justify-end gap-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleLoginAsHospital(item)}
-                                  disabled={saving}
-                                >
-                                  <LogIn className="w-4 h-4 mr-1" />
-                                  Login As
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    setHospitalToChangeStatus(item);
-                                    setStatusChangeOpen(true);
-                                  }}
-                                >
-                                  <Power className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                  onClick={() => {
-                                    setHospitalToDelete(item);
-                                    setDeleteConfirmation('');
-                                    setDeleteHospitalOpen(true);
-                                  }}
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
+                                <div>
+                                  <Label>Last Name *</Label>
+                                  <Input
+                                    value={newHospital.admin_last_name}
+                                    onChange={(e) => setNewHospital({...newHospital, admin_last_name: e.target.value})}
+                                    required
+                                  />
+                                </div>
+                                <div>
+                                  <Label>Admin Email *</Label>
+                                  <Input
+                                    type="email"
+                                    value={newHospital.admin_email}
+                                    onChange={(e) => setNewHospital({...newHospital, admin_email: e.target.value})}
+                                    placeholder="admin@hospital.gov.gh"
+                                    required
+                                  />
+                                </div>
+                                <div>
+                                  <Label>Admin Phone *</Label>
+                                  <Input
+                                    value={newHospital.admin_phone}
+                                    onChange={(e) => setNewHospital({...newHospital, admin_phone: e.target.value})}
+                                    placeholder="+233-XXX-XXXXXX"
+                                    required
+                                  />
+                                </div>
                               </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                        {filteredHospitals.length === 0 && (
-                          <TableRow>
-                            <TableCell colSpan={6} className="text-center py-12 text-gray-500">
-                              No hospitals found
-                            </TableCell>
-                          </TableRow>
+                            </div>
+                            
+                            <DialogFooter>
+                              <Button type="button" variant="outline" onClick={() => setCreateHospitalOpen(false)}>
+                                Cancel
+                              </Button>
+                              <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700" disabled={saving}>
+                                {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
+                                Create Hospital
+                              </Button>
+                            </DialogFooter>
+                          </form>
                         )}
-                      </TableBody>
-                    </Table>
+                      </DialogContent>
+                    </Dialog>
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                </CardHeader>
+                
+                <CardContent>
+                  {/* Filters */}
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="relative flex-1 max-w-sm">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <Input
+                        placeholder="Search hospitals..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-9"
+                      />
+                    </div>
+                    <Select value={selectedRegion} onValueChange={setSelectedRegion}>
+                      <SelectTrigger className="w-[200px]">
+                        <SelectValue placeholder="Filter by region" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Regions</SelectItem>
+                        {GHANA_REGIONS.map((r) => (
+                          <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Hospitals Table */}
+                  {loading ? (
+                    <div className="flex justify-center py-12">
+                      <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+                    </div>
+                  ) : (
+                    <div className="rounded-lg border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Hospital</TableHead>
+                            <TableHead>Region</TableHead>
+                            <TableHead>Admin</TableHead>
+                            <TableHead className="text-center">Locations</TableHead>
+                            <TableHead className="text-center">Users</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredHospitals.map((item) => (
+                            <TableRow key={item.hospital.id}>
+                              <TableCell>
+                                <div>
+                                  <p className="font-medium">{item.hospital.name}</p>
+                                  <p className="text-sm text-gray-500">{item.hospital.city}</p>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline">
+                                  {GHANA_REGIONS.find(r => r.id === item.hospital.region_id)?.name?.replace(' Region', '') || item.hospital.region_id}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                {item.admin ? (
+                                  <div>
+                                    <p className="text-sm">{item.admin.name}</p>
+                                    <p className="text-xs text-gray-500">{item.admin.email}</p>
+                                  </div>
+                                ) : (
+                                  <span className="text-gray-400">No admin</span>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <Badge variant="secondary">{item.hospital.location_count}</Badge>
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <Badge variant="secondary">{item.hospital.user_count}</Badge>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex items-center justify-end gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleLoginAsHospital(item)}
+                                    disabled={saving}
+                                  >
+                                    <LogIn className="w-4 h-4 mr-1" />
+                                    Login As
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      setHospitalToChangeStatus(item);
+                                      setStatusChangeOpen(true);
+                                    }}
+                                  >
+                                    <Power className="w-4 h-4" />
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                    onClick={() => {
+                                      setHospitalToDelete(item);
+                                      setDeleteConfirmation('');
+                                      setDeleteHospitalOpen(true);
+                                    }}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                          {filteredHospitals.length === 0 && (
+                            <TableRow>
+                              <TableCell colSpan={6} className="text-center py-12 text-gray-500">
+                                No hospitals found
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           {/* Staff Tab - Create Staff for Any Hospital */}
