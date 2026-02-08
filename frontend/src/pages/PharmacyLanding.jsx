@@ -593,25 +593,25 @@ export default function PharmacyLanding() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto mb-8">
             <Card>
               <CardContent className="pt-6">
-                <div className="text-3xl font-bold text-blue-600">{totalPharmacies}+</div>
+                <div className="text-3xl font-bold text-emerald-600">{totalPharmacies}+</div>
                 <div className="text-sm text-slate-500">Registered Pharmacies</div>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="pt-6">
-                <div className="text-3xl font-bold text-green-600">16</div>
+                <div className="text-3xl font-bold text-emerald-600">16</div>
                 <div className="text-sm text-slate-500">Regions Covered</div>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="pt-6">
-                <div className="text-3xl font-bold text-purple-600">24/7</div>
+                <div className="text-3xl font-bold text-emerald-600">24/7</div>
                 <div className="text-sm text-slate-500">Emergency Services</div>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="pt-6">
-                <div className="text-3xl font-bold text-orange-600">NHIS</div>
+                <div className="text-3xl font-bold text-emerald-600">NHIS</div>
                 <div className="text-sm text-slate-500">Insurance Supported</div>
               </CardContent>
             </Card>
