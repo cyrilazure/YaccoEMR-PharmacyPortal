@@ -58,11 +58,25 @@ const pharmacyDashAPI = {
   getStaff: () => api.get('/pharmacy-portal/admin/staff', { headers: getAuthHeader() }),
   createStaff: (data) => api.post('/pharmacy-portal/admin/staff', data, { headers: getAuthHeader() }),
   getAuditLogs: (params) => api.get('/pharmacy-portal/audit-logs', { params, headers: getAuthHeader() }),
+  getAuditLogsSummary: (days) => api.get('/pharmacy-portal/audit-logs/summary', { params: { days }, headers: getAuthHeader() }),
   getCurrentUser: () => api.get('/pharmacy-portal/auth/me', { headers: getAuthHeader() }),
   searchMedications: (query, category) => api.get('/pharmacy-portal/medications/search', { params: { query, category }, headers: getAuthHeader() }),
   getMedicationCategories: () => api.get('/pharmacy-portal/medications/categories', { headers: getAuthHeader() }),
   getDepartments: () => api.get('/pharmacy-portal/admin/departments', { headers: getAuthHeader() }),
   getRoles: () => api.get('/pharmacy-portal/admin/roles', { headers: getAuthHeader() }),
+  // Phase 3: E-Prescriptions from Hospital
+  getEPrescriptions: (params) => api.get('/pharmacy-portal/prescriptions/incoming', { params, headers: getAuthHeader() }),
+  acceptEPrescription: (id) => api.put(`/pharmacy-portal/eprescription/${id}/accept`, {}, { headers: getAuthHeader() }),
+  markEPrescriptionReady: (id) => api.put(`/pharmacy-portal/eprescription/${id}/ready`, {}, { headers: getAuthHeader() }),
+  dispenseEPrescription: (id, notes) => api.put(`/pharmacy-portal/eprescription/${id}/dispense`, { dispensing_notes: notes }, { headers: getAuthHeader() }),
+  // Phase 3: Supply Requests
+  getOutgoingSupplyRequests: (status) => api.get('/pharmacy-portal/supply-requests/outgoing', { params: { status }, headers: getAuthHeader() }),
+  getIncomingSupplyRequests: (status) => api.get('/pharmacy-portal/supply-requests/incoming', { params: { status }, headers: getAuthHeader() }),
+  createSupplyRequest: (data) => api.post('/pharmacy-portal/supply-requests/create', data, { headers: getAuthHeader() }),
+  respondToSupplyRequest: (id, response, notes, items) => api.put(`/pharmacy-portal/supply-requests/${id}/respond`, { response, response_notes: notes, available_items: items }, { headers: getAuthHeader() }),
+  fulfillSupplyRequest: (id, method, notes) => api.put(`/pharmacy-portal/supply-requests/${id}/fulfill`, { delivery_method: method, delivery_notes: notes }, { headers: getAuthHeader() }),
+  // Phase 3: Network Directory
+  getPharmacyNetwork: (params) => api.get('/pharmacy-portal/network/pharmacies', { params, headers: getAuthHeader() }),
 };
 
 // Dashboard Stats Card
