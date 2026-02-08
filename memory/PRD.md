@@ -29,6 +29,38 @@ Build a comprehensive Electronic Medical Records (EMR) system similar to Epic EM
 
 ## What's Been Implemented
 
+### Hospital Self-Registration Workflow (December 2025) - NEW
+- [x] **Hospital Registration Page** (`/register-hospital`):
+  - Public-facing registration portal for hospitals/healthcare facilities
+  - Hero section with platform stats (200+ hospitals, 16 regions, 50K+ healthcare workers)
+  - Feature highlights: EMR, Clinical Modules, NHIS Integration
+  - "Register Hospital" CTA button opens registration dialog
+- [x] **Registration Form** (Multi-section):
+  - Organization Info: Facility name, type (Hospital/Clinic/Medical Center/Urgent Care/Specialty), License #, NPI, Tax ID
+  - Location: Address lines, City/Town, Region (16 Ghana regions dropdown), Postal code
+  - Contact: Phone, Fax, Email, Website
+  - Admin Contact: First/Last name, Email, Phone, Title
+- [x] **Landing Page Integration**:
+  - "Register Your Hospital" link added to EMR portal card on main landing page
+  - "Register Your Pharmacy" link added to Pharmacy portal card
+  - Footer updated with hospital registration link
+- [x] **Backend Registration Endpoint** (`POST /api/organizations/register`):
+  - Public endpoint for self-service registration
+  - Duplicate check by email and license number
+  - Creates organization with "pending" status
+  - Returns registration confirmation
+- [x] **Super Admin Approval Workflow**:
+  - Pending registrations visible in Super Admin dashboard
+  - Approve: Creates hospital admin account with temp password
+  - Reject: Records rejection reason
+  - Suspend/Reactivate capabilities
+- [x] **API Endpoints**:
+  - `POST /api/organizations/register` - Self-service registration
+  - `GET /api/organizations/pending` - List pending (Super Admin)
+  - `POST /api/organizations/{id}/approve` - Approve registration
+  - `POST /api/organizations/{id}/reject` - Reject registration
+- [x] **Test Coverage**: 16/16 backend tests passing, full UI verification
+
 ### PatientChart Refactoring (February 6, 2026)
 - [x] Created reusable components in `/components/patient-chart/`:
   - `LabsTab.jsx` - Lab orders and results with enhanced integration
