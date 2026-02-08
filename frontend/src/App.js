@@ -117,6 +117,10 @@ function App() {
           <Route path="/pharmacy/:pharmacyId" element={<PharmacyProfile />} />
           <Route path="/pharmacy/dashboard" element={<PharmacyDashboard />} />
           
+          {/* ========== PRESCRIPTION TRACKING (PUBLIC) ========== */}
+          <Route path="/track" element={<PrescriptionTracking />} />
+          <Route path="/track/:trackingCode" element={<PrescriptionTracking />} />
+          
           {/* Ghana Region-Based Staff Login */}
           <Route path="/login" element={<RegionHospitalLogin />} />
           
