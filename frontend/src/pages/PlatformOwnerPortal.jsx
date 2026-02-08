@@ -458,7 +458,7 @@ export default function PlatformOwnerPortal() {
     
     setStaffActionLoading(true);
     try {
-      await api.put(`/pharmacy-portal/admin/staff/${selectedStaffMember.id}`, editStaffForm);
+      await api.put(`/pharmacy-portal/platform-owner/staff/${selectedStaffMember.id}`, editStaffForm);
       toast.success('Staff information updated');
       setEditStaffOpen(false);
       setSelectedStaffMember(null);
