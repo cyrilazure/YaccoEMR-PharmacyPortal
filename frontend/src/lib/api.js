@@ -38,6 +38,10 @@ export const authAPI = {
   register: (userData) => api.post('/auth/register', userData),
   login: (email, password, totpCode = null) => api.post('/auth/login', { email, password, totp_code: totpCode }),
   loginEnhanced: (credentials) => api.post('/auth/login/enhanced', credentials),
+  // OTP Login Flow
+  loginInit: (email, password) => api.post('/auth/login/init', { email, password }),
+  loginVerify: (otpSessionId, otpCode) => api.post('/auth/login/verify', null, { params: { otp_session_id: otpSessionId, otp_code: otpCode }}),
+  resendOTP: (otpSessionId) => api.post('/auth/login/resend-otp', null, { params: { otp_session_id: otpSessionId }}),
   getMe: () => api.get('/auth/me'),
   refreshToken: (refreshToken) => api.post('/auth/refresh', { refresh_token: refreshToken }),
   logout: () => api.post('/auth/logout'),
