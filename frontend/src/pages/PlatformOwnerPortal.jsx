@@ -137,15 +137,17 @@ export default function PlatformOwnerPortal() {
     if (!isSuperAdmin) return;
     try {
       setLoading(true);
-      const [overviewRes, regionsRes, hospitalsRes] = await Promise.all([
+      const [overviewRes, regionsRes, hospitalsRes, pendingOrgsRes] = await Promise.all([
         regionAPI.getPlatformOverview(),
         regionAPI.getRegions(),
-        regionAPI.getHospitalAdmins(selectedRegion === 'all' ? null : selectedRegion)
+        regionAPI.getHospitalAdmins(selectedRegion === 'all' ? null : selectedRegion),
+        organizationAPI.getPending().catch(() => ({ data: { organizations: [] } }))
       ]);
       
       setOverview(overviewRes.data);
       setRegions(regionsRes.data.regions || []);
       setHospitals(hospitalsRes.data.hospitals || []);
+      setPendingHospitals(pendingOrgsRes.data.organizations || pendingOrgsRes.data || []);
     } catch (err) {
       console.error('Error fetching data:', err);
       toast.error('Failed to load platform data');
