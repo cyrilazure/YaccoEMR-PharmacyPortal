@@ -177,10 +177,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('yacco_user');
     setUser(null);
     setRequires2FA(false);
-    setRequiresOTP(false);
-    setOtpSessionId(null);
-    setOtpPhoneMasked('');
-    setPendingCredentials(null);
+    resetOTPState();
   };
 
   return (
@@ -195,7 +192,9 @@ export const AuthProvider = ({ children }) => {
       cancel2FA,
       // OTP methods
       requiresOTP,
+      requiresPhone,
       otpPhoneMasked,
+      submitPhoneNumber,
       completeOTPLogin,
       resendOTP,
       cancelOTP
