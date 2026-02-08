@@ -1132,7 +1132,7 @@ export default function PharmacyDashboard() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid grid-cols-6 w-full max-w-3xl mb-6">
+          <TabsList className="grid grid-cols-8 w-full max-w-4xl mb-6">
             <TabsTrigger value="dashboard" className="gap-2">
               <BarChart3 className="w-4 h-4" /> Dashboard
             </TabsTrigger>
@@ -1147,6 +1147,12 @@ export default function PharmacyDashboard() {
             </TabsTrigger>
             <TabsTrigger value="prescriptions" className="gap-2">
               <FileText className="w-4 h-4" /> Rx
+            </TabsTrigger>
+            <TabsTrigger value="supply" className="gap-2">
+              <Truck className="w-4 h-4" /> Supply
+            </TabsTrigger>
+            <TabsTrigger value="audit" className="gap-2">
+              <History className="w-4 h-4" /> Audit
             </TabsTrigger>
             <TabsTrigger value="staff" className="gap-2">
               <Users className="w-4 h-4" /> Staff
