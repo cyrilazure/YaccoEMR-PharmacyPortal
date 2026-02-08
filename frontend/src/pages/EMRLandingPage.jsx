@@ -136,7 +136,7 @@ export default function EMRLandingPage() {
                 <Activity className="w-6 h-6 text-white" />
               </div>
               <div>
-                <span className="text-xl font-bold text-slate-900 tracking-tight">
+                <span className="text-xl font-bold text-emerald-700 tracking-tight">
                   Yacco Health
                 </span>
                 <span className="hidden sm:block text-xs text-slate-500">Ghana Healthcare Network</span>
