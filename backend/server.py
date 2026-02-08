@@ -367,11 +367,129 @@ async def register(user_data: UserCreate):
         )
     )
 
-# Login model with optional 2FA code
+# Login model with optional 2FA/OTP code
 class UserLoginWith2FA(BaseModel):
     email: EmailStr
     password: str
     totp_code: Optional[str] = None
+    otp_session_id: Optional[str] = None
+    otp_code: Optional[str] = None
+
+# Step 1: Initial login - validate credentials, send OTP
+@api_router.post("/auth/login/init")
+async def login_init(credentials: UserLogin):
+    """Step 1: Validate credentials and send OTP"""
+    from otp_module import create_otp_session
+    
+    user = await db.users.find_one({"email": credentials.email}, {"_id": 0})
+    if not user or not verify_password(credentials.password, user["password"]):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    # Check if user's organization is active (unless super_admin)
+    if user.get("organization_id") and user.get("role") != "super_admin":
+        org = await db.organizations.find_one({"id": user["organization_id"]})
+        if org and org.get("status") != "active":
+            raise HTTPException(status_code=403, detail="Your organization is not active. Please contact support.")
+    
+    # Get user's phone number
+    phone_number = user.get("phone") or user.get("phone_number")
+    
+    if not phone_number:
+        # If no phone, skip OTP and return token directly (legacy support)
+        token = create_token(user["id"], user["role"])
+        return {
+            "otp_required": False,
+            "token": token,
+            "user": {
+                "id": user["id"],
+                "email": user["email"],
+                "first_name": user["first_name"],
+                "last_name": user["last_name"],
+                "role": user["role"],
+                "department": user.get("department"),
+                "specialty": user.get("specialty"),
+                "organization_id": user.get("organization_id"),
+                "created_at": user["created_at"],
+                "is_active": user["is_active"]
+            }
+        }
+    
+    # Create OTP session and send SMS
+    otp_result = await create_otp_session(
+        db,
+        user_id=user["id"],
+        phone_number=phone_number,
+        platform="emr",
+        user_name=f"{user.get('first_name', '')} {user.get('last_name', '')}"
+    )
+    
+    return {
+        "otp_required": True,
+        "otp_session_id": otp_result["session_id"],
+        "phone_masked": otp_result["phone_masked"],
+        "expires_at": otp_result["expires_at"],
+        "sms_sent": otp_result["sms_sent"],
+        "message": "OTP sent to your registered phone number"
+    }
+
+
+# Step 2: Verify OTP and complete login
+@api_router.post("/auth/login/verify")
+async def login_verify(otp_session_id: str, otp_code: str):
+    """Step 2: Verify OTP and issue token"""
+    from otp_module import verify_otp, mark_otp_used
+    
+    # Verify OTP
+    result = await verify_otp(db, otp_session_id, otp_code)
+    
+    if not result["success"]:
+        raise HTTPException(status_code=401, detail=result["error"])
+    
+    # Get user
+    user = await db.users.find_one({"id": result["user_id"]}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+    
+    # Mark OTP as used
+    await mark_otp_used(db, otp_session_id)
+    
+    # Create token
+    token = create_token(user["id"], user["role"])
+    
+    return {
+        "token": token,
+        "user": {
+            "id": user["id"],
+            "email": user["email"],
+            "first_name": user["first_name"],
+            "last_name": user["last_name"],
+            "role": user["role"],
+            "department": user.get("department"),
+            "specialty": user.get("specialty"),
+            "organization_id": user.get("organization_id"),
+            "created_at": user["created_at"],
+            "is_active": user["is_active"]
+        }
+    }
+
+
+# Resend OTP endpoint
+@api_router.post("/auth/login/resend-otp")
+async def resend_login_otp(otp_session_id: str):
+    """Resend OTP for login"""
+    from otp_module import resend_otp
+    
+    result = await resend_otp(db, otp_session_id)
+    
+    if not result["success"]:
+        raise HTTPException(status_code=400, detail=result["error"])
+    
+    return {
+        "message": "OTP resent successfully",
+        "phone_masked": result["phone_masked"],
+        "expires_at": result["expires_at"]
+    }
+
 
 @api_router.post("/auth/login", response_model=LoginResponse)
 async def login(credentials: UserLoginWith2FA):
