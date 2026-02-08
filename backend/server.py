@@ -1213,6 +1213,11 @@ from pharmacy_portal_module import create_pharmacy_portal_router
 pharmacy_portal_router = create_pharmacy_portal_router(db)
 app.include_router(pharmacy_portal_router)
 
+# Pharmacy WebSocket Module (Real-time notifications)
+from pharmacy_ws_module import pharmacy_ws_router, create_pharmacy_ws_endpoints
+pharmacy_ws_endpoints = create_pharmacy_ws_endpoints(db)
+app.include_router(pharmacy_ws_router)
+
 # Medication Database API
 from medication_database import get_all_medications, search_medications, get_medication_categories, get_medications_by_category
 
