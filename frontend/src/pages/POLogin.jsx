@@ -7,6 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { 
+  Dialog, DialogContent, DialogDescription, 
+  DialogHeader, DialogTitle 
+} from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { 
   Shield, 
@@ -16,7 +20,9 @@ import {
   EyeOff, 
   Loader2,
   AlertCircle,
-  Activity
+  Activity,
+  Smartphone,
+  Send
 } from 'lucide-react';
 
 export default function POLogin() {
@@ -28,6 +34,15 @@ export default function POLogin() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  
+  // OTP States
+  const [loginStep, setLoginStep] = useState('credentials'); // 'credentials', 'phone', 'otp'
+  const [pendingUserId, setPendingUserId] = useState('');
+  const [otpSessionId, setOtpSessionId] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [phoneMasked, setPhoneMasked] = useState('');
+  const [resending, setResending] = useState(false);
 
   // If already logged in as super_admin, redirect to portal
   if (user?.role === 'super_admin') {
@@ -40,13 +55,74 @@ export default function POLogin() {
     setLoading(true);
     
     try {
-      const response = await api.post('/auth/login', { email, password });
+      // Step 1: Initialize login with OTP flow
+      const response = await api.post('/auth/login/init', { email, password });
+      
+      if (response.data.phone_required) {
+        // Phone number is needed
+        setPendingUserId(response.data.user_id);
+        setLoginStep('phone');
+        toast.info('Please enter your phone number for verification');
+      } else if (response.data.otp_required) {
+        // OTP sent to existing phone
+        setOtpSessionId(response.data.otp_session_id);
+        setPhoneMasked(response.data.phone_masked);
+        setLoginStep('otp');
+        toast.success('OTP sent to your phone');
+      }
+      
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Invalid credentials');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePhoneSubmit = async (e) => {
+    e.preventDefault();
+    if (phoneNumber.length < 9) {
+      setError('Please enter a valid phone number');
+      return;
+    }
+    
+    setLoading(true);
+    setError('');
+    try {
+      const response = await api.post('/auth/login/submit-phone', { 
+        user_id: pendingUserId, 
+        phone_number: phoneNumber 
+      });
+      setOtpSessionId(response.data.otp_session_id);
+      setPhoneMasked(response.data.phone_masked);
+      setLoginStep('otp');
+      toast.success('OTP sent to your phone');
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to send OTP');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOTPVerify = async (e) => {
+    e.preventDefault();
+    if (otpCode.length !== 6) {
+      setError('Please enter a valid 6-digit OTP');
+      return;
+    }
+    
+    setLoading(true);
+    setError('');
+    try {
+      const response = await api.post('/auth/login/verify', null, { 
+        params: { otp_session_id: otpSessionId, otp_code: otpCode }
+      });
+      
       const { token, user: userData } = response.data;
       
       // Check if user is super_admin
       if (userData.role !== 'super_admin') {
         setError('Access denied. This portal is only for Platform Owners.');
-        setLoading(false);
+        setLoginStep('credentials');
         return;
       }
       
@@ -58,10 +134,31 @@ export default function POLogin() {
       window.location.href = '/platform-admin';
       
     } catch (err) {
-      setError(err.response?.data?.detail || 'Invalid credentials');
+      setError(err.response?.data?.detail || 'Invalid OTP');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleResendOTP = async () => {
+    setResending(true);
+    try {
+      await api.post('/auth/login/resend-otp', null, { 
+        params: { otp_session_id: otpSessionId }
+      });
+      toast.success('OTP resent successfully');
+    } catch (err) {
+      toast.error('Failed to resend OTP');
+    } finally {
+      setResending(false);
+    }
+  };
+
+  const handleBack = () => {
+    setLoginStep('credentials');
+    setOtpCode('');
+    setPhoneNumber('');
+    setError('');
   };
 
   return (
