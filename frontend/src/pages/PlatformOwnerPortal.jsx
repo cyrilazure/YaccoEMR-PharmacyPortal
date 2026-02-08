@@ -387,30 +387,16 @@ export default function PlatformOwnerPortal() {
     setPharmacyDetailsOpen(true);
   };
 
-  // Fetch Pharmacy Staff (using public pharmacy data to extract admin info)
+  // Fetch Pharmacy Staff from Platform Owner endpoint
   const fetchPharmacyStaff = async () => {
     try {
       setPharmacyLoading(true);
-      // Use public pharmacies endpoint to get pharmacy admin info
-      const response = await api.get('/pharmacy-portal/public/pharmacies', { params: { limit: 200 } });
-      const allStaff = [];
-      for (const pharmacy of (response.data.pharmacies || [])) {
-        // Add pharmacy admin as staff
-        if (pharmacy.admin_email || pharmacy.email) {
-          allStaff.push({
-            id: pharmacy.id + '_admin',
-            pharmacy_id: pharmacy.id,
-            pharmacy_name: pharmacy.name,
-            email: pharmacy.admin_email || pharmacy.email,
-            first_name: pharmacy.admin_first_name || pharmacy.owner_name?.split(' ')[0] || 'Admin',
-            last_name: pharmacy.admin_last_name || pharmacy.owner_name?.split(' ').slice(1).join(' ') || '',
-            role: 'pharmacy_it_admin',
-            status: pharmacy.status || pharmacy.registration_status || 'active',
-            phone: pharmacy.admin_phone || pharmacy.phone,
-            created_at: pharmacy.created_at
-          });
-        }
-      }
+      // Use Platform Owner endpoint that lists all pharmacy staff across all pharmacies
+      const response = await api.get('/pharmacy-portal/platform-owner/staff');
+      const allStaff = (response.data.staff || []).map(staff => ({
+        ...staff,
+        status: staff.status || (staff.is_active ? 'active' : 'inactive')
+      }));
       setPharmacyStaff(allStaff);
     } catch (err) {
       console.error('Failed to fetch pharmacy staff:', err);
