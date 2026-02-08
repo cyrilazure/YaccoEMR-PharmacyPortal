@@ -447,7 +447,218 @@ def create_region_endpoints(db, get_current_user, hash_password):
             "total": len(locations)
         }
     
-    # ============ Location-Aware Authentication ============
+    # ============ Location-Aware Authentication with OTP ============
+    
+    @region_router.post("/auth/login/init", response_model=dict)
+    async def location_login_init(request: LocationLoginInitRequest):
+        """
+        Initialize OTP login flow with hospital/location context
+        Step 1: Verify credentials, return OTP requirement
+        """
+        # Get hospital
+        hospital = await db["hospitals"].find_one(
+            {"id": request.hospital_id},
+            {"_id": 0}
+        )
+        
+        if not hospital:
+            raise HTTPException(status_code=404, detail="Hospital not found")
+        
+        if hospital.get("status") != "active":
+            raise HTTPException(
+                status_code=403,
+                detail="Hospital is not active. Please contact support."
+            )
+        
+        # Check if hospital has multiple locations
+        location = None
+        location_count = await db["hospital_locations"].count_documents({
+            "hospital_id": request.hospital_id,
+            "is_active": True
+        })
+        
+        if location_count > 1 and request.location_id:
+            location = await db["hospital_locations"].find_one(
+                {"id": request.location_id, "hospital_id": request.hospital_id},
+                {"_id": 0}
+            )
+        elif location_count == 1:
+            location = await db["hospital_locations"].find_one(
+                {"hospital_id": request.hospital_id, "is_active": True},
+                {"_id": 0}
+            )
+        
+        # Find user
+        user = await db["users"].find_one({
+            "email": request.email,
+            "organization_id": request.hospital_id
+        }, {"_id": 0})
+        
+        if not user:
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+        
+        # Verify password
+        stored_password = user.get("password_hash") or user.get("password", "")
+        if not stored_password or not verify_password(request.password, stored_password):
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+        
+        # Check if user is active
+        if not user.get("is_active", True):
+            raise HTTPException(
+                status_code=403,
+                detail="Your account is inactive. Please contact your administrator."
+            )
+        
+        # Check if user has phone number
+        phone = user.get("phone")
+        if not phone or phone.strip() == "":
+            # Phone number required
+            return {
+                "otp_required": True,
+                "phone_required": True,
+                "user_id": user["id"],
+                "hospital_id": request.hospital_id,
+                "location_id": request.location_id,
+                "message": "Please enter your phone number to receive OTP"
+            }
+        
+        # Generate and send OTP
+        otp_session = await generate_otp_session(user["id"], phone, db)
+        await send_otp_sms(phone, otp_session["otp"])
+        
+        # Mask phone number
+        masked_phone = "******" + phone[-4:] if len(phone) >= 4 else "****"
+        
+        return {
+            "otp_required": True,
+            "phone_required": False,
+            "otp_session_id": otp_session["session_id"],
+            "phone_masked": masked_phone,
+            "hospital_id": request.hospital_id,
+            "location_id": request.location_id,
+            "expires_at": otp_session["expires_at"],
+            "sms_sent": True,
+            "message": "OTP sent to your registered phone number"
+        }
+    
+    @region_router.post("/auth/login/submit-phone", response_model=dict)
+    async def location_login_submit_phone(request: LocationLoginPhoneRequest):
+        """
+        Step 2: Submit phone number and send OTP
+        """
+        user = await db["users"].find_one({"id": request.user_id}, {"_id": 0})
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Update user's phone number
+        await db["users"].update_one(
+            {"id": request.user_id},
+            {"$set": {"phone": request.phone_number}}
+        )
+        
+        # Generate and send OTP
+        otp_session = await generate_otp_session(request.user_id, request.phone_number, db)
+        await send_otp_sms(request.phone_number, otp_session["otp"])
+        
+        # Mask phone number
+        masked_phone = "******" + request.phone_number[-4:] if len(request.phone_number) >= 4 else "****"
+        
+        return {
+            "otp_session_id": otp_session["session_id"],
+            "phone_masked": masked_phone,
+            "hospital_id": request.hospital_id,
+            "location_id": request.location_id,
+            "expires_at": otp_session["expires_at"],
+            "sms_sent": True,
+            "message": "OTP sent to your phone number"
+        }
+    
+    @region_router.post("/auth/login/verify", response_model=dict)
+    async def location_login_verify(request: LocationLoginVerifyRequest):
+        """
+        Step 3: Verify OTP and complete login
+        """
+        # Verify OTP
+        otp_result = await verify_otp(request.otp_session_id, request.otp_code, db)
+        if not otp_result["valid"]:
+            raise HTTPException(status_code=401, detail=otp_result.get("message", "Invalid OTP"))
+        
+        # Get user
+        user = await db["users"].find_one({"id": otp_result["user_id"]}, {"_id": 0})
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Get hospital
+        hospital = await db["hospitals"].find_one(
+            {"id": user.get("organization_id")},
+            {"_id": 0}
+        )
+        
+        # Get location if assigned
+        location = None
+        if user.get("location_id"):
+            location = await db["hospital_locations"].find_one(
+                {"id": user["location_id"]},
+                {"_id": 0}
+            )
+        elif hospital:
+            # Get single location if exists
+            location_count = await db["hospital_locations"].count_documents({
+                "hospital_id": hospital["id"],
+                "is_active": True
+            })
+            if location_count == 1:
+                location = await db["hospital_locations"].find_one(
+                    {"hospital_id": hospital["id"], "is_active": True},
+                    {"_id": 0}
+                )
+        
+        # Create token
+        token = create_location_token(user, hospital, location)
+        
+        # Determine redirect based on role
+        role = user.get("role", "physician")
+        redirect_to = ROLE_PORTAL_MAP.get(role, "/dashboard")
+        
+        # Prepare response
+        user_response = {
+            "id": user["id"],
+            "email": user["email"],
+            "first_name": user.get("first_name", ""),
+            "last_name": user.get("last_name", ""),
+            "role": user.get("role"),
+            "department": user.get("department"),
+            "specialty": user.get("specialty"),
+            "is_active": user.get("is_active", True)
+        }
+        
+        hospital_response = None
+        if hospital:
+            hospital_response = {
+                "id": hospital["id"],
+                "name": hospital["name"],
+                "region_id": hospital.get("region_id"),
+                "city": hospital.get("city")
+            }
+        
+        location_response = None
+        if location:
+            location_response = {
+                "id": location["id"],
+                "name": location["name"],
+                "type": location.get("type"),
+                "address": location.get("address")
+            }
+        
+        return {
+            "token": token,
+            "user": user_response,
+            "hospital": hospital_response,
+            "location": location_response,
+            "redirect_to": redirect_to
+        }
+    
+    # ============ Legacy Location-Aware Authentication (without OTP) ============
     
     @region_router.post("/auth/login", response_model=dict)
     async def location_login(request: LocationLoginRequest):
