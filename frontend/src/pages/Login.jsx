@@ -343,6 +343,74 @@ export default function LoginPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* OTP Dialog */}
+      <Dialog open={requiresOTP} onOpenChange={(open) => !open && handleCancelOTP()}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <div className="flex items-center justify-center mb-4">
+              <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center">
+                <Shield className="w-8 h-8 text-emerald-600" />
+              </div>
+            </div>
+            <DialogTitle className="text-center">Verify Your Identity</DialogTitle>
+            <DialogDescription className="text-center">
+              Enter the 6-digit OTP code sent to {otpPhoneMasked}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleOTPSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="otp-code">OTP Code</Label>
+              <Input
+                id="otp-code"
+                type="text"
+                placeholder="000000"
+                value={otpCode}
+                onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                className="text-center text-2xl tracking-widest font-mono"
+                autoComplete="one-time-code"
+                autoFocus
+                maxLength={6}
+              />
+              <p className="text-xs text-slate-500 text-center">
+                Code sent to {otpPhoneMasked}
+              </p>
+            </div>
+            
+            <div className="flex gap-2">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={handleCancelOTP}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+                disabled={loading || otpCode.length !== 6}
+              >
+                {loading ? 'Verifying...' : 'Verify & Login'}
+              </Button>
+            </div>
+
+            <div className="text-center">
+              <Button 
+                type="button" 
+                variant="ghost" 
+                size="sm"
+                onClick={handleResendOTP}
+                disabled={resending}
+                className="text-emerald-600 hover:text-emerald-700"
+              >
+                {resending ? 'Sending...' : "Didn't receive code? Resend OTP"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
