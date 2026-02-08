@@ -6,7 +6,7 @@ Handles electronic prescriptions with safety controls
 import uuid
 from datetime import datetime, timezone
 from typing import Optional, List
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Body
 from pydantic import BaseModel
 from enum import Enum
 
