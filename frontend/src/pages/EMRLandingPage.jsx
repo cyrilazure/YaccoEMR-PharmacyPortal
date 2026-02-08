@@ -500,6 +500,11 @@ export default function EMRLandingPage() {
                     <Pill className="w-3 h-3" /> Yacco Pharm
                   </Link>
                 </li>
+                <li>
+                  <Link to="/register-hospital" className="hover:text-white transition-colors flex items-center gap-2">
+                    <Hospital className="w-3 h-3" /> Register Hospital
+                  </Link>
+                </li>
               </ul>
             </div>
 
