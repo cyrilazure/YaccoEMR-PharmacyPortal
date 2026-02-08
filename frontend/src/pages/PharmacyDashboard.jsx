@@ -1071,6 +1071,22 @@ export default function PharmacyDashboard() {
         } else if (activeTab === 'staff') {
           const staffRes = await pharmacyDashAPI.getStaff();
           setStaff(staffRes.data.staff || []);
+        } else if (activeTab === 'supply') {
+          const [outRes, inRes, networkRes] = await Promise.all([
+            pharmacyDashAPI.getOutgoingSupplyRequests(),
+            pharmacyDashAPI.getIncomingSupplyRequests(),
+            pharmacyDashAPI.getPharmacyNetwork({})
+          ]);
+          setOutgoingRequests(outRes.data.requests || []);
+          setIncomingRequests(inRes.data.requests || []);
+          setNetworkPharmacies(networkRes.data.pharmacies || []);
+        } else if (activeTab === 'audit') {
+          const [logsRes, summaryRes] = await Promise.all([
+            pharmacyDashAPI.getAuditLogs({ limit: 50 }),
+            pharmacyDashAPI.getAuditLogsSummary(7)
+          ]);
+          setAuditLogs(logsRes.data.logs || []);
+          setAuditSummary(summaryRes.data);
         }
       } catch (error) {
         console.error('Failed to fetch tab data:', error);
