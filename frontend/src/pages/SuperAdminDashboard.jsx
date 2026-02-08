@@ -486,7 +486,8 @@ export default function SuperAdminDashboard() {
         </TabsContent>
 
         {/* Hospitals Tab */}
-        <TabsContent value="hospitals" className="space-y-4">
+        <TabsContent value="hospitals" className="space-y-6">
+          {/* Search and Add */}
           <div className="flex items-center justify-between">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -497,67 +498,261 @@ export default function SuperAdminDashboard() {
                 onChange={(e) => setOrgSearch(e.target.value)}
               />
             </div>
-            <Dialog open={createOrgOpen} onOpenChange={setCreateOrgOpen}>
-              <DialogTrigger asChild>
-                <Button className="gap-2 bg-emerald-600 hover:bg-emerald-700">
-                  <Hospital className="w-4 h-4" />Add Hospital
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-lg">
-                <DialogHeader>
-                  <DialogTitle>Add New Hospital</DialogTitle>
-                  <DialogDescription>Add a new hospital or clinic to the platform</DialogDescription>
-                </DialogHeader>
-                <form onSubmit={handleCreateOrg} className="space-y-4 mt-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2 col-span-2">
-                      <Label>Organization Name *</Label>
-                      <Input
-                        value={newOrg.name}
-                        onChange={(e) => setNewOrg({ ...newOrg, name: e.target.value })}
-                        required
-                      />
+            <div className="flex items-center gap-3">
+              <Badge className="bg-slate-100 text-slate-700">
+                {organizations.length} Total Hospitals
+              </Badge>
+              <Dialog open={createOrgOpen} onOpenChange={setCreateOrgOpen}>
+                <DialogTrigger asChild>
+                  <Button className="gap-2 bg-emerald-600 hover:bg-emerald-700">
+                    <Hospital className="w-4 h-4" />Add Hospital
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-lg">
+                  <DialogHeader>
+                    <DialogTitle>Add New Hospital</DialogTitle>
+                    <DialogDescription>Add a new hospital or clinic to the platform</DialogDescription>
+                  </DialogHeader>
+                  <form onSubmit={handleCreateOrg} className="space-y-4 mt-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2 col-span-2">
+                        <Label>Organization Name *</Label>
+                        <Input
+                          value={newOrg.name}
+                          onChange={(e) => setNewOrg({ ...newOrg, name: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Type *</Label>
+                        <Select value={newOrg.type} onValueChange={(v) => setNewOrg({ ...newOrg, type: v })}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="hospital">Hospital</SelectItem>
+                            <SelectItem value="clinic">Clinic</SelectItem>
+                            <SelectItem value="practice">Private Practice</SelectItem>
+                            <SelectItem value="lab">Laboratory</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Contact Email *</Label>
+                        <Input
+                          type="email"
+                          value={newOrg.contact_email}
+                          onChange={(e) => setNewOrg({ ...newOrg, contact_email: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Phone</Label>
+                        <Input
+                          value={newOrg.phone}
+                          onChange={(e) => setNewOrg({ ...newOrg, phone: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>City</Label>
+                        <Input
+                          value={newOrg.city}
+                          onChange={(e) => setNewOrg({ ...newOrg, city: e.target.value })}
+                        />
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label>Type *</Label>
-                      <Select value={newOrg.type} onValueChange={(v) => setNewOrg({ ...newOrg, type: v })}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="hospital">Hospital</SelectItem>
-                          <SelectItem value="clinic">Clinic</SelectItem>
-                          <SelectItem value="practice">Private Practice</SelectItem>
-                          <SelectItem value="lab">Laboratory</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Contact Email *</Label>
-                      <Input
-                        type="email"
-                        value={newOrg.contact_email}
-                        onChange={(e) => setNewOrg({ ...newOrg, contact_email: e.target.value })}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Phone</Label>
-                      <Input
-                        value={newOrg.phone}
-                        onChange={(e) => setNewOrg({ ...newOrg, phone: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>City</Label>
-                      <Input
-                        value={newOrg.city}
-                        onChange={(e) => setNewOrg({ ...newOrg, city: e.target.value })}
-                      />
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button type="submit" disabled={saving}>
-                      {saving ? 'Creating...' : 'Create Hospital'}
-                    </Button>
+                    <DialogFooter>
+                      <Button type="submit" disabled={saving}>
+                        {saving ? 'Creating...' : 'Create Hospital'}
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </div>
+
+          {/* Pending Hospital Approvals Section */}
+          <Card className="border-amber-200">
+            <CardHeader className="pb-3 bg-amber-50 rounded-t-lg">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg flex items-center gap-2 text-amber-800">
+                  <Clock className="w-5 h-5" />
+                  Pending Hospital Approvals
+                </CardTitle>
+                <Badge className="bg-amber-500 text-white">
+                  {filteredOrgs.filter(o => o.status === 'pending').length} Pending
+                </Badge>
+              </div>
+              <CardDescription className="text-amber-700">
+                Review and approve new hospital registration requests
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-slate-50">
+                    <TableHead>Hospital / Clinic</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Contact</TableHead>
+                    <TableHead>License</TableHead>
+                    <TableHead>Submitted</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredOrgs.filter(o => o.status === 'pending').map((org) => (
+                    <TableRow key={org.id} className="bg-amber-50/30">
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{org.name}</p>
+                          <p className="text-sm text-slate-500">{org.city || org.state || '-'}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{org.type || org.organization_type || 'hospital'}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          <p>{org.contact_email || org.email || org.admin_email}</p>
+                          <p className="text-slate-500">{org.phone || '-'}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm">{org.license_number || '-'}</TableCell>
+                      <TableCell className="text-sm text-slate-500">
+                        {org.created_at ? formatDateTime(org.created_at) : '-'}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button 
+                            size="sm" 
+                            className="bg-emerald-600 hover:bg-emerald-700"
+                            onClick={() => handleOrgAction(org.id, 'approve')}
+                          >
+                            <CheckCircle2 className="w-4 h-4 mr-1" />
+                            Approve
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="destructive"
+                            onClick={() => handleOrgAction(org.id, 'reject')}
+                          >
+                            <XCircle className="w-4 h-4 mr-1" />
+                            Reject
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {filteredOrgs.filter(o => o.status === 'pending').length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8 text-slate-500">
+                        <Clock className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+                        No pending hospital approvals
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          {/* Approved Hospitals Section */}
+          <Card>
+            <CardHeader className="pb-3 bg-emerald-50 rounded-t-lg">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg flex items-center gap-2 text-emerald-800">
+                  <CheckCircle2 className="w-5 h-5" />
+                  Approved Hospitals
+                </CardTitle>
+                <Badge className="bg-emerald-500 text-white">
+                  {filteredOrgs.filter(o => o.status === 'active' || o.status === 'approved').length} Active
+                </Badge>
+              </div>
+              <CardDescription className="text-emerald-700">
+                Manage approved hospitals and healthcare facilities
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-slate-50">
+                    <TableHead>Hospital / Clinic</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Users</TableHead>
+                    <TableHead>Approved</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredOrgs.filter(o => o.status !== 'pending').map((org) => (
+                    <TableRow key={org.id}>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{org.name}</p>
+                          <p className="text-sm text-slate-500">{org.contact_email || org.email || org.admin_email}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{org.type || org.organization_type || 'hospital'}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge style={{ backgroundColor: STATUS_COLORS[org.status] || '#6b7280' }} className="text-white">
+                          {org.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{org.user_count || org.total_users || 0}</TableCell>
+                      <TableCell className="text-sm text-slate-500">
+                        {org.approved_at ? formatDateTime(org.approved_at) : org.created_at ? formatDateTime(org.created_at) : '-'}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          {(org.status === 'active' || org.status === 'approved') && (
+                            <Button 
+                              size="sm" 
+                              variant="destructive"
+                              onClick={() => handleOrgAction(org.id, 'suspend')}
+                            >
+                              <Pause className="w-4 h-4 mr-1" />
+                              Suspend
+                            </Button>
+                          )}
+                          {org.status === 'suspended' && (
+                            <Button 
+                              size="sm"
+                              className="bg-emerald-600 hover:bg-emerald-700"
+                              onClick={() => handleOrgAction(org.id, 'reactivate')}
+                            >
+                              <Play className="w-4 h-4 mr-1" />
+                              Reactivate
+                            </Button>
+                          )}
+                          {org.status === 'rejected' && (
+                            <Button 
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleOrgAction(org.id, 'approve')}
+                            >
+                              <CheckCircle2 className="w-4 h-4 mr-1" />
+                              Reconsider
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {filteredOrgs.filter(o => o.status !== 'pending').length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8 text-slate-500">
+                        <Hospital className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+                        No approved hospitals yet
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
                   </DialogFooter>
                 </form>
               </DialogContent>
