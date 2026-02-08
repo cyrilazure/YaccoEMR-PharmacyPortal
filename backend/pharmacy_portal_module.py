@@ -1650,7 +1650,7 @@ def create_pharmacy_portal_router(db) -> APIRouter:
         }
     
     @router.put("/eprescription/{rx_id}/accept")
-    async def accept_prescription(
+    async def accept_eprescription(
         rx_id: str,
         user: dict = Depends(require_roles(
             PharmacyStaffRole.SUPERINTENDENT_PHARMACIST,
