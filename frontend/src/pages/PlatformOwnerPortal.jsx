@@ -104,6 +104,14 @@ export default function PlatformOwnerPortal() {
   const [statusChangeOpen, setStatusChangeOpen] = useState(false);
   const [hospitalToChangeStatus, setHospitalToChangeStatus] = useState(null);
   
+  // Pharmacy approval management
+  const [pendingPharmacies, setPendingPharmacies] = useState([]);
+  const [approvedPharmacies, setApprovedPharmacies] = useState([]);
+  const [pharmacyLoading, setPharmacyLoading] = useState(false);
+  const [selectedPharmacyDetails, setSelectedPharmacyDetails] = useState(null);
+  const [pharmacyDetailsOpen, setPharmacyDetailsOpen] = useState(false);
+  const [approvalNotes, setApprovalNotes] = useState('');
+  
   // Forms
   const [newHospital, setNewHospital] = useState({
     name: '',
