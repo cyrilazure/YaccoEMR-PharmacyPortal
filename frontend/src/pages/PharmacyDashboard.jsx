@@ -998,6 +998,14 @@ export default function PharmacyDashboard() {
   const [showAddStaff, setShowAddStaff] = useState(false);
   const [showSeedDrugs, setShowSeedDrugs] = useState(false);
   const [drugSearch, setDrugSearch] = useState('');
+  
+  // Phase 3: Supply Requests and Audit Logs
+  const [outgoingRequests, setOutgoingRequests] = useState([]);
+  const [incomingRequests, setIncomingRequests] = useState([]);
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [auditSummary, setAuditSummary] = useState(null);
+  const [networkPharmacies, setNetworkPharmacies] = useState([]);
+  const [showSupplyRequest, setShowSupplyRequest] = useState(false);
 
   // Check auth on mount
   useEffect(() => {
