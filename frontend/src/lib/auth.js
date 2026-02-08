@@ -11,6 +11,8 @@ export const AuthProvider = ({ children }) => {
   
   // OTP States
   const [requiresOTP, setRequiresOTP] = useState(false);
+  const [requiresPhone, setRequiresPhone] = useState(false);
+  const [pendingUserId, setPendingUserId] = useState(null);
   const [otpSessionId, setOtpSessionId] = useState(null);
   const [otpPhoneMasked, setOtpPhoneMasked] = useState('');
 
@@ -40,26 +42,30 @@ export const AuthProvider = ({ children }) => {
       // Use new OTP flow
       const response = await authAPI.loginInit(email, password);
       
-      if (response.data.otp_required) {
-        // OTP is required
+      if (response.data.phone_required) {
+        // Phone number is required - show phone input
+        setRequiresPhone(true);
+        setPendingUserId(response.data.user_id);
+        setPendingCredentials({ email, password });
+        throw new Error('PHONE_REQUIRED');
+      } else if (response.data.otp_required) {
+        // OTP is required, show OTP input
         setRequiresOTP(true);
         setOtpSessionId(response.data.otp_session_id);
         setOtpPhoneMasked(response.data.phone_masked);
         setPendingCredentials({ email, password });
         throw new Error('OTP_REQUIRED');
       } else {
-        // No OTP required (no phone), direct login
+        // No OTP required (shouldn't happen with new flow)
         const { token, user: userData } = response.data;
         localStorage.setItem('yacco_token', token);
         localStorage.setItem('yacco_user', JSON.stringify(userData));
         setUser(userData);
-        setRequires2FA(false);
-        setRequiresOTP(false);
-        setPendingCredentials(null);
+        resetOTPState();
         return userData;
       }
     } catch (error) {
-      if (error.message === 'OTP_REQUIRED') {
+      if (error.message === 'OTP_REQUIRED' || error.message === 'PHONE_REQUIRED') {
         throw error;
       }
       // Check if 2FA is required (legacy TOTP)
@@ -70,6 +76,22 @@ export const AuthProvider = ({ children }) => {
       }
       throw error;
     }
+  };
+
+  const submitPhoneNumber = async (phoneNumber) => {
+    if (!pendingUserId) {
+      throw new Error('No pending login');
+    }
+    
+    const response = await authAPI.loginSubmitPhone(pendingUserId, phoneNumber);
+    
+    // Phone submitted, now show OTP step
+    setRequiresPhone(false);
+    setRequiresOTP(true);
+    setOtpSessionId(response.data.otp_session_id);
+    setOtpPhoneMasked(response.data.phone_masked);
+    
+    return response.data;
   };
 
   const completeOTPLogin = async (otpCode) => {
@@ -83,10 +105,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('yacco_token', token);
     localStorage.setItem('yacco_user', JSON.stringify(userData));
     setUser(userData);
-    setRequiresOTP(false);
-    setOtpSessionId(null);
-    setOtpPhoneMasked('');
-    setPendingCredentials(null);
+    resetOTPState();
     return userData;
   };
 
@@ -97,11 +116,17 @@ export const AuthProvider = ({ children }) => {
     await authAPI.resendOTP(otpSessionId);
   };
 
-  const cancelOTP = () => {
+  const resetOTPState = () => {
     setRequiresOTP(false);
+    setRequiresPhone(false);
+    setPendingUserId(null);
     setOtpSessionId(null);
     setOtpPhoneMasked('');
     setPendingCredentials(null);
+  };
+
+  const cancelOTP = () => {
+    resetOTPState();
   };
 
   const complete2FALogin = async (totpCode) => {
