@@ -40,6 +40,7 @@ export const authAPI = {
   loginEnhanced: (credentials) => api.post('/auth/login/enhanced', credentials),
   // OTP Login Flow
   loginInit: (email, password) => api.post('/auth/login/init', { email, password }),
+  loginSubmitPhone: (userId, phoneNumber) => api.post('/auth/login/submit-phone', { user_id: userId, phone_number: phoneNumber }),
   loginVerify: (otpSessionId, otpCode) => api.post('/auth/login/verify', null, { params: { otp_session_id: otpSessionId, otp_code: otpCode }}),
   resendOTP: (otpSessionId) => api.post('/auth/login/resend-otp', null, { params: { otp_session_id: otpSessionId }}),
   getMe: () => api.get('/auth/me'),
