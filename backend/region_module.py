@@ -554,19 +554,17 @@ def create_region_endpoints(db, get_current_user, hash_password):
         )
         
         # Generate and send OTP
-        otp_session = await create_otp_session(request.user_id, request.phone_number, db)
-        await send_otp_sms(request.phone_number, otp_session["otp"])
-        
-        # Mask phone number
-        masked_phone = "******" + request.phone_number[-4:] if len(request.phone_number) >= 4 else "****"
+        user = await db["users"].find_one({"id": request.user_id}, {"_id": 0})
+        user_name = f"{user.get('first_name', '')} {user.get('last_name', '')}".strip() if user else "User"
+        otp_session = await create_otp_session(db, request.user_id, request.phone_number, "emr", user_name)
         
         return {
             "otp_session_id": otp_session["session_id"],
-            "phone_masked": masked_phone,
+            "phone_masked": otp_session.get("phone_masked", mask_phone_number(request.phone_number)),
             "hospital_id": request.hospital_id,
             "location_id": request.location_id,
             "expires_at": otp_session["expires_at"],
-            "sms_sent": True,
+            "sms_sent": otp_session.get("sms_sent", True),
             "message": "OTP sent to your phone number"
         }
     
@@ -576,7 +574,7 @@ def create_region_endpoints(db, get_current_user, hash_password):
         Step 3: Verify OTP and complete login
         """
         # Verify OTP
-        otp_result = await verify_otp(request.otp_session_id, request.otp_code, db)
+        otp_result = await verify_otp(db, request.otp_session_id, request.otp_code)
         if not otp_result["valid"]:
             raise HTTPException(status_code=401, detail=otp_result.get("message", "Invalid OTP"))
         
