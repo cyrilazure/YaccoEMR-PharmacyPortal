@@ -556,7 +556,7 @@ export default function SuperAdminDashboard() {
                   </div>
                   <DialogFooter>
                     <Button type="submit" disabled={saving}>
-                      {saving ? 'Creating...' : 'Create Organization'}
+                      {saving ? 'Creating...' : 'Create Hospital'}
                     </Button>
                   </DialogFooter>
                 </form>
@@ -568,7 +568,7 @@ export default function SuperAdminDashboard() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Organization</TableHead>
+                  <TableHead>Hospital / Clinic</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Users</TableHead>
@@ -582,33 +582,42 @@ export default function SuperAdminDashboard() {
                     <TableCell>
                       <div>
                         <p className="font-medium">{org.name}</p>
-                        <p className="text-sm text-slate-500">{org.contact_email}</p>
+                        <p className="text-sm text-slate-500">{org.contact_email || org.email || org.admin_email}</p>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline">{org.type}</Badge>
+                      <Badge variant="outline">{org.type || org.organization_type || 'hospital'}</Badge>
                     </TableCell>
                     <TableCell>
                       <Badge style={{ backgroundColor: STATUS_COLORS[org.status] || '#6b7280' }} className="text-white">
                         {org.status}
                       </Badge>
                     </TableCell>
-                    <TableCell>{org.user_count || 0}</TableCell>
+                    <TableCell>{org.user_count || org.total_users || 0}</TableCell>
                     <TableCell className="text-sm text-slate-500">
                       {org.created_at ? formatDateTime(org.created_at) : '-'}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
                         {org.status === 'pending' && (
-                          <Button 
-                            size="sm" 
-                            className="bg-emerald-600 hover:bg-emerald-700"
-                            onClick={() => handleOrgAction(org.id, 'approve')}
-                          >
-                            Approve
-                          </Button>
+                          <>
+                            <Button 
+                              size="sm" 
+                              className="bg-emerald-600 hover:bg-emerald-700"
+                              onClick={() => handleOrgAction(org.id, 'approve')}
+                            >
+                              Approve
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="destructive"
+                              onClick={() => handleOrgAction(org.id, 'reject')}
+                            >
+                              Reject
+                            </Button>
+                          </>
                         )}
-                        {org.status === 'active' && (
+                        {(org.status === 'active' || org.status === 'approved') && (
                           <Button 
                             size="sm" 
                             variant="destructive"
@@ -629,6 +638,124 @@ export default function SuperAdminDashboard() {
                     </TableCell>
                   </TableRow>
                 ))}
+                {filteredOrgs.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8 text-slate-500">
+                      No hospitals found
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </Card>
+        </TabsContent>
+
+        {/* Pharmacies Tab */}
+        <TabsContent value="pharmacies" className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Input
+                placeholder="Search pharmacies..."
+                className="pl-10"
+                value={pharmacySearch}
+                onChange={(e) => setPharmacySearch(e.target.value)}
+              />
+            </div>
+            <Badge className="bg-slate-100 text-slate-700">
+              {pharmacies.length} Total Pharmacies
+            </Badge>
+          </div>
+
+          <Card>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Pharmacy</TableHead>
+                  <TableHead>Region</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>License</TableHead>
+                  <TableHead>Created</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {pharmacies
+                  .filter(p => 
+                    !pharmacySearch || 
+                    p.name?.toLowerCase().includes(pharmacySearch.toLowerCase()) ||
+                    p.email?.toLowerCase().includes(pharmacySearch.toLowerCase()) ||
+                    p.license_number?.toLowerCase().includes(pharmacySearch.toLowerCase())
+                  )
+                  .map((pharmacy) => (
+                  <TableRow key={pharmacy.id}>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium">{pharmacy.name}</p>
+                        <p className="text-sm text-slate-500">{pharmacy.email}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-sm">{pharmacy.region || '-'}</span>
+                      {pharmacy.city && <span className="text-xs text-slate-400 block">{pharmacy.city}</span>}
+                    </TableCell>
+                    <TableCell>
+                      <Badge style={{ backgroundColor: STATUS_COLORS[pharmacy.status] || STATUS_COLORS[pharmacy.registration_status] || '#6b7280' }} className="text-white">
+                        {pharmacy.status || pharmacy.registration_status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-sm">{pharmacy.license_number || '-'}</TableCell>
+                    <TableCell className="text-sm text-slate-500">
+                      {pharmacy.created_at ? formatDateTime(pharmacy.created_at) : '-'}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        {(pharmacy.status === 'pending' || pharmacy.registration_status === 'pending') && (
+                          <>
+                            <Button 
+                              size="sm" 
+                              className="bg-emerald-600 hover:bg-emerald-700"
+                              onClick={() => handlePharmacyAction(pharmacy.id, 'approve')}
+                            >
+                              Approve
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="destructive"
+                              onClick={() => handlePharmacyAction(pharmacy.id, 'reject')}
+                            >
+                              Reject
+                            </Button>
+                          </>
+                        )}
+                        {(pharmacy.status === 'active' || pharmacy.status === 'approved') && (
+                          <Button 
+                            size="sm" 
+                            variant="destructive"
+                            onClick={() => handlePharmacyAction(pharmacy.id, 'suspend')}
+                          >
+                            Suspend
+                          </Button>
+                        )}
+                        {pharmacy.status === 'suspended' && (
+                          <Button 
+                            size="sm"
+                            onClick={() => handlePharmacyAction(pharmacy.id, 'reactivate')}
+                          >
+                            Reactivate
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {pharmacies.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8 text-slate-500">
+                      No pharmacies found
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </Card>
