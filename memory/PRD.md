@@ -754,6 +754,37 @@ GET  /api/billing-shifts/audit-logs      - Billing audit logs
 ### PatientChart - All 9 Tabs Implemented
 - [x] Overview, Vitals, Problems, Medications, Labs, Imaging, Pharmacy, Notes, Orders
 
+### Prescription Delivery Tracking - Patient-Facing (February 8, 2026)
+- [x] **Public Tracking Page** (`/track` and `/track/:trackingCode`):
+  - Search input for prescription number or tracking code
+  - Auto-fetch when tracking code is in URL
+  - Responsive design with gradient background
+  - Home button to return to main site
+- [x] **5-Step Tracking Timeline**:
+  1. Sent to Pharmacy - Prescription has been sent
+  2. Received - Pharmacy has received the prescription
+  3. Being Prepared - Medications are being prepared
+  4. Ready for Pickup - Prescription is ready
+  5. Collected/Delivered - Prescription has been collected or delivered
+- [x] **Status Progress Display**:
+  - Visual progress bar showing current step out of total
+  - Animated indicators for current status
+  - Timestamps for each completed step
+  - "Ready for Pickup!" alert when prescription is ready
+- [x] **Information Display**:
+  - Patient name, hospital name, prescription date
+  - Medications list with name, dosage, quantity
+  - Pharmacy location with name, address, region, phone
+  - Delivery method and address (if delivery selected)
+- [x] **Auto-Refresh Feature**:
+  - Toggle button for 30-second auto-refresh
+  - Real-time status updates without manual refresh
+- [x] **Backend Tracking APIs**:
+  - `GET /api/pharmacy-portal/public/prescription/track/{code}` - Public endpoint for patients
+  - `PUT /api/pharmacy-portal/prescription/{id}/update-status` - Update status with delivery info
+  - `POST /api/pharmacy-portal/prescription/{id}/set-delivery` - Set delivery method (pickup/delivery)
+  - `GET /api/pharmacy-portal/prescription/{id}/tracking-qr` - Generate QR code data for tracking
+
 ### P1 (High Priority)
 - [ ] Real Ghana FDA API integration (mock data currently simulating real FDA)
 - [ ] Real NHIS API integration (mock data currently simulating real NHIS)
