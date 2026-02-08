@@ -1662,10 +1662,316 @@ export default function PlatformOwnerPortal() {
                   )}
                 </CardContent>
               </Card>
+
+              {/* Pharmacy Staff Management Section */}
+              <Card className="border-blue-200">
+                <CardHeader className="bg-blue-50/50 rounded-t-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2 text-blue-800">
+                        <UserCog className="w-5 h-5" />
+                        Pharmacy Staff Management ({pharmacyStaff.length})
+                      </CardTitle>
+                      <CardDescription>Manage pharmacy IT admins and staff accounts</CardDescription>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={fetchPharmacyStaff} disabled={pharmacyLoading}>
+                      <RefreshCw className={`w-4 h-4 mr-2 ${pharmacyLoading ? 'animate-spin' : ''}`} />
+                      Refresh
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-0">
+                  {pharmacyLoading ? (
+                    <div className="flex items-center justify-center py-12">
+                      <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                    </div>
+                  ) : pharmacyStaff.length === 0 ? (
+                    <div className="text-center py-12 text-slate-500">
+                      <Users className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+                      <p>No pharmacy staff found</p>
+                    </div>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-slate-50">
+                          <TableHead>Staff Name</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Pharmacy</TableHead>
+                          <TableHead>Role</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {pharmacyStaff.map((staff) => (
+                          <TableRow key={staff.id}>
+                            <TableCell>
+                              <div>
+                                <p className="font-medium">{staff.first_name} {staff.last_name}</p>
+                                <p className="text-xs text-slate-500">{staff.phone || '-'}</p>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-sm">{staff.email}</TableCell>
+                            <TableCell className="text-sm">{staff.pharmacy_name || '-'}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="text-xs">
+                                {staff.role?.replace(/_/g, ' ') || 'Staff'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Badge className={
+                                staff.status === 'active' ? 'bg-emerald-100 text-emerald-700' :
+                                staff.status === 'suspended' ? 'bg-amber-100 text-amber-700' :
+                                staff.status === 'locked' ? 'bg-red-100 text-red-700' :
+                                'bg-slate-100 text-slate-700'
+                              }>
+                                {staff.status || 'active'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => openStaffDetails(staff)}
+                                  title="View Details"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => openEditStaff(staff)}
+                                  title="Edit"
+                                >
+                                  <Pencil className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => openStaffAction(staff, 'reset-password')}
+                                  title="Reset Password"
+                                >
+                                  <KeyRound className="w-4 h-4" />
+                                </Button>
+                                {staff.status === 'active' ? (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => openStaffAction(staff, 'suspend')}
+                                    title="Suspend"
+                                    className="text-amber-600 hover:text-amber-700"
+                                  >
+                                    <Ban className="w-4 h-4" />
+                                  </Button>
+                                ) : staff.status === 'suspended' ? (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => openStaffAction(staff, 'activate')}
+                                    title="Activate"
+                                    className="text-emerald-600 hover:text-emerald-700"
+                                  >
+                                    <CheckCircle className="w-4 h-4" />
+                                  </Button>
+                                ) : staff.status === 'locked' ? (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => openStaffAction(staff, 'unlock')}
+                                    title="Unlock"
+                                    className="text-blue-600 hover:text-blue-700"
+                                  >
+                                    <Unlock className="w-4 h-4" />
+                                  </Button>
+                                ) : null}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => openStaffAction(staff, 'delete')}
+                                  title="Delete"
+                                  className="text-red-600 hover:text-red-700"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
             </div>
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Staff Details Dialog */}
+      <Dialog open={staffDetailsOpen} onOpenChange={setStaffDetailsOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <User className="w-5 h-5 text-blue-600" />
+              Staff Details
+            </DialogTitle>
+          </DialogHeader>
+          {selectedStaffMember && (
+            <div className="space-y-4">
+              <div className="p-4 bg-slate-50 rounded-lg space-y-3">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-slate-400">Full Name</p>
+                    <p className="font-medium">{selectedStaffMember.first_name} {selectedStaffMember.last_name}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-400">Email</p>
+                    <p className="font-medium">{selectedStaffMember.email}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-400">Phone</p>
+                    <p className="font-medium">{selectedStaffMember.phone || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-400">Role</p>
+                    <p className="font-medium">{selectedStaffMember.role?.replace(/_/g, ' ')}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-400">Pharmacy</p>
+                    <p className="font-medium">{selectedStaffMember.pharmacy_name || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-400">Status</p>
+                    <Badge className={
+                      selectedStaffMember.status === 'active' ? 'bg-emerald-100 text-emerald-700' :
+                      selectedStaffMember.status === 'suspended' ? 'bg-amber-100 text-amber-700' :
+                      'bg-slate-100 text-slate-700'
+                    }>
+                      {selectedStaffMember.status || 'active'}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setStaffDetailsOpen(false)}>Close</Button>
+                <Button onClick={() => { setStaffDetailsOpen(false); openEditStaff(selectedStaffMember); }}>
+                  Edit Details
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Staff Dialog */}
+      <Dialog open={editStaffOpen} onOpenChange={setEditStaffOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pencil className="w-5 h-5 text-blue-600" />
+              Edit Staff Information
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleEditStaff} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>First Name</Label>
+                <Input
+                  value={editStaffForm.first_name}
+                  onChange={(e) => setEditStaffForm({...editStaffForm, first_name: e.target.value})}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Last Name</Label>
+                <Input
+                  value={editStaffForm.last_name}
+                  onChange={(e) => setEditStaffForm({...editStaffForm, last_name: e.target.value})}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input
+                type="email"
+                value={editStaffForm.email}
+                onChange={(e) => setEditStaffForm({...editStaffForm, email: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Phone</Label>
+              <Input
+                value={editStaffForm.phone}
+                onChange={(e) => setEditStaffForm({...editStaffForm, phone: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Role</Label>
+              <Select value={editStaffForm.role} onValueChange={(v) => setEditStaffForm({...editStaffForm, role: v})}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pharmacy_it_admin">Pharmacy IT Admin</SelectItem>
+                  <SelectItem value="pharmacy_admin">Pharmacy Admin</SelectItem>
+                  <SelectItem value="pharmacist">Pharmacist</SelectItem>
+                  <SelectItem value="pharmacy_staff">Staff</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setEditStaffOpen(false)}>Cancel</Button>
+              <Button type="submit" disabled={staffActionLoading}>
+                {staffActionLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                Save Changes
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Staff Action Confirmation Dialog */}
+      <Dialog open={staffActionOpen} onOpenChange={setStaffActionOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {staffActionType === 'delete' && <Trash2 className="w-5 h-5 text-red-600" />}
+              {staffActionType === 'suspend' && <Ban className="w-5 h-5 text-amber-600" />}
+              {staffActionType === 'activate' && <CheckCircle className="w-5 h-5 text-emerald-600" />}
+              {staffActionType === 'unlock' && <Unlock className="w-5 h-5 text-blue-600" />}
+              {staffActionType === 'reset-password' && <KeyRound className="w-5 h-5 text-purple-600" />}
+              {staffActionType === 'deactivate' && <XCircle className="w-5 h-5 text-red-600" />}
+              Confirm {staffActionType?.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+            </DialogTitle>
+            <DialogDescription>
+              {staffActionType === 'delete' && 'This will permanently delete this staff account. This action cannot be undone.'}
+              {staffActionType === 'suspend' && 'This will temporarily suspend this staff account. They will not be able to login.'}
+              {staffActionType === 'activate' && 'This will reactivate this staff account. They will be able to login again.'}
+              {staffActionType === 'unlock' && 'This will unlock this staff account after failed login attempts.'}
+              {staffActionType === 'reset-password' && 'This will generate a new temporary password for this staff member.'}
+              {staffActionType === 'deactivate' && 'This will deactivate this staff account.'}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedStaffMember && (
+            <div className="p-4 bg-slate-50 rounded-lg">
+              <p className="text-sm text-slate-500">Staff Member</p>
+              <p className="font-medium">{selectedStaffMember.first_name} {selectedStaffMember.last_name}</p>
+              <p className="text-sm text-slate-500">{selectedStaffMember.email}</p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setStaffActionOpen(false)}>Cancel</Button>
+            <Button 
+              variant={staffActionType === 'delete' ? 'destructive' : 'default'}
+              onClick={() => handleStaffAction(staffActionType, selectedStaffMember?.id)}
+              disabled={staffActionLoading}
+            >
+              {staffActionLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+              Confirm
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Pharmacy Details Dialog */}
       <Dialog open={pharmacyDetailsOpen} onOpenChange={setPharmacyDetailsOpen}>
