@@ -1017,6 +1017,18 @@ export default function PharmacyDashboard() {
   const [showSeedDrugs, setShowSeedDrugs] = useState(false);
   const [drugSearch, setDrugSearch] = useState('');
   
+  // Staff Management States
+  const [selectedStaff, setSelectedStaff] = useState(null);
+  const [showStaffDetails, setShowStaffDetails] = useState(false);
+  const [showSuspendDialog, setShowSuspendDialog] = useState(false);
+  const [showPermissionsDialog, setShowPermissionsDialog] = useState(false);
+  const [showLocationDialog, setShowLocationDialog] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [suspendReason, setSuspendReason] = useState('');
+  const [staffLocation, setStaffLocation] = useState('');
+  const [staffPermissions, setStaffPermissions] = useState([]);
+  const [staffActionLoading, setStaffActionLoading] = useState(false);
+  
   // Phase 3: Supply Requests and Audit Logs
   const [outgoingRequests, setOutgoingRequests] = useState([]);
   const [incomingRequests, setIncomingRequests] = useState([]);
