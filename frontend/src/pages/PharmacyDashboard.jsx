@@ -1229,7 +1229,7 @@ export default function PharmacyDashboard() {
   if (loading && !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
       </div>
     );
   }
@@ -1241,7 +1241,7 @@ export default function PharmacyDashboard() {
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center">
+              <div className="w-10 h-10 bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-xl flex items-center justify-center">
                 <Pill className="w-6 h-6 text-white" />
               </div>
               <div>
@@ -1268,7 +1268,7 @@ export default function PharmacyDashboard() {
                   toast.info(`${notifications.length} notifications`);
                 }}
               >
-                <BellRing className={`w-5 h-5 ${unreadCount > 0 ? 'text-blue-600' : 'text-slate-500'}`} />
+                <BellRing className={`w-5 h-5 ${unreadCount > 0 ? 'text-emerald-600' : 'text-slate-500'}`} />
                 {unreadCount > 0 && (
                   <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center animate-bounce">
                     {unreadCount > 9 ? '9+' : unreadCount}
