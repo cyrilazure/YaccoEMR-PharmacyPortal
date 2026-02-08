@@ -610,9 +610,20 @@ GET  /api/billing-shifts/audit-logs      - Billing audit logs
 - [ ] Real NHIS API integration (replace mock data)
 - [ ] Real PACS/dcm4chee server integration (replace demo mode)
 - [ ] Complete PatientChart refactoring (remaining tabs: Overview, Notes, Orders, Imaging, Pharmacy)
-- [ ] Pharmacy Portal Phase 2 - Insurance Claim Routing from Pharmacy
-- [ ] Pharmacy Portal Phase 3 - Automated Stock Reorder System
-- [ ] Admin Pharmacy Approval Workflow
+- [ ] Pharmacy Portal Phase 3 - Hospital Connection & Auditing
+  - Integrate pharmacy directory into Physician Portal for e-prescription routing
+  - Hospital pharmacy units request supplies from network
+  - Detailed audit logging for pharmacy activities
+- [ ] Admin Pharmacy Approval Workflow (Platform Admin UI for approving/rejecting)
+- [x] ~~Pharmacy Portal Phase 2 - Drug Database & Dashboard~~ ✅ DONE (Feb 7, 2026)
+  - Global Medication Database with 200+ drugs (analgesics, antibiotics, antimalarials, etc.)
+  - Drug seeding from global database into pharmacy catalog
+  - Add Drug dialog with global medication search
+  - Receive Stock dialog for inventory management
+  - New Sale workflow with drug selection and payment methods
+  - Add Staff dialog for pharmacy staff management
+  - Reorder suggestions for low stock items
+  - Full dashboard with stats and inventory alerts
 - [x] ~~Notifications for prescription updates~~ ✅ DONE
 - [x] ~~Stock alerts for pharmacists~~ ✅ DONE
 - [x] ~~Advanced Admin Dashboard Widgets (graphs/charts for revenue trends)~~ ✅ DONE (Feb 7, 2026)
