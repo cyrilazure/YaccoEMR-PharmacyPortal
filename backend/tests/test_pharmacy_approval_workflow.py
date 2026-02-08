@@ -253,10 +253,18 @@ class TestSendToNetworkPharmacyEndpoint:
         # First create a test prescription
         # Get a patient first
         patients_response = requests.get(f"{BASE_URL}/api/patients", headers=auth_headers)
-        if patients_response.status_code != 200 or not patients_response.json().get("patients"):
+        patients_data = patients_response.json()
+        # Handle both list and dict response formats
+        if patients_response.status_code != 200:
+            pytest.skip("Could not get patients")
+        if isinstance(patients_data, list):
+            patients = patients_data
+        else:
+            patients = patients_data.get("patients", [])
+        if not patients:
             pytest.skip("No patients available for testing")
         
-        patient_id = patients_response.json()["patients"][0]["id"]
+        patient_id = patients[0]["id"]
         
         # Create prescription
         prescription_response = requests.post(
@@ -340,7 +348,7 @@ class TestPharmacyPortalIntegration:
         unique_id = str(uuid.uuid4())[:8]
         
         response = requests.post(f"{BASE_URL}/api/pharmacy-portal/register", json={
-            "name": f"TEST_Integration_Pharmacy_{unique_id}",
+            "pharmacy_name": f"TEST_Integration_Pharmacy_{unique_id}",
             "license_number": f"PCGH/INT{unique_id}",
             "region": "Greater Accra",
             "district": "Accra Metropolitan",
