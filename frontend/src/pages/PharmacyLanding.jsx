@@ -52,6 +52,10 @@ const pharmacyAPI = {
   getPharmacy: (id) => api.get(`/pharmacy-portal/public/pharmacies/${id}`),
   register: (data) => api.post('/pharmacy-portal/register', data),
   login: (data) => api.post('/pharmacy-portal/auth/login', data),
+  // OTP Login Flow
+  loginInit: (data) => api.post('/pharmacy-portal/auth/login/init', data),
+  loginVerify: (data) => api.post('/pharmacy-portal/auth/login/verify', data),
+  resendOTP: (sessionId) => api.post('/pharmacy-portal/auth/login/resend-otp', { otp_session_id: sessionId }),
 };
 
 // Region Card Component
