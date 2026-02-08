@@ -519,6 +519,44 @@ def create_pharmacy_portal_router(db) -> APIRouter:
             "message": "OTP sent to your registered phone number"
         }
     
+    
+    @router.post("/auth/login/submit-phone")
+    async def pharmacy_submit_phone(user_id: str = Body(...), phone_number: str = Body(...)):
+        """Submit phone number for pharmacy staff without one and send OTP"""
+        from otp_module import create_otp_session
+        
+        # Validate phone format (Ghana numbers)
+        clean_phone = ''.join(filter(str.isdigit, phone_number))
+        if len(clean_phone) < 9:
+            raise HTTPException(status_code=400, detail="Invalid phone number format")
+        
+        # Get user
+        user = await db["pharmacy_staff"].find_one({"id": user_id})
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Update user's phone number
+        await db["pharmacy_staff"].update_one(
+            {"id": user_id},
+            {"$set": {"phone": phone_number, "phone_updated_at": datetime.now(timezone.utc).isoformat()}}
+        )
+        
+        # Create OTP session and send SMS
+        otp_result = await create_otp_session(
+            db,
+            user_id=user["id"],
+            phone_number=phone_number,
+            platform="pharmacy",
+            user_name=f"{user.get('first_name', '')} {user.get('last_name', '')}"
+        )
+        
+        return {
+            "otp_session_id": otp_result["session_id"],
+            "phone_masked": otp_result["phone_masked"],
+            "expires_at": otp_result["expires_at"],
+            "sms_sent": otp_result["sms_sent"],
+            "message": "OTP sent to your phone number"
+        }
     @router.post("/auth/login/verify")
     async def pharmacy_login_verify(data: PharmacyLoginOTP):
         """Step 2: Verify OTP and issue token"""
