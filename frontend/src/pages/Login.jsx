@@ -28,11 +28,16 @@ const getRoleRedirect = (role) => {
 };
 
 export default function LoginPage() {
-  const { user, login, requires2FA, complete2FALogin, cancel2FA } = useAuth();
+  const { 
+    user, login, requires2FA, complete2FALogin, cancel2FA,
+    requiresOTP, otpPhoneMasked, completeOTPLogin, resendOTP, cancelOTP
+  } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [totpCode, setTotpCode] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [resending, setResending] = useState(false);
 
   if (user) {
     return <Navigate to={getRoleRedirect(user.role)} replace />;
@@ -46,8 +51,9 @@ export default function LoginPage() {
       toast.success('Welcome back!');
       navigate(getRoleRedirect(userData.role));
     } catch (err) {
-      if (err.message === '2FA_REQUIRED') {
-        // 2FA dialog will be shown
+      if (err.message === 'OTP_REQUIRED') {
+        toast.success('OTP sent to your phone');
+      } else if (err.message === '2FA_REQUIRED') {
         toast.info('Please enter your 2FA code');
       } else {
         toast.error(err.response?.data?.detail || 'Login failed');
@@ -55,6 +61,42 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleOTPSubmit = async (e) => {
+    e.preventDefault();
+    if (otpCode.length !== 6) {
+      toast.error('Please enter a valid 6-digit OTP');
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const userData = await completeOTPLogin(otpCode);
+      toast.success('Welcome back!');
+      navigate(getRoleRedirect(userData.role));
+    } catch (err) {
+      toast.error(err.response?.data?.detail || err.message || 'Invalid OTP');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendOTP = async () => {
+    setResending(true);
+    try {
+      await resendOTP();
+      toast.success('OTP resent successfully');
+    } catch (err) {
+      toast.error('Failed to resend OTP');
+    } finally {
+      setResending(false);
+    }
+  };
+
+  const handleCancelOTP = () => {
+    cancelOTP();
+    setOtpCode('');
   };
 
   const handle2FASubmit = async (e) => {
