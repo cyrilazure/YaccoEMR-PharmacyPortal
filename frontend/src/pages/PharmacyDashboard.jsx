@@ -1252,6 +1252,40 @@ export default function PharmacyDashboard() {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              {/* WebSocket Connection Status */}
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${wsConnected ? 'bg-green-500 animate-pulse' : 'bg-slate-300'}`} />
+                <span className="text-xs text-slate-500">{wsConnected ? 'Live' : 'Offline'}</span>
+              </div>
+
+              {/* Notification Bell */}
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="relative"
+                onClick={() => {
+                  setUnreadCount(0);
+                  toast.info(`${notifications.length} notifications`);
+                }}
+              >
+                <BellRing className={`w-5 h-5 ${unreadCount > 0 ? 'text-blue-600' : 'text-slate-500'}`} />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center animate-bounce">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </Button>
+
+              {/* Sound Toggle */}
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setSoundEnabled(!soundEnabled)}
+                title={soundEnabled ? 'Sound On' : 'Sound Off'}
+              >
+                <Volume2 className={`w-5 h-5 ${soundEnabled ? 'text-green-600' : 'text-slate-300'}`} />
+              </Button>
+
               <Button variant="outline" size="sm" onClick={fetchData}>
                 <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
                 Refresh
