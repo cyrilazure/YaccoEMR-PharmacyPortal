@@ -208,13 +208,13 @@ def create_prescription_endpoints(db, get_current_user):
         
         return {"pharmacies": pharmacies, "total": len(pharmacies)}
     
-    @prescription_router.post("/send-to-pharmacy")
-    async def send_prescription_to_pharmacy(
+    @prescription_router.post("/send-to-network-pharmacy")
+    async def send_prescription_to_network_pharmacy(
         prescription_id: str = Body(...),
         pharmacy_id: str = Body(...),
         user: dict = Depends(get_current_user)
     ):
-        """Send a prescription to a pharmacy in the network"""
+        """Send a prescription to a pharmacy in the national network"""
         allowed_roles = ["physician", "super_admin", "nurse"]
         if user.get("role") not in allowed_roles:
             raise HTTPException(status_code=403, detail="Insufficient permissions")
@@ -224,10 +224,10 @@ def create_prescription_endpoints(db, get_current_user):
         if not prescription:
             raise HTTPException(status_code=404, detail="Prescription not found")
         
-        # Get pharmacy
+        # Get pharmacy from network
         pharmacy = await db["pharmacies"].find_one({"id": pharmacy_id})
         if not pharmacy:
-            raise HTTPException(status_code=404, detail="Pharmacy not found")
+            raise HTTPException(status_code=404, detail="Pharmacy not found in network")
         
         # Get hospital info
         hospital = await db["organizations"].find_one({"id": user.get("organization_id")})
@@ -242,7 +242,7 @@ def create_prescription_endpoints(db, get_current_user):
             "pharmacy_id": pharmacy_id,
             "pharmacy_name": pharmacy.get("name"),
             "patient_name": prescription.get("patient_name"),
-            "patient_phone": None,  # Could be added from patient record
+            "patient_phone": None,
             "prescriber_name": prescription.get("prescriber_name"),
             "hospital_name": hospital_name,
             "hospital_id": user.get("organization_id"),
@@ -250,7 +250,7 @@ def create_prescription_endpoints(db, get_current_user):
             "diagnosis": prescription.get("diagnosis"),
             "clinical_notes": prescription.get("clinical_notes"),
             "priority": prescription.get("priority", "routine"),
-            "status": "sent",  # sent, received, processing, ready, dispensed
+            "status": "sent",
             "sent_at": datetime.now(timezone.utc).isoformat(),
             "sent_by": user.get("id"),
             "sent_by_name": f"{user.get('first_name', '')} {user.get('last_name', '')}",
