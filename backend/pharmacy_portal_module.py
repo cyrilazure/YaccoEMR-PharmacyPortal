@@ -1349,7 +1349,7 @@ def create_pharmacy_portal_router(db) -> APIRouter:
     
     @router.post("/drugs/seed")
     async def seed_drugs_from_database(
-        categories: Optional[List[str]] = Body(None),
+        body: Optional[Dict[str, Any]] = Body(default={}),
         user: dict = Depends(require_roles(
             PharmacyStaffRole.PHARMACY_IT_ADMIN,
             PharmacyStaffRole.PHARMACY_OWNER,
@@ -1359,6 +1359,7 @@ def create_pharmacy_portal_router(db) -> APIRouter:
         """Seed drugs from global medication database into pharmacy catalog"""
         from medication_database import get_all_medications, get_medications_by_category
         
+        categories = body.get("categories") if body else None
         pharmacy_id = user.get("pharmacy_id")
         now = datetime.now(timezone.utc).isoformat()
         
