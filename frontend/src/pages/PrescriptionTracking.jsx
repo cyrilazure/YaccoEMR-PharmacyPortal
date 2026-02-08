@@ -81,7 +81,14 @@ export default function PrescriptionTracking() {
     
     try {
       const response = await fetch(`${API_BASE}/api/pharmacy-portal/public/prescription/track/${encodeURIComponent(code)}`);
-      const data = await response.json();
+      
+      let data;
+      try {
+        data = await response.json();
+      } catch (jsonError) {
+        // If JSON parsing fails, create a generic error
+        throw new Error('Prescription not found. Please check your tracking code.');
+      }
       
       if (!response.ok) {
         throw new Error(data.detail || 'Prescription not found');
