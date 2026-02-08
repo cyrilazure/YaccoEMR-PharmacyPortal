@@ -51,11 +51,17 @@ export default function SuperAdminDashboard() {
   const [platformStats, setPlatformStats] = useState(null);
   const [securityPolicies, setSecurityPolicies] = useState([]);
   const [organizations, setOrganizations] = useState([]);
+  const [pharmacies, setPharmacies] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
   const [securityAlerts, setSecurityAlerts] = useState({ alerts: [], summary: {} });
   
+  // Counts
+  const [pendingHospitals, setPendingHospitals] = useState(0);
+  const [pendingPharmacies, setPendingPharmacies] = useState(0);
+  
   // Filters
   const [orgSearch, setOrgSearch] = useState('');
+  const [pharmacySearch, setPharmacySearch] = useState('');
   const [auditFilter, setAuditFilter] = useState({ days: 7, org: 'all' });
   
   // Dialogs
@@ -75,19 +81,25 @@ export default function SuperAdminDashboard() {
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const [healthRes, statsRes, policiesRes, orgsRes, alertsRes] = await Promise.all([
+      const [healthRes, statsRes, policiesRes, orgsRes, alertsRes, pharmaciesRes] = await Promise.all([
         adminAPI.getSystemHealth(),
         adminAPI.getPlatformStats(),
         adminAPI.getSecurityPolicies(),
         organizationAPI.getOrganizations(),
-        adminAPI.getSecurityAlerts(24)
+        adminAPI.getSecurityAlerts(24),
+        pharmacyAdminAPI.listAll()
       ]);
       
       setSystemHealth(healthRes.data);
       setPlatformStats(statsRes.data);
       setSecurityPolicies(policiesRes.data.policies || []);
       setOrganizations(orgsRes.data.organizations || []);
+      setPharmacies(pharmaciesRes.data.pharmacies || []);
       setSecurityAlerts(alertsRes.data);
+      
+      // Count pending
+      setPendingHospitals((orgsRes.data.organizations || []).filter(o => o.status === 'pending').length);
+      setPendingPharmacies(pharmaciesRes.data.pending_count || 0);
     } catch (err) {
       console.error('Super admin dashboard fetch error:', err);
       toast.error('Failed to load system data');
