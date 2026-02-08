@@ -9,7 +9,7 @@ import sys
 
 class NursingPortalTester:
     def __init__(self):
-        self.base_url = "https://yacco-health.preview.emergentagent.com/api"
+        self.base_url = "https://medconnect-222.preview.emergentagent.com/api"
         self.token = None
         self.tests_run = 0
         self.tests_passed = 0

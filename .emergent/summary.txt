@@ -1,72 +1,96 @@
 <analysis>**original_problem_statement:**
-The user's primary goal is to build a unified EMR and Pharmacy application. The initial request was to merge separate EMR and Pharmacy portals into a single application with a unified landing page offering two distinct entry points: Yacco EMR for hospital staff and Yacco Pharm for pharmacy staff.
+The user's primary goal is to build a unified EMR and Pharmacy application named Yacco Health. Initially, this involved merging separate portals into one application. The project then focused on a phased build-out of a comprehensive Yacco Pharm module, which is now complete.
 
-The scope expanded to include the phased development of the Yacco Pharm module:
-- **Phase 1:** A national pharmacy directory, registration/onboarding for new pharmacies, and a dedicated portal.
-- **Phase 2:** Full pharmacy dashboard functionality, including inventory management and drug database population.
-- **Phase 3:** Hospital-to-pharmacy e-prescription routing, a supply request system between pharmacies, and detailed audit logging.
-- **Additional Features:** An admin workflow for approving new pharmacies, real-time WebSocket notifications for new prescriptions, and a public-facing prescription tracking system for patients.
+Subsequent user requests have expanded the scope to include:
+- A complete UI/branding overhaul to establish a consistent green Yacco Health theme across all portals.
+- A comprehensive staff management module within the Pharmacy Dashboard, providing granular administrative controls.
+- The removal of the Made with Emergent badge.
+- Integration of an SMS/WhatsApp notification system via the Arkesel API.
+- A mandatory, multi-step OTP (One-Time Password) login system for all user roles (EMR, Pharmacy, Platform Owner) to enhance security.
+- A fix for the platform owner's inability to log in, which was caused by the new OTP implementation.
+- The latest request is to implement a self-service registration and approval workflow for hospitals, mirroring the existing system for pharmacies, to be managed by the Super Admin.
 
 **User's preferred language**: English
 
 **what currently exists?**
-A full-stack application (FastAPI, React, MongoDB) with a unified landing page that directs users to either the EMR or Pharmacy portal. The EMR side has several completed modules (Radiology, IR, etc.).
+A full-stack application (FastAPI, React, MongoDB) with a unified landing page. The Pharmacy module is feature-complete, including a national directory, registration, and a full-featured dashboard.
 
-The Pharmacy module is now feature-rich and complete through all requested phases:
-- A national pharmacy directory and a separate authentication system for pharmacies are live at .
-- A comprehensive Pharmacy Dashboard () provides full functionality for inventory, sales, e-prescriptions (Rx), drug catalog management, staff management, inter-pharmacy supply requests, and audit logging.
-- A real-time notification system using WebSockets is integrated into the dashboard, alerting pharmacies instantly of new e-prescriptions with visual and audio cues.
-- A  includes an administration section for platform owners to review and approve/reject new pharmacy registrations.
-- A public-facing prescription tracking page () allows patients to check the status of their medications without needing to log in.
+The application now includes several new major features:
+- **Consistent Branding:** The UI across the main landing page, pharmacy landing page, and pharmacy dashboard has been updated to a consistent green Yacco Health theme.
+- **SMS/WhatsApp Notifications:** An  integrates with the Arkesel API to send messages. It is currently used to notify patients when their prescriptions are ready.
+- **Mandatory OTP Login:** A robust, multi-step OTP system is enforced for all logins. If a user's account lacks a phone number, the system prompts them to enter one, saves it, and then sends an OTP to proceed.
+- **Advanced Staff Management:** The Pharmacy Dashboard's Staff tab now includes a full suite of administrative actions: view details, reset password, manage permissions, suspend, deactivate, assign location, and delete users, complete with backend endpoints and frontend modals.
+- **Fixed Admin Login:** The Platform Owner () and Super Admin () login pages have been updated to support the new multi-step OTP flow, resolving the invalid credentials error.
+- **Badge Removed:** The Made with Emergent badge has been successfully removed from the UI.
 
 **Last working item**:
-    - Last item agent was working: The agent just completed the implementation of the **Prescription Delivery Tracking** feature, which was suggested as an enhancement.
-    - Status: NONE (The task is fully completed, tested, and verified by the testing agent).
-    - Agent Testing Done: Y
-    - Which testing method agent to use? NA
+    - Last item agent was working: Implementing a self-service registration and approval workflow for hospitals, mirroring the existing pharmacy workflow. The agent was attempting to create the public-facing hospital registration page.
+    - Status: BLOCKED
+    - Agent Testing Done: N
+    - Which testing method agent to use? Frontend testing agent should be used to verify the new registration page and workflow. Backend testing is also needed to ensure the registration and approval endpoints work correctly.
     - User Testing Done: N
 
 **All Pending/In progress Issue list**:
-  - Issue 1: IR Status Board - Clickable Rooms (Priority: P1)
+  - Issue 1: Hospital Registration Page Creation Failed (Priority: P0)
+  - Issue 2: IR Status Board - Clickable Rooms (Priority: P1)
   
   Issues Detail:
   - Issue 1: 
-     - Attempted fixes: The agent implemented a fix where Interventional Radiology (IR) procedure room cards are clickable only when a procedure is assigned to that room. The card styling changes to  to indicate interactivity in this state.
+     - Attempted fixes: The agent tried to execute  for , but the operation failed with a File already exists error.
      - Next debug checklist: 
-        1. Await confirmation from the user that this conditional clickability (i.e., rooms are only clickable when occupied) meets their expectations.
-        2. If confirmed, no further action is needed. If not, the user needs to provide clarification on the desired behavior for clicking an empty room.
-     - Why fix this issue and what will be achieved with the fix?: Resolves a user-reported UI bug, making the IR status board fully interactive as intended.
+        1. View the contents of the existing file  to determine if it is a placeholder or partially implemented component.
+        2. Based on the file content, either modify the existing file or overwrite it with the new registration form logic.
+        3. Create a new route in  for the hospital registration page (e.g., ).
+        4. Add a link or button on the EMR landing page () to direct users to the new registration page.
+     - Why fix this issue and what will be achieved with the fix?: This is the primary blocker for the user's latest feature request. Resolving it will enable the development of the hospital self-service registration workflow.
+     - Status:  BLOCKED
+     - Is recurring issue? N
+     - Should Test frontend/backend/both after fix?: Both
+     - Blocked on other issue: None
+  - Issue 2: 
+     - Attempted fixes: An earlier fix made Interventional Radiology (IR) room cards clickable only when a procedure is assigned.
+     - Next debug checklist: Await user confirmation on whether this conditional clickability is the desired behavior. If not, the user needs to clarify what should happen when an empty room is clicked.
+     - Why fix this issue and what will be achieved with the fix?: Resolves a long-standing user-reported UI bug on the IR status board.
      - Status:  USER VERIFICATION PENDING
      - Is recurring issue? N
      - Should Test frontend/backend/both after fix?: Frontend
      - Blocked on other issue: None
 
 **In progress Task List**:
-There are no tasks currently in progress.
+  - Task 1:  Complete the Hospital Self-Registration and Approval Workflow (Priority: P0)
+ 
+ Task Detail:
+  - Task 1: 
+     - Where to resume: Blocked by Issue 1: Hospital Registration Page Creation Failed. Once the file issue is resolved, the next step is to build out the  component, mimicking the pharmacy registration form and logic found in .
+     - What will be achieved with this?: Hospitals will be able to register for the platform independently. The Super Admin will then be able to review these registrations and approve or reject them from the Super Admin Portal ().
+     - Status:  BLOCKED
+     - Should Test frontend/backend/both after fix?: Both
+     - Blocked on something: Issue 1
 
 **Upcoming and Future Tasks**
 Upcoming Tasks:
-- (P1) **Integrate with Real Ghana FDA API**: Replace the mock data and logic in  with live API calls to the Ghana Food and Drugs Authority for drug verification and information.
-- (P1) **Integrate with Real NHIS API**: Replace the mock data and logic in  with live API calls for patient member verification, drug tariff lookups, and claims submission.
-- (P2) **Complete PatientChart Refactoring**: While the agent noted all 9 tabs in  are implemented, a dedicated task for a final review and polish of all tabs (Overview, Vitals, Problems, Medications, Labs, Imaging, Pharmacy, Notes, Orders) remains.
+- (P1) **Integrate with Real Ghana FDA API**: Replace mock data and logic in  with live API calls.
+- (P1) **Integrate with Real NHIS API**: Replace mock data and logic in  with live API calls.
+- (P2) **Expand SMS/WhatsApp Notifications**: Integrate the  into more workflows across both EMR and Pharmacy portals (e.g., appointment reminders, delivery updates, low stock alerts) using the existing templates.
+- (P2) **Complete PatientChart Refactoring**: Perform a final review and polish of all 9 tabs in .
 
 Future Tasks:
-- Implement real  PACS integration to connect to an external server.
+- Implement real  PACS integration.
 - Enhance the IR Status Board with real-time WebSocket updates.
 - Integrate an e-signature solution for IR procedure consents.
 - Develop an automated stock reordering system for the pharmacy portal.
-- Add a feature for patients to compare drug prices across different pharmacies in the network.
+- Add a feature for patients to compare drug prices across different pharmacies.
 
 **Completed work in this session**
-- **Unified Landing Page (DONE)**: Refactored  into a central entry point for both EMR and Pharmacy portals.
-- **Pharmacy Module - Phase 2 (DONE)**: Fully implemented the  with backend logic for drug database seeding, inventory management, and a complete UI for managing pharmacy operations.
-- **Pharmacy Module - Phase 3 (DONE)**: Implemented e-prescription routing from the EMR, a supply request system between pharmacies, and a comprehensive audit trail for all pharmacy activities in  and the UI.
-- **Admin Pharmacy Approval Workflow (DONE)**: Added a Pharmacies tab to  for admins to manage pending pharmacy registrations.
-- **Real-time Prescription Notifications (DONE)**: Created a WebSocket-based system () to provide instant alerts (visual and audio) to pharmacies for new prescriptions.
-- **Prescription Delivery Tracking (DONE)**: Created a public tracking page () and corresponding backend endpoints for patients to monitor their prescription status.
+- **Branding Unification (DONE)**: Updated the entire application UI (, , ) to use a consistent green Yacco Health theme.
+- **Advanced Staff Management Module (DONE)**: Implemented a full suite of staff management features in  with corresponding backend endpoints in .
+- **Emergent Badge Removal (DONE)**: Removed the Made with Emergent badge by adding custom CSS to  and .
+- **SMS/WhatsApp Integration (DONE)**: Created a new module  using the Arkesel API and integrated it for prescription-ready notifications.
+- **Mandatory OTP Login System (DONE)**: Implemented a mandatory, multi-step OTP verification system for all logins (EMR, Pharmacy, Admin), including a flow for users to register their phone numbers. This involved creating  and modifying , , , , , , and .
+- **Platform Owner Login Fix (DONE)**: Resolved the admin login issue by updating  and  to correctly handle the new multi-step OTP flow.
 
 **Earlier issues found/mentioned but not fixed**
-   - Minor linting errors (e.g., , ) exist in some older backend files. This is a low-priority code quality issue and does not affect functionality.
+   - Minor linting errors (, ) exist in some older backend files. This is a low-priority code quality issue and does not affect functionality.
 
 **Known issue recurrence from previous fork**
   - None.
@@ -75,20 +99,19 @@ Future Tasks:
 
 
 **Key Technical Concepts**
-- **Modular FastAPI Backend:** The backend is organized into distinct modules for different functionalities (e.g., , , ), promoting separation of concerns.
-- **Independent Authentication:** The Pharmacy portal utilizes its own JWT-based authentication system, distinct from the main EMR, allowing for separate user bases and security contexts.
-- **Real-time Communication:** WebSockets are used to push live notifications (e.g., new prescriptions) from the server to the pharmacy dashboard, enabling immediate action.
-- **Role-Based Access Control (RBAC):** The system distinguishes between different user roles, such as Platform Owner (admin) and various pharmacy staff levels, restricting access to sensitive features like pharmacy approvals.
+- **Modular FastAPI Backend:** The backend is organized into distinct modules for different functionalities.
+- **Independent Authentication:** The Pharmacy portal utilizes its own JWT-based authentication system.
+- **Real-time Communication:** WebSockets are used for live notifications.
+- **Role-Based Access Control (RBAC):** The system distinguishes between different user roles.
+- **SMS/WhatsApp Integration:** A new module uses the Arkesel API for transactional notifications, configured via environment variables.
+- **Multi-Factor Authentication (MFA/OTP):** A robust, session-based OTP verification flow is now mandatory for all logins, enhancing security. The system dynamically prompts for a phone number if one is not already on file.
 
 **key DB schema**
-- : { , , ,  (, , ),  }
-- : { , , ,  }
+- : Now includes a  field.
 - : { , , , , ,  }
-- : { , , , ,  }
-- : Now includes , , and  (e.g., , , ).
 
 **changes in tech stack**
-  - None.
+- **New Integration:** Arkesel SMS API for SMS/WhatsApp notifications.
 
 **All files of reference**
 - **Created**:
@@ -103,49 +126,47 @@ Future Tasks:
   - 
   - 
   - 
+  - 
+  - 
+  - 
+  - 
 
 **Areas that need refactoring**:
-- No immediate refactoring is required. The  refactoring is an upcoming planned task.
+- No new areas identified. The planned  refactoring is still pending.
 
 **key api endpoints**
-- **Pharmacy Auth & Mgmt**:
+- **Staff Management**:
   - 
   - 
-  -  (Public directory)
-- **Drug & Inventory**:
+  -  |  |  | 
+  - 
+- **SMS Notifications**:
   - 
   - 
-- **Admin**:
-  - 
-  - 
-- **Prescriptions & Tracking**:
-  - 
-  - 
-  - 
-- **WebSockets**:
-  - 
+- **OTP Login**:
+  -  | 
+  -  | 
+  -  | 
 
 **Critical Info for New Agent**
-- Your first priority should be to address the pending items, starting with confirming the Clickable IR Rooms behavior with the user.
-- The next major development tasks are to replace the mocked  and  with real API integrations.
-- The pharmacy module is now highly functional. Refer to  for all related backend logic and  for the frontend implementation.
-- Do not confuse the EMR authentication flow with the separate pharmacy authentication flow. They are independent.
+- **The immediate task is blocked.** You must first resolve the File already exists error for . Investigate the existing file before proceeding.
+- **The login system has been completely overhauled.** All logins now require a mandatory OTP step. The core logic is in  and the new backend . Refer to  or  for examples of the multi-step UI implementation.
+- The Arkesel API key () and Sender ID () are stored in .
 
 **documents and test reports created in this job**
-- 
-- 
-- 
-- 
-- 
-- 
-- 
+- None.
 
 **Last 10 User Messages and any pending HUMAN messages**
-1. User confirmed to continue with next action items, which included real-time notifications. **Status: Completed**
-2. Agent suggested a Prescription Delivery Tracking feature. **Status: Implemented**
-3. User confirmed to Continue with phase 3. **Status: Completed**
-4. User confirmed to Continue with phase 2. **Status: Completed**
-5. User confirmed to continue after the initial plan was proposed. **Status: Completed**
+1. User asked to add hospital registration just like pharmacy registration. **Status: In Progress (Blocked)**
+2. User reported getting invalid credentials for the super admin account. **Status: Resolved**
+3. User asked for the super admin URL and credentials. **Status: Completed**
+4. User asked for the platform owner URL and credentials. **Status: Completed**
+5. User confirmed the OTP flow should prompt for a phone number if one isn't registered. **Status: Completed**
+6. User asked to add OTP to all staff logins for both EMR and Pharmacy. **Status: Completed**
+7. User provided the Arkesel SMS API details for notifications. **Status: Completed**
+8. User asked to remove the Emergent badge. **Status: Completed**
+9. User requested extensive new staff management features for the pharmacy portal. **Status: Completed**
+10. User requested the main title to use both green and blue to represent both portals. **Status: Completed**
 
 **Project Health Check:**
 - **Broken**: None
@@ -158,19 +179,24 @@ Future Tasks:
 - **Paystack**: Payment processing.
 - **Resend**: Email notifications.
 - **qrcode.react / react-zxing**: QR code functionality.
-- **Emergent LLM Key**: Used for OpenAI Whisper (Speech-to-Text) and GPT (AI note expansion).
-  - No new integrations were added in this session.
+- **Emergent LLM Key**: Used for OpenAI Whisper and GPT.
+- **Arkesel SMS API**: Used for SMS/WhatsApp notifications. Requires  in .
 
 **Testing status**
-  - Testing agent used after significant changes: YES. The testing agent was run 6 times, after each major feature was completed.
+  - Testing agent used after significant changes: NO
   - Troubleshoot agent used after agent stuck in loop: NO
-  - Test files created: ['/app/test_reports/iteration_15.json', '/app/test_reports/iteration_16.json', '/app/test_reports/iteration_17.json', '/app/test_reports/iteration_18.json', '/app/test_reports/iteration_19.json', '/app/test_reports/iteration_20.json']
+  - Test files created: []
   - Known regressions: None identified.
 
 **Credentials to test flow:**
-- **EMR Roles**: (e.g., , ) use password .
-- **Platform Owner**: Login at  with email  and password .
-- **Pharmacy Staff**: First, register a new pharmacy via the  page. Second, log in as the Platform Owner and approve the pending registration. Finally, log in using the credentials created during registration.
+- **Super Admin / Platform Owner**:
+  - URL:  or 
+  - Email: 
+  - Password: 
+  - **NOTE**: Login requires a multi-step OTP verification. You will be prompted to enter a phone number the first time to receive the OTP via SMS.
+
+- **EMR & Pharmacy Staff**:
+  - All roles now require OTP. If the test account has a phone number, OTP is sent automatically. If not, the login flow will prompt for a phone number first. Use the credentials from previous sessions.
 
 **What agent forgot to execute**
-The agent was systematic and did not forget any major tasks. The one outstanding item, fixing the clickable rooms on the IR Status Board, is correctly identified as USER VERIFICATION PENDING and is not a forgotten task but a deliberate handoff point.</analysis>
+The agent did not forget any tasks but was blocked while executing the latest user request to create a hospital registration page. The error File already exists for  was not handled before the session ended.</analysis>
