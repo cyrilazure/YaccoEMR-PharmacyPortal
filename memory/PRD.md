@@ -711,11 +711,16 @@ GET  /api/billing-shifts/audit-logs      - Billing audit logs
   - Navigation to /login for EMR, /pharmacy for Pharm portal
 
 ### P1 (High Priority)
-- [ ] Real Ghana FDA API integration (replace mock data)
-- [ ] Real NHIS API integration (replace mock data)
+- [ ] Real Ghana FDA API integration (mock data currently simulating real FDA)
+- [ ] Real NHIS API integration (mock data currently simulating real NHIS)
 - [ ] Real PACS/dcm4chee server integration (replace demo mode)
-- [ ] Complete PatientChart refactoring (remaining tabs: Overview, Notes, Orders, Imaging, Pharmacy)
-- [ ] Real-time Prescription Notifications (WebSocket for pharmacy alerts)
+- [x] ~~Complete PatientChart refactoring~~ ✅ Already has all 9 tabs: Overview, Vitals, Problems, Medications, Labs, Imaging, Pharmacy, Notes, Orders
+- [x] ~~Real-time Prescription Notifications~~ ✅ DONE (Feb 8, 2026)
+  - WebSocket notification system for pharmacy portal
+  - Live/Offline connection indicator in dashboard header
+  - Notification bell icon with unread count badge
+  - Sound toggle for notification alerts
+  - Auto-notify when e-prescriptions are routed from hospitals
 - [x] ~~Physician Portal E-Prescription UI~~ ✅ Already implemented - PatientChart has pharmacy selector
 - [x] ~~Admin Pharmacy Approval Workflow~~ ✅ DONE (Feb 8, 2026)
   - Platform Owner Portal Pharmacies tab with pending count badge
