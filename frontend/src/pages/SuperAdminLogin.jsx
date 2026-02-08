@@ -196,72 +196,171 @@ export default function SuperAdminLogin() {
         <Card className="border-slate-700 bg-slate-800/50 backdrop-blur-sm">
           <CardHeader className="text-center pb-2">
             <div className="mx-auto w-12 h-12 rounded-full bg-indigo-500/10 flex items-center justify-center mb-3">
-              <Shield className="w-6 h-6 text-indigo-400" />
+              {loginStep === 'credentials' && <Shield className="w-6 h-6 text-indigo-400" />}
+              {loginStep === 'phone' && <Smartphone className="w-6 h-6 text-indigo-400" />}
+              {loginStep === 'otp' && <Lock className="w-6 h-6 text-indigo-400" />}
             </div>
-            <CardTitle className="text-white">Owner Access</CardTitle>
+            <CardTitle className="text-white">
+              {loginStep === 'credentials' && 'Owner Access'}
+              {loginStep === 'phone' && 'Phone Verification'}
+              {loginStep === 'otp' && 'Enter OTP Code'}
+            </CardTitle>
             <CardDescription className="text-slate-400">
-              Secure login for platform administration
+              {loginStep === 'credentials' && 'Secure login for platform administration'}
+              {loginStep === 'phone' && 'Enter your phone number to receive OTP'}
+              {loginStep === 'otp' && `Enter the 6-digit code sent to ${phoneMasked}`}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <Label className="text-slate-300">Email Address</Label>
-                <Input
-                  type="email"
-                  placeholder="Enter your email"
-                  value={credentials.email}
-                  onChange={(e) => setCredentials({ ...credentials, email: e.target.value })}
-                  required
-                  className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-500 focus:border-indigo-500"
-                  data-testid="admin-email"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label className="text-slate-300">Password</Label>
-                <div className="relative">
+            {/* Step 1: Credentials */}
+            {loginStep === 'credentials' && (
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Email Address</Label>
                   <Input
-                    type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    value={credentials.password}
-                    onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
+                    type="email"
+                    placeholder="Enter your email"
+                    value={credentials.email}
+                    onChange={(e) => setCredentials({ ...credentials, email: e.target.value })}
                     required
-                    className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-500 focus:border-indigo-500 pr-10"
-                    data-testid="admin-password"
+                    className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-500 focus:border-indigo-500"
+                    data-testid="admin-email"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-300"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
                 </div>
-              </div>
+                
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Password</Label>
+                  <div className="relative">
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={credentials.password}
+                      onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
+                      required
+                      className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-500 focus:border-indigo-500 pr-10"
+                      data-testid="admin-password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-300"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
 
-              <Button
-                type="submit"
-                className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white"
-                disabled={loading}
-                data-testid="admin-login-btn"
-              >
-                {loading ? (
-                  <>
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Authenticating...
-                  </>
-                ) : (
-                  <>
-                    <Lock className="w-4 h-4 mr-2" />
-                    Access Platform
-                  </>
-                )}
-              </Button>
-            </form>
+                <Button
+                  type="submit"
+                  className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white"
+                  disabled={loading}
+                  data-testid="admin-login-btn"
+                >
+                  {loading ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Authenticating...</>
+                  ) : (
+                    <><Lock className="w-4 h-4 mr-2" /> Continue</>
+                  )}
+                </Button>
+              </form>
+            )}
+
+            {/* Step 2: Phone Input */}
+            {loginStep === 'phone' && (
+              <form onSubmit={handlePhoneSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Phone Number</Label>
+                  <Input
+                    type="tel"
+                    placeholder="0241234567"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value.replace(/[^\d+]/g, ''))}
+                    className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-500 focus:border-indigo-500 text-center text-lg"
+                    autoFocus
+                  />
+                  <p className="text-xs text-slate-500 text-center">
+                    Enter your Ghana phone number (e.g., 0241234567)
+                  </p>
+                </div>
+
+                <Button
+                  type="submit"
+                  className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white"
+                  disabled={loading || phoneNumber.length < 9}
+                >
+                  {loading ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Sending...</>
+                  ) : (
+                    <><Send className="w-4 h-4 mr-2" /> Send OTP</>
+                  )}
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full text-slate-400 hover:text-white hover:bg-slate-700"
+                  onClick={handleBack}
+                >
+                  ← Back to Login
+                </Button>
+              </form>
+            )}
+
+            {/* Step 3: OTP Verification */}
+            {loginStep === 'otp' && (
+              <form onSubmit={handleOTPVerify} className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-slate-300">OTP Code</Label>
+                  <Input
+                    type="text"
+                    placeholder="000000"
+                    value={otpCode}
+                    onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    className="bg-slate-700/50 border-slate-600 text-white text-center text-2xl tracking-widest font-mono focus:border-indigo-500"
+                    maxLength={6}
+                    autoFocus
+                  />
+                  <p className="text-xs text-slate-500 text-center">
+                    Code sent to {phoneMasked}
+                  </p>
+                </div>
+
+                <Button
+                  type="submit"
+                  className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white"
+                  disabled={loading || otpCode.length !== 6}
+                >
+                  {loading ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Verifying...</>
+                  ) : (
+                    <><Shield className="w-4 h-4 mr-2" /> Verify & Access Platform</>
+                  )}
+                </Button>
+
+                <div className="flex items-center justify-between">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="text-slate-400 hover:text-white"
+                    onClick={handleBack}
+                  >
+                    ← Back
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="text-slate-400 hover:text-white"
+                    onClick={handleResendOTP}
+                    disabled={resending}
+                  >
+                    {resending ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
+                    Resend OTP
+                  </Button>
+                </div>
+              </form>
+            )}
 
             {/* Security Notice */}
             <div className="mt-6 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
