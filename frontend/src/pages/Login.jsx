@@ -366,6 +366,59 @@ export default function LoginPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Phone Number Input Dialog */}
+      <Dialog open={requiresPhone} onOpenChange={(open) => !open && handleCancelOTP()}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <div className="flex items-center justify-center mb-4">
+              <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center">
+                <Smartphone className="w-8 h-8 text-emerald-600" />
+              </div>
+            </div>
+            <DialogTitle className="text-center">Phone Verification Required</DialogTitle>
+            <DialogDescription className="text-center">
+              Enter your phone number to receive a verification code via SMS
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handlePhoneSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="phone-number">Phone Number</Label>
+              <Input
+                id="phone-number"
+                type="tel"
+                placeholder="0241234567"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value.replace(/[^\d+]/g, ''))}
+                className="text-center text-lg"
+                autoFocus
+              />
+              <p className="text-xs text-slate-500 text-center">
+                Enter your Ghana phone number (e.g., 0241234567)
+              </p>
+            </div>
+            
+            <div className="flex gap-2">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={handleCancelOTP}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+                disabled={loading || phoneNumber.length < 9}
+              >
+                {loading ? 'Sending...' : 'Send OTP'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       {/* OTP Dialog */}
       <Dialog open={requiresOTP} onOpenChange={(open) => !open && handleCancelOTP()}>
         <DialogContent className="max-w-md">
