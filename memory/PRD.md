@@ -636,6 +636,37 @@ GET  /api/billing-shifts/audit-logs      - Billing audit logs
   - `PUT /api/pharmacy-portal/admin/pharmacies/{id}/approve` - Approve/reject pharmacy
   - `GET /api/pharmacy-portal/admin/pharmacies/pending` - List pending pharmacies
 
+### Pharmacy Module - Phase 3: Hospital Connection & Auditing (February 8, 2026)
+- [x] **E-Prescription Routing from Hospital EMR**:
+  - `POST /api/pharmacy-portal/eprescription/receive` - Receive prescription from hospital
+  - `PUT /api/pharmacy-portal/eprescription/{id}/accept` - Accept prescription for processing
+  - `PUT /api/pharmacy-portal/eprescription/{id}/ready` - Mark prescription ready for pickup
+  - `PUT /api/pharmacy-portal/eprescription/{id}/dispense` - Complete dispensing with inventory deduction (FIFO)
+  - Prescription workflow: received → processing → ready → dispensed
+- [x] **Supply Request System** (Pharmacy-to-Pharmacy):
+  - `POST /api/pharmacy-portal/supply-requests/create` - Create request to another pharmacy
+  - `GET /api/pharmacy-portal/supply-requests/outgoing` - View sent requests
+  - `GET /api/pharmacy-portal/supply-requests/incoming` - View received requests
+  - `PUT /api/pharmacy-portal/supply-requests/{id}/respond` - Accept/reject/partially-accept request
+  - `PUT /api/pharmacy-portal/supply-requests/{id}/fulfill` - Mark request as fulfilled
+  - Request workflow: pending → accepted/rejected → fulfilled
+- [x] **Pharmacy Network Directory**:
+  - `GET /api/pharmacy-portal/network/pharmacies` - List pharmacies in network (excludes own)
+  - Filter by region, NHIS accreditation, 24hr service
+  - Enables finding pharmacies for supply requests
+- [x] **Enhanced Audit Logging**:
+  - `GET /api/pharmacy-portal/audit-logs` - View detailed audit trail with filters
+  - `GET /api/pharmacy-portal/audit-logs/summary` - Get summary stats for dashboard
+  - Tracks: prescription_received, prescription_accepted, prescription_dispensed
+  - Tracks: supply_request_created, supply_request_accepted/rejected, supply_request_fulfilled
+  - Summary shows: Total Activities, Top Action, Top Entity, Most Active User
+- [x] **Dashboard Updates** (8 tabs now):
+  - New **Supply Tab**: Incoming/Outgoing Supply Requests, Pharmacy Network
+  - New **Audit Tab**: Summary stats (4 cards), Activity Log table
+  - Incoming requests: Accept/Reject/Fulfill actions
+  - Outgoing requests: Table view with status badges
+  - Network: Grid of pharmacies with NHIS/24hr badges
+
 ## Prioritized Backlog
 
 ### P0 (Critical)
