@@ -343,13 +343,40 @@ export default function SuperAdminDashboard() {
         </Card>
       </div>
 
+      {/* Pending Approvals Alert */}
+      {(pendingHospitals > 0 || pendingPharmacies > 0) && (
+        <Alert className="border-amber-200 bg-amber-50">
+          <AlertTriangle className="h-4 w-4 text-amber-600" />
+          <AlertTitle className="text-amber-800">Pending Approvals</AlertTitle>
+          <AlertDescription className="text-amber-700 flex items-center gap-4">
+            {pendingHospitals > 0 && (
+              <span className="flex items-center gap-1">
+                <Hospital className="w-4 h-4" /> {pendingHospitals} Hospital(s)
+              </span>
+            )}
+            {pendingPharmacies > 0 && (
+              <span className="flex items-center gap-1">
+                <Pill className="w-4 h-4" /> {pendingPharmacies} Pharmacy(s)
+              </span>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="organizations">Organizations</TabsTrigger>
-          <TabsTrigger value="security">Security Policies</TabsTrigger>
-          <TabsTrigger value="audit">System Audit</TabsTrigger>
+          <TabsTrigger value="hospitals" className="gap-1">
+            <Hospital className="w-4 h-4" /> Hospitals
+            {pendingHospitals > 0 && <Badge className="ml-1 bg-amber-500 text-white text-xs">{pendingHospitals}</Badge>}
+          </TabsTrigger>
+          <TabsTrigger value="pharmacies" className="gap-1">
+            <Pill className="w-4 h-4" /> Pharmacies
+            {pendingPharmacies > 0 && <Badge className="ml-1 bg-amber-500 text-white text-xs">{pendingPharmacies}</Badge>}
+          </TabsTrigger>
+          <TabsTrigger value="security">Security</TabsTrigger>
+          <TabsTrigger value="audit">Audit</TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
