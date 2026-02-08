@@ -2074,6 +2074,233 @@ def create_pharmacy_portal_router(db) -> APIRouter:
             raise HTTPException(status_code=404, detail="Pharmacy not found or not suspended")
         return {"message": "Pharmacy reactivated"}
     
+    # ============== PLATFORM OWNER - PHARMACY STAFF MANAGEMENT ==============
+    
+    @router.get("/platform-owner/staff")
+    async def list_all_pharmacy_staff_platform():
+        """List all pharmacy staff across all pharmacies (Platform Owner only)"""
+        staff = await db["pharmacy_staff"].find(
+            {},
+            {"_id": 0, "password": 0}
+        ).sort("created_at", -1).to_list(500)
+        
+        return {"staff": staff, "total": len(staff)}
+    
+    @router.get("/platform-owner/staff/{staff_id}")
+    async def get_pharmacy_staff_details_platform(staff_id: str):
+        """Get pharmacy staff details (Platform Owner only)"""
+        staff = await db["pharmacy_staff"].find_one(
+            {"id": staff_id},
+            {"_id": 0, "password": 0}
+        )
+        
+        if not staff:
+            raise HTTPException(status_code=404, detail="Staff member not found")
+        
+        # Get pharmacy info
+        pharmacy = await db["pharmacies"].find_one(
+            {"id": staff.get("pharmacy_id")},
+            {"_id": 0, "password": 0}
+        )
+        
+        return {"staff": staff, "pharmacy": pharmacy}
+    
+    @router.put("/platform-owner/staff/{staff_id}")
+    async def update_pharmacy_staff_platform(
+        staff_id: str,
+        first_name: Optional[str] = Body(None),
+        last_name: Optional[str] = Body(None),
+        email: Optional[str] = Body(None),
+        phone: Optional[str] = Body(None),
+        role: Optional[str] = Body(None)
+    ):
+        """Update pharmacy staff information (Platform Owner only)"""
+        update_data = {"updated_at": datetime.now(timezone.utc).isoformat()}
+        
+        if first_name:
+            update_data["first_name"] = first_name
+        if last_name:
+            update_data["last_name"] = last_name
+        if email:
+            update_data["email"] = email
+        if phone:
+            update_data["phone"] = phone
+        if role:
+            update_data["role"] = role
+        
+        result = await db["pharmacy_staff"].update_one(
+            {"id": staff_id},
+            {"$set": update_data}
+        )
+        
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="Staff member not found")
+        
+        # Audit log
+        await db["pharmacy_audit_logs"].insert_one({
+            "id": str(uuid.uuid4()),
+            "action": "platform_owner_staff_update",
+            "entity_type": "staff",
+            "entity_id": staff_id,
+            "details": update_data,
+            "performed_by": "platform_owner",
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        })
+        
+        return {"message": "Staff information updated"}
+    
+    @router.put("/platform-owner/staff/{staff_id}/suspend")
+    async def suspend_pharmacy_staff_platform(staff_id: str, reason: str = Body("Suspended by Platform Owner", embed=True)):
+        """Suspend a pharmacy staff member (Platform Owner only)"""
+        now = datetime.now(timezone.utc).isoformat()
+        
+        result = await db["pharmacy_staff"].update_one(
+            {"id": staff_id},
+            {"$set": {
+                "status": "suspended",
+                "is_active": False,
+                "suspension_reason": reason,
+                "suspended_at": now,
+                "suspended_by": "platform_owner",
+                "updated_at": now
+            }}
+        )
+        
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="Staff member not found")
+        
+        return {"message": "Staff account suspended"}
+    
+    @router.put("/platform-owner/staff/{staff_id}/activate")
+    async def activate_pharmacy_staff_platform(staff_id: str):
+        """Activate/unlock a pharmacy staff member (Platform Owner only)"""
+        now = datetime.now(timezone.utc).isoformat()
+        
+        result = await db["pharmacy_staff"].update_one(
+            {"id": staff_id},
+            {"$set": {
+                "status": "active",
+                "is_active": True,
+                "suspension_reason": None,
+                "suspended_at": None,
+                "locked_at": None,
+                "unlocked_at": now,
+                "updated_at": now
+            }}
+        )
+        
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="Staff member not found")
+        
+        return {"message": "Staff account activated"}
+    
+    @router.put("/platform-owner/staff/{staff_id}/unlock")
+    async def unlock_pharmacy_staff_platform(staff_id: str):
+        """Unlock a locked pharmacy staff member (Platform Owner only)"""
+        now = datetime.now(timezone.utc).isoformat()
+        
+        result = await db["pharmacy_staff"].update_one(
+            {"id": staff_id},
+            {"$set": {
+                "status": "active",
+                "is_active": True,
+                "locked_at": None,
+                "login_attempts": 0,
+                "unlocked_at": now,
+                "updated_at": now
+            }}
+        )
+        
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="Staff member not found")
+        
+        return {"message": "Staff account unlocked"}
+    
+    @router.put("/platform-owner/staff/{staff_id}/deactivate")
+    async def deactivate_pharmacy_staff_platform(staff_id: str):
+        """Deactivate a pharmacy staff member (Platform Owner only)"""
+        now = datetime.now(timezone.utc).isoformat()
+        
+        result = await db["pharmacy_staff"].update_one(
+            {"id": staff_id},
+            {"$set": {
+                "status": "deactivated",
+                "is_active": False,
+                "deactivated_at": now,
+                "deactivated_by": "platform_owner",
+                "updated_at": now
+            }}
+        )
+        
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="Staff member not found")
+        
+        return {"message": "Staff account deactivated"}
+    
+    @router.put("/platform-owner/staff/{staff_id}/reset-password")
+    async def reset_pharmacy_staff_password_platform(staff_id: str):
+        """Reset pharmacy staff password (Platform Owner only)"""
+        staff = await db["pharmacy_staff"].find_one({"id": staff_id})
+        
+        if not staff:
+            raise HTTPException(status_code=404, detail="Staff member not found")
+        
+        # Generate temp password from phone or random
+        phone = staff.get("phone", "12345678")
+        temp_password = phone.replace("+", "").replace(" ", "").replace("-", "")[-8:]
+        if len(temp_password) < 6:
+            temp_password = "temp" + str(uuid.uuid4())[:4]
+        
+        await db["pharmacy_staff"].update_one(
+            {"id": staff_id},
+            {"$set": {
+                "password": hash_password(temp_password),
+                "password_reset_required": True,
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+        
+        # Audit log
+        await db["pharmacy_audit_logs"].insert_one({
+            "id": str(uuid.uuid4()),
+            "action": "platform_owner_password_reset",
+            "entity_type": "staff",
+            "entity_id": staff_id,
+            "details": {"staff_email": staff.get("email")},
+            "performed_by": "platform_owner",
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        })
+        
+        return {"message": "Password reset successfully", "temp_password": temp_password}
+    
+    @router.delete("/platform-owner/staff/{staff_id}")
+    async def delete_pharmacy_staff_platform(staff_id: str):
+        """Permanently delete a pharmacy staff member (Platform Owner only)"""
+        staff = await db["pharmacy_staff"].find_one({"id": staff_id})
+        
+        if not staff:
+            raise HTTPException(status_code=404, detail="Staff member not found")
+        
+        # Delete the staff member
+        await db["pharmacy_staff"].delete_one({"id": staff_id})
+        
+        # Audit log
+        await db["pharmacy_audit_logs"].insert_one({
+            "id": str(uuid.uuid4()),
+            "action": "platform_owner_staff_deleted",
+            "entity_type": "staff",
+            "entity_id": staff_id,
+            "details": {
+                "deleted_staff": f"{staff.get('first_name', '')} {staff.get('last_name', '')}",
+                "email": staff.get("email"),
+                "pharmacy_id": staff.get("pharmacy_id")
+            },
+            "performed_by": "platform_owner",
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        })
+        
+        return {"message": "Staff member deleted permanently"}
+    
     # ============== PHASE 3: HOSPITAL-PHARMACY CONNECTION ==============
     
     # ============== E-PRESCRIPTION FROM HOSPITAL TO PHARMACY ==============
