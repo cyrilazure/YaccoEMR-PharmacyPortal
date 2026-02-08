@@ -154,6 +154,11 @@ class PharmacyLogin(BaseModel):
     password: str
 
 
+class PharmacyLoginOTP(BaseModel):
+    otp_session_id: str
+    otp_code: str
+
+
 class DrugCreate(BaseModel):
     generic_name: str
     brand_name: Optional[str] = None
