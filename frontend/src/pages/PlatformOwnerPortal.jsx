@@ -32,8 +32,9 @@ import {
   ChevronRight, ExternalLink, Eye, Copy, Check,
   AlertCircle, CheckCircle, Clock, Loader2,
   Hospital, UserCog, BarChart3, Trash2, AlertTriangle,
-  Ban, Power, XCircle
+  Ban, Power, XCircle, Pill, Store, FileText
 } from 'lucide-react';
+import api from '@/lib/api';
 
 // Ghana Regions for dropdown
 const GHANA_REGIONS = [
