@@ -203,6 +203,7 @@ export default function PlatformOwnerPortal() {
   useEffect(() => {
     if (activeTab === 'pharmacies') {
       fetchPharmacies();
+      fetchPharmacyStaff();
     }
   }, [activeTab, fetchPharmacies]);
 
