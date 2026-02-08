@@ -180,14 +180,119 @@ def create_prescription_endpoints(db, get_current_user):
         return {"drugs": DRUG_DATABASE, "total": len(DRUG_DATABASE)}
     
     @prescription_router.get("/pharmacies/ghana")
-    async def get_ghana_pharmacies(region: Optional[str] = None):
-        """Get list of pharmacies in Ghana"""
+    async def get_ghana_pharmacies(region: Optional[str] = None, query: Optional[str] = None):
+        """Get list of pharmacies in Ghana from database"""
+        # First try to get real pharmacies from database
+        filter_query = {"status": "approved"}
+        
         if region:
-            pharmacies = [p for p in GHANA_PHARMACIES if p["region"] == region]
-        else:
-            pharmacies = GHANA_PHARMACIES
+            filter_query["region"] = region
+        if query:
+            filter_query["$or"] = [
+                {"name": {"$regex": query, "$options": "i"}},
+                {"town": {"$regex": query, "$options": "i"}},
+                {"district": {"$regex": query, "$options": "i"}}
+            ]
+        
+        pharmacies = await db["pharmacies"].find(
+            filter_query,
+            {"_id": 0, "password": 0, "user_id": 0}
+        ).to_list(100)
+        
+        # If no pharmacies in database, use mock data
+        if not pharmacies:
+            if region:
+                pharmacies = [p for p in GHANA_PHARMACIES if p["region"] == region]
+            else:
+                pharmacies = GHANA_PHARMACIES
         
         return {"pharmacies": pharmacies, "total": len(pharmacies)}
+    
+    @prescription_router.post("/send-to-pharmacy")
+    async def send_prescription_to_pharmacy(
+        prescription_id: str = Body(...),
+        pharmacy_id: str = Body(...),
+        user: dict = Depends(get_current_user)
+    ):
+        """Send a prescription to a pharmacy in the network"""
+        allowed_roles = ["physician", "super_admin", "nurse"]
+        if user.get("role") not in allowed_roles:
+            raise HTTPException(status_code=403, detail="Insufficient permissions")
+        
+        # Get prescription
+        prescription = await db["prescriptions"].find_one({"id": prescription_id})
+        if not prescription:
+            raise HTTPException(status_code=404, detail="Prescription not found")
+        
+        # Get pharmacy
+        pharmacy = await db["pharmacies"].find_one({"id": pharmacy_id})
+        if not pharmacy:
+            raise HTTPException(status_code=404, detail="Pharmacy not found")
+        
+        # Get hospital info
+        hospital = await db["organizations"].find_one({"id": user.get("organization_id")})
+        hospital_name = hospital.get("name") if hospital else "Unknown Hospital"
+        
+        # Create prescription routing record for the pharmacy portal
+        routing_id = str(uuid.uuid4())
+        routing_doc = {
+            "id": routing_id,
+            "prescription_id": prescription_id,
+            "rx_number": prescription.get("rx_number"),
+            "pharmacy_id": pharmacy_id,
+            "pharmacy_name": pharmacy.get("name"),
+            "patient_name": prescription.get("patient_name"),
+            "patient_phone": None,  # Could be added from patient record
+            "prescriber_name": prescription.get("prescriber_name"),
+            "hospital_name": hospital_name,
+            "hospital_id": user.get("organization_id"),
+            "medications": prescription.get("medications", []),
+            "diagnosis": prescription.get("diagnosis"),
+            "clinical_notes": prescription.get("clinical_notes"),
+            "priority": prescription.get("priority", "routine"),
+            "status": "sent",  # sent, received, processing, ready, dispensed
+            "sent_at": datetime.now(timezone.utc).isoformat(),
+            "sent_by": user.get("id"),
+            "sent_by_name": f"{user.get('first_name', '')} {user.get('last_name', '')}",
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        
+        await db["prescription_routing"].insert_one(routing_doc)
+        
+        # Update prescription with pharmacy info
+        await db["prescriptions"].update_one(
+            {"id": prescription_id},
+            {"$set": {
+                "pharmacy_id": pharmacy_id,
+                "pharmacy_name": pharmacy.get("name"),
+                "sent_to_pharmacy_at": datetime.now(timezone.utc).isoformat(),
+                "status": "sent_to_pharmacy",
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+        
+        # Audit log
+        await db["audit_logs"].insert_one({
+            "id": str(uuid.uuid4()),
+            "action": "prescription_sent_to_pharmacy",
+            "resource_type": "prescription",
+            "resource_id": prescription_id,
+            "user_id": user.get("id"),
+            "user_name": f"{user.get('first_name', '')} {user.get('last_name', '')}",
+            "organization_id": user.get("organization_id"),
+            "details": {
+                "rx_number": prescription.get("rx_number"),
+                "pharmacy_id": pharmacy_id,
+                "pharmacy_name": pharmacy.get("name")
+            },
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        })
+        
+        return {
+            "message": f"Prescription sent to {pharmacy.get('name')}",
+            "routing_id": routing_id,
+            "pharmacy_name": pharmacy.get("name")
+        }
     
     @prescription_router.post("/check-interactions")
     async def check_drug_interactions(
