@@ -219,7 +219,7 @@ export default function EMRLandingPage() {
             {/* Yacco EMR Portal Card */}
             <Card 
               className="relative overflow-hidden border-2 border-slate-200 hover:border-emerald-400 transition-all duration-300 hover:shadow-2xl group cursor-pointer"
-              onClick={() => navigate('/login')}
+              onClick={() => navigate('/register-hospital')}
               data-testid="emr-portal-card"
             >
               <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-emerald-500 to-teal-500" />
