@@ -2009,6 +2009,71 @@ def create_pharmacy_portal_router(db) -> APIRouter:
         
         return {"pharmacies": pharmacies, "total": len(pharmacies)}
     
+    @router.get("/admin/pharmacies")
+    async def list_all_pharmacies_admin(
+        status: Optional[str] = None,
+        search: Optional[str] = None,
+        limit: int = 100
+    ):
+        """List all pharmacies for admin management"""
+        query = {}
+        if status:
+            query["status"] = status
+        if search:
+            query["$or"] = [
+                {"name": {"$regex": search, "$options": "i"}},
+                {"email": {"$regex": search, "$options": "i"}},
+                {"license_number": {"$regex": search, "$options": "i"}}
+            ]
+        
+        pharmacies = await db["pharmacies"].find(
+            query,
+            {"_id": 0, "password": 0}
+        ).sort("created_at", -1).to_list(limit)
+        
+        # Get counts by status
+        pending_count = await db["pharmacies"].count_documents({"status": {"$in": ["pending", "under_review"]}})
+        active_count = await db["pharmacies"].count_documents({"status": {"$in": ["active", "approved"]}})
+        total_count = await db["pharmacies"].count_documents({})
+        
+        return {
+            "pharmacies": pharmacies,
+            "total": len(pharmacies),
+            "pending_count": pending_count,
+            "active_count": active_count,
+            "total_count": total_count
+        }
+    
+    @router.post("/admin/pharmacies/{pharmacy_id}/suspend")
+    async def suspend_pharmacy(pharmacy_id: str, reason: Optional[str] = Body(None, embed=True)):
+        """Suspend an active pharmacy"""
+        result = await db["pharmacies"].update_one(
+            {"id": pharmacy_id},
+            {"$set": {
+                "status": "suspended",
+                "suspension_reason": reason,
+                "suspended_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="Pharmacy not found")
+        return {"message": "Pharmacy suspended"}
+    
+    @router.post("/admin/pharmacies/{pharmacy_id}/reactivate")
+    async def reactivate_pharmacy(pharmacy_id: str):
+        """Reactivate a suspended pharmacy"""
+        result = await db["pharmacies"].update_one(
+            {"id": pharmacy_id, "status": "suspended"},
+            {"$set": {
+                "status": "approved",
+                "suspended_at": None,
+                "suspension_reason": None
+            }}
+        )
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="Pharmacy not found or not suspended")
+        return {"message": "Pharmacy reactivated"}
+    
     # ============== PHASE 3: HOSPITAL-PHARMACY CONNECTION ==============
     
     # ============== E-PRESCRIPTION FROM HOSPITAL TO PHARMACY ==============
