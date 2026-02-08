@@ -54,6 +54,7 @@ const pharmacyAPI = {
   login: (data) => api.post('/pharmacy-portal/auth/login', data),
   // OTP Login Flow
   loginInit: (data) => api.post('/pharmacy-portal/auth/login/init', data),
+  loginSubmitPhone: (userId, phoneNumber) => api.post('/pharmacy-portal/auth/login/submit-phone', { user_id: userId, phone_number: phoneNumber }),
   loginVerify: (data) => api.post('/pharmacy-portal/auth/login/verify', data),
   resendOTP: (sessionId) => api.post('/pharmacy-portal/auth/login/resend-otp', { otp_session_id: sessionId }),
 };
