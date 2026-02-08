@@ -485,13 +485,13 @@ export default function SuperAdminDashboard() {
           </div>
         </TabsContent>
 
-        {/* Organizations Tab */}
-        <TabsContent value="organizations" className="space-y-4">
+        {/* Hospitals Tab */}
+        <TabsContent value="hospitals" className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <Input
-                placeholder="Search organizations..."
+                placeholder="Search hospitals..."
                 className="pl-10"
                 value={orgSearch}
                 onChange={(e) => setOrgSearch(e.target.value)}
@@ -499,13 +499,13 @@ export default function SuperAdminDashboard() {
             </div>
             <Dialog open={createOrgOpen} onOpenChange={setCreateOrgOpen}>
               <DialogTrigger asChild>
-                <Button className="gap-2 bg-red-600 hover:bg-red-700">
-                  <Building2 className="w-4 h-4" />Create Organization
+                <Button className="gap-2 bg-emerald-600 hover:bg-emerald-700">
+                  <Hospital className="w-4 h-4" />Add Hospital
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-lg">
                 <DialogHeader>
-                  <DialogTitle>Create New Organization</DialogTitle>
+                  <DialogTitle>Add New Hospital</DialogTitle>
                   <DialogDescription>Add a new hospital or clinic to the platform</DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleCreateOrg} className="space-y-4 mt-4">
