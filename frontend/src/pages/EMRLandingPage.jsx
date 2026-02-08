@@ -320,15 +320,15 @@ export default function EMRLandingPage() {
               <div className="text-sm text-slate-500 mt-1">Regions Covered</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-blue-600">200+</div>
+              <div className="text-3xl font-bold text-emerald-600">200+</div>
               <div className="text-sm text-slate-500 mt-1">Health Facilities</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-indigo-600">133+</div>
+              <div className="text-3xl font-bold text-emerald-600">133+</div>
               <div className="text-sm text-slate-500 mt-1">Registered Pharmacies</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-teal-600">24/7</div>
+              <div className="text-3xl font-bold text-emerald-600">24/7</div>
               <div className="text-sm text-slate-500 mt-1">Emergency Services</div>
             </div>
           </div>
