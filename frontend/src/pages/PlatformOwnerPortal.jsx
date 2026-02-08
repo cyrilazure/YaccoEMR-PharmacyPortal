@@ -486,6 +486,12 @@ export default function PlatformOwnerPortal() {
             <TabsTrigger value="hospitals" className="gap-2">
               <Hospital className="w-4 h-4" /> Hospitals
             </TabsTrigger>
+            <TabsTrigger value="pharmacies" className="gap-2">
+              <Store className="w-4 h-4" /> Pharmacies
+              {pendingPharmacies.length > 0 && (
+                <Badge className="ml-1 bg-red-500 text-white text-xs">{pendingPharmacies.length}</Badge>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="staff" className="gap-2">
               <UserCog className="w-4 h-4" /> Staff
             </TabsTrigger>
