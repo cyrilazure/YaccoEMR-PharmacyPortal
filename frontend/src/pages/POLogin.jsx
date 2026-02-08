@@ -252,75 +252,186 @@ export default function POLogin() {
             <CardHeader className="space-y-1 pb-6">
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-10 h-10 rounded-lg bg-slate-900 flex items-center justify-center">
-                  <Shield className="w-5 h-5 text-emerald-400" />
+                  {loginStep === 'credentials' && <Shield className="w-5 h-5 text-emerald-400" />}
+                  {loginStep === 'phone' && <Smartphone className="w-5 h-5 text-emerald-400" />}
+                  {loginStep === 'otp' && <Lock className="w-5 h-5 text-emerald-400" />}
                 </div>
               </div>
-              <CardTitle className="text-2xl">Platform Owner Login</CardTitle>
+              <CardTitle className="text-2xl">
+                {loginStep === 'credentials' && 'Platform Owner Login'}
+                {loginStep === 'phone' && 'Phone Verification'}
+                {loginStep === 'otp' && 'Enter OTP Code'}
+              </CardTitle>
               <CardDescription>
-                Enter your Super Admin credentials to access the platform
+                {loginStep === 'credentials' && 'Enter your Super Admin credentials to access the platform'}
+                {loginStep === 'phone' && 'Enter your phone number to receive a verification code'}
+                {loginStep === 'otp' && `Enter the 6-digit code sent to ${phoneMasked}`}
               </CardDescription>
             </CardHeader>
             
             <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {error && (
-                  <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>{error}</AlertDescription>
-                  </Alert>
-                )}
-                
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="admin@yacco.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="pl-10"
-                      required
-                    />
+              {error && (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              {/* Step 1: Credentials */}
+              {loginStep === 'credentials' && (
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="admin@yacco.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="pl-10"
+                        required
+                      />
+                    </div>
                   </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Password</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <Input
+                        id="password"
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="pl-10 pr-10"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-slate-900 hover:bg-slate-800 h-11"
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Authenticating...</>
+                    ) : (
+                      <><Shield className="w-4 h-4 mr-2" /> Continue</>
+                    )}
+                  </Button>
+                </form>
+              )}
+
+              {/* Step 2: Phone Input */}
+              {loginStep === 'phone' && (
+                <form onSubmit={handlePhoneSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <div className="relative">
+                      <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <Input
+                        id="phone"
+                        type="tel"
+                        placeholder="0241234567"
+                        value={phoneNumber}
+                        onChange={(e) => setPhoneNumber(e.target.value.replace(/[^\d+]/g, ''))}
+                        className="pl-10 text-center text-lg"
+                        autoFocus
+                      />
+                    </div>
+                    <p className="text-xs text-slate-500 text-center">
+                      Enter your Ghana phone number (e.g., 0241234567)
+                    </p>
+                  </div>
+                  
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 h-11"
+                    disabled={loading || phoneNumber.length < 9}
+                  >
+                    {loading ? (
+                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Sending...</>
+                    ) : (
+                      <><Send className="w-4 h-4 mr-2" /> Send OTP</>
+                    )}
+                  </Button>
+                  
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    className="w-full"
+                    onClick={handleBack}
+                  >
+                    ← Back to Login
+                  </Button>
+                </form>
+              )}
+
+              {/* Step 3: OTP Verification */}
+              {loginStep === 'otp' && (
+                <form onSubmit={handleOTPVerify} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="otp">OTP Code</Label>
                     <Input
-                      id="password"
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="pl-10 pr-10"
-                      required
+                      id="otp"
+                      type="text"
+                      placeholder="000000"
+                      value={otpCode}
+                      onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      className="text-center text-2xl tracking-widest font-mono"
+                      maxLength={6}
+                      autoFocus
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    <p className="text-xs text-slate-500 text-center">
+                      Code sent to {phoneMasked}
+                    </p>
+                  </div>
+                  
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 h-11"
+                    disabled={loading || otpCode.length !== 6}
+                  >
+                    {loading ? (
+                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Verifying...</>
+                    ) : (
+                      <><Shield className="w-4 h-4 mr-2" /> Verify & Access Platform</>
+                    )}
+                  </Button>
+                  
+                  <div className="flex items-center justify-between">
+                    <Button 
+                      type="button" 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={handleBack}
                     >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
+                      ← Back
+                    </Button>
+                    <Button 
+                      type="button" 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={handleResendOTP}
+                      disabled={resending}
+                    >
+                      {resending ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
+                      Resend OTP
+                    </Button>
                   </div>
-                </div>
-                
-                <Button 
-                  type="submit" 
-                  className="w-full bg-slate-900 hover:bg-slate-800 h-11"
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Authenticating...</>
-                  ) : (
-                    <><Shield className="w-4 h-4 mr-2" /> Access Platform</>
-                  )}
-                </Button>
-              </form>
+                </form>
+              )}
             </CardContent>
             
             <CardFooter className="flex flex-col gap-4 pt-0">
