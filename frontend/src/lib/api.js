@@ -176,6 +176,7 @@ export const organizationAPI = {
   
   // Super Admin endpoints
   listAll: (params) => api.get('/organizations', { params }),
+  getOrganizations: (params) => api.get('/organizations', { params }),
   getPending: () => api.get('/organizations/pending'),
   approve: (orgId, data) => api.post(`/organizations/${orgId}/approve`, data),
   reject: (orgId, data) => api.post(`/organizations/${orgId}/reject`, data),
@@ -199,6 +200,16 @@ export const organizationAPI = {
   deactivateStaff: (userId) => api.put(`/organizations/staff/${userId}/deactivate`),
   activateStaff: (userId) => api.put(`/organizations/staff/${userId}/activate`),
   updateStaffRole: (userId, newRole) => api.put(`/organizations/staff/${userId}/role`, null, { params: { new_role: newRole } }),
+};
+
+// Pharmacy Admin APIs (for Super Admin portal)
+export const pharmacyAdminAPI = {
+  listAll: (params) => api.get('/pharmacy-portal/admin/pharmacies', { params }),
+  getPending: () => api.get('/pharmacy-portal/admin/pharmacies/pending'),
+  approve: (pharmacyId, notes) => api.put(`/pharmacy-portal/admin/pharmacies/${pharmacyId}/approve`, { status: 'approved', notes }),
+  reject: (pharmacyId, notes) => api.put(`/pharmacy-portal/admin/pharmacies/${pharmacyId}/approve`, { status: 'rejected', notes }),
+  suspend: (pharmacyId, reason) => api.post(`/pharmacy-portal/admin/pharmacies/${pharmacyId}/suspend`, { reason }),
+  reactivate: (pharmacyId) => api.post(`/pharmacy-portal/admin/pharmacies/${pharmacyId}/reactivate`),
 };
 
 // Password Reset APIs
