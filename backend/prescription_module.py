@@ -288,6 +288,26 @@ def create_prescription_endpoints(db, get_current_user):
             "timestamp": datetime.now(timezone.utc).isoformat()
         })
         
+        # Send real-time notification to pharmacy via WebSocket
+        try:
+            from pharmacy_ws_module import notify_prescription_received
+            await notify_prescription_received(
+                db,
+                pharmacy_id,
+                {
+                    "prescription_id": prescription_id,
+                    "routing_id": routing_id,
+                    "rx_number": prescription.get("rx_number"),
+                    "patient_name": prescription.get("patient_name"),
+                    "hospital_name": hospital_name,
+                    "prescriber_name": prescription.get("prescriber_name"),
+                    "medications": prescription.get("medications", [])
+                },
+                priority="high"
+            )
+        except Exception as e:
+            print(f"[WARN] Failed to send WebSocket notification: {e}")
+        
         return {
             "message": f"Prescription sent to {pharmacy.get('name')}",
             "routing_id": routing_id,
