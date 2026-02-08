@@ -225,6 +225,25 @@ class LocationLoginRequest(BaseModel):
     location_id: Optional[str] = None  # Required if hospital has multiple locations
     totp_code: Optional[str] = None  # For 2FA
 
+class LocationLoginInitRequest(BaseModel):
+    """OTP Login Init with hospital/location context"""
+    email: EmailStr
+    password: str
+    hospital_id: str
+    location_id: Optional[str] = None
+
+class LocationLoginPhoneRequest(BaseModel):
+    """Submit phone number for OTP"""
+    user_id: str
+    phone_number: str
+    hospital_id: str
+    location_id: Optional[str] = None
+
+class LocationLoginVerifyRequest(BaseModel):
+    """Verify OTP and complete login"""
+    otp_session_id: str
+    otp_code: str
+
 class LocationLoginResponse(BaseModel):
     token: str
     user: dict
