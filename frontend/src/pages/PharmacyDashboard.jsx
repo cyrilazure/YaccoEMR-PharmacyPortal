@@ -2451,7 +2451,17 @@ export default function PharmacyDashboard() {
           const staffRes = await pharmacyDashAPI.getStaff();
           setStaff(staffRes.data.staff || []);
         }}
+        onShowCredentials={handleShowCredentials}
       />
+      
+      {/* Credentials Dialog - Shows email and password after creation/reset */}
+      <CredentialsDialog
+        open={showCredentialsDialog}
+        onOpenChange={setShowCredentialsDialog}
+        credentials={staffCredentials}
+        staffName={credentialsStaffName}
+      />
+      
       <SeedDrugsDialog
         open={showSeedDrugs}
         onOpenChange={setShowSeedDrugs}
