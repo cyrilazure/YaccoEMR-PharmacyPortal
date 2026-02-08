@@ -1909,7 +1909,7 @@ export default function PharmacyDashboard() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle>Staff Members ({staff.length})</CardTitle>
-                  <Button size="sm" onClick={() => setShowAddStaff(true)} className="bg-purple-600 hover:bg-purple-700">
+                  <Button size="sm" onClick={() => setShowAddStaff(true)} className="bg-emerald-600 hover:bg-emerald-700">
                     <Plus className="w-4 h-4 mr-2" /> Add Staff
                   </Button>
                 </div>
@@ -1928,7 +1928,9 @@ export default function PharmacyDashboard() {
                         <TableHead>Email</TableHead>
                         <TableHead>Role</TableHead>
                         <TableHead>Department</TableHead>
+                        <TableHead>Location</TableHead>
                         <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -1940,10 +1942,67 @@ export default function PharmacyDashboard() {
                             <Badge variant="outline">{member.role?.replace(/_/g, ' ')}</Badge>
                           </TableCell>
                           <TableCell>{member.department?.replace(/_/g, ' ')}</TableCell>
+                          <TableCell>{member.assigned_location || '-'}</TableCell>
                           <TableCell>
-                            <Badge className={member.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}>
-                              {member.is_active ? 'Active' : 'Inactive'}
+                            <Badge className={
+                              member.status === 'suspended' ? 'bg-orange-100 text-orange-700' :
+                              member.status === 'deactivated' ? 'bg-red-100 text-red-700' :
+                              member.is_active ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-700'
+                            }>
+                              {member.status === 'suspended' ? 'Suspended' :
+                               member.status === 'deactivated' ? 'Deactivated' :
+                               member.is_active ? 'Active' : 'Inactive'}
                             </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-48">
+                                <DropdownMenuLabel>Staff Actions</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => handleViewStaffDetails(member)}>
+                                  <Eye className="mr-2 h-4 w-4" />
+                                  View Details
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleResetPassword(member)}>
+                                  <Key className="mr-2 h-4 w-4" />
+                                  Reset Password
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => openPermissionsDialog(member)}>
+                                  <ShieldCheck className="mr-2 h-4 w-4" />
+                                  Manage Permissions
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => openLocationDialog(member)}>
+                                  <MapPin className="mr-2 h-4 w-4" />
+                                  Assign Location
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                {member.status === 'suspended' ? (
+                                  <DropdownMenuItem onClick={() => handleUnlockStaff(member)}>
+                                    <Unlock className="mr-2 h-4 w-4 text-green-600" />
+                                    <span className="text-green-600">Unlock Account</span>
+                                  </DropdownMenuItem>
+                                ) : (
+                                  <DropdownMenuItem onClick={() => openSuspendDialog(member)}>
+                                    <Ban className="mr-2 h-4 w-4 text-orange-600" />
+                                    <span className="text-orange-600">Suspend</span>
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuItem onClick={() => handleDeactivateStaff(member)}>
+                                  <UserMinus className="mr-2 h-4 w-4 text-slate-600" />
+                                  <span className="text-slate-600">Deactivate</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => openDeleteConfirm(member)} className="text-red-600">
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Delete User
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </TableCell>
                         </TableRow>
                       ))}
