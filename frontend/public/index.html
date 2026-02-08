@@ -25,12 +25,49 @@
         <script src="https://assets.emergent.sh/scripts/emergent-main.js"></script>
         <style>
             /* Hide Emergent badge */
-            #emergent-badge, a[href*="emergent-badge"], [id*="emergent-badge"] {
+            #emergent-badge, a[href*="emergent-badge"], [id*="emergent-badge"],
+            a[href*="emergent.sh"][style*="position: fixed"] {
                 display: none !important;
                 visibility: hidden !important;
                 opacity: 0 !important;
+                pointer-events: none !important;
+                width: 0 !important;
+                height: 0 !important;
             }
         </style>
+        <script>
+            // Remove Emergent badge after page load
+            function removeEmergentBadge() {
+                var badge = document.getElementById('emergent-badge');
+                if (badge) badge.remove();
+                // Also find by href
+                document.querySelectorAll('a[href*="emergent-badge"], a[href*="emergent.sh"]').forEach(function(el) {
+                    if (el.style.position === 'fixed' || el.id === 'emergent-badge') {
+                        el.remove();
+                    }
+                });
+            }
+            // Run on load and observe for dynamic additions
+            document.addEventListener('DOMContentLoaded', removeEmergentBadge);
+            window.addEventListener('load', removeEmergentBadge);
+            setTimeout(removeEmergentBadge, 100);
+            setTimeout(removeEmergentBadge, 500);
+            setTimeout(removeEmergentBadge, 1000);
+            setTimeout(removeEmergentBadge, 2000);
+            // MutationObserver to catch dynamically added badge
+            var observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    mutation.addedNodes.forEach(function(node) {
+                        if (node.id === 'emergent-badge' || (node.href && node.href.includes('emergent'))) {
+                            node.remove();
+                        }
+                    });
+                });
+            });
+            document.addEventListener('DOMContentLoaded', function() {
+                observer.observe(document.body, { childList: true, subtree: true });
+            });
+        </script>
         <!--
         These two scripts have been added for the Visual Edits, please do not edit or remove them
         -->
