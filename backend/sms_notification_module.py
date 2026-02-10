@@ -15,7 +15,7 @@ import asyncio
 # Arkesel SMS API Configuration
 ARKESEL_API_URL = "https://sms.arkesel.com/sms/api"
 ARKESEL_API_KEY = os.environ.get("ARKESEL_API_KEY", "bkV2eXRmb2tXTmJMa3VDYWh6RUo")
-SENDER_ID = os.environ.get("SMS_SENDER_ID", "YGTNetworks")
+SENDER_ID = os.environ.get("SMS_SENDER_ID", "YaccoHealth")
 
 
 class NotificationType(str, Enum):
