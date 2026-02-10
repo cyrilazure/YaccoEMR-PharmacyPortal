@@ -755,23 +755,19 @@ class Department(Base):
     __tablename__ = 'departments'
     
     id: Mapped[str] = mapped_column(String(50), primary_key=True, default=generate_uuid)
-    organization_id: Mapped[str] = mapped_column(String(50), ForeignKey('organizations.id'), nullable=False)
+    organization_id: Mapped[Optional[str]] = mapped_column(String(50))  # No FK
     
-    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    name: Mapped[Optional[str]] = mapped_column(String(255))
     code: Mapped[Optional[str]] = mapped_column(String(50))
     department_type: Mapped[Optional[str]] = mapped_column(String(100))
     description: Mapped[Optional[str]] = mapped_column(Text)
     
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    staff_count: Mapped[int] = mapped_column(Integer, default=0)
+    is_active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    staff_count: Mapped[Optional[int]] = mapped_column(Integer, default=0)
     
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
-    
-    # Relationships
-    organization = relationship("Organization", back_populates="departments")
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), default=utc_now)
     
     __table_args__ = (
-        UniqueConstraint('organization_id', 'code', name='uq_dept_code_org'),
         Index('ix_departments_org', 'organization_id'),
     )
 
