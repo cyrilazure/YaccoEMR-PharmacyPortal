@@ -197,6 +197,14 @@ const navItems = [
     color: 'text-pink-500'
   },
   { 
+    to: '/staff-chat', 
+    icon: MessageCircle, 
+    label: 'Staff Chat', 
+    roles: ['physician', 'nurse', 'nursing_supervisor', 'floor_supervisor', 'hospital_admin', 'pharmacist', 'radiologist', 'radiology_staff', 'biller', 'scheduler', 'bed_manager', 'hospital_it_admin'],
+    description: 'Internal messaging',
+    color: 'text-sky-500'
+  },
+  { 
     to: '/records-sharing', 
     icon: Share2, 
     label: 'Records Sharing', 
