@@ -781,6 +781,31 @@ GET  /api/billing-shifts/audit-logs      - Billing audit logs
   - Root cause: API checked 'organizations' collection but hospitals are in 'hospitals' collection
   - Solution: Updated to check both 'hospitals' and 'organizations' collections
 
+### PostgreSQL Migration & Enterprise Security (December 2025) - IN PROGRESS
+- [x] **PostgreSQL Database Setup**:
+  - PostgreSQL installed and configured
+  - Database `yacco_health` created with user `yacco`
+  - DATABASE_URL added to backend/.env
+- [x] **SQLAlchemy Models Created** (`/app/backend/database/models.py`):
+  - Core entities: Region, Organization, Hospital
+  - User management: User, OTPSession
+  - Patient management: Patient, PatientMedicalHistory, Vital, Allergy
+  - Referral system: PatientReferral (for physician referrals)
+  - Internal chat: ChatConversation, ChatMessage
+  - Prescriptions: Prescription
+  - Pharmacy: Pharmacy, PharmacyStaff
+  - Audit & Security: AuditLog, RateLimitRecord
+  - All tables created with proper indexes and constraints
+- [x] **Security Middleware Created** (`/app/backend/security/__init__.py`):
+  - JWT token management (create, decode, validate)
+  - Role-based access control (RBAC) middleware
+  - Rate limiting (in-memory, Redis-ready)
+  - Input validation and sanitization
+  - Audit logging
+  - Password utilities
+- [ ] **Data Migration**: Schema mismatch issues being resolved
+- [ ] **Backend API Migration**: Convert from MongoDB to PostgreSQL
+
 ## Prioritized Backlog
 
 ### P0 (Critical)
