@@ -1269,6 +1269,15 @@ export default function PlatformOwnerPortal() {
                                   <Button
                                     variant="outline"
                                     size="sm"
+                                    onClick={() => fetchHospitalStaff(item.hospital)}
+                                    className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                                  >
+                                    <Users className="w-4 h-4 mr-1" />
+                                    Staff
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
                                     onClick={() => handleLoginAsHospital(item)}
                                     disabled={saving}
                                   >
@@ -1284,6 +1293,7 @@ export default function PlatformOwnerPortal() {
                                     }}
                                   >
                                     <Power className="w-4 h-4" />
+                                  </Button>
                                   </Button>
                                   <Button
                                     variant="outline"
