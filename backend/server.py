@@ -1390,6 +1390,11 @@ from sms_notification_module import create_sms_router
 sms_router = create_sms_router(db)
 app.include_router(sms_router, prefix="/api")
 
+# Patient Referral Module
+from referral_module import create_referral_router
+referral_router = create_referral_router(db)
+app.include_router(referral_router)
+
 # Medication Database API
 from medication_database import get_all_medications, search_medications, get_medication_categories, get_medications_by_category
 
