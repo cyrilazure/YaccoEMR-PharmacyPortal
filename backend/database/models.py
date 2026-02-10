@@ -606,16 +606,19 @@ class AuditLog(Base):
     id: Mapped[str] = mapped_column(String(50), primary_key=True, default=generate_uuid)
     
     # Event Details
-    event_type: Mapped[str] = mapped_column(String(100), nullable=False)
-    action: Mapped[str] = mapped_column(String(100), nullable=False)
+    event_type: Mapped[Optional[str]] = mapped_column(String(100))
+    action: Mapped[Optional[str]] = mapped_column(String(100))
     resource_type: Mapped[Optional[str]] = mapped_column(String(100))
     resource_id: Mapped[Optional[str]] = mapped_column(String(50))
+    entity_type: Mapped[Optional[str]] = mapped_column(String(100))  # MongoDB compat
+    entity_id: Mapped[Optional[str]] = mapped_column(String(50))  # MongoDB compat
     
     # Actor
     user_id: Mapped[Optional[str]] = mapped_column(String(50))
     user_email: Mapped[Optional[str]] = mapped_column(String(255))
     user_role: Mapped[Optional[str]] = mapped_column(String(50))
     organization_id: Mapped[Optional[str]] = mapped_column(String(50))
+    performed_by: Mapped[Optional[str]] = mapped_column(String(255))  # MongoDB compat
     
     # Request Details
     ip_address: Mapped[Optional[str]] = mapped_column(String(50))
@@ -629,18 +632,18 @@ class AuditLog(Base):
     details: Mapped[Optional[dict]] = mapped_column(JSONB)
     
     # Result
-    status: Mapped[str] = mapped_column(String(50), default='success')  # success, failure
+    status: Mapped[Optional[str]] = mapped_column(String(50), default='success')
     error_message: Mapped[Optional[str]] = mapped_column(Text)
     
     # Timestamp
-    timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    timestamp: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), default=utc_now)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), default=utc_now)  # MongoDB compat
     
     __table_args__ = (
         Index('ix_audit_event', 'event_type'),
         Index('ix_audit_user', 'user_id'),
         Index('ix_audit_org', 'organization_id'),
         Index('ix_audit_timestamp', 'timestamp'),
-        Index('ix_audit_resource', 'resource_type', 'resource_id'),
     )
 
 
