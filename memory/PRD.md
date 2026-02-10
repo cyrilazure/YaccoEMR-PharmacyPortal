@@ -2,7 +2,7 @@
 
 ## Project Overview
 **Name:** Yacco EMR - Electronic Medical Records System  
-**Version:** 2.1.0  
+**Version:** 2.2.0  
 **Created:** February 3, 2026  
 **Last Updated:** February 10, 2026
 
@@ -32,6 +32,34 @@ Build a comprehensive Electronic Medical Records (EMR) system similar to Epic EM
 - **Auth:** JWT-based authentication with role-based access control
 - **Interoperability:** FHIR R4 API
 - **Payments:** Paystack (with Subaccounts for hospital settlements)
+
+---
+
+## LATEST FEATURES (February 10, 2026)
+
+### ✅ NEW: Patient Referral System
+- **Backend Module:** `/app/backend/referral_module.py`
+- **Frontend Page:** `/app/frontend/src/pages/PatientReferralPage.jsx`
+- **Route:** `/referrals`
+
+**Features:**
+- Create patient referrals with clinical summary
+- Search and select destination hospitals (14+ hospitals available)
+- Include/exclude specific health records (medical history, labs, imaging, prescriptions)
+- Track referral status (pending → sent → received → accepted → completed)
+- View outgoing and incoming referrals
+- Hospital search with department listings
+- SMS notifications to destination hospital
+- Referral statistics dashboard
+
+**API Endpoints:**
+- `POST /api/referrals/` - Create new referral
+- `GET /api/referrals/` - List referrals (outgoing/incoming/all)
+- `GET /api/referrals/{id}` - Get referral details
+- `PUT /api/referrals/{id}/status` - Update status
+- `GET /api/referrals/search/hospitals?query=` - Search hospitals
+- `GET /api/referrals/stats/summary` - Get statistics
+- `GET /api/referrals/patient/{id}/history` - Patient referral history
 
 ---
 
