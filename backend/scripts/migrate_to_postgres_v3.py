@@ -169,6 +169,15 @@ class MigrationManagerV3:
         # Apply defaults
         doc = self.apply_defaults(doc, table_name)
         
+        # Field renames for reserved words
+        field_renames = {
+            'paystack_transactions': {'metadata': 'transaction_metadata'},
+        }
+        if table_name in field_renames:
+            for old_name, new_name in field_renames[table_name].items():
+                if old_name in doc:
+                    doc[new_name] = doc.pop(old_name)
+        
         # Filter to valid columns and convert values
         valid_columns = self.table_columns[table_name]
         filtered = {}
