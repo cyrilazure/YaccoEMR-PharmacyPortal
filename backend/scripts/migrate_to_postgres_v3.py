@@ -244,7 +244,7 @@ class MigrationManagerV3:
         try:
             await self.create_tables()
             
-            # Migration mapping
+            # Migration mapping - ALL collections
             migrations = [
                 # Core entities
                 ("regions", "regions"),
@@ -254,6 +254,7 @@ class MigrationManagerV3:
                 # Users & Auth
                 ("users", "users"),
                 ("otp_sessions", "otp_sessions"),
+                ("user_2fa", "user_2fa"),
                 
                 # Patients
                 ("patients", "patients"),
@@ -263,16 +264,84 @@ class MigrationManagerV3:
                 ("vitals", "vitals"),
                 ("allergies", "allergies"),
                 ("prescriptions", "prescriptions"),
+                ("clinical_notes", "clinical_notes"),
+                ("problems", "problems"),
+                ("medications", "medications"),
                 
                 # Pharmacy
                 ("pharmacies", "pharmacies"),
                 ("pharmacy_staff", "pharmacy_staff"),
+                ("pharmacy_drugs", "pharmacy_drugs"),
+                ("pharmacy_prescriptions", "pharmacy_prescriptions"),
+                ("pharmacy_activity_logs", "pharmacy_activity_logs"),
+                ("pharmacy_audit_logs", "pharmacy_audit_logs"),
+                ("prescription_routings", "prescription_routings"),
                 
                 # Infrastructure
                 ("departments", "departments"),
+                ("wards", "wards"),
+                ("rooms", "rooms"),
+                ("beds", "beds"),
+                ("admissions", "admissions"),
+                ("hospital_locations", "hospital_locations"),
                 
-                # Audit
+                # Appointments & Scheduling
+                ("appointments", "appointments"),
+                
+                # Finance & Billing
+                ("bank_accounts", "bank_accounts"),
+                ("mobile_money_accounts", "mobile_money_accounts"),
+                ("invoices", "invoices"),
+                ("payments", "payments"),
+                ("paystack_transactions", "paystack_transactions"),
+                ("billing_payments", "billing_payments"),
+                ("billing_shifts", "billing_shifts"),
+                ("billing_audit_logs", "billing_audit_logs"),
+                
+                # Ambulance
+                ("ambulance_vehicles", "ambulance_vehicles"),
+                ("ambulance_requests", "ambulance_requests"),
+                
+                # Radiology
+                ("radiology_orders", "radiology_orders"),
+                ("radiology_reports", "radiology_reports"),
+                ("radiology_notes", "radiology_notes"),
+                
+                # Interventional Radiology
+                ("ir_procedures", "ir_procedures"),
+                ("ir_pre_assessments", "ir_pre_assessments"),
+                ("ir_sedation_monitoring", "ir_sedation_monitoring"),
+                
+                # Laboratory
+                ("lab_orders", "lab_orders"),
+                ("lab_results", "lab_results"),
+                
+                # Inventory
+                ("inventory_items", "inventory_items"),
+                ("inventory_batches", "inventory_batches"),
+                ("stock_movements", "stock_movements"),
+                ("suppliers", "suppliers"),
+                
+                # Nursing
+                ("nurse_shifts", "nurse_shifts"),
+                ("nurse_assignments", "nurse_assignments"),
+                
+                # Notifications & Communications
+                ("notifications", "notifications"),
+                ("sms_logs", "sms_logs"),
+                ("voice_dictation_logs", "voice_dictation_logs"),
+                
+                # Access & Security
+                ("access_grants", "access_grants"),
+                ("records_requests", "records_requests"),
+                
+                # Integration
+                ("hl7_messages", "hl7_messages"),
+                ("orders", "orders"),
+                
+                # Audit Logs
                 ("audit_logs", "audit_logs"),
+                ("it_audit_logs", "it_audit_logs"),
             ]
             
             logger.info("\n📦 Migrating collections...")
