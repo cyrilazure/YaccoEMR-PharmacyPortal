@@ -557,43 +557,43 @@ class Prescription(Base):
     __tablename__ = 'prescriptions'
     
     id: Mapped[str] = mapped_column(String(50), primary_key=True, default=generate_uuid)
-    rx_number: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
-    organization_id: Mapped[str] = mapped_column(String(50), nullable=False)
+    rx_number: Mapped[Optional[str]] = mapped_column(String(50))
+    organization_id: Mapped[Optional[str]] = mapped_column(String(50))
     
     # Patient
-    patient_id: Mapped[str] = mapped_column(String(50), ForeignKey('patients.id'), nullable=False)
-    patient_name: Mapped[str] = mapped_column(String(255), nullable=False)
-    patient_mrn: Mapped[str] = mapped_column(String(50), nullable=False)
+    patient_id: Mapped[Optional[str]] = mapped_column(String(50))  # No FK
+    patient_name: Mapped[Optional[str]] = mapped_column(String(255))
+    patient_mrn: Mapped[Optional[str]] = mapped_column(String(50))
     
     # Prescriber
-    prescriber_id: Mapped[str] = mapped_column(String(50), nullable=False)
-    prescriber_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    prescriber_id: Mapped[Optional[str]] = mapped_column(String(50))
+    prescriber_name: Mapped[Optional[str]] = mapped_column(String(255))
     prescriber_license: Mapped[Optional[str]] = mapped_column(String(100))
     
     # Medications (stored as JSONB array)
-    medications: Mapped[list] = mapped_column(JSONB, nullable=False)
+    medications: Mapped[Optional[list]] = mapped_column(JSONB)
     
     # Diagnosis
     diagnosis: Mapped[Optional[str]] = mapped_column(Text)
     icd_codes: Mapped[Optional[list]] = mapped_column(JSONB)
     
     # Status
-    status: Mapped[str] = mapped_column(String(50), default='active')  # active, filled, cancelled, expired
+    status: Mapped[Optional[str]] = mapped_column(String(50), default='active')
     
     # Timestamps
-    prescribed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    prescribed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), default=utc_now)
     expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), default=utc_now)
     
     # Notes
     notes: Mapped[Optional[str]] = mapped_column(Text)
     
     # Relationships
-    patient = relationship("Patient", back_populates="prescriptions")
+    patient = relationship("Patient", back_populates="prescriptions", foreign_keys=[patient_id])
     
     __table_args__ = (
         Index('ix_prescriptions_patient', 'patient_id'),
         Index('ix_prescriptions_org', 'organization_id'),
-        Index('ix_prescriptions_rx', 'rx_number'),
     )
 
 
