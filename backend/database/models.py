@@ -584,18 +584,20 @@ class AuditLog(Base):
     action: Mapped[Optional[str]] = mapped_column(String(100))
     resource_type: Mapped[Optional[str]] = mapped_column(String(100))
     resource_id: Mapped[Optional[str]] = mapped_column(String(50))
-    entity_type: Mapped[Optional[str]] = mapped_column(String(100))  # MongoDB compat
-    entity_id: Mapped[Optional[str]] = mapped_column(String(50))  # MongoDB compat
+    entity_type: Mapped[Optional[str]] = mapped_column(String(100))
+    entity_id: Mapped[Optional[str]] = mapped_column(String(50))
     
     # Actor
     user_id: Mapped[Optional[str]] = mapped_column(String(50))
     user_email: Mapped[Optional[str]] = mapped_column(String(255))
     user_role: Mapped[Optional[str]] = mapped_column(String(50))
     organization_id: Mapped[Optional[str]] = mapped_column(String(50))
-    performed_by: Mapped[Optional[str]] = mapped_column(String(255))  # MongoDB compat
+    hospital_id: Mapped[Optional[str]] = mapped_column(String(50))  # MongoDB field
+    target_user_id: Mapped[Optional[str]] = mapped_column(String(50))  # MongoDB field
+    performed_by: Mapped[Optional[str]] = mapped_column(String(255))
     
     # Request Details
-    ip_address: Mapped[Optional[str]] = mapped_column(String(50))
+    ip_address: Mapped[Optional[str]] = mapped_column(String(100))
     user_agent: Mapped[Optional[str]] = mapped_column(Text)
     request_method: Mapped[Optional[str]] = mapped_column(String(10))
     request_path: Mapped[Optional[str]] = mapped_column(String(500))
@@ -611,7 +613,7 @@ class AuditLog(Base):
     
     # Timestamp
     timestamp: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), default=utc_now)
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), default=utc_now)  # MongoDB compat
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), default=utc_now)
     
     __table_args__ = (
         Index('ix_audit_event', 'event_type'),
