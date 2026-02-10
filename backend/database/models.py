@@ -341,9 +341,6 @@ class Vital(Base):
     recorded_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), default=utc_now)
     notes: Mapped[Optional[str]] = mapped_column(Text)
     
-    # Relationships
-    patient = relationship("Patient", back_populates="vitals", foreign_keys=[patient_id])
-    
     __table_args__ = (
         Index('ix_vitals_patient', 'patient_id'),
         Index('ix_vitals_recorded', 'recorded_at'),
@@ -355,7 +352,7 @@ class Allergy(Base):
     __tablename__ = 'allergies'
     
     id: Mapped[str] = mapped_column(String(50), primary_key=True, default=generate_uuid)
-    patient_id: Mapped[Optional[str]] = mapped_column(String(50))  # No FK constraint
+    patient_id: Mapped[Optional[str]] = mapped_column(String(50))
     organization_id: Mapped[Optional[str]] = mapped_column(String(50))
     
     allergen: Mapped[Optional[str]] = mapped_column(String(255))
@@ -372,9 +369,6 @@ class Allergy(Base):
     recorded_by: Mapped[Optional[str]] = mapped_column(String(50))
     created_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), default=utc_now)
     
-    # Relationships
-    patient = relationship("Patient", back_populates="allergies", foreign_keys=[patient_id])
-    
     __table_args__ = (
         Index('ix_allergies_patient', 'patient_id'),
     )
@@ -387,17 +381,17 @@ class PatientReferral(Base):
     __tablename__ = 'patient_referrals'
     
     id: Mapped[str] = mapped_column(String(50), primary_key=True, default=generate_uuid)
-    referral_number: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
+    referral_number: Mapped[Optional[str]] = mapped_column(String(50))
     
     # Patient Info
-    patient_id: Mapped[str] = mapped_column(String(50), ForeignKey('patients.id'), nullable=False)
-    patient_name: Mapped[str] = mapped_column(String(255), nullable=False)
-    patient_mrn: Mapped[str] = mapped_column(String(50), nullable=False)
-    patient_dob: Mapped[Date] = mapped_column(Date)
-    patient_phone: Mapped[Optional[str]] = mapped_column(String(20))
+    patient_id: Mapped[Optional[str]] = mapped_column(String(50))  # No FK
+    patient_name: Mapped[Optional[str]] = mapped_column(String(255))
+    patient_mrn: Mapped[Optional[str]] = mapped_column(String(50))
+    patient_dob: Mapped[Optional[Date]] = mapped_column(Date)
+    patient_phone: Mapped[Optional[str]] = mapped_column(String(50))
     
     # Source Hospital
-    source_organization_id: Mapped[str] = mapped_column(String(50), nullable=False)
+    source_organization_id: Mapped[Optional[str]] = mapped_column(String(50))
     source_hospital_name: Mapped[str] = mapped_column(String(255), nullable=False)
     referring_physician_id: Mapped[str] = mapped_column(String(50), nullable=False)
     referring_physician_name: Mapped[str] = mapped_column(String(255), nullable=False)
