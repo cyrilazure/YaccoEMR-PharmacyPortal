@@ -37,6 +37,15 @@ Build a comprehensive Electronic Medical Records (EMR) system similar to Epic EM
 
 ## LATEST FEATURES (February 10, 2026)
 
+### ✅ OTP Login Flow Fixed (February 10, 2026)
+- Fixed SMS API key typo in `.env` (D→C character)
+- Cleaned up all random phone numbers from user accounts
+- Only `ygtnetworks@gmail.com` has phone number (+233553550653)
+- OTP flow works correctly:
+  1. User without phone → asks for phone number → saves it → sends OTP
+  2. User with phone → sends OTP directly
+  3. OTP verification → returns JWT token
+
 ### ✅ Backend Refactor Progress (February 10, 2026)
 **Database Abstraction Layer V2** (`/app/backend/db_service_v2.py`) created:
 - Provides unified, simple interface for all database operations
