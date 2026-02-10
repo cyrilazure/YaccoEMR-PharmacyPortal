@@ -26,6 +26,10 @@ db = client[os.environ['DB_NAME']]
 from db_service import init_db_service, get_db_service
 db_service = init_db_service(db)
 
+# Initialize V2 Database Service (simplified interface)
+from db_service_v2 import init_db_service_v2, get_db_service as get_db_v2
+db_service_v2 = init_db_service_v2(db)
+
 # Import security module
 from security import (
     rate_limiter, audit_logger, InputSanitizer,
