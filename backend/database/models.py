@@ -153,20 +153,23 @@ class User(Base):
     __tablename__ = 'users'
     
     id: Mapped[str] = mapped_column(String(50), primary_key=True, default=generate_uuid)
-    organization_id: Mapped[Optional[str]] = mapped_column(String(50), ForeignKey('organizations.id'))
+    organization_id: Mapped[Optional[str]] = mapped_column(String(50))  # No FK for flexibility
     
     # Authentication
     email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
-    password: Mapped[str] = mapped_column(String(255), nullable=False)
-    is_temp_password: Mapped[bool] = mapped_column(Boolean, default=True)
+    password: Mapped[Optional[str]] = mapped_column(String(255))
+    password_hash: Mapped[Optional[str]] = mapped_column(String(255))  # Alternative field
+    is_temp_password: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
+    two_factor_enabled: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
     
     # Profile
     first_name: Mapped[str] = mapped_column(String(100), nullable=False)
     last_name: Mapped[str] = mapped_column(String(100), nullable=False)
-    phone: Mapped[Optional[str]] = mapped_column(String(20))
+    phone: Mapped[Optional[str]] = mapped_column(String(50))
+    phone_updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     
     # Role & Department
-    role: Mapped[str] = mapped_column(String(50), nullable=False)  # physician, nurse, admin, etc.
+    role: Mapped[str] = mapped_column(String(50), nullable=False)
     department: Mapped[Optional[str]] = mapped_column(String(100))
     specialty: Mapped[Optional[str]] = mapped_column(String(100))
     license_number: Mapped[Optional[str]] = mapped_column(String(100))
@@ -176,19 +179,16 @@ class User(Base):
     status: Mapped[Optional[str]] = mapped_column(String(50), default='active', server_default='active')
     
     # Security
-    login_attempts: Mapped[int] = mapped_column(Integer, default=0)
+    login_attempts: Mapped[Optional[int]] = mapped_column(Integer, default=0)
     locked_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     suspended_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     suspension_reason: Mapped[Optional[str]] = mapped_column(Text)
     
     # Timestamps
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, onupdate=utc_now)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), default=utc_now, onupdate=utc_now)
     last_login: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     password_reset_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
-    
-    # Relationships
-    organization = relationship("Organization", back_populates="users")
     
     __table_args__ = (
         Index('ix_users_organization', 'organization_id'),
