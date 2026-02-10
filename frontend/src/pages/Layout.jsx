@@ -158,6 +158,14 @@ const navItems = [
     description: 'Emergency transport',
     color: 'text-red-500'
   },
+  { 
+    to: '/referrals', 
+    icon: Send, 
+    label: 'Patient Referrals', 
+    roles: ['physician', 'nurse', 'nursing_supervisor', 'floor_supervisor', 'hospital_admin'],
+    description: 'Transfer patients',
+    color: 'text-indigo-500'
+  },
   
   // ========== SHARED CLINICAL PAGES (Based on Permissions) ==========
   { 
