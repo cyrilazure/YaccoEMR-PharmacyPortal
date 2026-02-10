@@ -835,8 +835,11 @@ def create_organization_endpoints(db, get_current_user, hash_password):
     @organization_router.get("/platform-owner/hospitals/{hospital_id}/staff", response_model=dict)
     async def get_hospital_staff_platform_owner(hospital_id: str):
         """List all staff members for a specific hospital (Platform Owner only)"""
-        # Check if hospital exists
-        hospital = await db["organizations"].find_one({"id": hospital_id})
+        # Check if hospital exists - look in both hospitals and organizations collections
+        hospital = await db["hospitals"].find_one({"id": hospital_id})
+        if not hospital:
+            # Fallback to organizations collection for hospitals registered via self-service
+            hospital = await db["organizations"].find_one({"id": hospital_id})
         if not hospital:
             raise HTTPException(status_code=404, detail="Hospital not found")
         
