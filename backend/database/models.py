@@ -262,13 +262,6 @@ class Patient(Base):
     updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), default=utc_now, onupdate=utc_now)
     created_by: Mapped[Optional[str]] = mapped_column(String(50))
     
-    # Relationships removed for flexible migration
-    medical_history = relationship("PatientMedicalHistory", back_populates="patient", foreign_keys="PatientMedicalHistory.patient_id")
-    vitals = relationship("Vital", back_populates="patient", foreign_keys="Vital.patient_id")
-    allergies = relationship("Allergy", back_populates="patient", foreign_keys="Allergy.patient_id")
-    prescriptions = relationship("Prescription", back_populates="patient", foreign_keys="Prescription.patient_id")
-    referrals_sent = relationship("PatientReferral", back_populates="patient", foreign_keys="PatientReferral.patient_id")
-    
     __table_args__ = (
         Index('ix_patients_organization', 'organization_id'),
         Index('ix_patients_mrn', 'mrn'),
@@ -281,11 +274,11 @@ class PatientMedicalHistory(Base):
     __tablename__ = 'patient_medical_history'
     
     id: Mapped[str] = mapped_column(String(50), primary_key=True, default=generate_uuid)
-    patient_id: Mapped[str] = mapped_column(String(50), ForeignKey('patients.id'), nullable=False)
-    organization_id: Mapped[str] = mapped_column(String(50), nullable=False)
+    patient_id: Mapped[Optional[str]] = mapped_column(String(50))  # No FK
+    organization_id: Mapped[Optional[str]] = mapped_column(String(50))
     
     # Condition Type
-    condition_type: Mapped[str] = mapped_column(String(50), nullable=False)  # chronic, past_diagnosis, surgery, hospitalization, family_history
+    condition_type: Mapped[Optional[str]] = mapped_column(String(50))
     
     # Condition Details
     condition_name: Mapped[str] = mapped_column(String(255), nullable=False)
