@@ -151,6 +151,11 @@ class MigrationManagerV3:
             except:
                 return None
         
+        # Convert lists and dicts to JSON strings for JSONB columns
+        if isinstance(value, (list, dict)):
+            import json
+            return json.dumps(value)
+        
         return value
     
     def filter_document(self, doc: Dict, table_name: str) -> Dict:
