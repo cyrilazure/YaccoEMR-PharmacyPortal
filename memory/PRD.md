@@ -37,6 +37,26 @@ Build a comprehensive Electronic Medical Records (EMR) system similar to Epic EM
 
 ## LATEST FEATURES (February 10, 2026)
 
+### ✅ Backend Refactor Progress (February 10, 2026)
+**Database Abstraction Layer V2** (`/app/backend/db_service_v2.py`) created:
+- Provides unified, simple interface for all database operations
+- Automatically excludes `_id` from all MongoDB responses
+- Supports: `find_one`, `find`, `insert`, `update`, `delete`, `count`, `aggregate`
+- Ready for PostgreSQL migration - switch via `USE_POSTGRES` env variable
+
+**Modules Refactored to use db_service_v2:**
+- ✅ `staff_chat_module.py` - Real-time chat API
+- ✅ `notifications_module.py` - User notifications
+- ✅ `otp_module.py` - OTP verification for login
+
+**Remaining Modules to Refactor (by direct db[] call count):**
+- `pharmacy_portal_module.py` - 144 calls
+- `region_module.py` - 99 calls  
+- `hospital_it_admin_module.py` - 64 calls
+- `organization_module.py` - 60 calls
+- `radiology_module.py` - 59 calls
+- And 17+ other modules
+
 ### ✅ API Verification (February 10, 2026)
 All major APIs verified working:
 - Patient Referral API: `/api/referrals/*` - 14 hospitals available for referral
