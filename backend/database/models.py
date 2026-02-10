@@ -552,9 +552,6 @@ class Prescription(Base):
     # Notes
     notes: Mapped[Optional[str]] = mapped_column(Text)
     
-    # Relationships
-    patient = relationship("Patient", back_populates="prescriptions", foreign_keys=[patient_id])
-    
     __table_args__ = (
         Index('ix_prescriptions_patient', 'patient_id'),
         Index('ix_prescriptions_org', 'organization_id'),
