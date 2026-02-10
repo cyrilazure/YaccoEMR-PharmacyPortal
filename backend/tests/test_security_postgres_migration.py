@@ -299,6 +299,8 @@ class TestOrganizationsEndpoint:
     @pytest.fixture
     def auth_token(self):
         """Get authentication token"""
+        # Wait a bit to avoid rate limiting from previous tests
+        time.sleep(1)
         response = requests.post(
             f"{BASE_URL}/api/auth/login",
             json={
@@ -308,6 +310,8 @@ class TestOrganizationsEndpoint:
         )
         if response.status_code == 200:
             return response.json()["token"]
+        elif response.status_code == 429:
+            pytest.skip("Rate limited - try again in 60 seconds")
         pytest.skip("Could not authenticate")
     
     def test_list_organizations(self, auth_token):
