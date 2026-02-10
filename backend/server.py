@@ -1400,6 +1400,13 @@ from patient_history_module import create_patient_history_router
 patient_history_router = create_patient_history_router(db)
 app.include_router(patient_history_router)
 
+# Internal Staff Chat Module
+from staff_chat_module import create_staff_chat_router, create_chat_websocket_router
+staff_chat_router = create_staff_chat_router(db)
+app.include_router(staff_chat_router)
+chat_ws_router = create_chat_websocket_router(db)
+app.include_router(chat_ws_router)
+
 # Medication Database API
 from medication_database import get_all_medications, search_medications, get_medication_categories, get_medications_by_category
 
