@@ -369,15 +369,32 @@ async def verify_migration():
     engine = create_async_engine(POSTGRES_URL, echo=False)
     
     async with engine.begin() as conn:
-        tables_to_check = ['regions', 'organizations', 'hospitals', 'users', 'patients', 'pharmacies']
+        # Check all key tables
+        tables_to_check = [
+            'regions', 'organizations', 'hospitals', 'users', 'patients',
+            'pharmacies', 'pharmacy_drugs', 'departments', 'wards', 'beds',
+            'invoices', 'appointments', 'radiology_orders', 'ir_procedures',
+            'notifications', 'audit_logs', 'sms_logs'
+        ]
         
         logger.info("\n📋 VERIFICATION")
         logger.info("-" * 40)
         
+        total_records = 0
         for table in tables_to_check:
-            result = await conn.execute(text(f"SELECT COUNT(*) FROM {table}"))
-            count = result.scalar()
-            logger.info(f"  {table}: {count} records")
+            try:
+                result = await conn.execute(text(f"SELECT COUNT(*) FROM {table}"))
+                count = result.scalar()
+                total_records += count
+                if count > 0:
+                    logger.info(f"  ✅ {table}: {count} records")
+                else:
+                    logger.info(f"  ⏭️  {table}: 0 records")
+            except Exception as e:
+                logger.warning(f"  ⚠️  {table}: error - {str(e)[:50]}")
+        
+        logger.info("-" * 40)
+        logger.info(f"Total records in key tables: {total_records}")
     
     await engine.dispose()
 
