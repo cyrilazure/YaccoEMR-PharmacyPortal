@@ -398,32 +398,32 @@ class PatientReferral(Base):
     
     # Destination Hospital
     destination_organization_id: Mapped[Optional[str]] = mapped_column(String(50))
-    destination_hospital_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    destination_hospital_name: Mapped[Optional[str]] = mapped_column(String(255))
     destination_hospital_address: Mapped[Optional[str]] = mapped_column(Text)
     destination_department: Mapped[Optional[str]] = mapped_column(String(100))
     receiving_physician_id: Mapped[Optional[str]] = mapped_column(String(50))
     receiving_physician_name: Mapped[Optional[str]] = mapped_column(String(255))
     
     # Referral Details
-    referral_type: Mapped[str] = mapped_column(String(50), default='standard')  # standard, urgent, emergency
-    priority: Mapped[str] = mapped_column(String(50), default='routine')  # routine, urgent, stat
-    reason: Mapped[str] = mapped_column(Text, nullable=False)
+    referral_type: Mapped[Optional[str]] = mapped_column(String(50), default='standard')
+    priority: Mapped[Optional[str]] = mapped_column(String(50), default='routine')
+    reason: Mapped[Optional[str]] = mapped_column(Text)
     clinical_summary: Mapped[Optional[str]] = mapped_column(Text)
     diagnosis: Mapped[Optional[str]] = mapped_column(Text)
     icd_codes: Mapped[Optional[list]] = mapped_column(JSONB)
     
     # Records to send
-    include_medical_history: Mapped[bool] = mapped_column(Boolean, default=True)
-    include_lab_results: Mapped[bool] = mapped_column(Boolean, default=True)
-    include_imaging: Mapped[bool] = mapped_column(Boolean, default=True)
-    include_prescriptions: Mapped[bool] = mapped_column(Boolean, default=True)
-    attached_records: Mapped[Optional[list]] = mapped_column(JSONB)  # List of record IDs
+    include_medical_history: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    include_lab_results: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    include_imaging: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    include_prescriptions: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    attached_records: Mapped[Optional[list]] = mapped_column(JSONB)
     
     # Status
-    status: Mapped[str] = mapped_column(String(50), default='pending')  # pending, sent, received, accepted, declined, completed
+    status: Mapped[Optional[str]] = mapped_column(String(50), default='pending')
     
     # Timestamps
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), default=utc_now)
     sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     received_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     accepted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
@@ -432,9 +432,6 @@ class PatientReferral(Base):
     # Notes
     referral_notes: Mapped[Optional[str]] = mapped_column(Text)
     receiving_notes: Mapped[Optional[str]] = mapped_column(Text)
-    
-    # Relationships
-    patient = relationship("Patient", back_populates="referrals_sent")
     
     __table_args__ = (
         Index('ix_referrals_patient', 'patient_id'),
@@ -451,11 +448,11 @@ class ChatConversation(Base):
     __tablename__ = 'chat_conversations'
     
     id: Mapped[str] = mapped_column(String(50), primary_key=True, default=generate_uuid)
-    organization_id: Mapped[str] = mapped_column(String(50), nullable=False)
+    organization_id: Mapped[Optional[str]] = mapped_column(String(50))
     
     # Conversation Type
-    conversation_type: Mapped[str] = mapped_column(String(50), default='direct')  # direct, group
-    name: Mapped[Optional[str]] = mapped_column(String(255))  # For group chats
+    conversation_type: Mapped[Optional[str]] = mapped_column(String(50), default='direct')
+    name: Mapped[Optional[str]] = mapped_column(String(255))
     
     # Participants (for direct messages - 2 users)
     participant_1_id: Mapped[Optional[str]] = mapped_column(String(50))
@@ -465,7 +462,7 @@ class ChatConversation(Base):
     participants: Mapped[Optional[list]] = mapped_column(JSONB)
     
     # Status
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    is_active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
     
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
