@@ -118,16 +118,36 @@ class MigrationManagerV3:
             return None
         
         # Convert datetime strings
-        date_fields = ['created_at', 'updated_at', 'approved_at', 'sent_at', 
+        datetime_fields = ['created_at', 'updated_at', 'approved_at', 'sent_at', 
                        'received_at', 'completed_at', 'expires_at', 'timestamp',
                        'last_login', 'locked_at', 'suspended_at', 'password_reset_at',
                        'verified_at', 'last_message_at', 'prescribed_at', 'recorded_at',
-                       'onset_date', 'resolved_date', 'accepted_at', 'edited_at',
-                       'deactivated_at', 'activated_at', 'unlocked_at']
+                       'accepted_at', 'edited_at', 'deactivated_at', 'activated_at', 
+                       'unlocked_at', 'phone_updated_at']
+        
+        # Date only fields (not datetime)
+        date_fields = ['date_of_birth', 'onset_date', 'resolved_date', 'patient_dob']
+        
+        if key in datetime_fields and isinstance(value, str):
+            try:
+                return datetime.fromisoformat(value.replace('Z', '+00:00'))
+            except:
+                return None
         
         if key in date_fields and isinstance(value, str):
             try:
-                return datetime.fromisoformat(value.replace('Z', '+00:00'))
+                # Parse date string to date object
+                from datetime import date as dt_date
+                if 'T' in value:
+                    return datetime.fromisoformat(value.replace('Z', '+00:00')).date()
+                else:
+                    # Try common date formats
+                    for fmt in ['%Y-%m-%d', '%d/%m/%Y', '%m/%d/%Y']:
+                        try:
+                            return datetime.strptime(value, fmt).date()
+                        except:
+                            continue
+                    return None
             except:
                 return None
         
