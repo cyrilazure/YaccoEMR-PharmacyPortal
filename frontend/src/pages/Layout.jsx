@@ -27,7 +27,7 @@ import {
   Pill, AlertTriangle, Stethoscope, BarChart3, Heart, UserCog, Shield, Video,
   Building2, Globe, CreditCard, Share2, ShieldCheck, FileSearch, Layers,
   Menu, X, Bell, Search, Sun, Moon, HelpCircle, Bed, Scan, Ambulance, Package,
-  Mic, Syringe
+  Mic, Syringe, Send
 } from 'lucide-react';
 
 const navItems = [
