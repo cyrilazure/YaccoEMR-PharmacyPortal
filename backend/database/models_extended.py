@@ -177,7 +177,7 @@ class PaystackTransaction(Base):
     status: Mapped[Optional[str]] = mapped_column(String(50))
     channel: Mapped[Optional[str]] = mapped_column(String(50))
     
-    metadata: Mapped[Optional[dict]] = mapped_column(JSONB)
+    transaction_metadata: Mapped[Optional[dict]] = mapped_column(JSONB)
     
     created_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), default=utc_now)
     paid_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
