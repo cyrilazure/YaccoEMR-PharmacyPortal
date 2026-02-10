@@ -2,6 +2,7 @@
 Internal Staff Chat Module for Yacco Health EMR
 ================================================
 Real-time messaging between hospital staff members.
+REFACTORED to use db_service_v2 for database abstraction.
 
 Features:
 - Direct messages between any staff members
@@ -25,6 +26,7 @@ import logging
 import asyncio
 
 from security import get_current_user, TokenPayload, audit_log
+from db_service_v2 import get_db_service
 
 logger = logging.getLogger(__name__)
 
@@ -147,21 +149,22 @@ def create_staff_chat_router(db) -> APIRouter:
     
     async def get_user_details(user_id: str) -> dict:
         """Get user details for chat"""
-        user = await db["users"].find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
+        db_svc = get_db_service()
+        user = await db_svc.find_one("users", {"id": user_id}, {"password_hash": 0})
         return user
     
     async def get_conversation(conversation_id: str) -> dict:
         """Get conversation by ID"""
-        conversation = await db["chat_conversations"].find_one(
-            {"id": conversation_id}, {"_id": 0}
-        )
+        db_svc = get_db_service()
+        conversation = await db_svc.get_by_id("chat_conversations", conversation_id)
         if not conversation:
             raise HTTPException(status_code=404, detail="Conversation not found")
         return conversation
     
     async def user_in_conversation(user_id: str, conversation_id: str) -> bool:
         """Check if user is a participant in the conversation"""
-        conversation = await db["chat_conversations"].find_one({
+        db_svc = get_db_service()
+        conversation = await db_svc.find_one("chat_conversations", {
             "id": conversation_id,
             "participant_ids": user_id
         })
@@ -180,6 +183,7 @@ def create_staff_chat_router(db) -> APIRouter:
         - GROUP: Multi-user chat with custom name
         - DEPARTMENT: Chat for all members of a department
         """
+        db_svc = get_db_service()
         now = datetime.now(timezone.utc)
         
         # Ensure current user is in participants
@@ -187,10 +191,10 @@ def create_staff_chat_router(db) -> APIRouter:
         
         # For direct chats, check if conversation already exists
         if data.chat_type == ChatType.DIRECT and len(participant_ids) == 2:
-            existing = await db["chat_conversations"].find_one({
+            existing = await db_svc.find_one("chat_conversations", {
                 "chat_type": "direct",
                 "participant_ids": {"$all": participant_ids, "$size": 2}
-            }, {"_id": 0})
+            })
             
             if existing:
                 return {"success": True, "conversation": existing, "existing": True}
@@ -229,8 +233,7 @@ def create_staff_chat_router(db) -> APIRouter:
             "unread_counts": {pid: 0 for pid in participant_ids}
         }
         
-        await db["chat_conversations"].insert_one(conversation)
-        conversation.pop("_id", None)
+        await db_svc.insert("chat_conversations", conversation, generate_id=False)
         
         logger.info(f"Created {data.chat_type.value} conversation: {conversation['id']}")
         
@@ -242,10 +245,13 @@ def create_staff_chat_router(db) -> APIRouter:
         current_user: TokenPayload = Depends(get_current_user)
     ):
         """List all conversations for the current user"""
-        conversations = await db["chat_conversations"].find(
+        db_svc = get_db_service()
+        conversations = await db_svc.find(
+            "chat_conversations",
             {"participant_ids": current_user.user_id},
-            {"_id": 0}
-        ).sort("last_message_at", -1).to_list(limit)
+            sort=[("last_message_at", -1)],
+            limit=limit
+        )
         
         # Calculate unread count for each conversation
         for conv in conversations:
@@ -278,6 +284,8 @@ def create_staff_chat_router(db) -> APIRouter:
         current_user: TokenPayload = Depends(get_current_user)
     ):
         """Send a message to a conversation"""
+        db_svc = get_db_service()
+        
         if not await user_in_conversation(current_user.user_id, conversation_id):
             raise HTTPException(status_code=403, detail="Not a member of this conversation")
         
@@ -304,8 +312,7 @@ def create_staff_chat_router(db) -> APIRouter:
             "organization_id": current_user.organization_id
         }
         
-        await db["chat_messages"].insert_one(msg)
-        msg.pop("_id", None)
+        await db_svc.insert("chat_messages", msg, generate_id=False)
         
         # Update conversation with last message
         unread_counts = conversation.get("unread_counts", {})
@@ -313,15 +320,12 @@ def create_staff_chat_router(db) -> APIRouter:
             if pid != current_user.user_id:
                 unread_counts[pid] = unread_counts.get(pid, 0) + 1
         
-        await db["chat_conversations"].update_one(
-            {"id": conversation_id},
-            {"$set": {
-                "last_message": message.content[:100],
-                "last_message_at": now.isoformat(),
-                "updated_at": now.isoformat(),
-                "unread_counts": unread_counts
-            }}
-        )
+        await db_svc.update_by_id("chat_conversations", conversation_id, {
+            "last_message": message.content[:100],
+            "last_message_at": now.isoformat(),
+            "updated_at": now.isoformat(),
+            "unread_counts": unread_counts
+        })
         
         # Broadcast to connected users
         broadcast_msg = {
@@ -343,6 +347,8 @@ def create_staff_chat_router(db) -> APIRouter:
         current_user: TokenPayload = Depends(get_current_user)
     ):
         """Get messages from a conversation"""
+        db_svc = get_db_service()
+        
         if not await user_in_conversation(current_user.user_id, conversation_id):
             raise HTTPException(status_code=403, detail="Not a member of this conversation")
         
@@ -350,12 +356,15 @@ def create_staff_chat_router(db) -> APIRouter:
         if before:
             query["sent_at"] = {"$lt": before}
         
-        messages = await db["chat_messages"].find(
-            query, {"_id": 0}
-        ).sort("sent_at", -1).limit(limit).to_list(limit)
+        messages = await db_svc.find(
+            "chat_messages",
+            query,
+            sort=[("sent_at", -1)],
+            limit=limit
+        )
         
-        # Mark messages as read
-        await db["chat_messages"].update_many(
+        # Mark messages as read - use direct MongoDB for $addToSet
+        await db_svc.collection("chat_messages").update_many(
             {
                 "conversation_id": conversation_id,
                 "sender_id": {"$ne": current_user.user_id},
@@ -364,8 +373,8 @@ def create_staff_chat_router(db) -> APIRouter:
             {"$addToSet": {"read_by": current_user.user_id}}
         )
         
-        # Reset unread count for this user
-        await db["chat_conversations"].update_one(
+        # Reset unread count for this user - use direct MongoDB for nested field update
+        await db_svc.collection("chat_conversations").update_one(
             {"id": conversation_id},
             {"$set": {f"unread_counts.{current_user.user_id}": 0}}
         )
@@ -384,10 +393,13 @@ def create_staff_chat_router(db) -> APIRouter:
         current_user: TokenPayload = Depends(get_current_user)
     ):
         """Mark all messages in a conversation as read"""
+        db_svc = get_db_service()
+        
         if not await user_in_conversation(current_user.user_id, conversation_id):
             raise HTTPException(status_code=403, detail="Not a member of this conversation")
         
-        await db["chat_messages"].update_many(
+        # Use direct MongoDB for $addToSet
+        await db_svc.collection("chat_messages").update_many(
             {
                 "conversation_id": conversation_id,
                 "sender_id": {"$ne": current_user.user_id},
@@ -396,7 +408,7 @@ def create_staff_chat_router(db) -> APIRouter:
             {"$addToSet": {"read_by": current_user.user_id}}
         )
         
-        await db["chat_conversations"].update_one(
+        await db_svc.collection("chat_conversations").update_one(
             {"id": conversation_id},
             {"$set": {f"unread_counts.{current_user.user_id}": 0}}
         )
@@ -412,22 +424,28 @@ def create_staff_chat_router(db) -> APIRouter:
         current_user: TokenPayload = Depends(get_current_user)
     ):
         """Search messages across all user's conversations"""
+        db_svc = get_db_service()
+        
         # Get user's conversations
-        conversations = await db["chat_conversations"].find(
+        conversations = await db_svc.find(
+            "chat_conversations",
             {"participant_ids": current_user.user_id},
-            {"id": 1}
-        ).to_list(1000)
+            projection={"id": 1},
+            limit=1000
+        )
         
         conversation_ids = [c["id"] for c in conversations]
         
         # Search messages
-        messages = await db["chat_messages"].find(
+        messages = await db_svc.find(
+            "chat_messages",
             {
                 "conversation_id": {"$in": conversation_ids},
                 "content": {"$regex": query, "$options": "i"}
             },
-            {"_id": 0}
-        ).sort("sent_at", -1).limit(limit).to_list(limit)
+            sort=[("sent_at", -1)],
+            limit=limit
+        )
         
         return {
             "messages": messages,
@@ -444,7 +462,10 @@ def create_staff_chat_router(db) -> APIRouter:
         current_user: TokenPayload = Depends(get_current_user)
     ):
         """Search for users to start a conversation with"""
-        users = await db["users"].find(
+        db_svc = get_db_service()
+        
+        users = await db_svc.find(
+            "users",
             {
                 "organization_id": current_user.organization_id,
                 "id": {"$ne": current_user.user_id},
@@ -455,8 +476,9 @@ def create_staff_chat_router(db) -> APIRouter:
                     {"email": {"$regex": query, "$options": "i"}}
                 ]
             },
-            {"_id": 0, "password_hash": 0}
-        ).limit(limit).to_list(limit)
+            projection={"password_hash": 0},
+            limit=limit
+        )
         
         return {
             "users": [{
@@ -476,10 +498,14 @@ def create_staff_chat_router(db) -> APIRouter:
         current_user: TokenPayload = Depends(get_current_user)
     ):
         """Get total unread message count for the current user"""
-        conversations = await db["chat_conversations"].find(
+        db_svc = get_db_service()
+        
+        conversations = await db_svc.find(
+            "chat_conversations",
             {"participant_ids": current_user.user_id},
-            {"unread_counts": 1}
-        ).to_list(1000)
+            projection={"unread_counts": 1},
+            limit=1000
+        )
         
         total_unread = sum(
             c.get("unread_counts", {}).get(current_user.user_id, 0)
@@ -514,15 +540,18 @@ def create_chat_websocket_router(db) -> APIRouter:
                 return
             
             user_id = payload.user_id
+            db_svc = get_db_service()
             
             # Connect
             await chat_manager.connect(websocket, user_id)
             
             # Subscribe to user's conversations
-            conversations = await db["chat_conversations"].find(
+            conversations = await db_svc.find(
+                "chat_conversations",
                 {"participant_ids": user_id},
-                {"id": 1}
-            ).to_list(1000)
+                projection={"id": 1},
+                limit=1000
+            )
             
             for conv in conversations:
                 chat_manager.subscribe_to_conversation(user_id, conv["id"])
