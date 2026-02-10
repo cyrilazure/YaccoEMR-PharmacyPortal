@@ -27,7 +27,7 @@ def test_endpoint(method, url, data=None, headers=None):
 
 def test_nurse_login_and_shifts(email, password):
     """Test nurse login and shift management"""
-    base_url = "https://unified-health-8.preview.emergentagent.com/api"
+    base_url = "https://emr-postgres-move.preview.emergentagent.com/api"
     
     print(f"\n🧪 Testing Nurse: {email}")
     print("=" * 60)

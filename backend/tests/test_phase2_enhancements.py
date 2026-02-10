@@ -10,7 +10,7 @@ import json
 from datetime import datetime
 
 # Backend URL
-BASE_URL = "https://unified-health-8.preview.emergentagent.com/api"
+BASE_URL = "https://emr-postgres-move.preview.emergentagent.com/api"
 
 # Test credentials
 BILLER_EMAIL = "biller@yacco.health"
