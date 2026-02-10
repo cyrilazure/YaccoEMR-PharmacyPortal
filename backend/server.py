@@ -26,19 +26,34 @@ db = client[os.environ['DB_NAME']]
 from db_service import init_db_service, get_db_service
 db_service = init_db_service(db)
 
+# Import security module
+from security import (
+    rate_limiter, audit_logger, InputSanitizer,
+    get_current_user, require_roles, require_platform_owner,
+    create_access_token, decode_access_token
+)
+from security.middleware import SecurityMiddleware, setup_security
+
 # JWT Configuration
 JWT_SECRET = os.environ.get('JWT_SECRET', 'yacco-emr-secret-key-2024')
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION_HOURS = 24
 
 # Create the main app
-app = FastAPI(title="Yacco EMR API")
+app = FastAPI(
+    title="Yacco EMR API",
+    description="Enterprise Healthcare Management System",
+    version="2.0.0"
+)
 api_router = APIRouter(prefix="/api")
 security = HTTPBearer()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+# Apply Security Middleware
+setup_security(app, db)
 
 # ============ ENUMS ============
 class UserRole(str, Enum):
