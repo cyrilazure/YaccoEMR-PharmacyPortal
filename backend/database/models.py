@@ -601,6 +601,7 @@ class AuditLog(Base):
     user_agent: Mapped[Optional[str]] = mapped_column(Text)
     request_method: Mapped[Optional[str]] = mapped_column(String(10))
     request_path: Mapped[Optional[str]] = mapped_column(String(500))
+    request_id: Mapped[Optional[str]] = mapped_column(String(50))
     
     # Changes
     old_values: Mapped[Optional[dict]] = mapped_column(JSONB)
@@ -609,6 +610,7 @@ class AuditLog(Base):
     
     # Result
     status: Mapped[Optional[str]] = mapped_column(String(50), default='success')
+    severity: Mapped[Optional[str]] = mapped_column(String(20), default='INFO')
     error_message: Mapped[Optional[str]] = mapped_column(Text)
     
     # Timestamp
