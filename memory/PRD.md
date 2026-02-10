@@ -762,6 +762,25 @@ GET  /api/billing-shifts/audit-logs      - Billing audit logs
 - [x] **Bug Fix**: Password/credentials were not displayed clearly (only in toast notifications)
   - Solution: Added persistent modal dialog that users must explicitly dismiss
 
+### Platform Owner Hospital Staff Management (December 2025) - NEW
+- [x] **Platform Owner Hospital Staff Endpoints**:
+  - `GET /api/organizations/platform-owner/hospitals/{id}/staff` - List all staff for a hospital
+  - `GET /api/organizations/platform-owner/staff/{id}` - Get staff details with hospital info
+  - `PUT /api/organizations/platform-owner/staff/{id}` - Update staff info
+  - `PUT /api/organizations/platform-owner/staff/{id}/reset-password` - Reset password, returns temp password
+  - `PUT /api/organizations/platform-owner/staff/{id}/suspend` - Suspend staff account
+  - `PUT /api/organizations/platform-owner/staff/{id}/activate` - Activate staff account
+  - `DELETE /api/organizations/platform-owner/staff/{id}` - Delete staff account
+- [x] **Platform Owner Portal Hospital Staff UI**:
+  - "Staff" button in Hospitals tab for each hospital
+  - Hospital Staff Dialog showing all staff with Name, Email, Role, Department, Status, Actions
+  - Staff Details Dialog with full information
+  - Credentials Dialog for password reset (shows email and temp password with Copy buttons)
+  - Action buttons: View Details (Eye), Reset Password (Key), Suspend (Ban), Activate (CheckCircle)
+- [x] **Bug Fix**: Backend was looking in wrong collection for hospitals
+  - Root cause: API checked 'organizations' collection but hospitals are in 'hospitals' collection
+  - Solution: Updated to check both 'hospitals' and 'organizations' collections
+
 ## Prioritized Backlog
 
 ### P0 (Critical)
