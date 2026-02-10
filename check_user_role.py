@@ -7,7 +7,7 @@ import requests
 import json
 
 def check_user_role():
-    base_url = "https://unified-emr.preview.emergentagent.com/api"
+    base_url = "https://medconnect-223.preview.emergentagent.com/api"
     
     # Login as IT Admin
     login_data = {
