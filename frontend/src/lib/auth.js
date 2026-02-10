@@ -156,13 +156,13 @@ export const AuthProvider = ({ children }) => {
         setPendingLocationId(locationId);
         return { otp_required: true };
       } else {
-        // Direct login (shouldn't happen)
-        const { token, user: userData } = response.data;
+        // Direct login (OTP disabled)
+        const { token, user: userData, redirect_to } = response.data;
         localStorage.setItem('yacco_token', token);
         localStorage.setItem('yacco_user', JSON.stringify(userData));
         setUser(userData);
         resetOTPState();
-        return userData;
+        return { ...userData, redirect_to };
       }
     } catch (error) {
       throw error;
