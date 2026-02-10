@@ -207,10 +207,11 @@ export default function RegionHospitalLogin() {
         toast.info('Please enter your phone number for verification');
       } else if (result.otp_required) {
         toast.success('OTP sent to your phone');
-      } else if (result.id) {
-        // Direct login (user returned)
+      } else if (result.id || result.email) {
+        // Direct login (OTP disabled - user returned with token)
         toast.success('Welcome!');
-        navigate('/dashboard');
+        const redirectPath = ROLE_REDIRECTS[result.role] || result.redirect_to || '/dashboard';
+        navigate(redirectPath);
       }
       
     } catch (error) {
