@@ -200,6 +200,15 @@ export const organizationAPI = {
   deactivateStaff: (userId) => api.put(`/organizations/staff/${userId}/deactivate`),
   activateStaff: (userId) => api.put(`/organizations/staff/${userId}/activate`),
   updateStaffRole: (userId, newRole) => api.put(`/organizations/staff/${userId}/role`, null, { params: { new_role: newRole } }),
+  
+  // Platform Owner - Hospital Staff Management
+  getHospitalStaff: (hospitalId) => api.get(`/organizations/platform-owner/hospitals/${hospitalId}/staff`),
+  getStaffDetails: (staffId) => api.get(`/organizations/platform-owner/staff/${staffId}`),
+  updateStaffPlatformOwner: (staffId, data) => api.put(`/organizations/platform-owner/staff/${staffId}`, data),
+  resetStaffPasswordPlatformOwner: (staffId) => api.put(`/organizations/platform-owner/staff/${staffId}/reset-password`),
+  suspendStaffPlatformOwner: (staffId, reason) => api.put(`/organizations/platform-owner/staff/${staffId}/suspend`, { reason }),
+  activateStaffPlatformOwner: (staffId) => api.put(`/organizations/platform-owner/staff/${staffId}/activate`),
+  deleteStaffPlatformOwner: (staffId) => api.delete(`/organizations/platform-owner/staff/${staffId}`),
 };
 
 // Pharmacy Admin APIs (for Super Admin portal)
