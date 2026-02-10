@@ -45,17 +45,17 @@ Build a comprehensive Electronic Medical Records (EMR) system similar to Epic EM
 - Ready for PostgreSQL migration - switch via `USE_POSTGRES` env variable
 
 **Modules Refactored to use db_service_v2:**
-- ✅ `staff_chat_module.py` - Real-time chat API
-- ✅ `notifications_module.py` - User notifications
-- ✅ `otp_module.py` - OTP verification for login
+- ✅ `staff_chat_module.py` - Real-time chat API (571 lines)
+- ✅ `notifications_module.py` - User notifications (276 lines)
+- ✅ `otp_module.py` - OTP verification for login (167 lines)
+- ✅ `region_module.py` - Ghana regions & hospital discovery (1640 lines) - 99 direct db calls removed
 
 **Remaining Modules to Refactor (by direct db[] call count):**
-- `pharmacy_portal_module.py` - 144 calls
-- `region_module.py` - 99 calls  
+- `pharmacy_portal_module.py` - 144 calls (3197 lines)
 - `hospital_it_admin_module.py` - 64 calls
 - `organization_module.py` - 60 calls
 - `radiology_module.py` - 59 calls
-- And 17+ other modules
+- And 15+ other modules
 
 ### ✅ API Verification (February 10, 2026)
 All major APIs verified working:
