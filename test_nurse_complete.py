@@ -26,7 +26,7 @@ def test_endpoint(method, url, data=None, headers=None):
         return None
 
 def main():
-    base_url = "https://emr-postgres-move.preview.emergentagent.com/api"
+    base_url = "https://unified-emr.preview.emergentagent.com/api"
     
     print("🧪 Testing Nurse Shift Management - Complete Workflow")
     print("=" * 60)
