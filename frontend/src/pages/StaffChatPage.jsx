@@ -55,7 +55,7 @@ export default function StaffChatPage() {
   // Fetch conversations
   const fetchConversations = useCallback(async () => {
     try {
-      const response = await api.get('/api/chat/conversations');
+      const response = await api.get('/chat/conversations');
       setConversations(response.data.conversations || []);
     } catch (error) {
       console.error('Error fetching conversations:', error);
@@ -67,7 +67,7 @@ export default function StaffChatPage() {
   // Fetch unread count
   const fetchUnreadCount = useCallback(async () => {
     try {
-      const response = await api.get('/api/chat/unread-count');
+      const response = await api.get('/chat/unread-count');
       setUnreadCount(response.data.unread_count || 0);
     } catch (error) {
       console.error('Error fetching unread count:', error);
