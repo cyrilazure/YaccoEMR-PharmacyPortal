@@ -1327,6 +1327,284 @@ export default function SuperAdminDashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Hospital Staff Management Dialog */}
+      <Dialog open={showStaffDialog} onOpenChange={setShowStaffDialog}>
+        <DialogContent className="max-w-4xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5 text-emerald-600" />
+              Staff Members - {selectedHospital?.name}
+            </DialogTitle>
+            <DialogDescription>
+              Manage staff accounts for this hospital
+            </DialogDescription>
+          </DialogHeader>
+          
+          <ScrollArea className="h-[500px] pr-4">
+            {staffLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <RefreshCw className="w-6 h-6 animate-spin text-slate-400" />
+              </div>
+            ) : hospitalStaff.length === 0 ? (
+              <div className="text-center py-12 text-slate-500">
+                <Users className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+                <p>No staff members found for this hospital</p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-slate-50">
+                    <TableHead>Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Department</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {hospitalStaff.map((staff) => (
+                    <TableRow key={staff.id}>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{staff.first_name} {staff.last_name}</p>
+                          <p className="text-xs text-slate-500">{staff.phone || '-'}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm">{staff.email}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={
+                          staff.role === 'hospital_admin' ? 'border-purple-300 text-purple-700' :
+                          staff.role === 'hospital_it_admin' ? 'border-blue-300 text-blue-700' :
+                          staff.role === 'physician' ? 'border-emerald-300 text-emerald-700' :
+                          'border-slate-300'
+                        }>
+                          {staff.role?.replace(/_/g, ' ')}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm text-slate-600">{staff.department || '-'}</TableCell>
+                      <TableCell>
+                        <Badge className={staff.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}>
+                          {staff.is_active ? 'Active' : staff.status === 'suspended' ? 'Suspended' : 'Inactive'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleViewStaffDetails(staff)}
+                            className="text-blue-600 hover:text-blue-700"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleStaffAction('reset-password', staff.id)}
+                            disabled={staffActionLoading}
+                            className="text-amber-600 hover:text-amber-700"
+                            title="Reset Password"
+                          >
+                            <Lock className="w-4 h-4" />
+                          </Button>
+                          {staff.is_active ? (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleStaffAction('suspend', staff.id)}
+                              disabled={staffActionLoading}
+                              className="text-orange-600 hover:text-orange-700"
+                              title="Suspend Account"
+                            >
+                              <Pause className="w-4 h-4" />
+                            </Button>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleStaffAction('activate', staff.id)}
+                              disabled={staffActionLoading}
+                              className="text-emerald-600 hover:text-emerald-700"
+                              title="Activate Account"
+                            >
+                              <Play className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      {/* Staff Details Dialog */}
+      <Dialog open={showStaffDetails} onOpenChange={setShowStaffDetails}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5 text-emerald-600" />
+              Staff Details
+            </DialogTitle>
+          </DialogHeader>
+          {selectedStaffMember && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-slate-500">Full Name</p>
+                  <p className="font-medium">{selectedStaffMember.first_name} {selectedStaffMember.last_name}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500">Email</p>
+                  <p className="font-medium">{selectedStaffMember.email}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500">Phone</p>
+                  <p className="font-medium">{selectedStaffMember.phone || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500">Role</p>
+                  <Badge variant="outline">{selectedStaffMember.role?.replace(/_/g, ' ')}</Badge>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500">Department</p>
+                  <p className="font-medium">{selectedStaffMember.department || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500">Specialty</p>
+                  <p className="font-medium">{selectedStaffMember.specialty || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500">License Number</p>
+                  <p className="font-medium">{selectedStaffMember.license_number || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500">Status</p>
+                  <Badge className={selectedStaffMember.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}>
+                    {selectedStaffMember.is_active ? 'Active' : 'Inactive'}
+                  </Badge>
+                </div>
+              </div>
+              <div className="pt-4 border-t flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => handleStaffAction('reset-password', selectedStaffMember.id)}
+                  disabled={staffActionLoading}
+                  className="text-amber-600 border-amber-200"
+                >
+                  <Lock className="w-4 h-4 mr-2" />
+                  Reset Password
+                </Button>
+                {selectedStaffMember.is_active ? (
+                  <Button
+                    variant="destructive"
+                    onClick={() => handleStaffAction('suspend', selectedStaffMember.id)}
+                    disabled={staffActionLoading}
+                  >
+                    <Pause className="w-4 h-4 mr-2" />
+                    Suspend
+                  </Button>
+                ) : (
+                  <Button
+                    className="bg-emerald-600 hover:bg-emerald-700"
+                    onClick={() => handleStaffAction('activate', selectedStaffMember.id)}
+                    disabled={staffActionLoading}
+                  >
+                    <Play className="w-4 h-4 mr-2" />
+                    Activate
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Staff Credentials Dialog */}
+      <Dialog open={showCredentialsDialog} onOpenChange={setShowCredentialsDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-emerald-600">
+              <CheckCircle2 className="w-5 h-5" />
+              Password Reset Successful
+            </DialogTitle>
+            <DialogDescription>
+              Please save these credentials securely
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <Alert className="bg-amber-50 border-amber-200">
+              <AlertTriangle className="h-4 w-4 text-amber-600" />
+              <AlertTitle className="text-amber-800">Important</AlertTitle>
+              <AlertDescription className="text-amber-700">
+                This is the only time the temporary password will be displayed.
+              </AlertDescription>
+            </Alert>
+            
+            {staffCredentials?.email && (
+              <div className="space-y-1">
+                <Label className="text-slate-600 text-sm">Email</Label>
+                <div className="flex items-center gap-2">
+                  <Input 
+                    value={staffCredentials.email} 
+                    readOnly 
+                    className="bg-slate-50 font-mono"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      navigator.clipboard.writeText(staffCredentials.email);
+                      toast.success('Email copied!');
+                    }}
+                  >
+                    Copy
+                  </Button>
+                </div>
+              </div>
+            )}
+            
+            <div className="space-y-1">
+              <Label className="text-slate-600 text-sm">Temporary Password</Label>
+              <div className="flex items-center gap-2">
+                <Input 
+                  value={staffCredentials?.password || ''} 
+                  readOnly 
+                  className="bg-emerald-50 border-emerald-200 font-mono text-lg font-bold text-emerald-700"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    navigator.clipboard.writeText(staffCredentials?.password || '');
+                    toast.success('Password copied!');
+                  }}
+                >
+                  Copy
+                </Button>
+              </div>
+            </div>
+            
+            <p className="text-xs text-slate-500">
+              The staff member will be required to change this password on first login.
+            </p>
+          </div>
+          
+          <DialogFooter>
+            <Button onClick={() => setShowCredentialsDialog(false)} className="bg-emerald-600 hover:bg-emerald-700">
+              Done - I've Saved the Credentials
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
