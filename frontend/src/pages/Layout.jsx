@@ -272,6 +272,14 @@ export default function Layout() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [pageLoading, setPageLoading] = useState(false);
+  
+  // Chat notifications hook
+  const { 
+    unreadCount: chatUnreadCount, 
+    isConnected: chatConnected,
+    soundEnabled,
+    setSoundEnabled 
+  } = useChatNotifications();
 
   // Handle route changes with loading state - using ref to track pathname
   const prevPathname = React.useRef(location.pathname);
