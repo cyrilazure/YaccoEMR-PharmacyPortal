@@ -1206,12 +1206,15 @@ class User2FA(Base):
     method: Mapped[Optional[str]] = mapped_column(String(50))
     secret: Mapped[Optional[str]] = mapped_column(String(255))
     
+    enabled: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
     is_enabled: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
+    verified: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
     
     backup_codes: Mapped[Optional[list]] = mapped_column(JSONB)
     
     created_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), default=utc_now)
     updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    setup_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     
     __table_args__ = (
         Index('ix_user_2fa_user', 'user_id'),
