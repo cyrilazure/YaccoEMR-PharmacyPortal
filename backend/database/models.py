@@ -228,7 +228,7 @@ class Patient(Base):
     __tablename__ = 'patients'
     
     id: Mapped[str] = mapped_column(String(50), primary_key=True, default=generate_uuid)
-    organization_id: Mapped[str] = mapped_column(String(50), ForeignKey('organizations.id'), nullable=False)
+    organization_id: Mapped[Optional[str]] = mapped_column(String(50))  # No FK constraint for flexible migration
     
     # Identifiers
     mrn: Mapped[str] = mapped_column(String(50), nullable=False)  # Medical Record Number
@@ -239,44 +239,48 @@ class Patient(Base):
     first_name: Mapped[str] = mapped_column(String(100), nullable=False)
     last_name: Mapped[str] = mapped_column(String(100), nullable=False)
     middle_name: Mapped[Optional[str]] = mapped_column(String(100))
-    date_of_birth: Mapped[Date] = mapped_column(Date, nullable=False)
-    gender: Mapped[str] = mapped_column(String(20), nullable=False)
+    date_of_birth: Mapped[Optional[Date]] = mapped_column(Date)  # Made nullable for migration
+    gender: Mapped[Optional[str]] = mapped_column(String(20))
     
     # Contact
     email: Mapped[Optional[str]] = mapped_column(String(255))
-    phone: Mapped[Optional[str]] = mapped_column(String(20))
+    phone: Mapped[Optional[str]] = mapped_column(String(50))  # Increased length
     address: Mapped[Optional[str]] = mapped_column(Text)
     city: Mapped[Optional[str]] = mapped_column(String(100))
     region: Mapped[Optional[str]] = mapped_column(String(100))
     
     # Emergency Contact
     emergency_contact_name: Mapped[Optional[str]] = mapped_column(String(255))
-    emergency_contact_phone: Mapped[Optional[str]] = mapped_column(String(20))
+    emergency_contact_phone: Mapped[Optional[str]] = mapped_column(String(50))
     emergency_contact_relationship: Mapped[Optional[str]] = mapped_column(String(50))
     
     # Insurance
     insurance_provider: Mapped[Optional[str]] = mapped_column(String(255))
     insurance_policy_number: Mapped[Optional[str]] = mapped_column(String(100))
+    insurance_id: Mapped[Optional[str]] = mapped_column(String(100))  # Added
+    insurance_plan: Mapped[Optional[str]] = mapped_column(String(255))  # Added
+    payment_type: Mapped[Optional[str]] = mapped_column(String(50))  # Added
+    
+    # Notifications
+    adt_notification: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)  # Added
     
     # Status
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    status: Mapped[str] = mapped_column(String(50), default='active')
+    is_active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True, server_default='true')
+    status: Mapped[Optional[str]] = mapped_column(String(50), default='active', server_default='active')
     
     # Timestamps
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, onupdate=utc_now)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), default=utc_now, onupdate=utc_now)
     created_by: Mapped[Optional[str]] = mapped_column(String(50))
     
-    # Relationships
-    organization = relationship("Organization", back_populates="patients")
-    medical_history = relationship("PatientMedicalHistory", back_populates="patient")
-    vitals = relationship("Vital", back_populates="patient")
-    allergies = relationship("Allergy", back_populates="patient")
-    prescriptions = relationship("Prescription", back_populates="patient")
+    # Relationships removed for flexible migration
+    medical_history = relationship("PatientMedicalHistory", back_populates="patient", foreign_keys="PatientMedicalHistory.patient_id")
+    vitals = relationship("Vital", back_populates="patient", foreign_keys="Vital.patient_id")
+    allergies = relationship("Allergy", back_populates="patient", foreign_keys="Allergy.patient_id")
+    prescriptions = relationship("Prescription", back_populates="patient", foreign_keys="Prescription.patient_id")
     referrals_sent = relationship("PatientReferral", back_populates="patient", foreign_keys="PatientReferral.patient_id")
     
     __table_args__ = (
-        UniqueConstraint('organization_id', 'mrn', name='uq_patient_mrn_org'),
         Index('ix_patients_organization', 'organization_id'),
         Index('ix_patients_mrn', 'mrn'),
         Index('ix_patients_name', 'last_name', 'first_name'),
