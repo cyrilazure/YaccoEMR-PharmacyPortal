@@ -419,7 +419,12 @@ async def login_init(credentials: UserLogin):
     
     # If OTP is disabled, return token directly
     if not OTP_ENABLED:
-        token = create_access_token(user_id=user["id"], role=user["role"])
+        token = create_access_token(
+            user_id=user["id"], 
+            email=user["email"],
+            role=user["role"],
+            organization_id=user.get("organization_id")
+        )
         user_response = {
             "id": user["id"],
             "email": user["email"],
