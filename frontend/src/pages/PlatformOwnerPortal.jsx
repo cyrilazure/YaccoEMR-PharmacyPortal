@@ -1294,7 +1294,6 @@ export default function PlatformOwnerPortal() {
                                   >
                                     <Power className="w-4 h-4" />
                                   </Button>
-                                  </Button>
                                   <Button
                                     variant="outline"
                                     size="sm"
