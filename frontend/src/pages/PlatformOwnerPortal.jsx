@@ -107,6 +107,17 @@ export default function PlatformOwnerPortal() {
   const [statusChangeOpen, setStatusChangeOpen] = useState(false);
   const [hospitalToChangeStatus, setHospitalToChangeStatus] = useState(null);
   
+  // Hospital Staff Management (Platform Owner)
+  const [showHospitalStaffDialog, setShowHospitalStaffDialog] = useState(false);
+  const [selectedHospitalForStaff, setSelectedHospitalForStaff] = useState(null);
+  const [hospitalStaff, setHospitalStaff] = useState([]);
+  const [hospitalStaffLoading, setHospitalStaffLoading] = useState(false);
+  const [selectedHospitalStaff, setSelectedHospitalStaff] = useState(null);
+  const [showHospitalStaffDetails, setShowHospitalStaffDetails] = useState(false);
+  const [showHospitalStaffCredentials, setShowHospitalStaffCredentials] = useState(false);
+  const [hospitalStaffCredentials, setHospitalStaffCredentials] = useState(null);
+  const [hospitalStaffActionLoading, setHospitalStaffActionLoading] = useState(false);
+  
   // Pharmacy approval management
   const [pendingPharmacies, setPendingPharmacies] = useState([]);
   const [approvedPharmacies, setApprovedPharmacies] = useState([]);
