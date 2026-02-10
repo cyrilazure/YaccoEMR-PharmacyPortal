@@ -53,6 +53,9 @@ import VoiceDictationAnalytics from "@/pages/VoiceDictationAnalytics";
 import InterventionalRadiologyPortal from "@/pages/InterventionalRadiologyPortal";
 import IRStatusBoardPage from "@/pages/IRStatusBoardPage";
 
+// Patient Referral System
+import PatientReferralPage from "@/pages/PatientReferralPage";
+
 // Pharmacy Portal (Standalone)
 import PharmacyLanding from "@/pages/PharmacyLanding";
 import PharmacyDashboard from "@/pages/PharmacyDashboard";
