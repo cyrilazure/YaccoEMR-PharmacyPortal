@@ -468,9 +468,6 @@ class ChatConversation(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
     last_message_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     
-    # Relationships
-    messages = relationship("ChatMessage", back_populates="conversation")
-    
     __table_args__ = (
         Index('ix_chat_conv_org', 'organization_id'),
         Index('ix_chat_conv_participants', 'participant_1_id', 'participant_2_id'),
@@ -482,16 +479,16 @@ class ChatMessage(Base):
     __tablename__ = 'chat_messages'
     
     id: Mapped[str] = mapped_column(String(50), primary_key=True, default=generate_uuid)
-    conversation_id: Mapped[str] = mapped_column(String(50), ForeignKey('chat_conversations.id'), nullable=False)
+    conversation_id: Mapped[Optional[str]] = mapped_column(String(50))  # No FK
     
     # Sender
-    sender_id: Mapped[str] = mapped_column(String(50), nullable=False)
-    sender_name: Mapped[str] = mapped_column(String(255), nullable=False)
-    sender_role: Mapped[str] = mapped_column(String(50), nullable=False)
+    sender_id: Mapped[Optional[str]] = mapped_column(String(50))
+    sender_name: Mapped[Optional[str]] = mapped_column(String(255))
+    sender_role: Mapped[Optional[str]] = mapped_column(String(50))
     
     # Message Content
-    message_type: Mapped[str] = mapped_column(String(50), default='text')  # text, image, file, system
-    content: Mapped[str] = mapped_column(Text, nullable=False)
+    message_type: Mapped[Optional[str]] = mapped_column(String(50), default='text')
+    content: Mapped[Optional[str]] = mapped_column(Text)
     
     # Attachments
     attachments: Mapped[Optional[list]] = mapped_column(JSONB)
@@ -500,18 +497,15 @@ class ChatMessage(Base):
     reply_to_id: Mapped[Optional[str]] = mapped_column(String(50))
     
     # Status
-    is_edited: Mapped[bool] = mapped_column(Boolean, default=False)
-    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_edited: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
+    is_deleted: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
     
     # Read receipts stored as JSONB {user_id: timestamp}
     read_by: Mapped[Optional[dict]] = mapped_column(JSONB)
     
     # Timestamps
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), default=utc_now)
     edited_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
-    
-    # Relationships
-    conversation = relationship("ChatConversation", back_populates="messages")
     
     __table_args__ = (
         Index('ix_chat_msg_conv', 'conversation_id'),
@@ -531,7 +525,7 @@ class Prescription(Base):
     organization_id: Mapped[Optional[str]] = mapped_column(String(50))
     
     # Patient
-    patient_id: Mapped[Optional[str]] = mapped_column(String(50))  # No FK
+    patient_id: Mapped[Optional[str]] = mapped_column(String(50))
     patient_name: Mapped[Optional[str]] = mapped_column(String(255))
     patient_mrn: Mapped[Optional[str]] = mapped_column(String(50))
     
