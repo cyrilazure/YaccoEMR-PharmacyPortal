@@ -24,7 +24,10 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    // Don't redirect on 401 errors during OTP verification or login process
+    const isAuthEndpoint = error.config?.url?.includes('/auth/login');
+    
+    if (error.response?.status === 401 && !isAuthEndpoint) {
       localStorage.removeItem('yacco_token');
       localStorage.removeItem('yacco_user');
       window.location.href = '/login';
