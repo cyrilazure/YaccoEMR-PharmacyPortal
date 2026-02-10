@@ -1489,10 +1489,12 @@ def create_region_endpoints(db, get_current_user, hash_password):
         total_locations = await db_svc.count("hospital_locations", {"is_active": True})
         pending_hospitals = await db_svc.count("hospitals", {"status": "pending"})
         
-        role_dist = await db_svc.aggregate("users", [
+        # Use direct MongoDB for aggregation that needs _id in grouping
+        role_dist_cursor = db_svc.collection("users").aggregate([
             {"$match": {"is_active": True}},
             {"$group": {"_id": "$role", "count": {"$sum": 1}}}
         ])
+        role_dist = await role_dist_cursor.to_list(50)
         
         return {
             "regions": region_stats,
@@ -1502,7 +1504,7 @@ def create_region_endpoints(db, get_current_user, hash_password):
                 "locations": total_locations,
                 "pending_hospitals": pending_hospitals
             },
-            "role_distribution": {r["_id"]: r["count"] for r in role_dist},
+            "role_distribution": {r["_id"]: r["count"] for r in role_dist if r.get("_id")},
             "country": "Ghana",
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
