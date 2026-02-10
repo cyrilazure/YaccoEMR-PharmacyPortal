@@ -238,6 +238,70 @@ export default function SuperAdminDashboard() {
     }
   };
 
+  // Hospital Staff Management Handlers
+  const handleViewStaff = async (hospital) => {
+    setSelectedHospital(hospital);
+    setShowStaffDialog(true);
+    setStaffLoading(true);
+    try {
+      const res = await organizationAPI.getHospitalStaff(hospital.id);
+      setHospitalStaff(res.data.staff || []);
+    } catch (err) {
+      console.error('Failed to fetch hospital staff:', err);
+      toast.error('Failed to load staff');
+      setHospitalStaff([]);
+    } finally {
+      setStaffLoading(false);
+    }
+  };
+
+  const handleStaffAction = async (action, staffId) => {
+    setStaffActionLoading(true);
+    try {
+      switch (action) {
+        case 'suspend':
+          await organizationAPI.suspendStaffPlatformOwner(staffId, 'Suspended by Super Admin');
+          toast.success('Staff account suspended');
+          break;
+        case 'activate':
+          await organizationAPI.activateStaffPlatformOwner(staffId);
+          toast.success('Staff account activated');
+          break;
+        case 'delete':
+          await organizationAPI.deleteStaffPlatformOwner(staffId);
+          toast.success('Staff account deleted');
+          break;
+        case 'reset-password':
+          const resetRes = await organizationAPI.resetStaffPasswordPlatformOwner(staffId);
+          setStaffCredentials({
+            email: resetRes.data.email,
+            password: resetRes.data.temp_password
+          });
+          setShowCredentialsDialog(true);
+          toast.success('Password reset successfully');
+          break;
+        default:
+          toast.error('Unknown action');
+      }
+      // Refresh staff list
+      if (selectedHospital) {
+        const res = await organizationAPI.getHospitalStaff(selectedHospital.id);
+        setHospitalStaff(res.data.staff || []);
+      }
+    } catch (err) {
+      const detail = err.response?.data?.detail;
+      toast.error(typeof detail === 'string' ? detail : `Failed to ${action} staff`);
+    } finally {
+      setStaffActionLoading(false);
+    }
+  };
+
+  const handleViewStaffDetails = (staff) => {
+    setSelectedStaffMember(staff);
+    setShowStaffDetails(true);
+  };
+
+
   // Filter organizations
   const filteredOrgs = organizations.filter(o =>
     !orgSearch || o.name?.toLowerCase().includes(orgSearch.toLowerCase())
