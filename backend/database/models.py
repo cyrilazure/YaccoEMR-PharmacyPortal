@@ -694,15 +694,15 @@ class Pharmacy(Base):
     owner_name: Mapped[Optional[str]] = mapped_column(String(255))
     
     # Status
-    status: Mapped[str] = mapped_column(String(50), default='pending')
-    registration_status: Mapped[str] = mapped_column(String(50), default='pending')
+    status: Mapped[Optional[str]] = mapped_column(String(50), default='pending')
+    registration_status: Mapped[Optional[str]] = mapped_column(String(50), default='pending')
     
     # Settings
     settings: Mapped[Optional[dict]] = mapped_column(JSONB)
     
     # Timestamps
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, onupdate=utc_now)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), default=utc_now, onupdate=utc_now)
     approved_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     approved_by: Mapped[Optional[str]] = mapped_column(String(255))
     
@@ -717,30 +717,30 @@ class PharmacyStaff(Base):
     __tablename__ = 'pharmacy_staff'
     
     id: Mapped[str] = mapped_column(String(50), primary_key=True, default=generate_uuid)
-    pharmacy_id: Mapped[str] = mapped_column(String(50), ForeignKey('pharmacies.id'), nullable=False)
-    pharmacy_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    pharmacy_id: Mapped[Optional[str]] = mapped_column(String(50))  # No FK
+    pharmacy_name: Mapped[Optional[str]] = mapped_column(String(255))
     
     # Authentication
     email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
-    password: Mapped[str] = mapped_column(String(255), nullable=False)
+    password: Mapped[Optional[str]] = mapped_column(String(255))
     
     # Profile
-    first_name: Mapped[str] = mapped_column(String(100), nullable=False)
-    last_name: Mapped[str] = mapped_column(String(100), nullable=False)
-    phone: Mapped[Optional[str]] = mapped_column(String(20))
+    first_name: Mapped[Optional[str]] = mapped_column(String(100))
+    last_name: Mapped[Optional[str]] = mapped_column(String(100))
+    phone: Mapped[Optional[str]] = mapped_column(String(50))
     
     # Role
-    role: Mapped[str] = mapped_column(String(50), nullable=False)  # pharmacy_it_admin, pharmacist, etc.
+    role: Mapped[Optional[str]] = mapped_column(String(50))
     department: Mapped[Optional[str]] = mapped_column(String(100))
     license_number: Mapped[Optional[str]] = mapped_column(String(100))
     
     # Status
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    status: Mapped[str] = mapped_column(String(50), default='active')
+    is_active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    status: Mapped[Optional[str]] = mapped_column(String(50), default='active')
     
     # Timestamps
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, onupdate=utc_now)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), default=utc_now, onupdate=utc_now)
     
     __table_args__ = (
         Index('ix_pharmacy_staff_pharmacy', 'pharmacy_id'),
