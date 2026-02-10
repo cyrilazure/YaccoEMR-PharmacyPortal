@@ -1,5 +1,7 @@
 """
 Region-Based Hospital Discovery Module for Yacco EMR (Ghana)
+REFACTORED to use db_service_v2 for database abstraction.
+
 Supports:
 - Ghana's 16 administrative regions
 - Hospital discovery by region
@@ -20,6 +22,7 @@ import jwt
 
 # Import OTP module
 from otp_module import create_otp_session, verify_otp, mask_phone_number
+from db_service_v2 import get_db_service
 
 region_router = APIRouter(prefix="/api/regions", tags=["Regions & Discovery"])
 
@@ -77,8 +80,9 @@ DEFAULT_HOSPITAL_DEPARTMENTS = [
 ]
 
 
-async def seed_hospital_departments(db, hospital_id: str) -> int:
+async def seed_hospital_departments(hospital_id: str) -> int:
     """Auto-seed default departments for a new hospital"""
+    db_svc = get_db_service()
     departments_created = 0
     
     for dept in DEFAULT_HOSPITAL_DEPARTMENTS:
@@ -93,10 +97,11 @@ async def seed_hospital_departments(db, hospital_id: str) -> int:
             "staff_count": 0,
             "created_at": datetime.now(timezone.utc).isoformat()
         }
-        await db["departments"].insert_one(dept_doc)
+        await db_svc.insert("departments", dept_doc, generate_id=False)
         departments_created += 1
     
     return departments_created
+
 
 # ============ Enums ============
 
@@ -110,10 +115,10 @@ class LocationType(str, Enum):
 class UserRoleGhana(str, Enum):
     PHYSICIAN = "physician"
     NURSE = "nurse"
-    ADMIN = "admin"  # Hospital admin
+    ADMIN = "admin"
     BILLER = "biller"
     SCHEDULER = "scheduler"
-    SUPER_ADMIN = "super_admin"  # Platform admin
+    SUPER_ADMIN = "super_admin"
 
 # Role to portal mapping
 ROLE_PORTAL_MAP = {
@@ -171,37 +176,29 @@ class HospitalLocation(HospitalLocationCreate):
     user_count: int = 0
 
 class HospitalWithRegion(BaseModel):
-    """Hospital model with region assignment"""
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
     region_id: str
     organization_type: str = "hospital"
-    # Address
     address: str
     city: str
     phone: str
     email: EmailStr
     website: Optional[str] = None
-    # Registration
     license_number: str
-    ghana_health_service_id: Optional[str] = None  # GHS registration
-    # Features
+    ghana_health_service_id: Optional[str] = None
     has_multiple_locations: bool = False
     locations: List[HospitalLocation] = []
-    # Status
     status: str = "pending"
     is_active: bool = True
-    # Metadata
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     approved_at: Optional[datetime] = None
     approved_by: Optional[str] = None
-    # Stats
     total_users: int = 0
     total_patients: int = 0
 
 class HospitalCreateGhana(BaseModel):
-    """Create hospital with region"""
     name: str
     region_id: str
     address: str
@@ -211,36 +208,31 @@ class HospitalCreateGhana(BaseModel):
     website: Optional[str] = None
     license_number: str
     ghana_health_service_id: Optional[str] = None
-    # Admin contact
     admin_first_name: str
     admin_last_name: str
     admin_email: EmailStr
     admin_phone: str
 
 class LocationLoginRequest(BaseModel):
-    """Login with hospital/location context"""
     email: EmailStr
     password: str
     hospital_id: str
-    location_id: Optional[str] = None  # Required if hospital has multiple locations
-    totp_code: Optional[str] = None  # For 2FA
+    location_id: Optional[str] = None
+    totp_code: Optional[str] = None
 
 class LocationLoginInitRequest(BaseModel):
-    """OTP Login Init with hospital/location context"""
     email: EmailStr
     password: str
     hospital_id: str
     location_id: Optional[str] = None
 
 class LocationLoginPhoneRequest(BaseModel):
-    """Submit phone number for OTP"""
     user_id: str
     phone_number: str
     hospital_id: str
     location_id: Optional[str] = None
 
 class LocationLoginVerifyRequest(BaseModel):
-    """Verify OTP and complete login"""
     otp_session_id: str
     otp_code: str
 
@@ -249,7 +241,7 @@ class LocationLoginResponse(BaseModel):
     user: dict
     hospital: dict
     location: Optional[dict] = None
-    redirect_to: str  # Role-based portal redirect
+    redirect_to: str
 
 class AddLocationRequest(BaseModel):
     name: str
@@ -268,7 +260,6 @@ class AddLocationRequest(BaseModel):
 def create_region_endpoints(db, get_current_user, hash_password):
     """Create region API endpoints with database dependency"""
     
-    # JWT Configuration - MUST match server.py
     import os
     JWT_SECRET = os.environ.get('JWT_SECRET', 'yacco-emr-secret-key-2024')
     JWT_ALGORITHM = "HS256"
@@ -278,14 +269,13 @@ def create_region_endpoints(db, get_current_user, hash_password):
         return bcrypt.checkpw(password.encode(), hashed.encode())
     
     def create_location_token(user: dict, hospital: dict, location: dict = None) -> str:
-        """Create JWT token with region/hospital/location context"""
         payload = {
             "user_id": user["id"],
             "role": user["role"],
             "region_id": hospital.get("region_id"),
             "hospital_id": hospital["id"],
             "location_id": location["id"] if location else None,
-            "organization_id": hospital["id"],  # For backward compatibility
+            "organization_id": hospital["id"],
             "exp": datetime.now(timezone.utc) + timedelta(hours=JWT_EXPIRATION_HOURS)
         }
         return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
@@ -294,15 +284,12 @@ def create_region_endpoints(db, get_current_user, hash_password):
     
     @region_router.get("/", response_model=dict)
     async def list_regions():
-        """
-        List all Ghana regions (PUBLIC - no auth required)
-        Used for the region selection dropdown on landing page
-        """
-        # Get regions from database or use default
-        db_regions = await db["regions"].find({"is_active": True}, {"_id": 0}).to_list(100)
+        """List all Ghana regions (PUBLIC - no auth required)"""
+        db_svc = get_db_service()
+        
+        db_regions = await db_svc.find("regions", {"is_active": True}, limit=100)
         
         if not db_regions:
-            # Seed default Ghana regions if not exist
             for region in GHANA_REGIONS:
                 region_doc = {
                     **region,
@@ -310,17 +297,16 @@ def create_region_endpoints(db, get_current_user, hash_password):
                     "hospital_count": 0,
                     "created_at": datetime.now(timezone.utc).isoformat()
                 }
-                await db["regions"].update_one(
+                await db_svc.collection("regions").update_one(
                     {"id": region["id"]},
                     {"$setOnInsert": region_doc},
                     upsert=True
                 )
             db_regions = GHANA_REGIONS
         
-        # Get hospital counts per region
         regions_with_counts = []
         for region in db_regions:
-            count = await db["hospitals"].count_documents({
+            count = await db_svc.count("hospitals", {
                 "region_id": region["id"],
                 "status": "active"
             })
@@ -337,9 +323,10 @@ def create_region_endpoints(db, get_current_user, hash_password):
     @region_router.get("/{region_id}", response_model=dict)
     async def get_region(region_id: str):
         """Get region details (PUBLIC)"""
-        region = await db["regions"].find_one({"id": region_id}, {"_id": 0})
+        db_svc = get_db_service()
+        
+        region = await db_svc.find_one("regions", {"id": region_id})
         if not region:
-            # Check if it's a default region
             default = next((r for r in GHANA_REGIONS if r["id"] == region_id), None)
             if default:
                 return default
@@ -352,23 +339,17 @@ def create_region_endpoints(db, get_current_user, hash_password):
         search: Optional[str] = None,
         city: Optional[str] = None
     ):
-        """
-        List all active hospitals in a region (PUBLIC)
-        Used after user selects a region
-        """
-        # Validate region exists
+        """List all active hospitals in a region (PUBLIC)"""
+        db_svc = get_db_service()
+        
         region = next((r for r in GHANA_REGIONS if r["id"] == region_id), None)
         if not region:
-            db_region = await db["regions"].find_one({"id": region_id})
+            db_region = await db_svc.find_one("regions", {"id": region_id})
             if not db_region:
                 raise HTTPException(status_code=404, detail="Region not found")
             region = db_region
         
-        # Build query
-        query = {
-            "region_id": region_id,
-            "status": "active"
-        }
+        query = {"region_id": region_id, "status": "active"}
         
         if search:
             query["$or"] = [
@@ -379,14 +360,15 @@ def create_region_endpoints(db, get_current_user, hash_password):
         if city:
             query["city"] = {"$regex": city, "$options": "i"}
         
-        hospitals = await db["hospitals"].find(
-            query,
-            {"_id": 0, "admin_password": 0}
-        ).sort("name", 1).to_list(200)
+        hospitals = await db_svc.find(
+            "hospitals", query,
+            projection={"admin_password": 0},
+            sort=[("name", 1)],
+            limit=200
+        )
         
-        # For each hospital, indicate if it has multiple locations
         for hospital in hospitals:
-            location_count = await db["hospital_locations"].count_documents({
+            location_count = await db_svc.count("hospital_locations", {
                 "hospital_id": hospital["id"],
                 "is_active": True
             })
@@ -402,19 +384,22 @@ def create_region_endpoints(db, get_current_user, hash_password):
     @region_router.get("/hospitals/{hospital_id}", response_model=dict)
     async def get_hospital_details(hospital_id: str):
         """Get hospital details including locations (PUBLIC)"""
-        hospital = await db["hospitals"].find_one(
-            {"id": hospital_id},
-            {"_id": 0, "admin_password": 0}
+        db_svc = get_db_service()
+        
+        hospital = await db_svc.find_one(
+            "hospitals", {"id": hospital_id},
+            projection={"admin_password": 0}
         )
         
         if not hospital:
             raise HTTPException(status_code=404, detail="Hospital not found")
         
-        # Get locations
-        locations = await db["hospital_locations"].find(
+        locations = await db_svc.find(
+            "hospital_locations",
             {"hospital_id": hospital_id, "is_active": True},
-            {"_id": 0}
-        ).sort("name", 1).to_list(50)
+            sort=[("name", 1)],
+            limit=50
+        )
         
         hospital["locations"] = locations
         hospital["location_count"] = len(locations)
@@ -424,22 +409,23 @@ def create_region_endpoints(db, get_current_user, hash_password):
     
     @region_router.get("/hospitals/{hospital_id}/locations", response_model=dict)
     async def list_hospital_locations(hospital_id: str):
-        """
-        List all locations for a hospital (PUBLIC)
-        Used when hospital has multiple locations
-        """
-        hospital = await db["hospitals"].find_one(
-            {"id": hospital_id},
-            {"_id": 0, "name": 1, "id": 1}
+        """List all locations for a hospital (PUBLIC)"""
+        db_svc = get_db_service()
+        
+        hospital = await db_svc.find_one(
+            "hospitals", {"id": hospital_id},
+            projection={"name": 1, "id": 1}
         )
         
         if not hospital:
             raise HTTPException(status_code=404, detail="Hospital not found")
         
-        locations = await db["hospital_locations"].find(
+        locations = await db_svc.find(
+            "hospital_locations",
             {"hospital_id": hospital_id, "is_active": True},
-            {"_id": 0}
-        ).sort("name", 1).to_list(50)
+            sort=[("name", 1)],
+            limit=50
+        )
         
         return {
             "hospital": hospital,
@@ -451,68 +437,51 @@ def create_region_endpoints(db, get_current_user, hash_password):
     
     @region_router.post("/auth/login/init", response_model=dict)
     async def location_login_init(request: LocationLoginInitRequest):
-        """
-        Initialize OTP login flow with hospital/location context
-        Step 1: Verify credentials, return OTP requirement
-        """
-        # Get hospital
-        hospital = await db["hospitals"].find_one(
-            {"id": request.hospital_id},
-            {"_id": 0}
-        )
+        """Initialize OTP login flow with hospital/location context"""
+        db_svc = get_db_service()
+        
+        hospital = await db_svc.find_one("hospitals", {"id": request.hospital_id})
         
         if not hospital:
             raise HTTPException(status_code=404, detail="Hospital not found")
         
         if hospital.get("status") != "active":
-            raise HTTPException(
-                status_code=403,
-                detail="Hospital is not active. Please contact support."
-            )
+            raise HTTPException(status_code=403, detail="Hospital is not active. Please contact support.")
         
-        # Check if hospital has multiple locations
         location = None
-        location_count = await db["hospital_locations"].count_documents({
+        location_count = await db_svc.count("hospital_locations", {
             "hospital_id": request.hospital_id,
             "is_active": True
         })
         
         if location_count > 1 and request.location_id:
-            location = await db["hospital_locations"].find_one(
-                {"id": request.location_id, "hospital_id": request.hospital_id},
-                {"_id": 0}
-            )
+            location = await db_svc.find_one("hospital_locations", {
+                "id": request.location_id,
+                "hospital_id": request.hospital_id
+            })
         elif location_count == 1:
-            location = await db["hospital_locations"].find_one(
-                {"hospital_id": request.hospital_id, "is_active": True},
-                {"_id": 0}
-            )
+            location = await db_svc.find_one("hospital_locations", {
+                "hospital_id": request.hospital_id,
+                "is_active": True
+            })
         
-        # Find user
-        user = await db["users"].find_one({
+        user = await db_svc.find_one("users", {
             "email": request.email,
             "organization_id": request.hospital_id
-        }, {"_id": 0})
+        })
         
         if not user:
             raise HTTPException(status_code=401, detail="Invalid credentials")
         
-        # Verify password
         stored_password = user.get("password_hash") or user.get("password", "")
         if not stored_password or not verify_password(request.password, stored_password):
             raise HTTPException(status_code=401, detail="Invalid credentials")
         
-        # Check if user is active
         if not user.get("is_active", True):
-            raise HTTPException(
-                status_code=403,
-                detail="Your account is inactive. Please contact your administrator."
-            )
+            raise HTTPException(status_code=403, detail="Your account is inactive. Please contact your administrator.")
         
-        # Check if user has phone number
         phone = user.get("phone")
         if not phone or phone.strip() == "":
-            # Phone number required
             return {
                 "otp_required": True,
                 "phone_required": True,
@@ -522,7 +491,6 @@ def create_region_endpoints(db, get_current_user, hash_password):
                 "message": "Please enter your phone number to receive OTP"
             }
         
-        # Generate and send OTP
         user_name = f"{user.get('first_name', '')} {user.get('last_name', '')}".strip() or "User"
         otp_session = await create_otp_session(db, user["id"], phone, "emr", user_name)
         
@@ -540,21 +508,16 @@ def create_region_endpoints(db, get_current_user, hash_password):
     
     @region_router.post("/auth/login/submit-phone", response_model=dict)
     async def location_login_submit_phone(request: LocationLoginPhoneRequest):
-        """
-        Step 2: Submit phone number and send OTP
-        """
-        user = await db["users"].find_one({"id": request.user_id}, {"_id": 0})
+        """Step 2: Submit phone number and send OTP"""
+        db_svc = get_db_service()
+        
+        user = await db_svc.get_by_id("users", request.user_id)
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
         
-        # Update user's phone number
-        await db["users"].update_one(
-            {"id": request.user_id},
-            {"$set": {"phone": request.phone_number}}
-        )
+        await db_svc.update_by_id("users", request.user_id, {"phone": request.phone_number})
         
-        # Generate and send OTP
-        user = await db["users"].find_one({"id": request.user_id}, {"_id": 0})
+        user = await db_svc.get_by_id("users", request.user_id)
         user_name = f"{user.get('first_name', '')} {user.get('last_name', '')}".strip() if user else "User"
         otp_session = await create_otp_session(db, request.user_id, request.phone_number, "emr", user_name)
         
@@ -570,52 +533,38 @@ def create_region_endpoints(db, get_current_user, hash_password):
     
     @region_router.post("/auth/login/verify", response_model=dict)
     async def location_login_verify(request: LocationLoginVerifyRequest):
-        """
-        Step 3: Verify OTP and complete login
-        """
-        # Verify OTP
+        """Step 3: Verify OTP and complete login"""
+        db_svc = get_db_service()
+        
         otp_result = await verify_otp(db, request.otp_session_id, request.otp_code)
         if not otp_result.get("success"):
             raise HTTPException(status_code=401, detail=otp_result.get("error", "Invalid OTP"))
         
-        # Get user
-        user = await db["users"].find_one({"id": otp_result["user_id"]}, {"_id": 0})
+        user = await db_svc.get_by_id("users", otp_result["user_id"])
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
         
-        # Get hospital
-        hospital = await db["hospitals"].find_one(
-            {"id": user.get("organization_id")},
-            {"_id": 0}
-        )
+        hospital = await db_svc.find_one("hospitals", {"id": user.get("organization_id")})
         
-        # Get location if assigned
         location = None
         if user.get("location_id"):
-            location = await db["hospital_locations"].find_one(
-                {"id": user["location_id"]},
-                {"_id": 0}
-            )
+            location = await db_svc.get_by_id("hospital_locations", user["location_id"])
         elif hospital:
-            # Get single location if exists
-            location_count = await db["hospital_locations"].count_documents({
+            location_count = await db_svc.count("hospital_locations", {
                 "hospital_id": hospital["id"],
                 "is_active": True
             })
             if location_count == 1:
-                location = await db["hospital_locations"].find_one(
-                    {"hospital_id": hospital["id"], "is_active": True},
-                    {"_id": 0}
-                )
+                location = await db_svc.find_one("hospital_locations", {
+                    "hospital_id": hospital["id"],
+                    "is_active": True
+                })
         
-        # Create token
         token = create_location_token(user, hospital, location)
         
-        # Determine redirect based on role
         role = user.get("role", "physician")
         redirect_to = ROLE_PORTAL_MAP.get(role, "/dashboard")
         
-        # Prepare response
         user_response = {
             "id": user["id"],
             "email": user["email"],
@@ -657,109 +606,74 @@ def create_region_endpoints(db, get_current_user, hash_password):
     
     @region_router.post("/auth/login", response_model=dict)
     async def location_login(request: LocationLoginRequest):
-        """
-        Authenticate user with hospital/location context
-        Returns JWT with region, hospital, location, and role
-        Includes redirect URL based on role
-        """
-        # Get hospital
-        hospital = await db["hospitals"].find_one(
-            {"id": request.hospital_id},
-            {"_id": 0}
-        )
+        """Authenticate user with hospital/location context"""
+        db_svc = get_db_service()
+        
+        hospital = await db_svc.find_one("hospitals", {"id": request.hospital_id})
         
         if not hospital:
             raise HTTPException(status_code=404, detail="Hospital not found")
         
         if hospital.get("status") != "active":
-            raise HTTPException(
-                status_code=403,
-                detail="Hospital is not active. Please contact support."
-            )
+            raise HTTPException(status_code=403, detail="Hospital is not active. Please contact support.")
         
-        # Check if hospital has multiple locations
         location = None
-        location_count = await db["hospital_locations"].count_documents({
+        location_count = await db_svc.count("hospital_locations", {
             "hospital_id": request.hospital_id,
             "is_active": True
         })
         
         if location_count > 1:
-            # Location selection required
             if not request.location_id:
-                raise HTTPException(
-                    status_code=400,
-                    detail="This hospital has multiple locations. Please select a location."
-                )
+                raise HTTPException(status_code=400, detail="This hospital has multiple locations. Please select a location.")
             
-            location = await db["hospital_locations"].find_one(
-                {"id": request.location_id, "hospital_id": request.hospital_id},
-                {"_id": 0}
-            )
+            location = await db_svc.find_one("hospital_locations", {
+                "id": request.location_id,
+                "hospital_id": request.hospital_id
+            })
             
             if not location:
                 raise HTTPException(status_code=404, detail="Location not found")
         elif location_count == 1:
-            # Single location - auto-select
-            location = await db["hospital_locations"].find_one(
-                {"hospital_id": request.hospital_id, "is_active": True},
-                {"_id": 0}
-            )
+            location = await db_svc.find_one("hospital_locations", {
+                "hospital_id": request.hospital_id,
+                "is_active": True
+            })
         
-        # Find user
-        user = await db["users"].find_one({
+        user = await db_svc.find_one("users", {
             "email": request.email,
             "organization_id": request.hospital_id
-        }, {"_id": 0})
+        })
         
         if not user:
             raise HTTPException(status_code=401, detail="Invalid credentials")
         
-        # Verify password
         stored_password = user.get("password_hash") or user.get("password", "")
         if not stored_password or not verify_password(request.password, stored_password):
             raise HTTPException(status_code=401, detail="Invalid credentials")
         
-        # Check if user is active
         if not user.get("is_active", True):
-            raise HTTPException(
-                status_code=403,
-                detail="Your account is inactive. Please contact your administrator."
-            )
+            raise HTTPException(status_code=403, detail="Your account is inactive. Please contact your administrator.")
         
-        # Check location assignment (if user has specific location)
         if location and user.get("location_id"):
             if user["location_id"] != location["id"]:
-                raise HTTPException(
-                    status_code=403,
-                    detail="You are not authorized to access this location."
-                )
+                raise HTTPException(status_code=403, detail="You are not authorized to access this location.")
         
-        # Handle 2FA if enabled
-        user_2fa = await db["user_2fa"].find_one({"user_id": user["id"]})
+        user_2fa = await db_svc.find_one("user_2fa", {"user_id": user["id"]})
         if user_2fa and user_2fa.get("enabled"):
             if not request.totp_code:
-                raise HTTPException(
-                    status_code=403,
-                    detail="2FA_REQUIRED",
-                    headers={"X-2FA-Required": "true"}
-                )
+                raise HTTPException(status_code=403, detail="2FA_REQUIRED", headers={"X-2FA-Required": "true"})
             
-            # Verify 2FA code
             from twofa_module import verify_totp
             if not verify_totp(user_2fa["secret"], request.totp_code):
                 raise HTTPException(status_code=401, detail="Invalid 2FA code")
         
-        # Create token
         token = create_location_token(user, hospital, location)
         
-        # Determine redirect based on role
         role = user.get("role", "physician")
         redirect_to = ROLE_PORTAL_MAP.get(role, "/dashboard")
         
-        # Log login
-        await db["audit_logs"].insert_one({
-            "id": str(uuid.uuid4()),
+        await db_svc.insert("audit_logs", {
             "action": "login",
             "user_id": user["id"],
             "user_email": user["email"],
@@ -777,7 +691,6 @@ def create_region_endpoints(db, get_current_user, hash_password):
             }
         })
         
-        # Prepare response
         user_response = {
             "id": user["id"],
             "email": user["email"],
@@ -825,11 +738,12 @@ def create_region_endpoints(db, get_current_user, hash_password):
         user: dict = Depends(get_current_user)
     ):
         """Create a new region (Super Admin only)"""
+        db_svc = get_db_service()
+        
         if user.get("role") != "super_admin":
             raise HTTPException(status_code=403, detail="Super Admin access required")
         
-        # Check if region exists
-        existing = await db["regions"].find_one({"id": region_data.id})
+        existing = await db_svc.find_one("regions", {"id": region_data.id})
         if existing:
             raise HTTPException(status_code=400, detail="Region already exists")
         
@@ -841,9 +755,7 @@ def create_region_endpoints(db, get_current_user, hash_password):
             "created_by": user["id"]
         }
         
-        await db["regions"].insert_one(region)
-        if "_id" in region:
-            del region["_id"]
+        await db_svc.insert("regions", region, generate_id=False)
         
         return {"message": "Region created", "region": region}
     
@@ -854,16 +766,15 @@ def create_region_endpoints(db, get_current_user, hash_password):
         user: dict = Depends(get_current_user)
     ):
         """Update a region (Super Admin only)"""
+        db_svc = get_db_service()
+        
         if user.get("role") != "super_admin":
             raise HTTPException(status_code=403, detail="Super Admin access required")
         
         updates["updated_at"] = datetime.now(timezone.utc).isoformat()
-        result = await db["regions"].update_one(
-            {"id": region_id},
-            {"$set": updates}
-        )
+        result = await db_svc.update("regions", {"id": region_id}, updates)
         
-        if result.matched_count == 0:
+        if not result:
             raise HTTPException(status_code=404, detail="Region not found")
         
         return {"message": "Region updated"}
@@ -874,21 +785,19 @@ def create_region_endpoints(db, get_current_user, hash_password):
         user: dict = Depends(get_current_user)
     ):
         """Deactivate a region (Super Admin only)"""
+        db_svc = get_db_service()
+        
         if user.get("role") != "super_admin":
             raise HTTPException(status_code=403, detail="Super Admin access required")
         
-        # Check if region has hospitals
-        hospital_count = await db["hospitals"].count_documents({"region_id": region_id})
+        hospital_count = await db_svc.count("hospitals", {"region_id": region_id})
         if hospital_count > 0:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Cannot delete region with {hospital_count} hospitals. Reassign hospitals first."
-            )
+            raise HTTPException(status_code=400, detail=f"Cannot delete region with {hospital_count} hospitals. Reassign hospitals first.")
         
-        await db["regions"].update_one(
-            {"id": region_id},
-            {"$set": {"is_active": False, "deactivated_at": datetime.now(timezone.utc).isoformat()}}
-        )
+        await db_svc.update("regions", {"id": region_id}, {
+            "is_active": False,
+            "deactivated_at": datetime.now(timezone.utc).isoformat()
+        })
         
         return {"message": "Region deactivated"}
     
@@ -900,19 +809,19 @@ def create_region_endpoints(db, get_current_user, hash_password):
         user: dict = Depends(get_current_user)
     ):
         """Create a new hospital under a region (Super Admin only)"""
+        db_svc = get_db_service()
+        
         if user.get("role") != "super_admin":
             raise HTTPException(status_code=403, detail="Super Admin access required")
         
-        # Validate region
         region = next((r for r in GHANA_REGIONS if r["id"] == hospital_data.region_id), None)
         if not region:
-            db_region = await db["regions"].find_one({"id": hospital_data.region_id})
+            db_region = await db_svc.find_one("regions", {"id": hospital_data.region_id})
             if not db_region:
                 raise HTTPException(status_code=404, detail="Region not found")
         
         hospital_id = str(uuid.uuid4())
         
-        # Create hospital
         hospital = {
             "id": hospital_id,
             "name": hospital_data.name,
@@ -925,10 +834,10 @@ def create_region_endpoints(db, get_current_user, hash_password):
             "website": hospital_data.website,
             "license_number": hospital_data.license_number,
             "ghana_health_service_id": hospital_data.ghana_health_service_id,
-            "status": "active",  # Direct creation by super admin
+            "status": "active",
             "is_active": True,
             "has_multiple_locations": False,
-            "total_users": 1,  # Admin user
+            "total_users": 1,
             "total_patients": 0,
             "created_at": datetime.now(timezone.utc).isoformat(),
             "updated_at": datetime.now(timezone.utc).isoformat(),
@@ -936,7 +845,6 @@ def create_region_endpoints(db, get_current_user, hash_password):
             "approved_by": user["id"]
         }
         
-        # Create default main location
         main_location = {
             "id": str(uuid.uuid4()),
             "hospital_id": hospital_id,
@@ -955,7 +863,6 @@ def create_region_endpoints(db, get_current_user, hash_password):
             "created_at": datetime.now(timezone.utc).isoformat()
         }
         
-        # Create admin user
         admin_id = str(uuid.uuid4())
         temp_password = secrets.token_urlsafe(12)
         admin_user = {
@@ -973,16 +880,13 @@ def create_region_endpoints(db, get_current_user, hash_password):
             "created_at": datetime.now(timezone.utc).isoformat()
         }
         
-        # Insert all
-        await db["hospitals"].insert_one(hospital)
-        await db["hospital_locations"].insert_one(main_location)
-        await db["users"].insert_one(admin_user)
+        await db_svc.insert("hospitals", hospital, generate_id=False)
+        await db_svc.insert("hospital_locations", main_location, generate_id=False)
+        await db_svc.insert("users", admin_user, generate_id=False)
         
-        # Auto-seed default departments for the hospital
-        departments_created = await seed_hospital_departments(db, hospital_id)
+        departments_created = await seed_hospital_departments(hospital_id)
         
-        # Update region hospital count
-        await db["regions"].update_one(
+        await db_svc.collection("regions").update_one(
             {"id": hospital_data.region_id},
             {"$inc": {"hospital_count": 1}}
         )
@@ -1017,33 +921,29 @@ def create_region_endpoints(db, get_current_user, hash_password):
         user: dict = Depends(get_current_user)
     ):
         """Reassign a hospital to a different region (Super Admin only)"""
+        db_svc = get_db_service()
+        
         if user.get("role") != "super_admin":
             raise HTTPException(status_code=403, detail="Super Admin access required")
         
-        # Get hospital
-        hospital = await db["hospitals"].find_one({"id": hospital_id})
+        hospital = await db_svc.get_by_id("hospitals", hospital_id)
         if not hospital:
             raise HTTPException(status_code=404, detail="Hospital not found")
         
         old_region_id = hospital.get("region_id")
         
-        # Update hospital
-        await db["hospitals"].update_one(
-            {"id": hospital_id},
-            {"$set": {
-                "region_id": region_id,
-                "updated_at": datetime.now(timezone.utc).isoformat()
-            }}
-        )
+        await db_svc.update_by_id("hospitals", hospital_id, {
+            "region_id": region_id,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        })
         
-        # Update region counts
         if old_region_id:
-            await db["regions"].update_one(
+            await db_svc.collection("regions").update_one(
                 {"id": old_region_id},
                 {"$inc": {"hospital_count": -1}}
             )
         
-        await db["regions"].update_one(
+        await db_svc.collection("regions").update_one(
             {"id": region_id},
             {"$inc": {"hospital_count": 1}}
         )
@@ -1057,6 +957,8 @@ def create_region_endpoints(db, get_current_user, hash_password):
         user: dict = Depends(get_current_user)
     ):
         """List all hospitals across all regions (Super Admin only)"""
+        db_svc = get_db_service()
+        
         if user.get("role") != "super_admin":
             raise HTTPException(status_code=403, detail="Super Admin access required")
         
@@ -1066,12 +968,13 @@ def create_region_endpoints(db, get_current_user, hash_password):
         if status:
             query["status"] = status
         
-        hospitals = await db["hospitals"].find(
-            query,
-            {"_id": 0, "admin_password": 0}
-        ).sort([("region_id", 1), ("name", 1)]).to_list(500)
+        hospitals = await db_svc.find(
+            "hospitals", query,
+            projection={"admin_password": 0},
+            sort=[("region_id", 1), ("name", 1)],
+            limit=500
+        )
         
-        # Group by region
         by_region = {}
         for hospital in hospitals:
             rid = hospital.get("region_id", "unassigned")
@@ -1092,24 +995,21 @@ def create_region_endpoints(db, get_current_user, hash_password):
         user: dict = Depends(get_current_user)
     ):
         """Create a staff account for any hospital (Super Admin only)"""
+        db_svc = get_db_service()
+        
         if user.get("role") != "super_admin":
             raise HTTPException(status_code=403, detail="Super Admin access required")
         
-        # Get hospital
-        hospital = await db["hospitals"].find_one({"id": hospital_id})
+        hospital = await db_svc.get_by_id("hospitals", hospital_id)
         if not hospital:
             raise HTTPException(status_code=404, detail="Hospital not found")
         
-        # Check if email already exists
-        existing = await db["users"].find_one({"email": staff_data.get("email")})
+        existing = await db_svc.find_one("users", {"email": staff_data.get("email")})
         if existing:
             raise HTTPException(status_code=400, detail="Email already exists")
         
-        # Generate temp password
-        import secrets
         temp_password = secrets.token_urlsafe(12)
         
-        # Create user
         staff_id = str(uuid.uuid4())
         staff_user = {
             "id": staff_id,
@@ -1132,17 +1032,14 @@ def create_region_endpoints(db, get_current_user, hash_password):
             "created_by_super_admin": True
         }
         
-        await db["users"].insert_one(staff_user)
+        await db_svc.insert("users", staff_user, generate_id=False)
         
-        # Update hospital user count
-        await db["hospitals"].update_one(
+        await db_svc.collection("hospitals").update_one(
             {"id": hospital_id},
             {"$inc": {"user_count": 1}}
         )
         
-        # Audit log
-        await db["audit_logs"].insert_one({
-            "id": str(uuid.uuid4()),
+        await db_svc.insert("audit_logs", {
             "event_type": "staff_created_by_super_admin",
             "user_id": user["id"],
             "target_user_id": staff_id,
@@ -1179,16 +1076,16 @@ def create_region_endpoints(db, get_current_user, hash_password):
         user: dict = Depends(get_current_user)
     ):
         """Seed default departments for an existing hospital (Super Admin only)"""
+        db_svc = get_db_service()
+        
         if user.get("role") != "super_admin":
             raise HTTPException(status_code=403, detail="Super Admin access required")
         
-        # Get hospital
-        hospital = await db["hospitals"].find_one({"id": hospital_id})
+        hospital = await db_svc.get_by_id("hospitals", hospital_id)
         if not hospital:
             raise HTTPException(status_code=404, detail="Hospital not found")
         
-        # Check if departments already exist
-        existing_count = await db["departments"].count_documents({"organization_id": hospital_id})
+        existing_count = await db_svc.count("departments", {"organization_id": hospital_id})
         if existing_count > 0:
             return {
                 "message": f"Hospital already has {existing_count} departments",
@@ -1196,8 +1093,7 @@ def create_region_endpoints(db, get_current_user, hash_password):
                 "skipped": True
             }
         
-        # Seed departments
-        departments_created = await seed_hospital_departments(db, hospital_id)
+        departments_created = await seed_hospital_departments(hospital_id)
         
         return {
             "message": f"Successfully created {departments_created} default departments",
@@ -1212,38 +1108,31 @@ def create_region_endpoints(db, get_current_user, hash_password):
         user: dict = Depends(get_current_user)
     ):
         """Delete (soft-delete/deactivate) a hospital (Super Admin only)"""
+        db_svc = get_db_service()
+        
         if user.get("role") != "super_admin":
             raise HTTPException(status_code=403, detail="Super Admin access required")
         
-        # Get hospital
-        hospital = await db["hospitals"].find_one({"id": hospital_id})
+        hospital = await db_svc.get_by_id("hospitals", hospital_id)
         if not hospital:
             raise HTTPException(status_code=404, detail="Hospital not found")
         
-        # Get counts for audit
-        user_count = await db["users"].count_documents({"organization_id": hospital_id})
-        patient_count = await db["patients"].count_documents({"organization_id": hospital_id})
+        user_count = await db_svc.count("users", {"organization_id": hospital_id})
+        patient_count = await db_svc.count("patients", {"organization_id": hospital_id})
         
-        # Soft delete - mark as deleted, don't actually remove
-        await db["hospitals"].update_one(
-            {"id": hospital_id},
-            {"$set": {
-                "status": "deleted",
-                "is_active": False,
-                "deleted_at": datetime.now(timezone.utc).isoformat(),
-                "deleted_by": user["id"]
-            }}
-        )
+        await db_svc.update_by_id("hospitals", hospital_id, {
+            "status": "deleted",
+            "is_active": False,
+            "deleted_at": datetime.now(timezone.utc).isoformat(),
+            "deleted_by": user["id"]
+        })
         
-        # Deactivate all users in this hospital
-        await db["users"].update_many(
-            {"organization_id": hospital_id},
-            {"$set": {"is_active": False, "deactivated_reason": "hospital_deleted"}}
-        )
+        await db_svc.update_many("users", {"organization_id": hospital_id}, {
+            "is_active": False,
+            "deactivated_reason": "hospital_deleted"
+        })
         
-        # Audit log
-        await db["audit_logs"].insert_one({
-            "id": str(uuid.uuid4()),
+        await db_svc.insert("audit_logs", {
             "event_type": "hospital_deleted",
             "user_id": user["id"],
             "hospital_id": hospital_id,
@@ -1273,11 +1162,12 @@ def create_region_endpoints(db, get_current_user, hash_password):
         user: dict = Depends(get_current_user)
     ):
         """Update hospital status (Super Admin only)"""
+        db_svc = get_db_service()
+        
         if user.get("role") != "super_admin":
             raise HTTPException(status_code=403, detail="Super Admin access required")
         
-        # Get hospital
-        hospital = await db["hospitals"].find_one({"id": hospital_id})
+        hospital = await db_svc.get_by_id("hospitals", hospital_id)
         if not hospital:
             raise HTTPException(status_code=404, detail="Hospital not found")
         
@@ -1287,34 +1177,26 @@ def create_region_endpoints(db, get_current_user, hash_password):
         if new_status not in valid_statuses:
             raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: {valid_statuses}")
         
-        # Update status
         is_active = new_status == "active"
-        await db["hospitals"].update_one(
-            {"id": hospital_id},
-            {"$set": {
-                "status": new_status,
-                "is_active": is_active,
-                "status_updated_at": datetime.now(timezone.utc).isoformat(),
-                "status_updated_by": user["id"]
-            }}
-        )
+        await db_svc.update_by_id("hospitals", hospital_id, {
+            "status": new_status,
+            "is_active": is_active,
+            "status_updated_at": datetime.now(timezone.utc).isoformat(),
+            "status_updated_by": user["id"]
+        })
         
-        # If suspended/inactive, also deactivate user logins
         if not is_active:
-            await db["users"].update_many(
-                {"organization_id": hospital_id},
-                {"$set": {"login_disabled": True, "login_disabled_reason": f"hospital_{new_status}"}}
-            )
+            await db_svc.update_many("users", {"organization_id": hospital_id}, {
+                "login_disabled": True,
+                "login_disabled_reason": f"hospital_{new_status}"
+            })
         else:
-            # Reactivate user logins
-            await db["users"].update_many(
+            await db_svc.collection("users").update_many(
                 {"organization_id": hospital_id, "login_disabled_reason": {"$regex": "^hospital_"}},
                 {"$set": {"login_disabled": False}, "$unset": {"login_disabled_reason": ""}}
             )
         
-        # Audit log
-        await db["audit_logs"].insert_one({
-            "id": str(uuid.uuid4()),
+        await db_svc.insert("audit_logs", {
             "event_type": "hospital_status_changed",
             "user_id": user["id"],
             "hospital_id": hospital_id,
@@ -1343,16 +1225,15 @@ def create_region_endpoints(db, get_current_user, hash_password):
         user: dict = Depends(get_current_user)
     ):
         """Add a new location/branch to a hospital (Hospital Admin)"""
-        # Check permissions
+        db_svc = get_db_service()
+        
         if user.get("role") not in ["hospital_admin", "admin", "super_admin"]:
             raise HTTPException(status_code=403, detail="Admin access required")
         
-        # Verify hospital access
         if user.get("role") != "super_admin" and user.get("organization_id") != hospital_id:
             raise HTTPException(status_code=403, detail="Not authorized for this hospital")
         
-        # Get hospital
-        hospital = await db["hospitals"].find_one({"id": hospital_id})
+        hospital = await db_svc.get_by_id("hospitals", hospital_id)
         if not hospital:
             raise HTTPException(status_code=404, detail="Hospital not found")
         
@@ -1366,24 +1247,17 @@ def create_region_endpoints(db, get_current_user, hash_password):
             "created_by": user["id"]
         }
         
-        await db["hospital_locations"].insert_one(location)
+        await db_svc.insert("hospital_locations", location, generate_id=False)
         
-        # Update hospital has_multiple_locations flag
-        location_count = await db["hospital_locations"].count_documents({
+        location_count = await db_svc.count("hospital_locations", {
             "hospital_id": hospital_id,
             "is_active": True
         })
         
-        await db["hospitals"].update_one(
-            {"id": hospital_id},
-            {"$set": {
-                "has_multiple_locations": location_count > 1,
-                "updated_at": datetime.now(timezone.utc).isoformat()
-            }}
-        )
-        
-        if "_id" in location:
-            del location["_id"]
+        await db_svc.update_by_id("hospitals", hospital_id, {
+            "has_multiple_locations": location_count > 1,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        })
         
         return {"message": "Location added", "location": location}
     
@@ -1395,6 +1269,8 @@ def create_region_endpoints(db, get_current_user, hash_password):
         user: dict = Depends(get_current_user)
     ):
         """Update a hospital location (Hospital Admin)"""
+        db_svc = get_db_service()
+        
         if user.get("role") not in ["hospital_admin", "admin", "super_admin"]:
             raise HTTPException(status_code=403, detail="Admin access required")
         
@@ -1403,12 +1279,9 @@ def create_region_endpoints(db, get_current_user, hash_password):
         
         updates["updated_at"] = datetime.now(timezone.utc).isoformat()
         
-        result = await db["hospital_locations"].update_one(
-            {"id": location_id, "hospital_id": hospital_id},
-            {"$set": updates}
-        )
+        result = await db_svc.update("hospital_locations", {"id": location_id, "hospital_id": hospital_id}, updates)
         
-        if result.matched_count == 0:
+        if not result:
             raise HTTPException(status_code=404, detail="Location not found")
         
         return {"message": "Location updated"}
@@ -1420,43 +1293,34 @@ def create_region_endpoints(db, get_current_user, hash_password):
         user: dict = Depends(get_current_user)
     ):
         """Deactivate a hospital location (Hospital Admin)"""
+        db_svc = get_db_service()
+        
         if user.get("role") not in ["hospital_admin", "admin", "super_admin"]:
             raise HTTPException(status_code=403, detail="Admin access required")
         
         if user.get("role") != "super_admin" and user.get("organization_id") != hospital_id:
             raise HTTPException(status_code=403, detail="Not authorized for this hospital")
         
-        # Check if it's the last active location
-        active_count = await db["hospital_locations"].count_documents({
+        active_count = await db_svc.count("hospital_locations", {
             "hospital_id": hospital_id,
             "is_active": True
         })
         
         if active_count <= 1:
-            raise HTTPException(
-                status_code=400,
-                detail="Cannot deactivate the last location. Hospital must have at least one active location."
-            )
+            raise HTTPException(status_code=400, detail="Cannot deactivate the last location. Hospital must have at least one active location.")
         
-        await db["hospital_locations"].update_one(
-            {"id": location_id, "hospital_id": hospital_id},
-            {"$set": {
-                "is_active": False,
-                "deactivated_at": datetime.now(timezone.utc).isoformat(),
-                "deactivated_by": user["id"]
-            }}
-        )
+        await db_svc.update("hospital_locations", {"id": location_id, "hospital_id": hospital_id}, {
+            "is_active": False,
+            "deactivated_at": datetime.now(timezone.utc).isoformat(),
+            "deactivated_by": user["id"]
+        })
         
-        # Update has_multiple_locations
-        new_count = await db["hospital_locations"].count_documents({
+        new_count = await db_svc.count("hospital_locations", {
             "hospital_id": hospital_id,
             "is_active": True
         })
         
-        await db["hospitals"].update_one(
-            {"id": hospital_id},
-            {"$set": {"has_multiple_locations": new_count > 1}}
-        )
+        await db_svc.update_by_id("hospitals", hospital_id, {"has_multiple_locations": new_count > 1})
         
         return {"message": "Location deactivated"}
     
@@ -1469,28 +1333,27 @@ def create_region_endpoints(db, get_current_user, hash_password):
         user: dict = Depends(get_current_user)
     ):
         """Create staff user with location assignment (Hospital Admin)"""
+        db_svc = get_db_service()
+        
         if user.get("role") not in ["hospital_admin", "admin", "super_admin"]:
             raise HTTPException(status_code=403, detail="Admin access required")
         
         if user.get("role") != "super_admin" and user.get("organization_id") != hospital_id:
             raise HTTPException(status_code=403, detail="Not authorized for this hospital")
         
-        # Check email uniqueness
-        existing = await db["users"].find_one({"email": staff_data["email"]})
+        existing = await db_svc.find_one("users", {"email": staff_data["email"]})
         if existing:
             raise HTTPException(status_code=400, detail="Email already registered")
         
-        # Validate location if provided
         location_id = staff_data.get("location_id")
         if location_id:
-            location = await db["hospital_locations"].find_one({
+            location = await db_svc.find_one("hospital_locations", {
                 "id": location_id,
                 "hospital_id": hospital_id
             })
             if not location:
                 raise HTTPException(status_code=404, detail="Location not found")
         
-        # Generate temp password
         temp_password = secrets.token_urlsafe(12)
         
         staff_user = {
@@ -1510,16 +1373,15 @@ def create_region_endpoints(db, get_current_user, hash_password):
             "created_by": user["id"]
         }
         
-        await db["users"].insert_one(staff_user)
+        await db_svc.insert("users", staff_user, generate_id=False)
         
-        # Update counts
-        await db["hospitals"].update_one(
+        await db_svc.collection("hospitals").update_one(
             {"id": hospital_id},
             {"$inc": {"total_users": 1}}
         )
         
         if location_id:
-            await db["hospital_locations"].update_one(
+            await db_svc.collection("hospital_locations").update_one(
                 {"id": location_id},
                 {"$inc": {"user_count": 1}}
             )
@@ -1544,47 +1406,40 @@ def create_region_endpoints(db, get_current_user, hash_password):
         user: dict = Depends(get_current_user)
     ):
         """Assign or reassign staff to a location (Hospital Admin)"""
+        db_svc = get_db_service()
+        
         if user.get("role") not in ["hospital_admin", "admin", "super_admin"]:
             raise HTTPException(status_code=403, detail="Admin access required")
         
-        # Get staff user
-        staff = await db["users"].find_one({"id": user_id})
+        staff = await db_svc.get_by_id("users", user_id)
         if not staff:
             raise HTTPException(status_code=404, detail="User not found")
         
-        # Verify hospital access
         hospital_id = staff.get("organization_id")
         if user.get("role") != "super_admin" and user.get("organization_id") != hospital_id:
             raise HTTPException(status_code=403, detail="Not authorized for this user")
         
-        # Validate location
-        location = await db["hospital_locations"].find_one({
+        location = await db_svc.find_one("hospital_locations", {
             "id": location_id,
             "hospital_id": hospital_id
         })
         if not location:
             raise HTTPException(status_code=404, detail="Location not found in this hospital")
         
-        # Update old location count
         old_location_id = staff.get("location_id")
         if old_location_id and old_location_id != location_id:
-            await db["hospital_locations"].update_one(
+            await db_svc.collection("hospital_locations").update_one(
                 {"id": old_location_id},
                 {"$inc": {"user_count": -1}}
             )
         
-        # Update staff
-        await db["users"].update_one(
-            {"id": user_id},
-            {"$set": {
-                "location_id": location_id,
-                "updated_at": datetime.now(timezone.utc).isoformat()
-            }}
-        )
+        await db_svc.update_by_id("users", user_id, {
+            "location_id": location_id,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        })
         
-        # Update new location count
         if old_location_id != location_id:
-            await db["hospital_locations"].update_one(
+            await db_svc.collection("hospital_locations").update_one(
                 {"id": location_id},
                 {"$inc": {"user_count": 1}}
             )
@@ -1600,17 +1455,18 @@ def create_region_endpoints(db, get_current_user, hash_password):
     @region_router.get("/admin/overview", response_model=dict)
     async def get_platform_overview(user: dict = Depends(get_current_user)):
         """Get platform-wide overview (Super Admin only)"""
+        db_svc = get_db_service()
+        
         if user.get("role") != "super_admin":
             raise HTTPException(status_code=403, detail="Super Admin access required")
         
-        # Count by region
         region_stats = []
         for region in GHANA_REGIONS:
-            hospital_count = await db["hospitals"].count_documents({
+            hospital_count = await db_svc.count("hospitals", {
                 "region_id": region["id"],
                 "status": "active"
             })
-            user_count = await db["users"].aggregate([
+            user_count_result = await db_svc.aggregate("users", [
                 {"$lookup": {
                     "from": "hospitals",
                     "localField": "organization_id",
@@ -1620,25 +1476,23 @@ def create_region_endpoints(db, get_current_user, hash_password):
                 {"$unwind": {"path": "$hospital", "preserveNullAndEmptyArrays": True}},
                 {"$match": {"hospital.region_id": region["id"]}},
                 {"$count": "total"}
-            ]).to_list(1)
+            ])
             
             region_stats.append({
                 **region,
                 "hospital_count": hospital_count,
-                "user_count": user_count[0]["total"] if user_count else 0
+                "user_count": user_count_result[0]["total"] if user_count_result else 0
             })
         
-        # Overall stats
-        total_hospitals = await db["hospitals"].count_documents({"status": "active"})
-        total_users = await db["users"].count_documents({"is_active": True})
-        total_locations = await db["hospital_locations"].count_documents({"is_active": True})
-        pending_hospitals = await db["hospitals"].count_documents({"status": "pending"})
+        total_hospitals = await db_svc.count("hospitals", {"status": "active"})
+        total_users = await db_svc.count("users", {"is_active": True})
+        total_locations = await db_svc.count("hospital_locations", {"is_active": True})
+        pending_hospitals = await db_svc.count("hospitals", {"status": "pending"})
         
-        # Role distribution
-        role_dist = await db["users"].aggregate([
+        role_dist = await db_svc.aggregate("users", [
             {"$match": {"is_active": True}},
             {"$group": {"_id": "$role", "count": {"$sum": 1}}}
-        ]).to_list(20)
+        ])
         
         return {
             "regions": region_stats,
@@ -1653,41 +1507,36 @@ def create_region_endpoints(db, get_current_user, hash_password):
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
     
-    # ============ Super Admin - Impersonation (Login As Hospital) ============
+    # ============ Super Admin - Impersonation ============
     
     @region_router.post("/admin/login-as-hospital/{hospital_id}", response_model=dict)
     async def login_as_hospital(
         hospital_id: str,
         user: dict = Depends(get_current_user)
     ):
-        """
-        Super Admin can login as any hospital admin to manage their account.
-        Creates a temporary token that identifies as super_admin impersonating hospital.
-        """
+        """Super Admin can login as any hospital admin"""
+        db_svc = get_db_service()
+        
         if user.get("role") != "super_admin":
             raise HTTPException(status_code=403, detail="Super Admin access required")
         
-        # Get hospital
-        hospital = await db["hospitals"].find_one({"id": hospital_id}, {"_id": 0})
+        hospital = await db_svc.get_by_id("hospitals", hospital_id)
         if not hospital:
             raise HTTPException(status_code=404, detail="Hospital not found")
         
-        # Get hospital admin user
-        admin_user = await db["users"].find_one({
+        admin_user = await db_svc.find_one("users", {
             "organization_id": hospital_id,
             "role": "hospital_admin"
-        }, {"_id": 0})
+        })
         
         if not admin_user:
             raise HTTPException(status_code=404, detail="Hospital admin not found")
         
-        # Get main location
-        main_location = await db["hospital_locations"].find_one({
+        main_location = await db_svc.find_one("hospital_locations", {
             "hospital_id": hospital_id,
             "is_active": True
-        }, {"_id": 0})
+        })
         
-        # Create impersonation token (marks it as impersonation)
         payload = {
             "user_id": admin_user["id"],
             "role": "hospital_admin",
@@ -1695,16 +1544,14 @@ def create_region_endpoints(db, get_current_user, hash_password):
             "hospital_id": hospital_id,
             "location_id": main_location["id"] if main_location else None,
             "organization_id": hospital_id,
-            "impersonated_by": user["id"],  # Track who is impersonating
+            "impersonated_by": user["id"],
             "impersonated_by_email": user.get("email"),
             "is_impersonation": True,
-            "exp": datetime.now(timezone.utc) + timedelta(hours=4)  # Shorter expiration for security
+            "exp": datetime.now(timezone.utc) + timedelta(hours=4)
         }
         token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
         
-        # Log the impersonation
-        await db["audit_logs"].insert_one({
-            "id": str(uuid.uuid4()),
+        await db_svc.insert("audit_logs", {
             "action": "impersonate_hospital",
             "user_id": user["id"],
             "user_email": user.get("email"),
@@ -1751,32 +1598,30 @@ def create_region_endpoints(db, get_current_user, hash_password):
         user: dict = Depends(get_current_user)
     ):
         """List all hospitals with their admin credentials (Super Admin only)"""
+        db_svc = get_db_service()
+        
         if user.get("role") != "super_admin":
             raise HTTPException(status_code=403, detail="Super Admin access required")
         
-        # Build query
         hospital_query = {"status": "active"}
         if region_id:
             hospital_query["region_id"] = region_id
         
-        hospitals = await db["hospitals"].find(hospital_query, {"_id": 0}).to_list(200)
+        hospitals = await db_svc.find("hospitals", hospital_query, limit=200)
         
         result = []
         for hospital in hospitals:
-            # Get admin user for this hospital
-            admin = await db["users"].find_one({
+            admin = await db_svc.find_one("users", {
                 "organization_id": hospital["id"],
                 "role": "hospital_admin"
-            }, {"_id": 0, "password": 0})
+            }, projection={"password": 0})
             
-            # Get location count
-            location_count = await db["hospital_locations"].count_documents({
+            location_count = await db_svc.count("hospital_locations", {
                 "hospital_id": hospital["id"],
                 "is_active": True
             })
             
-            # Get user count
-            user_count = await db["users"].count_documents({
+            user_count = await db_svc.count("users", {
                 "organization_id": hospital["id"],
                 "is_active": True
             })
