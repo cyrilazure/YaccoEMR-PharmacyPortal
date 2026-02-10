@@ -619,6 +619,7 @@ def create_region_endpoints(db, get_current_user, hash_password):
             "role": user.get("role"),
             "department": user.get("department"),
             "specialty": user.get("specialty"),
+            "organization_id": user.get("organization_id") or (hospital["id"] if hospital else None),
             "is_active": user.get("is_active", True)
         }
         
