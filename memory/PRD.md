@@ -37,7 +37,39 @@ Build a comprehensive Electronic Medical Records (EMR) system similar to Epic EM
 
 ## LATEST FEATURES (February 10, 2026)
 
-### ✅ NEW: Patient Referral System
+### ✅ NEW: Internal Staff Chat System
+- **Backend Module:** `/app/backend/staff_chat_module.py`
+- **Frontend Page:** `/app/frontend/src/pages/StaffChatPage.jsx`
+- **Route:** `/staff-chat`
+
+**Features:**
+- Real-time direct messaging between hospital staff
+- Group chat support by department or custom groups
+- User search for starting new conversations
+- Message history with pagination
+- Read receipts and unread message counts
+- Typing indicators (WebSocket-based)
+- Role-based badges for staff identification
+- Mobile-responsive design
+
+**API Endpoints:**
+- `POST /api/chat/conversations` - Create new conversation (direct or group)
+- `GET /api/chat/conversations` - List user's conversations
+- `GET /api/chat/conversations/{id}` - Get conversation details
+- `POST /api/chat/conversations/{id}/messages` - Send message
+- `GET /api/chat/conversations/{id}/messages` - Get messages with pagination
+- `POST /api/chat/conversations/{id}/read` - Mark conversation as read
+- `GET /api/chat/users/search` - Search users for new chat
+- `GET /api/chat/unread-count` - Get total unread count
+- `GET /api/chat/search` - Search messages across conversations
+- `WS /ws/chat/{token}` - WebSocket for real-time updates
+
+**Access Roles:**
+physician, nurse, nursing_supervisor, floor_supervisor, hospital_admin, pharmacist, radiologist, radiology_staff, biller, scheduler, bed_manager, hospital_it_admin
+
+---
+
+### ✅ Patient Referral System
 - **Backend Module:** `/app/backend/referral_module.py`
 - **Frontend Page:** `/app/frontend/src/pages/PatientReferralPage.jsx`
 - **Route:** `/referrals`
