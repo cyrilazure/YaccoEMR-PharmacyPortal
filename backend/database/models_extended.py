@@ -445,10 +445,14 @@ class AmbulanceRequest(Base):
     requesting_physician: Mapped[Optional[str]] = mapped_column(String(255))
     
     status: Mapped[Optional[str]] = mapped_column(String(50), default='pending')
+    status_notes: Mapped[Optional[str]] = mapped_column(Text)
     
     vehicle_id: Mapped[Optional[str]] = mapped_column(String(50))
     driver_id: Mapped[Optional[str]] = mapped_column(String(50))
     paramedic_id: Mapped[Optional[str]] = mapped_column(String(50))
+    
+    dispatch_notes: Mapped[Optional[str]] = mapped_column(Text)
+    estimated_arrival: Mapped[Optional[str]] = mapped_column(String(100))
     
     requested_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), default=utc_now)
     approved_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
@@ -456,6 +460,8 @@ class AmbulanceRequest(Base):
     completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     
     created_by: Mapped[Optional[str]] = mapped_column(String(50))
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     
     __table_args__ = (
         Index('ix_ambulance_requests_org', 'organization_id'),
