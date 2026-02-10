@@ -342,8 +342,8 @@ class Vital(Base):
     __tablename__ = 'vitals'
     
     id: Mapped[str] = mapped_column(String(50), primary_key=True, default=generate_uuid)
-    patient_id: Mapped[str] = mapped_column(String(50), ForeignKey('patients.id'), nullable=False)
-    organization_id: Mapped[str] = mapped_column(String(50), nullable=False)
+    patient_id: Mapped[Optional[str]] = mapped_column(String(50))  # No FK constraint
+    organization_id: Mapped[Optional[str]] = mapped_column(String(50))
     
     # Vital Signs
     blood_pressure_systolic: Mapped[Optional[int]] = mapped_column(Integer)
@@ -359,11 +359,11 @@ class Vital(Base):
     
     # Metadata
     recorded_by: Mapped[Optional[str]] = mapped_column(String(50))
-    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    recorded_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), default=utc_now)
     notes: Mapped[Optional[str]] = mapped_column(Text)
     
     # Relationships
-    patient = relationship("Patient", back_populates="vitals")
+    patient = relationship("Patient", back_populates="vitals", foreign_keys=[patient_id])
     
     __table_args__ = (
         Index('ix_vitals_patient', 'patient_id'),
@@ -376,25 +376,25 @@ class Allergy(Base):
     __tablename__ = 'allergies'
     
     id: Mapped[str] = mapped_column(String(50), primary_key=True, default=generate_uuid)
-    patient_id: Mapped[str] = mapped_column(String(50), ForeignKey('patients.id'), nullable=False)
-    organization_id: Mapped[str] = mapped_column(String(50), nullable=False)
+    patient_id: Mapped[Optional[str]] = mapped_column(String(50))  # No FK constraint
+    organization_id: Mapped[Optional[str]] = mapped_column(String(50))
     
-    allergen: Mapped[str] = mapped_column(String(255), nullable=False)
-    allergen_type: Mapped[Optional[str]] = mapped_column(String(50))  # medication, food, environmental
+    allergen: Mapped[Optional[str]] = mapped_column(String(255))
+    allergen_type: Mapped[Optional[str]] = mapped_column(String(50))
     reaction: Mapped[Optional[str]] = mapped_column(Text)
-    severity: Mapped[str] = mapped_column(String(50), default='moderate')
+    severity: Mapped[Optional[str]] = mapped_column(String(50), default='moderate')
     
     # Status
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    is_active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
     onset_date: Mapped[Optional[Date]] = mapped_column(Date)
     
     # Metadata
     notes: Mapped[Optional[str]] = mapped_column(Text)
     recorded_by: Mapped[Optional[str]] = mapped_column(String(50))
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), default=utc_now)
     
     # Relationships
-    patient = relationship("Patient", back_populates="allergies")
+    patient = relationship("Patient", back_populates="allergies", foreign_keys=[patient_id])
     
     __table_args__ = (
         Index('ix_allergies_patient', 'patient_id'),
