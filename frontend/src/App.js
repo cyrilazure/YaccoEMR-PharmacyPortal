@@ -67,6 +67,9 @@ import PharmacyProfile from "@/pages/PharmacyProfile";
 // Prescription Tracking (Patient-facing)
 import PrescriptionTracking from "@/pages/PrescriptionTracking";
 
+// Internal Staff Chat
+import StaffChatPage from "@/pages/StaffChatPage";
+
 // Role-based redirect component
 function RoleBasedRedirect() {
   const { user } = useAuth();
@@ -267,6 +270,9 @@ function App() {
             
             {/* IR Status Board (Full Screen Display) */}
             <Route path="ir-status-board" element={<IRStatusBoardPage />} />
+            
+            {/* Internal Staff Chat */}
+            <Route path="staff-chat" element={<StaffChatPage />} />
           </Route>
           
           {/* Catch-all redirect to landing page */}
