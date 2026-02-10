@@ -117,16 +117,40 @@ class MigrationManagerV3:
         if value is None:
             return None
         
-        # Convert datetime strings
-        datetime_fields = ['created_at', 'updated_at', 'approved_at', 'sent_at', 
-                       'received_at', 'completed_at', 'expires_at', 'timestamp',
-                       'last_login', 'locked_at', 'suspended_at', 'password_reset_at',
-                       'verified_at', 'last_message_at', 'prescribed_at', 'recorded_at',
-                       'accepted_at', 'edited_at', 'deactivated_at', 'activated_at', 
-                       'unlocked_at', 'phone_updated_at']
+        # Convert datetime strings - comprehensive list
+        datetime_fields = [
+            'created_at', 'updated_at', 'approved_at', 'sent_at', 
+            'received_at', 'completed_at', 'expires_at', 'timestamp',
+            'last_login', 'locked_at', 'suspended_at', 'password_reset_at',
+            'verified_at', 'last_message_at', 'prescribed_at', 'recorded_at',
+            'accepted_at', 'edited_at', 'deactivated_at', 'activated_at', 
+            'unlocked_at', 'phone_updated_at', 'performed_at', 'signed_at',
+            'requested_at', 'dispatched_at', 'due_date', 'paid_at',
+            'specimen_collected_at', 'started_at', 'ended_at', 'start_time_dt',
+            'end_time_dt', 'read_at', 'setup_at', 'processed_at',
+            'consent_signed_at', 'assessed_at', 'unassigned_at', 'assigned_at',
+            'responded_at', 'granted_at', 'dispensed_at', 'expiry_date',
+            'deleted_at', 'acknowledged_at', 'admitted_at', 'discharged_at'
+        ]
         
         # Date only fields (not datetime)
-        date_fields = ['date_of_birth', 'onset_date', 'resolved_date', 'patient_dob']
+        date_fields = ['date_of_birth', 'onset_date', 'resolved_date', 'patient_dob', 
+                       'start_date', 'end_date', 'received_date', 'date']
+        
+        # Auto-detect datetime strings by pattern
+        if isinstance(value, str) and ('T' in value or value.endswith('Z')):
+            # Looks like ISO datetime format
+            if key in date_fields:
+                try:
+                    return datetime.fromisoformat(value.replace('Z', '+00:00')).date()
+                except:
+                    pass
+            else:
+                # Treat as datetime
+                try:
+                    return datetime.fromisoformat(value.replace('Z', '+00:00'))
+                except:
+                    pass
         
         if key in datetime_fields and isinstance(value, str):
             try:
