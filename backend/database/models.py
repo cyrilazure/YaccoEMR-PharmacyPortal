@@ -89,11 +89,7 @@ class Organization(Base):
     approved_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     approved_by: Mapped[Optional[str]] = mapped_column(String(255))
     
-    # Relationships
-    region = relationship("Region", back_populates="organizations")
-    users = relationship("User", back_populates="organization")
-    departments = relationship("Department", back_populates="organization")
-    patients = relationship("Patient", back_populates="organization")
+    # Relationships removed for flexible migration
     
     __table_args__ = (
         Index('ix_organizations_status', 'status'),
@@ -107,7 +103,7 @@ class Hospital(Base):
     
     id: Mapped[str] = mapped_column(String(50), primary_key=True, default=generate_uuid)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    region_id: Mapped[Optional[str]] = mapped_column(String(50), ForeignKey('regions.id'))
+    region_id: Mapped[Optional[str]] = mapped_column(String(50))
     organization_type: Mapped[str] = mapped_column(String(50), default='hospital')
     
     # Contact Info
