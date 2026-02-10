@@ -3,6 +3,7 @@ Yacco Health OTP (One-Time Password) Module
 ==========================================
 SMS-based OTP verification for staff logins on EMR and Pharmacy platforms.
 Uses Arkesel SMS API for OTP delivery.
+REFACTORED to use db_service_v2 for database abstraction.
 """
 import uuid
 import random
@@ -10,6 +11,8 @@ import string
 from datetime import datetime, timezone, timedelta
 from typing import Optional
 from pydantic import BaseModel
+
+from db_service_v2 import get_db_service
 
 
 class OTPRequest(BaseModel):
@@ -35,7 +38,7 @@ def generate_otp(length: int = OTP_LENGTH) -> str:
 
 
 async def create_otp_session(
-    db,
+    db,  # Legacy parameter for backwards compatibility
     user_id: str,
     phone_number: str,
     platform: str,
@@ -46,6 +49,8 @@ async def create_otp_session(
     Returns session info for frontend to track
     """
     from sms_notification_module import send_sms, SMSTemplates
+    
+    db_svc = get_db_service()
     
     # Generate OTP
     otp_code = generate_otp()
@@ -66,14 +71,14 @@ async def create_otp_session(
         "used": False
     }
     
-    await db["otp_sessions"].insert_one(otp_session)
+    await db_svc.insert("otp_sessions", otp_session, generate_id=False)
     
     # Send OTP via SMS
     message = SMSTemplates.otp_verification(otp_code)
     sms_result = await send_sms(phone_number, message)
     
     # Log OTP send
-    await db["sms_logs"].insert_one({
+    await db_svc.insert("sms_logs", {
         "phone_number": phone_number,
         "notification_type": "otp_verification",
         "success": sms_result.get("success", False),
@@ -90,7 +95,7 @@ async def create_otp_session(
 
 
 async def verify_otp(
-    db,
+    db,  # Legacy parameter for backwards compatibility
     session_id: str,
     otp_code: str
 ) -> dict:
@@ -98,8 +103,10 @@ async def verify_otp(
     Verify OTP code for a session
     Returns verification result
     """
+    db_svc = get_db_service()
+    
     # Find session
-    session = await db["otp_sessions"].find_one({"id": session_id})
+    session = await db_svc.get_by_id("otp_sessions", session_id)
     
     if not session:
         return {"success": False, "error": "Invalid session"}
@@ -121,8 +128,8 @@ async def verify_otp(
     if session.get("attempts", 0) >= MAX_OTP_ATTEMPTS:
         return {"success": False, "error": "Maximum attempts exceeded"}
     
-    # Increment attempts
-    await db["otp_sessions"].update_one(
+    # Increment attempts - use direct MongoDB for $inc
+    await db_svc.collection("otp_sessions").update_one(
         {"id": session_id},
         {"$inc": {"attempts": 1}}
     )
@@ -136,13 +143,10 @@ async def verify_otp(
         }
     
     # Mark as verified
-    await db["otp_sessions"].update_one(
-        {"id": session_id},
-        {"$set": {
-            "verified": True,
-            "verified_at": datetime.now(timezone.utc).isoformat()
-        }}
-    )
+    await db_svc.update_by_id("otp_sessions", session_id, {
+        "verified": True,
+        "verified_at": datetime.now(timezone.utc).isoformat()
+    })
     
     return {
         "success": True,
@@ -153,20 +157,21 @@ async def verify_otp(
 
 async def mark_otp_used(db, session_id: str):
     """Mark OTP session as used after successful login"""
-    await db["otp_sessions"].update_one(
-        {"id": session_id},
-        {"$set": {
-            "used": True,
-            "used_at": datetime.now(timezone.utc).isoformat()
-        }}
-    )
+    db_svc = get_db_service()
+    
+    await db_svc.update_by_id("otp_sessions", session_id, {
+        "used": True,
+        "used_at": datetime.now(timezone.utc).isoformat()
+    })
 
 
 async def resend_otp(db, session_id: str) -> dict:
     """Resend OTP for an existing session"""
     from sms_notification_module import send_sms, SMSTemplates
     
-    session = await db["otp_sessions"].find_one({"id": session_id})
+    db_svc = get_db_service()
+    
+    session = await db_svc.get_by_id("otp_sessions", session_id)
     
     if not session:
         return {"success": False, "error": "Invalid session"}
@@ -179,15 +184,12 @@ async def resend_otp(db, session_id: str) -> dict:
     new_expiry = datetime.now(timezone.utc) + timedelta(minutes=OTP_EXPIRY_MINUTES)
     
     # Update session
-    await db["otp_sessions"].update_one(
-        {"id": session_id},
-        {"$set": {
-            "otp_code": new_otp,
-            "expires_at": new_expiry.isoformat(),
-            "attempts": 0,
-            "resent_at": datetime.now(timezone.utc).isoformat()
-        }}
-    )
+    await db_svc.update_by_id("otp_sessions", session_id, {
+        "otp_code": new_otp,
+        "expires_at": new_expiry.isoformat(),
+        "attempts": 0,
+        "resent_at": datetime.now(timezone.utc).isoformat()
+    })
     
     # Send new OTP
     message = SMSTemplates.otp_verification(new_otp)
@@ -209,9 +211,11 @@ def mask_phone_number(phone: str) -> str:
 
 async def cleanup_expired_sessions(db):
     """Clean up expired OTP sessions (run periodically)"""
+    db_svc = get_db_service()
+    
     expiry_threshold = datetime.now(timezone.utc) - timedelta(hours=1)
-    result = await db["otp_sessions"].delete_many({
+    result = await db_svc.delete_many("otp_sessions", {
         "expires_at": {"$lt": expiry_threshold.isoformat()},
         "used": False
     })
-    return result.deleted_count
+    return result
