@@ -253,6 +253,9 @@ function App() {
 
             {/* Patient Referral System */}
             <Route path="referrals" element={<PatientReferralPage />} />
+            
+            {/* Patient History */}
+            <Route path="patient/:patientId/history" element={<PatientHistoryTab />} />
 
             <Route path="audit-logs" element={<AuditLogs />} />
             
