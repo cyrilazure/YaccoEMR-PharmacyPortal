@@ -163,8 +163,13 @@ class MigrationManagerV3:
         if table_name not in self.table_columns:
             return {}
         
-        # Remove MongoDB _id
-        doc.pop('_id', None)
+        # Store _id before removing it in case we need to generate id
+        mongo_id = doc.pop('_id', None)
+        
+        # Generate id if missing (some collections use _id only)
+        if 'id' not in doc and mongo_id:
+            import uuid
+            doc['id'] = str(uuid.uuid4())
         
         # Apply defaults
         doc = self.apply_defaults(doc, table_name)
