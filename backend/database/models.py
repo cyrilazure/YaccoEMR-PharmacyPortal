@@ -119,8 +119,8 @@ class Hospital(Base):
     # Registration
     license_number: Mapped[Optional[str]] = mapped_column(String(100))
     nhis_number: Mapped[Optional[str]] = mapped_column(String(100))
-    status: Mapped[str] = mapped_column(String(50), default='pending')
-    registration_status: Mapped[str] = mapped_column(String(50), default='pending')
+    status: Mapped[Optional[str]] = mapped_column(String(50), default='pending', server_default='pending')
+    registration_status: Mapped[Optional[str]] = mapped_column(String(50), default='pending', server_default='pending')
     
     # Admin Info
     admin_name: Mapped[Optional[str]] = mapped_column(String(255))
