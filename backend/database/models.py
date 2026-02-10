@@ -172,8 +172,8 @@ class User(Base):
     license_number: Mapped[Optional[str]] = mapped_column(String(100))
     
     # Status
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    status: Mapped[str] = mapped_column(String(50), default='active')
+    is_active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True, server_default='true')
+    status: Mapped[Optional[str]] = mapped_column(String(50), default='active', server_default='active')
     
     # Security
     login_attempts: Mapped[int] = mapped_column(Integer, default=0)
