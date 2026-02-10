@@ -290,8 +290,8 @@ class PatientMedicalHistory(Base):
     resolved_date: Mapped[Optional[Date]] = mapped_column(Date)
     
     # Status
-    status: Mapped[str] = mapped_column(String(50), default='active')  # active, resolved, managed
-    severity: Mapped[Optional[str]] = mapped_column(String(50))  # mild, moderate, severe
+    status: Mapped[Optional[str]] = mapped_column(String(50), default='active')
+    severity: Mapped[Optional[str]] = mapped_column(String(50))
     
     # Treatment
     current_treatment: Mapped[Optional[str]] = mapped_column(Text)
@@ -305,11 +305,8 @@ class PatientMedicalHistory(Base):
     
     # Metadata
     recorded_by: Mapped[Optional[str]] = mapped_column(String(50))
-    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, onupdate=utc_now)
-    
-    # Relationships
-    patient = relationship("Patient", back_populates="medical_history")
+    recorded_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), default=utc_now, onupdate=utc_now)
     
     __table_args__ = (
         Index('ix_medical_history_patient', 'patient_id'),
@@ -324,7 +321,7 @@ class Vital(Base):
     __tablename__ = 'vitals'
     
     id: Mapped[str] = mapped_column(String(50), primary_key=True, default=generate_uuid)
-    patient_id: Mapped[Optional[str]] = mapped_column(String(50))  # No FK constraint
+    patient_id: Mapped[Optional[str]] = mapped_column(String(50))
     organization_id: Mapped[Optional[str]] = mapped_column(String(50))
     
     # Vital Signs
