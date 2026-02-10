@@ -36,15 +36,11 @@ class Region(Base):
     
     id: Mapped[str] = mapped_column(String(50), primary_key=True, default=generate_uuid)
     name: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
-    capital: Mapped[str] = mapped_column(String(100))
-    code: Mapped[str] = mapped_column(String(10), unique=True)
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    hospital_count: Mapped[int] = mapped_column(Integer, default=0)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
-    
-    # Relationships
-    organizations = relationship("Organization", back_populates="region")
-    hospitals = relationship("Hospital", back_populates="region")
+    capital: Mapped[Optional[str]] = mapped_column(String(100))
+    code: Mapped[Optional[str]] = mapped_column(String(10))
+    is_active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    hospital_count: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), default=utc_now)
 
 
 class Organization(Base):
