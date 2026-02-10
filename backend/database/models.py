@@ -129,9 +129,6 @@ class Hospital(Base):
     approved_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     approved_by: Mapped[Optional[str]] = mapped_column(String(255))
     
-    # Relationships
-    region = relationship("Region", back_populates="hospitals")
-    
     __table_args__ = (
         Index('ix_hospitals_status', 'status'),
         Index('ix_hospitals_region', 'region_id'),
