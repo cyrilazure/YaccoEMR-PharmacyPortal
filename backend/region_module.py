@@ -435,6 +435,9 @@ def create_region_endpoints(db, get_current_user, hash_password):
     
     # ============ Location-Aware Authentication with OTP ============
     
+    # OTP Configuration
+    OTP_ENABLED = os.environ.get('OTP_ENABLED', 'true').lower() == 'true'
+    
     @region_router.post("/auth/login/init", response_model=dict)
     async def location_login_init(request: LocationLoginInitRequest):
         """Initialize OTP login flow with hospital/location context"""
@@ -479,6 +482,48 @@ def create_region_endpoints(db, get_current_user, hash_password):
         
         if not user.get("is_active", True):
             raise HTTPException(status_code=403, detail="Your account is inactive. Please contact your administrator.")
+        
+        # If OTP is disabled, return token directly
+        if not OTP_ENABLED:
+            token = create_location_token(user, hospital, location)
+            role = user.get("role", "physician")
+            redirect_to = ROLE_PORTAL_MAP.get(role, "/dashboard")
+            
+            user_response = {
+                "id": user["id"],
+                "email": user["email"],
+                "first_name": user.get("first_name", ""),
+                "last_name": user.get("last_name", ""),
+                "role": user.get("role"),
+                "department": user.get("department"),
+                "specialty": user.get("specialty"),
+                "is_active": user.get("is_active", True)
+            }
+            
+            hospital_response = {
+                "id": hospital["id"],
+                "name": hospital["name"],
+                "region_id": hospital.get("region_id"),
+                "city": hospital.get("city")
+            }
+            
+            location_response = None
+            if location:
+                location_response = {
+                    "id": location["id"],
+                    "name": location["name"],
+                    "type": location.get("type"),
+                    "address": location.get("address")
+                }
+            
+            return {
+                "otp_required": False,
+                "token": token,
+                "user": user_response,
+                "hospital": hospital_response,
+                "location": location_response,
+                "redirect_to": redirect_to
+            }
         
         phone = user.get("phone")
         if not phone or phone.strip() == "":
