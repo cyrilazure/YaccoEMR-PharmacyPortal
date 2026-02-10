@@ -1395,6 +1395,11 @@ from referral_module import create_referral_router
 referral_router = create_referral_router(db)
 app.include_router(referral_router)
 
+# Patient History Module
+from patient_history_module import create_patient_history_router
+patient_history_router = create_patient_history_router(db)
+app.include_router(patient_history_router)
+
 # Medication Database API
 from medication_database import get_all_medications, search_medications, get_medication_categories, get_medications_by_category
 
