@@ -248,6 +248,8 @@ function App() {
             <Route path="supply-chain" element={<SupplyChainPortal />} />
             <Route path="inventory" element={<SupplyChainPortal />} />
 
+            {/* Patient Referral System */}
+            <Route path="referrals" element={<PatientReferralPage />} />
 
             <Route path="audit-logs" element={<AuditLogs />} />
             
