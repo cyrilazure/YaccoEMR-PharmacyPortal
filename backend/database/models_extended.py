@@ -1098,7 +1098,7 @@ class SMSLog(Base):
     id: Mapped[str] = mapped_column(String(50), primary_key=True, default=generate_uuid)
     organization_id: Mapped[Optional[str]] = mapped_column(String(50))
     
-    phone_number: Mapped[Optional[str]] = mapped_column(String(20))
+    phone_number: Mapped[Optional[str]] = mapped_column(String(50))
     message: Mapped[Optional[str]] = mapped_column(Text)
     notification_type: Mapped[Optional[str]] = mapped_column(String(50))
     
@@ -1108,6 +1108,7 @@ class SMSLog(Base):
     provider_response: Mapped[Optional[dict]] = mapped_column(JSONB)
     
     timestamp: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), default=utc_now)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), default=utc_now)
 
 
 class VoiceDictationLog(Base):
