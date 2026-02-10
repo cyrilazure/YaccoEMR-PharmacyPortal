@@ -398,6 +398,9 @@ class UserLoginWith2FA(BaseModel):
     otp_session_id: Optional[str] = None
     otp_code: Optional[str] = None
 
+# OTP Configuration
+OTP_ENABLED = os.environ.get('OTP_ENABLED', 'true').lower() == 'true'
+
 # Step 1: Initial login - validate credentials, check phone, send OTP
 @api_router.post("/auth/login/init")
 async def login_init(credentials: UserLogin):
@@ -413,6 +416,26 @@ async def login_init(credentials: UserLogin):
         org = await db.organizations.find_one({"id": user["organization_id"]})
         if org and org.get("status") != "active":
             raise HTTPException(status_code=403, detail="Your organization is not active. Please contact support.")
+    
+    # If OTP is disabled, return token directly
+    if not OTP_ENABLED:
+        token = create_access_token(user_id=user["id"], role=user["role"])
+        user_response = {
+            "id": user["id"],
+            "email": user["email"],
+            "first_name": user.get("first_name", ""),
+            "last_name": user.get("last_name", ""),
+            "role": user.get("role"),
+            "department": user.get("department"),
+            "specialty": user.get("specialty"),
+            "organization_id": user.get("organization_id"),
+            "is_active": user.get("is_active", True)
+        }
+        return {
+            "otp_required": False,
+            "token": token,
+            "user": user_response
+        }
     
     # Get user's phone number
     phone_number = user.get("phone") or user.get("phone_number")
