@@ -191,18 +191,20 @@ class OTPSession(Base):
     __tablename__ = 'otp_sessions'
     
     id: Mapped[str] = mapped_column(String(50), primary_key=True, default=generate_uuid)
-    user_id: Mapped[str] = mapped_column(String(50), nullable=False)
-    phone_number: Mapped[Optional[str]] = mapped_column(String(20))
-    platform: Mapped[str] = mapped_column(String(50))  # emr, pharmacy, platform_owner
-    otp_code: Mapped[str] = mapped_column(String(10), nullable=False)
+    user_id: Mapped[Optional[str]] = mapped_column(String(50))
+    phone_number: Mapped[Optional[str]] = mapped_column(String(50))
+    platform: Mapped[Optional[str]] = mapped_column(String(50))
+    otp_code: Mapped[Optional[str]] = mapped_column(String(10))
     
-    # Status
-    attempts: Mapped[int] = mapped_column(Integer, default=0)
-    is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Status - both field names for MongoDB compatibility
+    attempts: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    is_verified: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
+    verified: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)  # MongoDB name
+    used: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)  # MongoDB name
     
     # Timestamps
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
-    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), default=utc_now)
+    expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     verified_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     
     __table_args__ = (
