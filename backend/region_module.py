@@ -1466,7 +1466,8 @@ def create_region_endpoints(db, get_current_user, hash_password):
                 "region_id": region["id"],
                 "status": "active"
             })
-            user_count_result = await db_svc.aggregate("users", [
+            # Use direct MongoDB for aggregation
+            user_count_cursor = db_svc.collection("users").aggregate([
                 {"$lookup": {
                     "from": "hospitals",
                     "localField": "organization_id",
@@ -1477,6 +1478,7 @@ def create_region_endpoints(db, get_current_user, hash_password):
                 {"$match": {"hospital.region_id": region["id"]}},
                 {"$count": "total"}
             ])
+            user_count_result = await user_count_cursor.to_list(1)
             
             region_stats.append({
                 **region,
