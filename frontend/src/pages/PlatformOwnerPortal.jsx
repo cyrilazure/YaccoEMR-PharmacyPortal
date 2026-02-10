@@ -506,6 +506,72 @@ export default function PlatformOwnerPortal() {
     setStaffActionOpen(true);
   };
 
+  // ============ HOSPITAL STAFF MANAGEMENT (Platform Owner) ============
+  
+  // Fetch Hospital Staff
+  const fetchHospitalStaff = async (hospital) => {
+    setSelectedHospitalForStaff(hospital);
+    setShowHospitalStaffDialog(true);
+    setHospitalStaffLoading(true);
+    try {
+      const response = await organizationAPI.getHospitalStaff(hospital.id);
+      setHospitalStaff(response.data.staff || []);
+    } catch (err) {
+      console.error('Failed to fetch hospital staff:', err);
+      toast.error('Failed to load staff');
+      setHospitalStaff([]);
+    } finally {
+      setHospitalStaffLoading(false);
+    }
+  };
+
+  // Hospital Staff Action Handler
+  const handleHospitalStaffAction = async (action, staffId) => {
+    setHospitalStaffActionLoading(true);
+    try {
+      switch (action) {
+        case 'suspend':
+          await organizationAPI.suspendStaffPlatformOwner(staffId, 'Suspended by Platform Owner');
+          toast.success('Staff account suspended');
+          break;
+        case 'activate':
+          await organizationAPI.activateStaffPlatformOwner(staffId);
+          toast.success('Staff account activated');
+          break;
+        case 'delete':
+          await organizationAPI.deleteStaffPlatformOwner(staffId);
+          toast.success('Staff account deleted');
+          break;
+        case 'reset-password':
+          const resetRes = await organizationAPI.resetStaffPasswordPlatformOwner(staffId);
+          setHospitalStaffCredentials({
+            email: resetRes.data.email,
+            password: resetRes.data.temp_password
+          });
+          setShowHospitalStaffCredentials(true);
+          toast.success('Password reset successfully');
+          break;
+        default:
+          toast.error('Unknown action');
+      }
+      // Refresh staff list
+      if (selectedHospitalForStaff) {
+        const res = await organizationAPI.getHospitalStaff(selectedHospitalForStaff.id);
+        setHospitalStaff(res.data.staff || []);
+      }
+    } catch (err) {
+      const detail = err.response?.data?.detail;
+      toast.error(typeof detail === 'string' ? detail : `Failed to ${action} staff`);
+    } finally {
+      setHospitalStaffActionLoading(false);
+    }
+  };
+
+  const openHospitalStaffDetails = (staff) => {
+    setSelectedHospitalStaff(staff);
+    setShowHospitalStaffDetails(true);
+  };
+
   // Hospital Deletion (Soft Delete with Safeguards)
   const handleDeleteHospital = async () => {
     if (!hospitalToDelete) return;
