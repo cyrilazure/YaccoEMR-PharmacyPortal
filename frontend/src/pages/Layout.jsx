@@ -484,6 +484,57 @@ export default function Layout() {
                   <TooltipContent>Search</TooltipContent>
                 </Tooltip>
                 
+                {/* Chat Notifications */}
+                {user?.role !== 'super_admin' && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="text-slate-600 hover:text-sky-600 relative"
+                        onClick={() => navigate('/staff-chat')}
+                        data-testid="chat-notification-btn"
+                      >
+                        <MessageCircle className="w-4 h-4" />
+                        {chatUnreadCount > 0 && (
+                          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-medium px-1">
+                            {chatUnreadCount > 99 ? '99+' : chatUnreadCount}
+                          </span>
+                        )}
+                        {chatConnected && (
+                          <span className="absolute bottom-0 right-0 w-2 h-2 bg-green-500 rounded-full border border-white" />
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      Staff Chat {chatUnreadCount > 0 ? `(${chatUnreadCount} unread)` : ''}
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+                
+                {/* Sound Toggle for Chat */}
+                {user?.role !== 'super_admin' && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className={cn(
+                          "text-slate-600 hover:text-sky-600",
+                          !soundEnabled && "text-slate-400"
+                        )}
+                        onClick={() => setSoundEnabled(!soundEnabled)}
+                        data-testid="sound-toggle-btn"
+                      >
+                        {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {soundEnabled ? 'Mute notifications' : 'Unmute notifications'}
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+                
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button variant="ghost" size="icon" className="text-slate-600 hover:text-sky-600 relative">
