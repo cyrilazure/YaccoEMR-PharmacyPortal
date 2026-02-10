@@ -830,4 +830,175 @@ def create_organization_endpoints(db, get_current_user, hash_password):
             "total_patients": total_patients
         }
     
+    # ============ PLATFORM OWNER - HOSPITAL STAFF MANAGEMENT ============
+    
+    @organization_router.get("/platform-owner/hospitals/{hospital_id}/staff", response_model=dict)
+    async def get_hospital_staff_platform_owner(hospital_id: str):
+        """List all staff members for a specific hospital (Platform Owner only)"""
+        # Check if hospital exists
+        hospital = await db["organizations"].find_one({"id": hospital_id})
+        if not hospital:
+            raise HTTPException(status_code=404, detail="Hospital not found")
+        
+        staff = await db["users"].find(
+            {"organization_id": hospital_id},
+            {"_id": 0, "password": 0}
+        ).sort("created_at", -1).to_list(500)
+        
+        return {
+            "staff": staff,
+            "count": len(staff),
+            "hospital": {
+                "id": hospital["id"],
+                "name": hospital["name"],
+                "status": hospital.get("status")
+            }
+        }
+    
+    @organization_router.get("/platform-owner/staff/{staff_id}", response_model=dict)
+    async def get_staff_details_platform_owner(staff_id: str):
+        """Get staff member details (Platform Owner only)"""
+        staff = await db["users"].find_one(
+            {"id": staff_id},
+            {"_id": 0, "password": 0}
+        )
+        
+        if not staff:
+            raise HTTPException(status_code=404, detail="Staff member not found")
+        
+        # Get hospital info
+        hospital = await db["organizations"].find_one(
+            {"id": staff.get("organization_id")},
+            {"_id": 0}
+        )
+        
+        return {"staff": staff, "hospital": hospital}
+    
+    @organization_router.put("/platform-owner/staff/{staff_id}", response_model=dict)
+    async def update_staff_platform_owner(
+        staff_id: str,
+        first_name: Optional[str] = Body(None),
+        last_name: Optional[str] = Body(None),
+        email: Optional[str] = Body(None),
+        phone: Optional[str] = Body(None),
+        role: Optional[str] = Body(None),
+        department: Optional[str] = Body(None)
+    ):
+        """Update staff member information (Platform Owner only)"""
+        update_data = {"updated_at": datetime.now(timezone.utc).isoformat()}
+        
+        if first_name:
+            update_data["first_name"] = first_name
+        if last_name:
+            update_data["last_name"] = last_name
+        if email:
+            update_data["email"] = email
+        if phone:
+            update_data["phone"] = phone
+        if role:
+            update_data["role"] = role
+        if department:
+            update_data["department"] = department
+        
+        result = await db["users"].update_one(
+            {"id": staff_id},
+            {"$set": update_data}
+        )
+        
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="Staff member not found")
+        
+        return {"message": "Staff information updated"}
+    
+    @organization_router.put("/platform-owner/staff/{staff_id}/reset-password", response_model=dict)
+    async def reset_staff_password_platform_owner(staff_id: str):
+        """Reset staff member password (Platform Owner only)"""
+        staff = await db["users"].find_one({"id": staff_id})
+        
+        if not staff:
+            raise HTTPException(status_code=404, detail="Staff member not found")
+        
+        # Generate new temp password
+        temp_password = generate_temp_password()
+        
+        await db["users"].update_one(
+            {"id": staff_id},
+            {"$set": {
+                "password": hash_password(temp_password),
+                "is_temp_password": True,
+                "password_reset_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+        
+        return {
+            "message": "Password reset successfully",
+            "temp_password": temp_password,
+            "email": staff.get("email"),
+            "note": "Please share the temporary password securely with the staff member"
+        }
+    
+    @organization_router.put("/platform-owner/staff/{staff_id}/suspend", response_model=dict)
+    async def suspend_staff_platform_owner(staff_id: str, reason: str = Body("Suspended by Platform Owner", embed=True)):
+        """Suspend a staff member (Platform Owner only)"""
+        now = datetime.now(timezone.utc).isoformat()
+        
+        result = await db["users"].update_one(
+            {"id": staff_id},
+            {"$set": {
+                "is_active": False,
+                "status": "suspended",
+                "suspension_reason": reason,
+                "suspended_at": now,
+                "suspended_by": "platform_owner"
+            }}
+        )
+        
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="Staff member not found")
+        
+        return {"message": "Staff account suspended"}
+    
+    @organization_router.put("/platform-owner/staff/{staff_id}/activate", response_model=dict)
+    async def activate_staff_platform_owner(staff_id: str):
+        """Activate/unsuspend a staff member (Platform Owner only)"""
+        now = datetime.now(timezone.utc).isoformat()
+        
+        result = await db["users"].update_one(
+            {"id": staff_id},
+            {"$set": {
+                "is_active": True,
+                "status": "active",
+                "suspension_reason": None,
+                "suspended_at": None,
+                "activated_at": now
+            }}
+        )
+        
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="Staff member not found")
+        
+        return {"message": "Staff account activated"}
+    
+    @organization_router.delete("/platform-owner/staff/{staff_id}", response_model=dict)
+    async def delete_staff_platform_owner(staff_id: str):
+        """Permanently delete a staff member (Platform Owner only)"""
+        staff = await db["users"].find_one({"id": staff_id})
+        
+        if not staff:
+            raise HTTPException(status_code=404, detail="Staff member not found")
+        
+        org_id = staff.get("organization_id")
+        
+        # Delete the staff member
+        await db["users"].delete_one({"id": staff_id})
+        
+        # Update organization user count
+        if org_id:
+            await db["organizations"].update_one(
+                {"id": org_id},
+                {"$inc": {"total_users": -1}}
+            )
+        
+        return {"message": "Staff member deleted permanently"}
+    
     return organization_router
