@@ -38,12 +38,12 @@ security = HTTPBearer(auto_error=False)
 class TokenPayload(BaseModel):
     """JWT Token payload structure"""
     user_id: str
-    email: str
+    email: Optional[str] = None
     role: str
     organization_id: Optional[str] = None
     platform: str = "emr"  # emr, pharmacy, platform_owner
     exp: int
-    iat: int
+    iat: Optional[int] = None
 
 
 def create_access_token(
