@@ -751,4 +751,17 @@ class Department(Base):
     )
 
 
-# Additional models will be added in subsequent files...
+# Import extended models to register them with Base
+from .models_extended import (
+    Appointment, BankAccount, MobileMoneyAccount, Invoice, Payment,
+    PaystackTransaction, BillingPayment, BillingShift, BillingAuditLog,
+    Ward, Room, Bed, Admission, AmbulanceVehicle, AmbulanceRequest,
+    RadiologyOrder, RadiologyReport, RadiologyNote, IRProcedure,
+    IRPreAssessment, IRSedationMonitoring, LabOrder, LabResult,
+    ClinicalNote, Problem, Medication, PharmacyDrug, PharmacyPrescription,
+    PharmacyActivityLog, PharmacyAuditLog, PrescriptionRouting,
+    InventoryItem, InventoryBatch, StockMovement, Supplier,
+    NurseShift, NurseAssignment, Notification, SMSLog, VoiceDictationLog,
+    AccessGrant, RecordsRequest, User2FA, ITAuditLog, HL7Message,
+    HospitalLocation, Order
+)
