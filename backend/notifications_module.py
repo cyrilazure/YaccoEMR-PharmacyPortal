@@ -1,6 +1,7 @@
 """
 Notifications Module for Yacco EMR
 Real-time notifications for prescription updates, system alerts, and user messages
+REFACTORED to use db_service_v2 for database abstraction.
 """
 
 import uuid
@@ -9,6 +10,8 @@ from typing import Optional, List
 from fastapi import APIRouter, HTTPException, Depends, Query
 from pydantic import BaseModel
 from enum import Enum
+
+from db_service_v2 import get_db_service
 
 notifications_router = APIRouter(prefix="/api/notifications", tags=["Notifications"])
 
@@ -78,6 +81,8 @@ def create_notification_endpoints(db, get_current_user):
         user: dict = Depends(get_current_user)
     ):
         """Get user's notifications"""
+        db_svc = get_db_service()
+        
         query = {"recipient_id": user.get("id")}
         
         if unread_only:
@@ -85,10 +90,19 @@ def create_notification_endpoints(db, get_current_user):
         if notification_type:
             query["notification_type"] = notification_type
         
-        notifications = await db["notifications"].find(query, {"_id": 0}).sort("created_at", -1).skip(offset).limit(limit).to_list(limit)
+        notifications = await db_svc.find(
+            "notifications",
+            query,
+            sort=[("created_at", -1)],
+            skip=offset,
+            limit=limit
+        )
         
         # Get unread count
-        unread_count = await db["notifications"].count_documents({"recipient_id": user.get("id"), "read": False})
+        unread_count = await db_svc.count(
+            "notifications",
+            {"recipient_id": user.get("id"), "read": False}
+        )
         
         return {
             "notifications": notifications,
@@ -99,7 +113,11 @@ def create_notification_endpoints(db, get_current_user):
     @notifications_router.get("/unread-count")
     async def get_unread_count(user: dict = Depends(get_current_user)):
         """Get count of unread notifications"""
-        count = await db["notifications"].count_documents({"recipient_id": user.get("id"), "read": False})
+        db_svc = get_db_service()
+        count = await db_svc.count(
+            "notifications",
+            {"recipient_id": user.get("id"), "read": False}
+        )
         return {"unread_count": count}
     
     @notifications_router.post("")
@@ -108,6 +126,7 @@ def create_notification_endpoints(db, get_current_user):
         user: dict = Depends(get_current_user)
     ):
         """Create a notification for a user"""
+        db_svc = get_db_service()
         notification_id = str(uuid.uuid4())
         
         notification_doc = {
@@ -130,10 +149,7 @@ def create_notification_endpoints(db, get_current_user):
             "created_at": datetime.now(timezone.utc).isoformat()
         }
         
-        await db["notifications"].insert_one(notification_doc)
-        
-        if "_id" in notification_doc:
-            del notification_doc["_id"]
+        await db_svc.insert("notifications", notification_doc, generate_id=False)
         
         return {"message": "Notification created", "notification": notification_doc}
     
@@ -143,6 +159,8 @@ def create_notification_endpoints(db, get_current_user):
         user: dict = Depends(get_current_user)
     ):
         """Broadcast notification to multiple users"""
+        db_svc = get_db_service()
+        
         allowed_roles = ["hospital_admin", "hospital_it_admin", "super_admin"]
         if user.get("role") not in allowed_roles:
             raise HTTPException(status_code=403, detail="Admin access required")
@@ -157,7 +175,12 @@ def create_notification_endpoints(db, get_current_user):
         if data.roles:
             query["role"] = {"$in": data.roles}
         
-        recipients = await db["users"].find(query, {"id": 1, "role": 1}).to_list(1000)
+        recipients = await db_svc.find(
+            "users",
+            query,
+            projection={"id": 1, "role": 1},
+            limit=1000
+        )
         
         # Create notifications for all recipients
         notifications = []
@@ -182,7 +205,7 @@ def create_notification_endpoints(db, get_current_user):
             notifications.append(notification_doc)
         
         if notifications:
-            await db["notifications"].insert_many(notifications)
+            await db_svc.insert_many("notifications", notifications, generate_ids=False)
         
         return {"message": f"Notification sent to {len(notifications)} recipients"}
     
@@ -192,12 +215,15 @@ def create_notification_endpoints(db, get_current_user):
         user: dict = Depends(get_current_user)
     ):
         """Mark notification as read"""
-        result = await db["notifications"].update_one(
+        db_svc = get_db_service()
+        
+        result = await db_svc.update(
+            "notifications",
             {"id": notification_id, "recipient_id": user.get("id")},
-            {"$set": {"read": True, "read_at": datetime.now(timezone.utc).isoformat()}}
+            {"read": True, "read_at": datetime.now(timezone.utc).isoformat()}
         )
         
-        if result.modified_count == 0:
+        if not result:
             raise HTTPException(status_code=404, detail="Notification not found")
         
         return {"message": "Marked as read"}
@@ -205,9 +231,12 @@ def create_notification_endpoints(db, get_current_user):
     @notifications_router.put("/mark-all-read")
     async def mark_all_as_read(user: dict = Depends(get_current_user)):
         """Mark all notifications as read"""
-        await db["notifications"].update_many(
+        db_svc = get_db_service()
+        
+        await db_svc.update_many(
+            "notifications",
             {"recipient_id": user.get("id"), "read": False},
-            {"$set": {"read": True, "read_at": datetime.now(timezone.utc).isoformat()}}
+            {"read": True, "read_at": datetime.now(timezone.utc).isoformat()}
         )
         
         return {"message": "All notifications marked as read"}
@@ -218,11 +247,14 @@ def create_notification_endpoints(db, get_current_user):
         user: dict = Depends(get_current_user)
     ):
         """Delete a notification"""
-        result = await db["notifications"].delete_one(
+        db_svc = get_db_service()
+        
+        result = await db_svc.delete(
+            "notifications",
             {"id": notification_id, "recipient_id": user.get("id")}
         )
         
-        if result.deleted_count == 0:
+        if not result:
             raise HTTPException(status_code=404, detail="Notification not found")
         
         return {"message": "Notification deleted"}
@@ -230,8 +262,13 @@ def create_notification_endpoints(db, get_current_user):
     @notifications_router.delete("/clear-all")
     async def clear_all_notifications(user: dict = Depends(get_current_user)):
         """Clear all notifications for user"""
-        result = await db["notifications"].delete_many({"recipient_id": user.get("id")})
-        return {"message": f"Cleared {result.deleted_count} notifications"}
+        db_svc = get_db_service()
+        
+        count = await db_svc.delete_many(
+            "notifications",
+            {"recipient_id": user.get("id")}
+        )
+        return {"message": f"Cleared {count} notifications"}
     
     # ============== Helper function for internal use ==============
     
@@ -248,6 +285,7 @@ def create_notification_endpoints(db, get_current_user):
         organization_id: str = None
     ):
         """Internal helper to send notifications from other modules"""
+        db_svc = get_db_service()
         notification_id = str(uuid.uuid4())
         
         notification_doc = {
@@ -267,7 +305,7 @@ def create_notification_endpoints(db, get_current_user):
             "created_at": datetime.now(timezone.utc).isoformat()
         }
         
-        await db["notifications"].insert_one(notification_doc)
+        await db_svc.insert("notifications", notification_doc, generate_id=False)
         return notification_id
     
     # Store the helper function for external access
