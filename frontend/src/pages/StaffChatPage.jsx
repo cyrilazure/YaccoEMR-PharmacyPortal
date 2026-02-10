@@ -77,7 +77,7 @@ export default function StaffChatPage() {
   // Fetch messages for a conversation
   const fetchMessages = useCallback(async (conversationId) => {
     try {
-      const response = await api.get(`/api/chat/conversations/${conversationId}/messages`);
+      const response = await api.get(`/chat/conversations/${conversationId}/messages`);
       setMessages(response.data.messages || []);
       setTimeout(scrollToBottom, 100);
     } catch (error) {
@@ -94,7 +94,7 @@ export default function StaffChatPage() {
     }
     setSearchingUsers(true);
     try {
-      const response = await api.get(`/api/chat/users/search?query=${encodeURIComponent(query)}`);
+      const response = await api.get(`/chat/users/search?query=${encodeURIComponent(query)}`);
       setSearchedUsers(response.data.users || []);
     } catch (error) {
       console.error('Error searching users:', error);
@@ -106,7 +106,7 @@ export default function StaffChatPage() {
   // Create new conversation
   const createConversation = async (participantId) => {
     try {
-      const response = await api.post('/api/chat/conversations', {
+      const response = await api.post('/chat/conversations', {
         chat_type: 'direct',
         participant_ids: [participantId]
       });
@@ -135,7 +135,7 @@ export default function StaffChatPage() {
     setSendingMessage(true);
     try {
       const response = await api.post(
-        `/api/chat/conversations/${selectedConversation.id}/messages`,
+        `/chat/conversations/${selectedConversation.id}/messages`,
         { content: messageInput.trim(), message_type: 'text' }
       );
       
@@ -161,7 +161,7 @@ export default function StaffChatPage() {
   // Mark conversation as read
   const markAsRead = async (conversationId) => {
     try {
-      await api.post(`/api/chat/conversations/${conversationId}/read`);
+      await api.post(`/chat/conversations/${conversationId}/read`);
       setConversations(prev => prev.map(conv =>
         conv.id === conversationId ? { ...conv, unread_count: 0 } : conv
       ));
