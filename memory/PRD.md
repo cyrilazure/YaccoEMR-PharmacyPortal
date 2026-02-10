@@ -37,9 +37,10 @@ Build a comprehensive Electronic Medical Records (EMR) system similar to Epic EM
 
 ## LATEST FEATURES (February 10, 2026)
 
-### ✅ NEW: Internal Staff Chat System
+### ✅ NEW: Internal Staff Chat System with Push Notifications
 - **Backend Module:** `/app/backend/staff_chat_module.py`
 - **Frontend Page:** `/app/frontend/src/pages/StaffChatPage.jsx`
+- **Notification Hook:** `/app/frontend/src/hooks/useChatNotifications.js`
 - **Route:** `/staff-chat`
 
 **Features:**
@@ -51,6 +52,13 @@ Build a comprehensive Electronic Medical Records (EMR) system similar to Epic EM
 - Typing indicators (WebSocket-based)
 - Role-based badges for staff identification
 - Mobile-responsive design
+- **Push Notifications (NEW):**
+  - Browser notification bell in header with unread count badge
+  - Toast notifications when new messages arrive
+  - Browser notifications (when page not focused)
+  - Sound notifications toggle (mute/unmute button)
+  - WebSocket-based real-time alerts
+  - Green connection indicator in header
 
 **API Endpoints:**
 - `POST /api/chat/conversations` - Create new conversation (direct or group)
