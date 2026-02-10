@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
+import { useChatNotifications } from '@/hooks/useChatNotifications';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -27,7 +28,7 @@ import {
   Pill, AlertTriangle, Stethoscope, BarChart3, Heart, UserCog, Shield, Video,
   Building2, Globe, CreditCard, Share2, ShieldCheck, FileSearch, Layers,
   Menu, X, Bell, Search, Sun, Moon, HelpCircle, Bed, Scan, Ambulance, Package,
-  Mic, Syringe, Send, MessageCircle
+  Mic, Syringe, Send, MessageCircle, Volume2, VolumeX
 } from 'lucide-react';
 
 const navItems = [
