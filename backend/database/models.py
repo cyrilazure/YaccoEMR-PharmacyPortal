@@ -70,11 +70,11 @@ class Organization(Base):
     # Registration & Status
     license_number: Mapped[Optional[str]] = mapped_column(String(100))
     tax_id: Mapped[Optional[str]] = mapped_column(String(50))
-    status: Mapped[str] = mapped_column(String(50), default='pending')  # pending, active, suspended, rejected
-    registration_status: Mapped[str] = mapped_column(String(50), default='pending')
+    status: Mapped[Optional[str]] = mapped_column(String(50), default='pending', server_default='pending')
+    registration_status: Mapped[Optional[str]] = mapped_column(String(50), default='pending', server_default='pending')
     
     # Subscription
-    subscription_tier: Mapped[str] = mapped_column(String(50), default='basic')
+    subscription_tier: Mapped[Optional[str]] = mapped_column(String(50), default='basic', server_default='basic')
     max_users: Mapped[int] = mapped_column(Integer, default=50)
     total_users: Mapped[int] = mapped_column(Integer, default=0)
     
