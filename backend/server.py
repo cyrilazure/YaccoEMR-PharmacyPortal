@@ -22,6 +22,10 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
+# Initialize Database Service (supports both MongoDB and PostgreSQL)
+from db_service import init_db_service, get_db_service
+db_service = init_db_service(db)
+
 # JWT Configuration
 JWT_SECRET = os.environ.get('JWT_SECRET', 'yacco-emr-secret-key-2024')
 JWT_ALGORITHM = "HS256"
