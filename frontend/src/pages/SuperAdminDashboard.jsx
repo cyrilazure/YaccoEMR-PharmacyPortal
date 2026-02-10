@@ -70,6 +70,17 @@ export default function SuperAdminDashboard() {
   const [selectedOrg, setSelectedOrg] = useState(null);
   const [selectedPolicy, setSelectedPolicy] = useState(null);
   
+  // Hospital Staff Management
+  const [showStaffDialog, setShowStaffDialog] = useState(false);
+  const [selectedHospital, setSelectedHospital] = useState(null);
+  const [hospitalStaff, setHospitalStaff] = useState([]);
+  const [staffLoading, setStaffLoading] = useState(false);
+  const [selectedStaffMember, setSelectedStaffMember] = useState(null);
+  const [showStaffDetails, setShowStaffDetails] = useState(false);
+  const [showCredentialsDialog, setShowCredentialsDialog] = useState(false);
+  const [staffCredentials, setStaffCredentials] = useState(null);
+  const [staffActionLoading, setStaffActionLoading] = useState(false);
+  
   // Forms
   const [newOrg, setNewOrg] = useState({
     name: '', type: 'hospital', contact_email: '', phone: '',
