@@ -542,6 +542,12 @@ class Prescription(Base):
     # Diagnosis
     diagnosis: Mapped[Optional[str]] = mapped_column(Text)
     icd_codes: Mapped[Optional[list]] = mapped_column(JSONB)
+    clinical_notes: Mapped[Optional[str]] = mapped_column(Text)
+    priority: Mapped[Optional[str]] = mapped_column(String(50))
+    
+    # Pharmacy
+    pharmacy_id: Mapped[Optional[str]] = mapped_column(String(50))
+    send_to_external: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
     
     # Status
     status: Mapped[Optional[str]] = mapped_column(String(50), default='active')
@@ -549,10 +555,15 @@ class Prescription(Base):
     # Timestamps
     prescribed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), default=utc_now)
     expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    expiry_date: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), default=utc_now)
+    dispensed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    dispensed_by: Mapped[Optional[str]] = mapped_column(String(50))
     
     # Notes
     notes: Mapped[Optional[str]] = mapped_column(Text)
+    pharmacist_notes: Mapped[Optional[str]] = mapped_column(Text)
     
     __table_args__ = (
         Index('ix_prescriptions_patient', 'patient_id'),
