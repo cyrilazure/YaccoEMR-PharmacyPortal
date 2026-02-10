@@ -781,6 +781,15 @@ export default function SuperAdminDashboard() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleViewStaff(org)}
+                            className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                          >
+                            <Users className="w-4 h-4 mr-1" />
+                            Staff
+                          </Button>
                           {(org.status === 'active' || org.status === 'approved') && (
                             <Button 
                               size="sm" 
