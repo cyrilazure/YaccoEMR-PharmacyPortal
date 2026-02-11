@@ -250,18 +250,28 @@ export default function StaffChatPage() {
   useEffect(() => {
     fetchConversations();
     fetchUnreadCount();
-    
-    // Polling fallback for real-time updates (since WebSocket may not work through proxy)
+  }, [fetchConversations, fetchUnreadCount]);
+  
+  // Polling for real-time updates (fallback since WebSocket may not work through proxy)
+  useEffect(() => {
     const pollInterval = setInterval(() => {
       fetchConversations();
       fetchUnreadCount();
-      if (selectedConversation) {
-        fetchMessages(selectedConversation.id);
-      }
-    }, 5000); // Poll every 5 seconds
+    }, 5000); // Poll conversations every 5 seconds
     
     return () => clearInterval(pollInterval);
-  }, [fetchConversations, fetchUnreadCount, selectedConversation, fetchMessages]);
+  }, [fetchConversations, fetchUnreadCount]);
+  
+  // Poll messages for selected conversation
+  useEffect(() => {
+    if (!selectedConversation) return;
+    
+    const pollMessages = setInterval(() => {
+      fetchMessages(selectedConversation.id);
+    }, 3000); // Poll messages every 3 seconds when in a conversation
+    
+    return () => clearInterval(pollMessages);
+  }, [selectedConversation?.id, fetchMessages]);
 
   // Debounced user search
   useEffect(() => {
