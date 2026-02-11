@@ -35,9 +35,22 @@ Build a comprehensive Electronic Medical Records (EMR) system similar to Epic EM
 
 ---
 
-## LATEST FEATURES (February 10, 2026)
+## LATEST FEATURES (February 11, 2026)
 
-### ✅ OTP Login Flow Fixed (February 10, 2026)
+### ✅ Staff Chat Polling Fix Verified (February 11, 2026)
+- **Issue**: Staff Chat messages were not being delivered reliably - WebSockets don't work in preview environment
+- **Solution**: Implemented polling mechanism as fallback:
+  - Conversations poll every 5 seconds (StaffChatPage.jsx lines 256-263)
+  - Messages poll every 3 seconds when viewing a conversation (lines 265-274)
+- **Status**: VERIFIED WORKING - Testing agent confirmed 100% success rate on all features:
+  - Conversation list loads correctly with participant names, roles, avatars
+  - Messages display correctly for both sender and receiver
+  - Sending messages works and they appear immediately
+  - Polling refreshes messages within 3-5 seconds
+  - User search for starting new conversations works
+- **Note**: WebSocket shows "Offline" in preview environment - this is expected behavior, polling provides reliable message delivery
+
+### ✅ OTP Login Flow Disabled (February 10-11, 2026)
 - Fixed SMS API key typo in `.env` (D→C character)
 - Cleaned up all random phone numbers from user accounts
 - Only `ygtnetworks@gmail.com` has phone number (+233553550653)
