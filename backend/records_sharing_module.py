@@ -250,9 +250,10 @@ def setup_routes(db, get_current_user):
         if not physician:
             raise HTTPException(status_code=404, detail="Physician not found")
         
-        # Get organization info
+        # Get organization info - check both organizations and hospitals collections
         org_info = None
         if physician.get("organization_id"):
+            # Try organizations collection first
             org = await db.organizations.find_one(
                 {"id": physician["organization_id"]},
                 {"_id": 0}
@@ -263,8 +264,24 @@ def setup_routes(db, get_current_user):
                     "name": org.get("name"),
                     "address": org.get("address"),
                     "city": org.get("city"),
-                    "state": org.get("state")
+                    "state": org.get("state"),
+                    "region_id": org.get("region_id")
                 }
+            else:
+                # Try hospitals collection
+                hospital = await db.hospitals.find_one(
+                    {"id": physician["organization_id"]},
+                    {"_id": 0}
+                )
+                if hospital:
+                    org_info = {
+                        "id": hospital["id"],
+                        "name": hospital.get("name"),
+                        "address": hospital.get("address"),
+                        "city": hospital.get("city"),
+                        "state": hospital.get("region_id"),  # Use region_id as state for Ghana
+                        "region_id": hospital.get("region_id")
+                    }
         
         return {
             **physician,
