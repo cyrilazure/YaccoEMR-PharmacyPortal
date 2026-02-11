@@ -193,20 +193,33 @@ def setup_routes(db, get_current_user):
             {"_id": 0, "password": 0}
         ).to_list(100)
         
-        # Enrich with organization names
+        # Enrich with organization names - check both organizations and hospitals collections
         results = []
         for physician in physicians:
             org_name = "Independent"
             hospital_name = None
+            region_id = None
             
             if physician.get("organization_id"):
+                # Try organizations collection first
                 org = await db.organizations.find_one(
                     {"id": physician["organization_id"]},
-                    {"_id": 0, "name": 1}
+                    {"_id": 0, "name": 1, "region_id": 1}
                 )
                 if org:
                     org_name = org.get("name", "Unknown Hospital")
                     hospital_name = org_name
+                    region_id = org.get("region_id")
+                else:
+                    # Try hospitals collection (main source for registered hospitals)
+                    hospital = await db.hospitals.find_one(
+                        {"id": physician["organization_id"]},
+                        {"_id": 0, "name": 1, "region_id": 1}
+                    )
+                    if hospital:
+                        org_name = hospital.get("name", "Unknown Hospital")
+                        hospital_name = org_name
+                        region_id = hospital.get("region_id")
             
             results.append({
                 "id": physician["id"],
@@ -217,7 +230,8 @@ def setup_routes(db, get_current_user):
                 "department": physician.get("department"),
                 "organization_id": physician.get("organization_id"),
                 "organization_name": org_name,
-                "hospital_name": hospital_name
+                "hospital_name": hospital_name,
+                "region_id": region_id
             })
         
         return {"physicians": results, "count": len(results)}
