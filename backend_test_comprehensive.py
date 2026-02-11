@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 import jwt
 
 class ComprehensiveEMRTester:
-    def __init__(self, base_url="https://medconnect-223.preview.emergentagent.com"):
+    def __init__(self, base_url="https://yacco-health-1.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_base = f"{base_url}/api"
         self.tests_run = 0
