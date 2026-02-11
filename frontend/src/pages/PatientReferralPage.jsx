@@ -96,7 +96,7 @@ export default function PatientReferralPage() {
   const [showDetailDialog, setShowDetailDialog] = useState(false);
 
   // Get auth token
-  const getToken = () => localStorage.getItem('token');
+  const getToken = () => localStorage.getItem('yacco_token');
   
   const authHeaders = {
     'Authorization': `Bearer ${getToken()}`,
