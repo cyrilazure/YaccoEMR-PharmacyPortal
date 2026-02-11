@@ -105,7 +105,7 @@ export default function PatientReferralPage() {
 
   // Load user from localStorage
   useEffect(() => {
-    const userData = localStorage.getItem('user');
+    const userData = localStorage.getItem('yacco_user');
     if (userData) {
       setUser(JSON.parse(userData));
     } else {
