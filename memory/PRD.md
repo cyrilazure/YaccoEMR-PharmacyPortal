@@ -37,6 +37,18 @@ Build a comprehensive Electronic Medical Records (EMR) system similar to Epic EM
 
 ## LATEST FEATURES (February 11, 2026)
 
+### ✅ Records Sharing Cross-Hospital Search Fixed (February 11, 2026)
+- **Issue**: Searching for physicians from other hospitals showed "No physicians found" because the search was only checking `organizations` collection but hospitals are stored in `hospitals` collection
+- **Fix**: Updated `records_sharing_module.py` to check BOTH `organizations` AND `hospitals` collections when enriching physician data with hospital names
+- **Status**: VERIFIED WORKING
+  - Can now find physicians from Eastern Region, Northern Region, and all other hospitals
+  - Example: "PhysicianICU Physician" from "Eastern Region Regional Health Center" now appears in search
+
+### ✅ Patient Referrals Page Crash Fixed (February 11, 2026)
+- **Issue**: Page crashed on load due to wrong localStorage key for auth token
+- **Fix**: Changed `localStorage.getItem('token')` to `localStorage.getItem('yacco_token')` in `PatientReferralPage.jsx` and `PatientHistoryTab.jsx`
+- **Status**: VERIFIED WORKING - Page loads correctly
+
 ### ✅ Staff Chat Polling Fix Verified (February 11, 2026)
 - **Issue**: Staff Chat messages were reported as not being delivered reliably - WebSockets don't work in preview environment
 - **Solution**: Polling mechanism implemented as fallback:
