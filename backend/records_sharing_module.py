@@ -651,66 +651,87 @@ def setup_routes(db, get_current_user):
         if not access_grant:
             raise HTTPException(status_code=403, detail="No active access to this patient's records")
         
-        # Get patient info from the granting organization
+        # Get the original request to find patient's actual organization
+        original_request = await db.records_requests.find_one(
+            {"id": access_grant["request_id"]},
+            {"_id": 0}
+        )
+        
+        # The patient exists in the REQUESTING organization (where the request originated)
+        # Not in the granting organization
+        patient_org_id = original_request.get("requesting_organization_id") if original_request else None
+        
+        # First try to find patient with the patient_id directly (might be from requesting org)
         patient = await db.patients.find_one(
-            {"id": patient_id, "organization_id": access_grant["granting_organization_id"]},
+            {"id": patient_id},
             {"_id": 0}
         )
         
         if not patient:
             raise HTTPException(status_code=404, detail="Patient records not found")
         
+        # Use the patient's actual organization_id for fetching records
+        patient_org = patient.get("organization_id")
+        
         records = {"patient": patient}
         records_types = access_grant.get("records_types", ["all"])
         
-        # Fetch requested record types
+        # Fetch requested record types from patient's actual organization
         if "all" in records_types or "vitals" in records_types:
             records["vitals"] = await db.vitals.find(
-                {"patient_id": patient_id, "organization_id": access_grant["granting_organization_id"]},
+                {"patient_id": patient_id},
                 {"_id": 0}
             ).sort("recorded_at", -1).to_list(50)
         
         if "all" in records_types or "problems" in records_types:
             records["problems"] = await db.problems.find(
-                {"patient_id": patient_id, "organization_id": access_grant["granting_organization_id"]},
+                {"patient_id": patient_id},
                 {"_id": 0}
             ).to_list(100)
         
         if "all" in records_types or "medications" in records_types:
             records["medications"] = await db.medications.find(
-                {"patient_id": patient_id, "organization_id": access_grant["granting_organization_id"]},
+                {"patient_id": patient_id},
                 {"_id": 0}
             ).to_list(100)
         
         if "all" in records_types or "allergies" in records_types:
             records["allergies"] = await db.allergies.find(
-                {"patient_id": patient_id, "organization_id": access_grant["granting_organization_id"]},
+                {"patient_id": patient_id},
                 {"_id": 0}
             ).to_list(100)
         
         if "all" in records_types or "notes" in records_types:
             records["notes"] = await db.clinical_notes.find(
-                {"patient_id": patient_id, "organization_id": access_grant["granting_organization_id"]},
+                {"patient_id": patient_id},
                 {"_id": 0}
             ).sort("created_at", -1).to_list(50)
         
         if "all" in records_types or "labs" in records_types:
             records["lab_results"] = await db.lab_results.find(
-                {"patient_id": patient_id, "organization_id": access_grant["granting_organization_id"]},
+                {"patient_id": patient_id},
                 {"_id": 0}
             ).sort("resulted_at", -1).to_list(50)
         
         if "all" in records_types or "imaging" in records_types:
             records["imaging_studies"] = await db.imaging_studies.find(
-                {"patient_id": patient_id, "organization_id": access_grant["granting_organization_id"]},
+                {"patient_id": patient_id},
                 {"_id": 0}
             ).sort("study_date", -1).to_list(50)
+        
+        # Get encounter/visit records
+        records["encounters"] = await db.encounters.find(
+            {"patient_id": patient_id},
+            {"_id": 0}
+        ).sort("created_at", -1).to_list(50)
         
         # Add access info
         records["access_info"] = {
             "granted_at": access_grant["granted_at"],
             "expires_at": access_grant["expires_at"],
-            "records_types": records_types
+            "records_types": records_types,
+            "patient_organization": patient_org,
+            "request_id": access_grant.get("request_id")
         }
         
         # AUDIT: Log the records access (critical for HIPAA)
