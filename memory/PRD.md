@@ -38,17 +38,19 @@ Build a comprehensive Electronic Medical Records (EMR) system similar to Epic EM
 ## LATEST FEATURES (February 11, 2026)
 
 ### ✅ Staff Chat Polling Fix Verified (February 11, 2026)
-- **Issue**: Staff Chat messages were not being delivered reliably - WebSockets don't work in preview environment
-- **Solution**: Implemented polling mechanism as fallback:
+- **Issue**: Staff Chat messages were reported as not being delivered reliably - WebSockets don't work in preview environment
+- **Solution**: Polling mechanism implemented as fallback:
   - Conversations poll every 5 seconds (StaffChatPage.jsx lines 256-263)
   - Messages poll every 3 seconds when viewing a conversation (lines 265-274)
-- **Status**: VERIFIED WORKING - Testing agent confirmed 100% success rate on all features:
-  - Conversation list loads correctly with participant names, roles, avatars
-  - Messages display correctly for both sender and receiver
-  - Sending messages works and they appear immediately
-  - Polling refreshes messages within 3-5 seconds
-  - User search for starting new conversations works
+- **Status**: FULLY VERIFIED WORKING
+  - Backend APIs tested: All 11 messages visible to both users
+  - Frontend UI tested: Full conversation displayed correctly in chronological order
+  - Bidirectional messaging confirmed: Physician sends → IT Admin receives → IT Admin replies → Physician receives
+  - Conversation list, user search, read receipts all working
 - **Note**: WebSocket shows "Offline" in preview environment - this is expected behavior, polling provides reliable message delivery
+- **Test Credentials**:
+  - IT Admin: ashaiman@itadmin.com / ZXHoe0HxwupLPzvv
+  - Physician: physicianicu@pysicianicu.com / test123
 
 ### ✅ OTP Login Flow Disabled (February 10-11, 2026)
 - OTP feature disabled via `OTP_ENABLED=false` in `/app/backend/.env`
