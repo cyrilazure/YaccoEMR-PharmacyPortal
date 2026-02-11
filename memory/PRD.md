@@ -51,13 +51,10 @@ Build a comprehensive Electronic Medical Records (EMR) system similar to Epic EM
 - **Note**: WebSocket shows "Offline" in preview environment - this is expected behavior, polling provides reliable message delivery
 
 ### ✅ OTP Login Flow Disabled (February 10-11, 2026)
-- Fixed SMS API key typo in `.env` (D→C character)
-- Cleaned up all random phone numbers from user accounts
-- Only `ygtnetworks@gmail.com` has phone number (+233553550653)
-- OTP flow works correctly:
-  1. User without phone → asks for phone number → saves it → sends OTP
-  2. User with phone → sends OTP directly
-  3. OTP verification → returns JWT token
+- OTP feature disabled via `OTP_ENABLED=false` in `/app/backend/.env`
+- Login now works directly with email/password without OTP verification
+- OTP can be re-enabled by setting `OTP_ENABLED=true` once external SMS service is ready
+- Fixed SMS API key and sender ID configured as 'Yaccohealth'
 
 ### ✅ Backend Refactor Progress (February 10, 2026)
 **Database Abstraction Layer V2** (`/app/backend/db_service_v2.py`) created:
