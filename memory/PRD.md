@@ -37,6 +37,15 @@ Build a comprehensive Electronic Medical Records (EMR) system similar to Epic EM
 
 ## LATEST FEATURES (February 11, 2026)
 
+### ✅ Records Sharing "View Records" Fixed (February 11, 2026)
+- **Issue**: Clicking "View Records" on a shared patient showed "Patient records not found" error
+- **Root Cause**: The `get_shared_patient_records` function was looking for the patient in the **granting** organization's database, but the patient actually exists in the **requesting** organization's database
+- **Fix**: Updated `/app/backend/records_sharing_module.py` to:
+  1. Look up patient by ID directly (without organization filter)
+  2. Use the patient's actual organization_id for fetching related records
+  3. Also retrieve encounter/visit records
+- **Status**: VERIFIED WORKING - Patient "eastern patient" records now display correctly in the modal
+
 ### ✅ Records Sharing Cross-Hospital Search Fixed (February 11, 2026)
 - **Issue**: Searching for physicians from other hospitals showed "No physicians found" because the search was only checking `organizations` collection but hospitals are stored in `hospitals` collection
 - **Fix**: Updated `records_sharing_module.py` to check BOTH `organizations` AND `hospitals` collections when enriching physician data with hospital names
