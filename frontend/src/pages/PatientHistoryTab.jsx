@@ -83,7 +83,7 @@ export default function PatientHistoryTab({ patientId: propPatientId }) {
   });
   const [submitting, setSubmitting] = useState(false);
 
-  const getToken = () => localStorage.getItem('token');
+  const getToken = () => localStorage.getItem('yacco_token');
   
   const authHeaders = {
     'Authorization': `Bearer ${getToken()}`,
