@@ -247,7 +247,7 @@ async def get_user(user_id: str, admin: dict = Depends(require_it_admin)):
 @api_router.post("/users", response_model=dict)
 async def create_user(user_data: UserCreate, admin: dict = Depends(require_it_admin)):
     # Check if email exists
-    existing = await db.users.find_one({"email": user_data.email})
+    existing = await db.users.find_one({"email": user_data.email}, {"_id": 1})
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
     
