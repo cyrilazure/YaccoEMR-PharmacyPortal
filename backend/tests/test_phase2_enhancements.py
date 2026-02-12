@@ -10,7 +10,7 @@ import json
 from datetime import datetime
 
 # Backend URL
-BASE_URL = "https://yacco-health-1.preview.emergentagent.com/api"
+BASE_URL = "https://yacco-emr-testing.preview.emergentagent.com/api"
 
 # Test credentials
 BILLER_EMAIL = "biller@yacco.health"

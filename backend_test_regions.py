@@ -7,7 +7,7 @@ from datetime import datetime
 import time
 
 class YaccoEMRRegionsHospitalsTester:
-    def __init__(self, base_url="https://c2268c5e-71c6-4e43-9de5-db8608466ebc.preview.emergentagent.com"):
+    def __init__(self, base_url="https://yacco-emr-testing.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_base = f"{base_url}/api"
         self.token = None

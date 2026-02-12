@@ -6,7 +6,7 @@
         "platform_issues": [
             {
                 "issue": "External preview URL not routing /api calls",
-                "endpoint": "https://yacco-health-2.preview.emergentagent.com/api/*", 
+                "endpoint": "https://yacco-emr-testing.preview.emergentagent.com/api/*", 
                 "status": "404 responses for all API calls",
                 "workaround": "Backend works correctly on localhost:8001",
                 "note": "This is a platform routing issue, not a code issue"
