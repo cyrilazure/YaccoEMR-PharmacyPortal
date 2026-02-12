@@ -109,10 +109,9 @@ def create_google_healthcare_router(db_client: AsyncIOMotorClient):
         }
     
     @router.post("/datasets/create")
-    @require_roles(["hospital_it_admin", "super_admin"])
     async def create_healthcare_dataset(
         dataset_id: str = Query(default=HEALTHCARE_DATASET_ID),
-        current_user: TokenPayload = Depends(get_current_user)
+        current_user: TokenPayload = Depends(require_roles("hospital_it_admin", "super_admin"))
     ):
         """Create a Healthcare API dataset."""
         try:
@@ -155,11 +154,10 @@ def create_google_healthcare_router(db_client: AsyncIOMotorClient):
             raise HTTPException(status_code=400, detail=str(e))
     
     @router.post("/fhir-store/create")
-    @require_roles(["hospital_it_admin", "super_admin"])
     async def create_fhir_store(
         store_id: str = Query(default=FHIR_STORE_ID),
         fhir_version: str = Query(default="R4"),
-        current_user: TokenPayload = Depends(get_current_user)
+        current_user: TokenPayload = Depends(require_roles("hospital_it_admin", "super_admin"))
     ):
         """Create a FHIR data store."""
         try:
@@ -195,10 +193,9 @@ def create_google_healthcare_router(db_client: AsyncIOMotorClient):
             raise HTTPException(status_code=400, detail=str(e))
     
     @router.post("/fhir/patients")
-    @require_roles(["hospital_it_admin", "physician", "nurse", "receptionist", "hospital_admin"])
     async def create_fhir_patient(
         patient_data: Dict[str, Any] = Body(...),
-        current_user: TokenPayload = Depends(get_current_user)
+        current_user: TokenPayload = Depends(require_roles("hospital_it_admin", "physician", "nurse", "receptionist", "hospital_admin"))
     ):
         """Create a FHIR Patient resource."""
         try:
@@ -233,10 +230,9 @@ def create_google_healthcare_router(db_client: AsyncIOMotorClient):
             raise HTTPException(status_code=400, detail=str(e))
     
     @router.get("/fhir/patients/{patient_id}")
-    @require_roles(["hospital_it_admin", "physician", "nurse", "nursing_supervisor", "floor_supervisor", "hospital_admin"])
     async def get_fhir_patient(
         patient_id: str,
-        current_user: TokenPayload = Depends(get_current_user)
+        current_user: TokenPayload = Depends(require_roles("hospital_it_admin", "physician", "nurse", "nursing_supervisor", "floor_supervisor", "hospital_admin"))
     ):
         """Retrieve a FHIR Patient resource."""
         try:
@@ -257,12 +253,11 @@ def create_google_healthcare_router(db_client: AsyncIOMotorClient):
             raise HTTPException(status_code=404, detail=str(e))
     
     @router.get("/fhir/patients")
-    @require_roles(["hospital_it_admin", "physician", "nurse", "nursing_supervisor", "floor_supervisor", "hospital_admin"])
     async def search_fhir_patients(
         name: Optional[str] = None,
         birthdate: Optional[str] = None,
         identifier: Optional[str] = None,
-        current_user: TokenPayload = Depends(get_current_user)
+        current_user: TokenPayload = Depends(require_roles("hospital_it_admin", "physician", "nurse", "nursing_supervisor", "floor_supervisor", "hospital_admin"))
     ):
         """Search for FHIR Patient resources."""
         try:
@@ -293,10 +288,9 @@ def create_google_healthcare_router(db_client: AsyncIOMotorClient):
             raise HTTPException(status_code=400, detail=str(e))
     
     @router.post("/hl7v2/messages/ingest")
-    @require_roles(["hospital_it_admin", "hospital_admin"])
     async def ingest_hl7v2_message(
         message: HL7MessageCreate,
-        current_user: TokenPayload = Depends(get_current_user)
+        current_user: TokenPayload = Depends(require_roles("hospital_it_admin", "hospital_admin"))
     ):
         """Ingest an HL7v2 message."""
         try:
@@ -339,10 +333,9 @@ def create_google_healthcare_router(db_client: AsyncIOMotorClient):
             raise HTTPException(status_code=400, detail=str(e))
     
     @router.get("/hl7v2/messages")
-    @require_roles(["hospital_it_admin", "hospital_admin"])
     async def list_hl7v2_messages(
         limit: int = Query(default=50, le=100),
-        current_user: TokenPayload = Depends(get_current_user)
+        current_user: TokenPayload = Depends(require_roles("hospital_it_admin", "hospital_admin"))
     ):
         """List HL7v2 messages."""
         try:
@@ -369,10 +362,9 @@ def create_google_healthcare_router(db_client: AsyncIOMotorClient):
             raise HTTPException(status_code=400, detail=str(e))
     
     @router.post("/dicom/instances/store")
-    @require_roles(["hospital_it_admin", "physician", "hospital_admin"])
     async def store_dicom_instance(
         file: UploadFile = File(...),
-        current_user: TokenPayload = Depends(get_current_user)
+        current_user: TokenPayload = Depends(require_roles("hospital_it_admin", "physician", "hospital_admin"))
     ):
         """Store a DICOM instance."""
         try:
@@ -407,10 +399,9 @@ def create_google_healthcare_router(db_client: AsyncIOMotorClient):
             raise HTTPException(status_code=400, detail=str(e))
     
     @router.get("/dicom/instances")
-    @require_roles(["hospital_it_admin", "physician", "hospital_admin"])
     async def search_dicom_instances(
         study_instance_uid: Optional[str] = None,
-        current_user: TokenPayload = Depends(get_current_user)
+        current_user: TokenPayload = Depends(require_roles("hospital_it_admin", "physician", "hospital_admin"))
     ):
         """Search for DICOM instances."""
         try:
