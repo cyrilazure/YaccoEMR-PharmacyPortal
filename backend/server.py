@@ -332,7 +332,7 @@ async def create_facility(facility_data: FacilityCreate, admin: dict = Depends(r
 
 @api_router.put("/facilities/{facility_id}")
 async def update_facility(facility_id: str, update_data: FacilityUpdate, admin: dict = Depends(require_it_admin)):
-    facility = await db.facilities.find_one({"id": facility_id})
+    facility = await db.facilities.find_one({"id": facility_id}, {"_id": 1})
     if not facility:
         raise HTTPException(status_code=404, detail="Facility not found")
     
