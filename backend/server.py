@@ -260,11 +260,12 @@ async def create_user(user_data: UserCreate, admin: dict = Depends(require_it_ad
     user_dict = user.model_dump()
     user_dict["password_hash"] = hash_password(user_data.password)
     
-    await db.users.insert_one(user_dict)
+    # Insert into database (this will add _id to user_dict)
+    await db.users.insert_one(user_dict.copy())  # Use copy to avoid mutation
     
-    # Return without password hash
-    del user_dict["password_hash"]
-    return user_dict
+    # Return without password hash and without _id
+    response_dict = {k: v for k, v in user_dict.items() if k not in ["password_hash", "_id"]}
+    return response_dict
 
 @api_router.put("/users/{user_id}")
 async def update_user(user_id: str, update_data: UserUpdate, admin: dict = Depends(require_it_admin)):
