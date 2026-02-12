@@ -213,6 +213,14 @@ const navItems = [
     color: 'text-lime-500'
   },
   { 
+    to: '/hl7-adt', 
+    icon: Network, 
+    label: 'HL7 / ADT', 
+    roles: ['hospital_it_admin', 'nursing_supervisor', 'physician', 'nurse', 'floor_supervisor', 'hospital_admin'],
+    description: 'Healthcare messaging',
+    color: 'text-cyan-500'
+  },
+  { 
     to: '/analytics', 
     icon: BarChart3, 
     label: 'Analytics', 
