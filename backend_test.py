@@ -2413,12 +2413,12 @@ class YaccoEMRTester:
 if __name__ == "__main__":
     tester = YaccoEMRTester()
     
-    # Run the new Yacco EMR modules tests as specified in the review request
-    success = tester.run_yacco_emr_new_modules_tests()
+    # Run the Region API tests as specified in the review request
+    success = tester.run_region_api_tests()
     
     if success:
-        print("\n🎉 All tests passed!")
+        print("\n🎉 All region API tests passed!")
         sys.exit(0)
     else:
-        print("\n💥 Some tests failed!")
+        print("\n💥 Some region API tests failed!")
         sys.exit(1)
