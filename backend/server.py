@@ -268,7 +268,7 @@ async def create_user(user_data: UserCreate, admin: dict = Depends(require_it_ad
 
 @api_router.put("/users/{user_id}")
 async def update_user(user_id: str, update_data: UserUpdate, admin: dict = Depends(require_it_admin)):
-    user = await db.users.find_one({"id": user_id})
+    user = await db.users.find_one({"id": user_id}, {"_id": 1})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
