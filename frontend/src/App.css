@@ -1,30 +1,3 @@
 .App {
   min-height: 100vh;
 }
-
-/* Additional app-specific styles */
-.App-header {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
-}
-
-/* Override for select dropdown in dark mode */
-[data-radix-popper-content-wrapper] {
-  z-index: 9999 !important;
-}
-
-/* Table styles */
-table {
-  border-collapse: collapse;
-  width: 100%;
-}
-
-/* Dialog overlay */
-[data-state="open"][data-radix-dialog-overlay] {
-  background-color: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(4px);
-}

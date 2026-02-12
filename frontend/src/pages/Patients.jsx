@@ -1,0 +1,545 @@
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { patientAPI } from '@/lib/api';
+import { getErrorMessage } from '@/lib/utils';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { toast } from 'sonner';
+import { calculateAge, formatDate } from '@/lib/utils';
+import { 
+  Search, UserPlus, Users, ChevronRight, Phone, Mail, 
+  Calendar, IdCard, FileText, Hash, CreditCard, Banknote, AlertCircle
+} from 'lucide-react';
+
+export default function Patients() {
+  const navigate = useNavigate();
+  const [patients, setPatients] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [paymentType, setPaymentType] = useState('insurance'); // 'insurance' or 'cash'
+  const [newPatient, setNewPatient] = useState({
+    first_name: '', last_name: '', date_of_birth: '', gender: 'male',
+    mrn: '', // Added MRN field
+    email: '', phone: '', address: '',
+    emergency_contact_name: '', emergency_contact_phone: '',
+    insurance_provider: '', insurance_id: '', insurance_plan: '',
+    payment_type: 'insurance', // 'insurance' or 'cash'
+    adt_notification: true // ADT notification flag
+  });
+
+  useEffect(() => {
+    fetchPatients();
+  }, []);
+
+  useEffect(() => {
+    const delaySearch = setTimeout(() => {
+      fetchPatients(searchTerm);
+    }, 300);
+    return () => clearTimeout(delaySearch);
+  }, [searchTerm]);
+
+  const fetchPatients = async (search = '') => {
+    try {
+      const res = await patientAPI.getAll(search);
+      setPatients(res.data);
+    } catch (err) {
+      toast.error('Failed to load patients');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreatePatient = async (e) => {
+    e.preventDefault();
+    
+    // Validate insurance if payment type is insurance
+    if (paymentType === 'insurance' && (!newPatient.insurance_provider || !newPatient.insurance_id)) {
+      toast.error('Insurance information is required. Select "Pay Cash" to skip.');
+      return;
+    }
+    
+    setSaving(true);
+    try {
+      const patientData = {
+        ...newPatient,
+        payment_type: paymentType,
+        adt_notification: newPatient.adt_notification
+      };
+      const res = await patientAPI.create(patientData);
+      toast.success('Patient created successfully');
+      
+      // Show ADT notification if enabled
+      if (newPatient.adt_notification) {
+        toast.info('ADT notification will be sent for this patient');
+      }
+      
+      setDialogOpen(false);
+      setNewPatient({
+        first_name: '', last_name: '', date_of_birth: '', gender: 'male',
+        mrn: '',
+        email: '', phone: '', address: '',
+        emergency_contact_name: '', emergency_contact_phone: '',
+        insurance_provider: '', insurance_id: '', insurance_plan: '',
+        payment_type: 'insurance',
+        adt_notification: true
+      });
+      setPaymentType('insurance');
+      fetchPatients();
+      navigate(`/patients/${res.data.id}`);
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Failed to create patient'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6 animate-fade-in" data-testid="patients-page">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900" style={{ fontFamily: 'Manrope' }}>
+            Patients
+          </h1>
+          <p className="text-slate-500 mt-1">Manage patient records and information</p>
+        </div>
+        
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="gap-2 bg-sky-600 hover:bg-sky-700" data-testid="add-patient-btn">
+              <UserPlus className="w-4 h-4" /> Add Patient
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle style={{ fontFamily: 'Manrope' }}>Register New Patient</DialogTitle>
+              <DialogDescription>
+                Enter the patient's demographic and contact information
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleCreatePatient} className="space-y-6 mt-4">
+              {/* Personal Info */}
+              <div className="space-y-4">
+                <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                  <Users className="w-4 h-4" /> Personal Information
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="first_name">First Name *</Label>
+                    <Input 
+                      id="first_name"
+                      data-testid="patient-firstname"
+                      value={newPatient.first_name}
+                      onChange={(e) => setNewPatient({ ...newPatient, first_name: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="last_name">Last Name *</Label>
+                    <Input 
+                      id="last_name"
+                      data-testid="patient-lastname"
+                      value={newPatient.last_name}
+                      onChange={(e) => setNewPatient({ ...newPatient, last_name: e.target.value })}
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="mrn" className="flex items-center gap-1">
+                      <Hash className="w-3 h-3" /> MRN (Medical Record Number)
+                    </Label>
+                    <Input 
+                      id="mrn"
+                      data-testid="patient-mrn"
+                      placeholder="Auto-generated if empty"
+                      value={newPatient.mrn}
+                      onChange={(e) => setNewPatient({ ...newPatient, mrn: e.target.value })}
+                    />
+                    <p className="text-xs text-slate-500">Leave empty to auto-generate</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="dob">Date of Birth *</Label>
+                    <Input 
+                      id="dob"
+                      data-testid="patient-dob"
+                      type="date"
+                      value={newPatient.date_of_birth}
+                      onChange={(e) => setNewPatient({ ...newPatient, date_of_birth: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="gender">Gender *</Label>
+                    <Select 
+                      value={newPatient.gender} 
+                      onValueChange={(value) => setNewPatient({ ...newPatient, gender: value })}
+                    >
+                      <SelectTrigger data-testid="patient-gender">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="male">Male</SelectItem>
+                        <SelectItem value="female">Female</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Contact Info */}
+              <div className="space-y-4">
+                <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                  <Phone className="w-4 h-4" /> Contact Information
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input 
+                      id="email"
+                      data-testid="patient-email"
+                      type="email"
+                      value={newPatient.email}
+                      onChange={(e) => setNewPatient({ ...newPatient, email: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone</Label>
+                    <Input 
+                      id="phone"
+                      data-testid="patient-phone"
+                      value={newPatient.phone}
+                      onChange={(e) => setNewPatient({ ...newPatient, phone: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="address">Address</Label>
+                  <Input 
+                    id="address"
+                    data-testid="patient-address"
+                    value={newPatient.address}
+                    onChange={(e) => setNewPatient({ ...newPatient, address: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              {/* Emergency Contact */}
+              <div className="space-y-4">
+                <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                  <Users className="w-4 h-4" /> Emergency Contact
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="emergency_name">Contact Name</Label>
+                    <Input 
+                      id="emergency_name"
+                      data-testid="patient-emergency-name"
+                      value={newPatient.emergency_contact_name}
+                      onChange={(e) => setNewPatient({ ...newPatient, emergency_contact_name: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="emergency_phone">Contact Phone</Label>
+                    <Input 
+                      id="emergency_phone"
+                      data-testid="patient-emergency-phone"
+                      value={newPatient.emergency_contact_phone}
+                      onChange={(e) => setNewPatient({ ...newPatient, emergency_contact_phone: e.target.value })}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Payment Type & Insurance Info */}
+              <div className="space-y-4">
+                <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                  <CreditCard className="w-4 h-4" /> Payment & Insurance
+                </h3>
+                
+                {/* Payment Type Selection */}
+                <div className="flex gap-4 p-3 bg-slate-50 rounded-lg">
+                  <Button
+                    type="button"
+                    variant={paymentType === 'insurance' ? 'default' : 'outline'}
+                    className={paymentType === 'insurance' ? 'bg-sky-600 hover:bg-sky-700' : ''}
+                    onClick={() => setPaymentType('insurance')}
+                  >
+                    <IdCard className="w-4 h-4 mr-2" />
+                    Insurance
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={paymentType === 'cash' ? 'default' : 'outline'}
+                    className={paymentType === 'cash' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}
+                    onClick={() => setPaymentType('cash')}
+                  >
+                    <Banknote className="w-4 h-4 mr-2" />
+                    Cash / Self-Pay
+                  </Button>
+                </div>
+                
+                {paymentType === 'insurance' ? (
+                  <div className="space-y-4">
+                    <Alert className="bg-sky-50 border-sky-200">
+                      <IdCard className="h-4 w-4 text-sky-600" />
+                      <AlertTitle className="text-sky-800">Insurance Required</AlertTitle>
+                      <AlertDescription className="text-sky-700">
+                        Please provide insurance details. Select "Cash / Self-Pay" if patient will pay out of pocket.
+                      </AlertDescription>
+                    </Alert>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="insurance_provider">Insurance Provider *</Label>
+                        <Select 
+                          value={newPatient.insurance_provider} 
+                          onValueChange={(value) => setNewPatient({ ...newPatient, insurance_provider: value })}
+                        >
+                          <SelectTrigger data-testid="patient-insurance-provider">
+                            <SelectValue placeholder="Select provider" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {/* Government Insurance */}
+                            <SelectItem value="NHIS">NHIS (National Health Insurance)</SelectItem>
+                            
+                            {/* Private Health Insurance - Major Providers */}
+                            <SelectItem value="Acacia Health">Acacia Health Insurance</SelectItem>
+                            <SelectItem value="Apex Health Insurance">Apex Health Insurance</SelectItem>
+                            <SelectItem value="Cosmopolitan Health Insurance">Cosmopolitan Health Insurance</SelectItem>
+                            <SelectItem value="Enterprise Life">Enterprise Life Assurance</SelectItem>
+                            <SelectItem value="Glico Healthcare">Glico Healthcare</SelectItem>
+                            <SelectItem value="Metropolitan Insurance">Metropolitan Health Insurance</SelectItem>
+                            <SelectItem value="Nationwide Medical">Nationwide Medical Insurance</SelectItem>
+                            <SelectItem value="Phoenix Health Insurance">Phoenix Health Insurance</SelectItem>
+                            <SelectItem value="Premier Health Insurance">Premier Health Insurance</SelectItem>
+                            <SelectItem value="Star Assurance">Star Assurance Health</SelectItem>
+                            <SelectItem value="Vanguard Assurance">Vanguard Assurance</SelectItem>
+                            
+                            {/* Corporate/Group Plans */}
+                            <SelectItem value="SIC Insurance">SIC Insurance Company</SelectItem>
+                            <SelectItem value="Ghana Union Assurance">Ghana Union Assurance</SelectItem>
+                            <SelectItem value="Activa International">Activa International Insurance</SelectItem>
+                            <SelectItem value="Donewell Insurance">Donewell Insurance</SelectItem>
+                            <SelectItem value="Hollard Insurance">Hollard Insurance Ghana</SelectItem>
+                            <SelectItem value="Old Mutual">Old Mutual Ghana</SelectItem>
+                            <SelectItem value="Prudential Life">Prudential Life Insurance Ghana</SelectItem>
+                            
+                            {/* HMO / Managed Care */}
+                            <SelectItem value="AAR Health Services">AAR Health Services</SelectItem>
+                            <SelectItem value="Medivac Healthcare">Medivac Healthcare</SelectItem>
+                            
+                            {/* Other */}
+                            <SelectItem value="Other">Other Insurance Provider</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="insurance_id">Insurance ID / Policy Number *</Label>
+                        <Input 
+                          id="insurance_id"
+                          data-testid="patient-insurance-id"
+                          placeholder="e.g., NHIS-12345678"
+                          value={newPatient.insurance_id}
+                          onChange={(e) => setNewPatient({ ...newPatient, insurance_id: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="insurance_plan">Insurance Plan (Optional)</Label>
+                      <Input 
+                        id="insurance_plan"
+                        placeholder="e.g., Premium, Basic"
+                        value={newPatient.insurance_plan}
+                        onChange={(e) => setNewPatient({ ...newPatient, insurance_plan: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <Alert className="bg-emerald-50 border-emerald-200">
+                    <Banknote className="h-4 w-4 text-emerald-600" />
+                    <AlertTitle className="text-emerald-800">Cash / Self-Pay Selected</AlertTitle>
+                    <AlertDescription className="text-emerald-700">
+                      Patient will pay for services out of pocket. Insurance information is optional.
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+
+              {/* ADT Notification Settings */}
+              <div className="space-y-4">
+                <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4" /> ADT Notifications
+                </h3>
+                <div className="flex items-center space-x-3 p-3 bg-slate-50 rounded-lg">
+                  <Checkbox 
+                    id="adt_notification"
+                    checked={newPatient.adt_notification}
+                    onCheckedChange={(checked) => setNewPatient({ ...newPatient, adt_notification: checked })}
+                  />
+                  <div>
+                    <Label htmlFor="adt_notification" className="cursor-pointer font-medium">
+                      Enable ADT Notifications
+                    </Label>
+                    <p className="text-sm text-slate-500">
+                      Send alerts for Admission, Discharge, and Transfer events
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t">
+                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={saving} data-testid="save-patient-btn">
+                  {saving ? 'Creating...' : 'Create Patient'}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {/* Search */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <Input 
+              placeholder="Search by name or MRN..."
+              className="pl-10"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              data-testid="patient-search"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Patients Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle style={{ fontFamily: 'Manrope' }}>Patient Registry</CardTitle>
+          <CardDescription>{patients.length} patients found</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="space-y-4">
+              {[1, 2, 3, 4, 5].map(i => (
+                <Skeleton key={i} className="h-16 w-full" />
+              ))}
+            </div>
+          ) : patients.length === 0 ? (
+            <div className="text-center py-12 text-slate-500">
+              <Users className="w-16 h-16 mx-auto mb-4 opacity-50" />
+              <p className="text-lg font-medium">No patients found</p>
+              <p className="text-sm">Register your first patient to get started</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Patient</TableHead>
+                  <TableHead>MRN</TableHead>
+                  <TableHead>Age / Gender</TableHead>
+                  <TableHead>Contact</TableHead>
+                  <TableHead>Insurance</TableHead>
+                  <TableHead></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {patients.map((patient) => (
+                  <TableRow 
+                    key={patient.id} 
+                    className="cursor-pointer hover:bg-slate-50"
+                    onClick={() => navigate(`/patients/${patient.id}`)}
+                    data-testid={`patient-row-${patient.id}`}
+                  >
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center font-semibold">
+                          {patient.first_name?.[0]}{patient.last_name?.[0]}
+                        </div>
+                        <div>
+                          <p className="font-medium text-slate-900">
+                            {patient.first_name} {patient.last_name}
+                          </p>
+                          <p className="text-xs text-slate-500">DOB: {formatDate(patient.date_of_birth)}</p>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="font-mono">{patient.mrn}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-slate-900">{calculateAge(patient.date_of_birth)} yrs</span>
+                      <span className="text-slate-400 mx-1">•</span>
+                      <span className="text-slate-600 capitalize">{patient.gender}</span>
+                    </TableCell>
+                    <TableCell>
+                      {patient.phone && (
+                        <div className="flex items-center gap-1 text-sm text-slate-600">
+                          <Phone className="w-3 h-3" /> {patient.phone}
+                        </div>
+                      )}
+                      {patient.email && (
+                        <div className="flex items-center gap-1 text-sm text-slate-500 truncate max-w-[180px]">
+                          <Mail className="w-3 h-3" /> {patient.email}
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {patient.insurance_provider ? (
+                        <span className="text-sm text-slate-600">{patient.insurance_provider}</span>
+                      ) : (
+                        <span className="text-sm text-slate-400">Not provided</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Button variant="ghost" size="sm">
+                        <ChevronRight className="w-4 h-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

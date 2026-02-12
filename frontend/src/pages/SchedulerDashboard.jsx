@@ -1,0 +1,879 @@
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useAuth } from '@/lib/auth';
+import { appointmentsAPI, patientAPI, usersAPI } from '@/lib/api';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from 'sonner';
+import { formatTime, getStatusColor, calculateAge, formatDate } from '@/lib/utils';
+import { 
+  Calendar, Plus, Clock, User, ChevronLeft, ChevronRight, 
+  UserPlus, CheckCircle, XCircle, Users, CalendarDays, Eye,
+  Phone, Mail, MapPin, Shield, AlertCircle, LogIn, LogOut, Search,
+  Printer, QrCode
+} from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
+
+export default function SchedulerDashboard() {
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [appointments, setAppointments] = useState([]);
+  const [patients, setPatients] = useState([]);
+  const [providers, setProviders] = useState([]);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [patientDialogOpen, setPatientDialogOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  
+  // Patient Info Dialog State
+  const [viewPatientInfo, setViewPatientInfo] = useState(null);
+  const [patientSearchTerm, setPatientSearchTerm] = useState('');
+  
+  // QR Code / Patient Label State
+  const [registeredPatient, setRegisteredPatient] = useState(null);
+  const [selectedPhysician, setSelectedPhysician] = useState('');
+  const [qrDialogOpen, setQrDialogOpen] = useState(false);
+  const qrPrintRef = useRef(null);
+  
+  const [newAppointment, setNewAppointment] = useState({
+    patient_id: '', provider_id: '', appointment_type: 'follow_up',
+    date: '', start_time: '', end_time: '', reason: '', notes: ''
+  });
+  
+  const [newPatient, setNewPatient] = useState({
+    first_name: '', last_name: '', date_of_birth: '', gender: 'male',
+    email: '', phone: '', address: '', 
+    emergency_contact_name: '', emergency_contact_phone: '',
+    insurance_provider: '', insurance_id: ''
+  });
+
+  const fetchData = useCallback(async () => {
+    try {
+      const [apptsRes, patientsRes, usersRes] = await Promise.all([
+        appointmentsAPI.getAll({ date: selectedDate }),
+        patientAPI.getAll(),
+        usersAPI.getAll()
+      ]);
+      
+      setAppointments(apptsRes.data);
+      setPatients(patientsRes.data);
+      setProviders(usersRes.data.filter(u => u.role === 'physician'));
+    } catch (err) {
+      toast.error('Failed to load data');
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedDate]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const handleCreateAppointment = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await appointmentsAPI.create(newAppointment);
+      toast.success('Appointment scheduled');
+      setDialogOpen(false);
+      setNewAppointment({
+        patient_id: '', provider_id: '', appointment_type: 'follow_up',
+        date: '', start_time: '', end_time: '', reason: '', notes: ''
+      });
+      fetchData();
+    } catch (err) {
+      toast.error('Failed to schedule appointment');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCreatePatient = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const response = await patientAPI.create(newPatient);
+      const createdPatient = response.data;
+      
+      // Store registered patient and show QR dialog
+      setRegisteredPatient(createdPatient);
+      setPatientDialogOpen(false);
+      setQrDialogOpen(true);
+      
+      setNewPatient({
+        first_name: '', last_name: '', date_of_birth: '', gender: 'male',
+        email: '', phone: '', address: '',
+        emergency_contact_name: '', emergency_contact_phone: '',
+        insurance_provider: '', insurance_id: ''
+      });
+      fetchData();
+    } catch (err) {
+      toast.error('Failed to register patient');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Print QR Code Label
+  const handlePrintQR = () => {
+    const printContent = qrPrintRef.current;
+    if (!printContent) return;
+
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Patient Label - ${registeredPatient?.mrn}</title>
+          <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { font-family: 'Segoe UI', Arial, sans-serif; }
+            .label { 
+              width: 4in; 
+              padding: 0.25in;
+              border: 1px solid #000;
+            }
+            .header { 
+              text-align: center; 
+              border-bottom: 2px solid #000; 
+              padding-bottom: 8px; 
+              margin-bottom: 10px;
+            }
+            .hospital-name { font-size: 14px; font-weight: bold; }
+            .mrn { font-size: 18px; font-weight: bold; font-family: monospace; margin: 8px 0; }
+            .patient-name { font-size: 16px; font-weight: bold; margin: 5px 0; }
+            .info-row { font-size: 12px; margin: 4px 0; }
+            .qr-container { text-align: center; margin: 10px 0; }
+            .physician { font-size: 12px; margin-top: 8px; padding-top: 8px; border-top: 1px dashed #000; }
+            @media print { 
+              body { padding: 0; } 
+              .label { border: none; }
+            }
+          </style>
+        </head>
+        <body>
+          ${printContent.innerHTML}
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 250);
+  };
+
+  // Generate QR Code data
+  const getQRData = () => {
+    if (!registeredPatient) return '';
+    const physicianName = providers.find(p => p.id === selectedPhysician);
+    return JSON.stringify({
+      mrn: registeredPatient.mrn,
+      firstName: registeredPatient.first_name,
+      lastName: registeredPatient.last_name,
+      dob: registeredPatient.date_of_birth,
+      physician: physicianName ? `Dr. ${physicianName.first_name} ${physicianName.last_name}` : 'Not Assigned'
+    });
+  };
+
+  const handleStatusChange = async (apptId, newStatus) => {
+    try {
+      await appointmentsAPI.updateStatus(apptId, newStatus);
+      const statusMessages = {
+        checked_in: 'Patient checked in successfully',
+        completed: 'Patient checked out - Visit completed',
+        in_progress: 'Patient is now with provider',
+        cancelled: 'Appointment cancelled',
+        no_show: 'Patient marked as no-show'
+      };
+      toast.success(statusMessages[newStatus] || 'Status updated');
+      fetchData();
+    } catch (err) {
+      toast.error('Failed to update status');
+    }
+  };
+
+  const changeDate = (days) => {
+    const date = new Date(selectedDate);
+    date.setDate(date.getDate() + days);
+    setSelectedDate(date.toISOString().split('T')[0]);
+  };
+
+  const getPatientName = (patientId) => {
+    const patient = patients.find(p => p.id === patientId);
+    return patient ? patient.first_name + ' ' + patient.last_name : 'Unknown';
+  };
+
+  const getProviderName = (providerId) => {
+    const provider = providers.find(p => p.id === providerId);
+    return provider ? 'Dr. ' + provider.first_name + ' ' + provider.last_name : 'Unknown';
+  };
+
+  // Time slots for the calendar view
+  const timeSlots = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
+  
+  const stats = {
+    scheduled: appointments.filter(a => a.status === 'scheduled').length,
+    checkedIn: appointments.filter(a => a.status === 'checked_in').length,
+    completed: appointments.filter(a => a.status === 'completed').length,
+    cancelled: appointments.filter(a => a.status === 'cancelled').length
+  };
+
+  return (
+    <div className="space-y-6 animate-fade-in" data-testid="scheduler-dashboard">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900" style={{ fontFamily: 'Manrope' }}>
+            Scheduling Center
+          </h1>
+          <p className="text-slate-500 mt-1">
+            Welcome, {user?.first_name} • Manage appointments and patient registration
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Dialog open={patientDialogOpen} onOpenChange={setPatientDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <UserPlus className="w-4 h-4" /> Register Patient
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Register New Patient</DialogTitle>
+                <DialogDescription>
+                  MRN will be auto-generated after registration
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleCreatePatient} className="space-y-4 mt-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>First Name *</Label>
+                    <Input value={newPatient.first_name} onChange={(e) => setNewPatient({ ...newPatient, first_name: e.target.value })} required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Last Name *</Label>
+                    <Input value={newPatient.last_name} onChange={(e) => setNewPatient({ ...newPatient, last_name: e.target.value })} required />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Date of Birth *</Label>
+                    <Input type="date" value={newPatient.date_of_birth} onChange={(e) => setNewPatient({ ...newPatient, date_of_birth: e.target.value })} required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Gender *</Label>
+                    <Select value={newPatient.gender} onValueChange={(v) => setNewPatient({ ...newPatient, gender: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="male">Male</SelectItem>
+                        <SelectItem value="female">Female</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Phone</Label>
+                    <Input value={newPatient.phone} onChange={(e) => setNewPatient({ ...newPatient, phone: e.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Email</Label>
+                    <Input type="email" value={newPatient.email} onChange={(e) => setNewPatient({ ...newPatient, email: e.target.value })} />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Address</Label>
+                  <Input value={newPatient.address} onChange={(e) => setNewPatient({ ...newPatient, address: e.target.value })} placeholder="Street address, city" />
+                </div>
+                <Separator />
+                <p className="text-sm font-medium text-slate-700">Emergency Contact</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Contact Name</Label>
+                    <Input value={newPatient.emergency_contact_name} onChange={(e) => setNewPatient({ ...newPatient, emergency_contact_name: e.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Contact Phone</Label>
+                    <Input value={newPatient.emergency_contact_phone} onChange={(e) => setNewPatient({ ...newPatient, emergency_contact_phone: e.target.value })} />
+                  </div>
+                </div>
+                <Separator />
+                <p className="text-sm font-medium text-slate-700">Insurance Information</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Insurance Provider</Label>
+                    <Input value={newPatient.insurance_provider} onChange={(e) => setNewPatient({ ...newPatient, insurance_provider: e.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Insurance ID</Label>
+                    <Input value={newPatient.insurance_id} onChange={(e) => setNewPatient({ ...newPatient, insurance_id: e.target.value })} />
+                  </div>
+                </div>
+                <Button type="submit" className="w-full" disabled={saving}>
+                  {saving ? 'Registering...' : 'Register Patient'}
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2 bg-sky-600 hover:bg-sky-700">
+                <Plus className="w-4 h-4" /> New Appointment
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Schedule Appointment</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleCreateAppointment} className="space-y-4 mt-4">
+                <div className="space-y-2">
+                  <Label>Patient *</Label>
+                  <Select value={newAppointment.patient_id} onValueChange={(v) => setNewAppointment({ ...newAppointment, patient_id: v })}>
+                    <SelectTrigger><SelectValue placeholder="Select patient" /></SelectTrigger>
+                    <SelectContent>
+                      {patients.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>{p.first_name} {p.last_name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Provider *</Label>
+                  <Select value={newAppointment.provider_id} onValueChange={(v) => setNewAppointment({ ...newAppointment, provider_id: v })}>
+                    <SelectTrigger><SelectValue placeholder="Select provider" /></SelectTrigger>
+                    <SelectContent>
+                      {providers.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>Dr. {p.first_name} {p.last_name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Type</Label>
+                  <Select value={newAppointment.appointment_type} onValueChange={(v) => setNewAppointment({ ...newAppointment, appointment_type: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="new_patient">New Patient</SelectItem>
+                      <SelectItem value="follow_up">Follow Up</SelectItem>
+                      <SelectItem value="procedure">Procedure</SelectItem>
+                      <SelectItem value="consultation">Consultation</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-2">
+                    <Label>Date *</Label>
+                    <Input type="date" value={newAppointment.date} onChange={(e) => setNewAppointment({ ...newAppointment, date: e.target.value })} required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Start *</Label>
+                    <Input type="time" value={newAppointment.start_time} onChange={(e) => setNewAppointment({ ...newAppointment, start_time: e.target.value })} required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>End *</Label>
+                    <Input type="time" value={newAppointment.end_time} onChange={(e) => setNewAppointment({ ...newAppointment, end_time: e.target.value })} required />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Reason</Label>
+                  <Input value={newAppointment.reason} onChange={(e) => setNewAppointment({ ...newAppointment, reason: e.target.value })} />
+                </div>
+                <Button type="submit" className="w-full" disabled={saving}>
+                  {saving ? 'Scheduling...' : 'Schedule Appointment'}
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="border-l-4 border-l-amber-500">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-slate-500">Scheduled</p>
+                <p className="text-2xl font-bold text-slate-900">{stats.scheduled}</p>
+              </div>
+              <Calendar className="w-8 h-8 text-amber-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-l-4 border-l-blue-500">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-slate-500">Checked In</p>
+                <p className="text-2xl font-bold text-slate-900">{stats.checkedIn}</p>
+              </div>
+              <CheckCircle className="w-8 h-8 text-blue-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-l-4 border-l-emerald-500">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-slate-500">Completed</p>
+                <p className="text-2xl font-bold text-slate-900">{stats.completed}</p>
+              </div>
+              <CheckCircle className="w-8 h-8 text-emerald-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-l-4 border-l-slate-400">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-slate-500">Cancelled/No Show</p>
+                <p className="text-2xl font-bold text-slate-900">{stats.cancelled}</p>
+              </div>
+              <XCircle className="w-8 h-8 text-slate-400" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Date Navigation and Schedule */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" size="icon" onClick={() => changeDate(-1)}>
+                <ChevronLeft className="w-5 h-5" />
+              </Button>
+              <div className="flex items-center gap-2">
+                <CalendarDays className="w-5 h-5 text-sky-600" />
+                <span className="text-lg font-semibold">
+                  {new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+                </span>
+              </div>
+              <Button variant="ghost" size="icon" onClick={() => changeDate(1)}>
+                <ChevronRight className="w-5 h-5" />
+              </Button>
+            </div>
+            <Input 
+              type="date" 
+              value={selectedDate} 
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="w-40"
+            />
+          </div>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="space-y-3">
+              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-20 w-full" />
+            </div>
+          ) : appointments.length === 0 ? (
+            <div className="text-center py-12 text-slate-500">
+              <Calendar className="w-16 h-16 mx-auto mb-4 opacity-50" />
+              <p className="text-lg font-medium">No appointments scheduled</p>
+              <p className="text-sm">Click "New Appointment" to schedule one</p>
+            </div>
+          ) : (
+            <ScrollArea className="h-[400px]">
+              <div className="space-y-3">
+                {appointments.map((appt) => (
+                  <div 
+                    key={appt.id} 
+                    className={`flex items-center justify-between p-4 rounded-lg border transition-colors ${
+                      appt.status === 'checked_in' ? 'border-blue-300 bg-blue-50' :
+                      appt.status === 'in_progress' ? 'border-amber-300 bg-amber-50' :
+                      appt.status === 'completed' ? 'border-emerald-300 bg-emerald-50' :
+                      'border-slate-200 hover:border-sky-200'
+                    }`}
+                  >
+                    <div className="flex gap-4">
+                      <div className="text-center min-w-[80px]">
+                        <p className="text-lg font-bold text-sky-600">{formatTime(appt.start_time)}</p>
+                        <p className="text-xs text-slate-400">to {formatTime(appt.end_time)}</p>
+                      </div>
+                      <div>
+                        <p className="font-medium text-slate-900">{getPatientName(appt.patient_id)}</p>
+                        <p className="text-sm text-slate-500">{getProviderName(appt.provider_id)}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="outline" className="text-xs capitalize">{appt.appointment_type.replace('_', ' ')}</Badge>
+                          {appt.reason && <span className="text-xs text-slate-500">{appt.reason}</span>}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge className={getStatusColor(appt.status)}>{appt.status.replace('_', ' ')}</Badge>
+                      
+                      {/* Quick Check-In/Out Buttons */}
+                      {appt.status === 'scheduled' && (
+                        <Button 
+                          size="sm" 
+                          className="bg-blue-600 hover:bg-blue-700 gap-1"
+                          onClick={() => handleStatusChange(appt.id, 'checked_in')}
+                        >
+                          <LogIn className="w-3 h-3" />
+                          Check In
+                        </Button>
+                      )}
+                      {(appt.status === 'checked_in' || appt.status === 'in_progress') && (
+                        <Button 
+                          size="sm" 
+                          className="bg-emerald-600 hover:bg-emerald-700 gap-1"
+                          onClick={() => handleStatusChange(appt.id, 'completed')}
+                        >
+                          <LogOut className="w-3 h-3" />
+                          Check Out
+                        </Button>
+                      )}
+                      
+                      {/* More Options Dropdown */}
+                      <Select onValueChange={(v) => handleStatusChange(appt.id, v)}>
+                        <SelectTrigger className="w-[100px] h-8 text-sm">
+                          <SelectValue placeholder="More..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="scheduled">Scheduled</SelectItem>
+                          <SelectItem value="checked_in">Checked In</SelectItem>
+                          <SelectItem value="in_progress">In Progress</SelectItem>
+                          <SelectItem value="completed">Completed</SelectItem>
+                          <SelectItem value="cancelled">Cancelled</SelectItem>
+                          <SelectItem value="no_show">No Show</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Patient List - Limited View for Scheduler */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="w-5 h-5" /> Patient Directory
+          </CardTitle>
+          <CardDescription>View basic patient information for scheduling (limited access)</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {/* Search */}
+          <div className="mb-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Input
+                placeholder="Search by name..."
+                value={patientSearchTerm}
+                onChange={(e) => setPatientSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {patients
+              .filter(p => {
+                if (!patientSearchTerm) return true;
+                const search = patientSearchTerm.toLowerCase();
+                return (
+                  p.first_name?.toLowerCase().includes(search) ||
+                  p.last_name?.toLowerCase().includes(search) ||
+                  p.mrn?.toLowerCase().includes(search)
+                );
+              })
+              .slice(0, 12)
+              .map((patient) => (
+              <div 
+                key={patient.id}
+                className="p-4 rounded-lg border border-slate-200 hover:border-sky-300 hover:shadow-sm transition-all"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center text-sm font-semibold">
+                      {patient.first_name?.[0]}{patient.last_name?.[0]}
+                    </div>
+                    <div>
+                      <p className="font-medium text-slate-900">{patient.first_name} {patient.last_name}</p>
+                      <p className="text-xs text-slate-500">MRN: {patient.mrn}</p>
+                      {patient.date_of_birth && (
+                        <p className="text-xs text-slate-400">DOB: {formatDate(patient.date_of_birth)}</p>
+                      )}
+                    </div>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setViewPatientInfo(patient)}
+                    className="gap-1"
+                  >
+                    <Eye className="w-3 h-3" />
+                    View
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          {patients.length === 0 && (
+            <div className="text-center py-12 text-slate-500">
+              <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p>No patients registered</p>
+              <p className="text-sm">Register a new patient to get started</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Patient Info Dialog - Limited Information for Scheduler */}
+      <Dialog open={viewPatientInfo !== null} onOpenChange={(open) => !open && setViewPatientInfo(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <User className="w-5 h-5 text-sky-600" />
+              Patient Information
+            </DialogTitle>
+            <DialogDescription>
+              Basic patient details for scheduling purposes
+            </DialogDescription>
+          </DialogHeader>
+          
+          {viewPatientInfo && (
+            <div className="space-y-4 py-2">
+              {/* Basic Info */}
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center text-xl font-bold">
+                  {viewPatientInfo.first_name?.[0]}{viewPatientInfo.last_name?.[0]}
+                </div>
+                <div>
+                  <p className="text-xl font-semibold text-slate-900">
+                    {viewPatientInfo.first_name} {viewPatientInfo.last_name}
+                  </p>
+                  <p className="text-sm text-slate-500">MRN: {viewPatientInfo.mrn}</p>
+                </div>
+              </div>
+              
+              <Separator />
+              
+              {/* Personal Details */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 text-sm">
+                  <Calendar className="w-4 h-4 text-slate-400" />
+                  <span className="text-slate-600">Date of Birth:</span>
+                  <span className="font-medium">
+                    {viewPatientInfo.date_of_birth ? formatDate(viewPatientInfo.date_of_birth) : 'Not provided'}
+                    {viewPatientInfo.date_of_birth && (
+                      <span className="text-slate-500 ml-1">
+                        ({calculateAge(viewPatientInfo.date_of_birth)} years)
+                      </span>
+                    )}
+                  </span>
+                </div>
+                
+                <div className="flex items-center gap-3 text-sm">
+                  <MapPin className="w-4 h-4 text-slate-400" />
+                  <span className="text-slate-600">Address:</span>
+                  <span className="font-medium">{viewPatientInfo.address || 'Not provided'}</span>
+                </div>
+                
+                <div className="flex items-center gap-3 text-sm">
+                  <Phone className="w-4 h-4 text-slate-400" />
+                  <span className="text-slate-600">Phone:</span>
+                  <span className="font-medium">{viewPatientInfo.phone || 'Not provided'}</span>
+                </div>
+                
+                <div className="flex items-center gap-3 text-sm">
+                  <Mail className="w-4 h-4 text-slate-400" />
+                  <span className="text-slate-600">Email:</span>
+                  <span className="font-medium">{viewPatientInfo.email || 'Not provided'}</span>
+                </div>
+              </div>
+              
+              <Separator />
+              
+              {/* Emergency Contact */}
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm font-medium text-red-800 flex items-center gap-2 mb-2">
+                  <AlertCircle className="w-4 h-4" />
+                  Emergency Contact
+                </p>
+                <div className="space-y-1 text-sm">
+                  <p className="text-slate-700">
+                    <span className="text-slate-500">Name:</span>{' '}
+                    <span className="font-medium">{viewPatientInfo.emergency_contact_name || 'Not provided'}</span>
+                  </p>
+                  <p className="text-slate-700">
+                    <span className="text-slate-500">Phone:</span>{' '}
+                    <span className="font-medium">{viewPatientInfo.emergency_contact_phone || 'Not provided'}</span>
+                  </p>
+                </div>
+              </div>
+              
+              {/* Insurance Info */}
+              <div className="p-3 bg-sky-50 border border-sky-200 rounded-lg">
+                <p className="text-sm font-medium text-sky-800 flex items-center gap-2 mb-2">
+                  <Shield className="w-4 h-4" />
+                  Insurance Information
+                </p>
+                <div className="space-y-1 text-sm">
+                  <p className="text-slate-700">
+                    <span className="text-slate-500">Provider:</span>{' '}
+                    <span className="font-medium">{viewPatientInfo.insurance_provider || 'Not provided'}</span>
+                  </p>
+                  <p className="text-slate-700">
+                    <span className="text-slate-500">Insurance ID:</span>{' '}
+                    <span className="font-medium">{viewPatientInfo.insurance_id || 'Not provided'}</span>
+                  </p>
+                </div>
+              </div>
+              
+              {/* Actions */}
+              <div className="flex gap-2 pt-2">
+                <Button 
+                  className="flex-1 bg-sky-600 hover:bg-sky-700"
+                  onClick={() => {
+                    setNewAppointment({ ...newAppointment, patient_id: viewPatientInfo.id });
+                    setViewPatientInfo(null);
+                    setDialogOpen(true);
+                  }}
+                >
+                  <CalendarDays className="w-4 h-4 mr-2" />
+                  Schedule Appointment
+                </Button>
+                <Button variant="outline" onClick={() => setViewPatientInfo(null)}>
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* QR Code / Patient Label Dialog */}
+      <Dialog open={qrDialogOpen} onOpenChange={setQrDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <QrCode className="w-5 h-5 text-sky-600" />
+              Patient Registered Successfully!
+            </DialogTitle>
+            <DialogDescription>
+              Print a patient label with QR code for easy identification
+            </DialogDescription>
+          </DialogHeader>
+          
+          {registeredPatient && (
+            <div className="space-y-4 py-2">
+              {/* Success Message */}
+              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                <p className="text-emerald-800 font-medium">
+                  MRN: <span className="font-mono text-lg">{registeredPatient.mrn}</span>
+                </p>
+                <p className="text-emerald-700">
+                  {registeredPatient.first_name} {registeredPatient.last_name}
+                </p>
+              </div>
+              
+              {/* Select Physician */}
+              <div className="space-y-2">
+                <Label>Assign Physician (for label)</Label>
+                <Select value={selectedPhysician} onValueChange={setSelectedPhysician}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select physician..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {providers.filter(p => p.role === 'physician').map((doc) => (
+                      <SelectItem key={doc.id} value={doc.id}>
+                        Dr. {doc.first_name} {doc.last_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {/* Printable Label Preview */}
+              <div className="border-2 border-dashed border-slate-300 rounded-lg p-4 bg-white">
+                <div ref={qrPrintRef}>
+                  <div className="label">
+                    <div className="header">
+                      <div className="hospital-name">YACCO HEALTH CENTER</div>
+                    </div>
+                    
+                    <div className="mrn" style={{ textAlign: 'center', fontSize: '18px', fontFamily: 'monospace', fontWeight: 'bold' }}>
+                      MRN: {registeredPatient.mrn}
+                    </div>
+                    
+                    <div className="qr-container" style={{ textAlign: 'center', margin: '12px 0' }}>
+                      <QRCodeSVG 
+                        value={getQRData()} 
+                        size={120}
+                        level="M"
+                        includeMargin={true}
+                      />
+                    </div>
+                    
+                    <div className="patient-name" style={{ textAlign: 'center', fontSize: '16px', fontWeight: 'bold' }}>
+                      {registeredPatient.first_name} {registeredPatient.last_name}
+                    </div>
+                    
+                    <div className="info-row" style={{ textAlign: 'center', fontSize: '12px', marginTop: '4px' }}>
+                      DOB: {formatDate(registeredPatient.date_of_birth)}
+                    </div>
+                    
+                    {selectedPhysician && (
+                      <div className="physician" style={{ textAlign: 'center', fontSize: '12px', marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed #ccc' }}>
+                        Physician: Dr. {providers.find(p => p.id === selectedPhysician)?.first_name} {providers.find(p => p.id === selectedPhysician)?.last_name}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              {/* Action Buttons */}
+              <DialogFooter className="gap-2">
+                <Button variant="outline" onClick={() => {
+                  setQrDialogOpen(false);
+                  setRegisteredPatient(null);
+                  setSelectedPhysician('');
+                }}>
+                  Skip
+                </Button>
+                <Button 
+                  onClick={handlePrintQR}
+                  className="bg-sky-600 hover:bg-sky-700 gap-2"
+                >
+                  <Printer className="w-4 h-4" />
+                  Print Label
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

@@ -1,0 +1,137 @@
+{
+  "identity": {
+    "name": "Yacco EMR",
+    "description": "A comprehensive, high-performance Electronic Medical Records system designed for speed, clarity, and clinical efficiency.",
+    "tone": "Professional, Trustworthy, Efficient, Calm, Clinical Zen",
+    "target_audience": "Physicians, Nurses, Schedulers, Admins"
+  },
+  "typography": {
+    "primary_font": "Inter",
+    "heading_font": "Manrope",
+    "mono_font": "JetBrains Mono",
+    "scale": {
+      "h1": "text-4xl font-bold tracking-tight text-slate-900",
+      "h2": "text-3xl font-semibold tracking-tight text-slate-900",
+      "h3": "text-2xl font-semibold tracking-tight text-slate-900",
+      "h4": "text-xl font-semibold tracking-tight text-slate-900",
+      "body": "text-base font-normal text-slate-600 leading-relaxed",
+      "small": "text-sm font-medium text-slate-500",
+      "tiny": "text-xs font-medium text-slate-400 uppercase tracking-wider"
+    }
+  },
+  "colors": {
+    "theme": "light",
+    "palette": {
+      "background": "#F8FAFC",
+      "foreground": "#0F172A",
+      "card": "#FFFFFF",
+      "card_foreground": "#0F172A",
+      "popover": "#FFFFFF",
+      "popover_foreground": "#0F172A",
+      "primary": "#0F172A",
+      "primary_foreground": "#F8FAFC",
+      "secondary": "#F1F5F9",
+      "secondary_foreground": "#0F172A",
+      "muted": "#F1F5F9",
+      "muted_foreground": "#64748B",
+      "accent": "#F1F5F9",
+      "accent_foreground": "#0F172A",
+      "destructive": "#EF4444",
+      "destructive_foreground": "#F8FAFC",
+      "border": "#E2E8F0",
+      "input": "#E2E8F0",
+      "ring": "#0F172A",
+      "brand": {
+        "DEFAULT": "#0284C7",
+        "hover": "#0369A1",
+        "light": "#E0F2FE"
+      },
+      "success": "#10B981",
+      "warning": "#F59E0B",
+      "info": "#3B82F6"
+    }
+  },
+  "layout": {
+    "container": "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8",
+    "grid_system": "grid grid-cols-12 gap-6",
+    "spacing": {
+      "section": "py-12",
+      "card_padding": "p-6",
+      "element_gap": "gap-4"
+    },
+    "radius": "rounded-lg"
+  },
+  "components": {
+    "buttons": {
+      "primary": "bg-slate-900 text-white hover:bg-slate-800 shadow-sm h-10 px-4 py-2 rounded-md transition-colors",
+      "secondary": "bg-white text-slate-900 border border-slate-200 hover:bg-slate-100 shadow-sm h-10 px-4 py-2 rounded-md transition-colors",
+      "ghost": "hover:bg-slate-100 hover:text-slate-900 h-10 px-4 py-2 rounded-md transition-colors",
+      "destructive": "bg-red-500 text-white hover:bg-red-600 shadow-sm h-10 px-4 py-2 rounded-md transition-colors"
+    },
+    "cards": {
+      "base": "bg-white rounded-lg border border-slate-200 shadow-sm",
+      "header": "p-6 border-b border-slate-100",
+      "content": "p-6",
+      "footer": "p-6 border-t border-slate-100 bg-slate-50/50"
+    },
+    "inputs": {
+      "base": "flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+    },
+    "badges": {
+      "default": "inline-flex items-center rounded-full border border-slate-200 px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-slate-950 focus:ring-offset-2 text-slate-950",
+      "secondary": "border-transparent bg-slate-100 text-slate-900 hover:bg-slate-100/80",
+      "destructive": "border-transparent bg-red-500 text-slate-50 hover:bg-red-500/80",
+      "outline": "text-slate-950"
+    }
+  },
+  "visual_enhancers": {
+    "glassmorphism": "bg-white/80 backdrop-blur-md border-b border-slate-200/50",
+    "gradients": "None. Use solid colors for clinical clarity.",
+    "shadows": {
+      "sm": "shadow-sm",
+      "md": "shadow-md",
+      "lg": "shadow-lg",
+      "xl": "shadow-xl"
+    }
+  },
+  "image_urls": {
+    "login_background": "https://images.unsplash.com/photo-1717497932377-7758b8d5b45e?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzZ8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBob3NwaXRhbCUyMGFyY2hpdGVjdHVyZSUyMGJyaWdodHxlbnwwfHx8fDE3NzAwNzY5Njh8MA&ixlib=rb-4.1.0&q=85",
+    "doctor_avatar": "https://images.unsplash.com/photo-1758691461516-7e716e0ca135?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NzB8MHwxfHNlYXJjaHwxfHxkb2N0b3IlMjBwb3J0cmFpdCUyMHByb2Zlc3Npb25hbCUyMHNtaWxlfGVufDB8fHx8MTc3MDA3Njk3MXww&ixlib=rb-4.1.0&q=85",
+    "patient_avatar": "https://images.unsplash.com/photo-1752084794888-0b27a762b6fd?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzNDR8MHwxfHNlYXJjaHwxfHxzZW5pb3IlMjBwYXRpZW50JTIwcG9ydHJhaXQlMjBoYXBweXxlbnwwfHx8fDE3NzAwNzY5NzV8MA&ixlib=rb-4.1.0&q=85"
+  },
+  "instructions_to_main_agent": [
+    "Use 'Manrope' for all headings and 'Inter' for body text. Import them from Google Fonts.",
+    "Implement a 'Clinical Zen' aesthetic: High contrast, generous whitespace, and subtle borders.",
+    "Use the 'Bento Grid' layout (Mode B) for the dashboard: Dense but organized.",
+    "Ensure all interactive elements have 'data-testid' attributes.",
+    "Use Shadcn UI components for all interactive elements (Dialogs, Forms, Dropdowns).",
+    "Do NOT use gradients for backgrounds. Keep it flat and clean.",
+    "Use the provided image URLs for the login page and avatars.",
+    "Implement a sidebar navigation with clear active states.",
+    "Ensure the app is responsive and works well on tablet sizes.",
+    "Use 'sonner' for toast notifications.",
+    "Strictly follow the color palette defined in this file."
+  ],
+  "UNIVERSAL_GUIDELINES_FOR_MAIN_AGENT": [
+    "You tend to converge toward generic, 'on distribution' outputs. In frontend design, this creates what users call the 'AI slop' aesthetic. Avoid this: make creative, distinctive frontends that surprise and delight.",
+    "Dark colors look good when used independently without gradients. DO NOT use dark colors as gradients",
+    "Don't make generic centered layouts, simplistic gradients, and uniform styling.",
+    "Create depth through layered design elements with z-index hierarchy",
+    "Use glass-morphism effects with backdrop filters (12-24px blur)",
+    "You MUST NOT apply universal transition. Eg: 'transition: all'. This results in breaking transforms. Always add transitions for specific interactive elements like button, input excluding transforms",
+    "You MUST NOT center align the app container, ie do not add '.App { text-align: center; }' in the css file. This disrupts the human natural reading flow of text",
+    "Always use modern button styles like pill-shaped, or sharp button with interaction animations & color relevant to the app style",
+    "NEVER: use AI assistant Emoji characters like 🤖🧠💭💡🔮🎯📚🎭🎬🎪🎉🎊🎁🎀🎂🍰🎈🎨🎰💰💵💳🏦💎🪙💸🤑📊📈📉💹🔢🏆🥇 etc for icons.",
+    "Every interaction needs micro-animations - hover states, transitions, parallax effects, and entrance animations. Static = dead.",
+    "Use 2-3x more spacing than feels comfortable. Cramped designs look cheap.",
+    "Subtle grain textures, noise overlays, custom cursors, selection states, and loading animations: separates good from extraordinary.",
+    "Main agent relies on these image URLs. Missing categories (especially sponsor logos) = main agent will use placeholder text which is FORBIDDEN",
+    "Prioritize using pre-existing components from src/components/ui when applicable",
+    "Create new components that match the style and conventions of existing components when needed",
+    "Examine existing components to understand the project's component patterns before creating new ones",
+    "Components MUST use named exports (export const ComponentName = ...)",
+    "Pages MUST use default exports (export default function PageName() {...})",
+    "Use 'sonner' for toasts",
+    "Sonner component are located in '/app/src/components/ui/sonner.tsx'"
+  ]
+}

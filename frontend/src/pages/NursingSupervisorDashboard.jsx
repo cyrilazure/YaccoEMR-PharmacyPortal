@@ -1,0 +1,2087 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/lib/auth';
+import { nursingSupervisorAPI, patientAPI, bedManagementAPI, nurseAPI } from '@/lib/api';
+import { getErrorMessage } from '@/lib/utils';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { 
+  Dialog, DialogContent, DialogDescription, 
+  DialogHeader, DialogTitle, DialogFooter 
+} from '@/components/ui/dialog';
+import { 
+  Select, SelectContent, SelectItem, 
+  SelectTrigger, SelectValue 
+} from '@/components/ui/select';
+import { 
+  Table, TableBody, TableCell, 
+  TableHead, TableHeader, TableRow 
+} from '@/components/ui/table';
+import { Textarea } from '@/components/ui/textarea';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from 'sonner';
+import { 
+  Users, UserPlus, ClipboardList, FileText, 
+  Clock, CheckCircle, AlertCircle, RefreshCw,
+  Eye, UserCheck, Activity, Stethoscope, 
+  Calendar, ChevronRight, Search, Plus,
+  FileCheck, Send, Star, Loader2, Bed,
+  LogIn, LogOut, Timer, QrCode, Mic
+} from 'lucide-react';
+import PatientScanner from '@/components/PatientScanner';
+import VoiceDictation from '@/components/VoiceDictation';
+
+// Stat Card Component
+function StatCard({ label, value, icon: Icon, color = 'blue' }) {
+  const colors = {
+    blue: 'from-blue-500 to-blue-600',
+    emerald: 'from-emerald-500 to-emerald-600',
+    amber: 'from-amber-500 to-amber-600',
+    purple: 'from-purple-500 to-purple-600',
+    red: 'from-red-500 to-red-600',
+    slate: 'from-slate-500 to-slate-600'
+  };
+  
+  return (
+    <Card className="relative overflow-hidden">
+      <CardContent className="pt-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-slate-500">{label}</p>
+            <p className="text-2xl font-bold">{value}</p>
+          </div>
+          <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${colors[color]} flex items-center justify-center`}>
+            <Icon className="w-6 h-6 text-white" />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+export default function NursingSupervisorDashboard() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  
+  const [loading, setLoading] = useState(true);
+  const [dashboard, setDashboard] = useState(null);
+  const [nurses, setNurses] = useState([]);
+  const [reports, setReports] = useState([]);
+  const [currentShifts, setCurrentShifts] = useState([]);
+  const [unassignedPatients, setUnassignedPatients] = useState([]);
+  const [bedCensus, setBedCensus] = useState({ summary: {}, wards: [] });
+  const [wards, setWards] = useState([]);
+  const [beds, setBeds] = useState([]);
+  const [admissions, setAdmissions] = useState([]);
+  
+  // Dialogs
+  const [assignPatientOpen, setAssignPatientOpen] = useState(false);
+  const [assignTaskOpen, setAssignTaskOpen] = useState(false);
+  const [viewReportOpen, setViewReportOpen] = useState(false);
+  const [reviewReportOpen, setReviewReportOpen] = useState(false);
+  const [viewNurseOpen, setViewNurseOpen] = useState(false);
+  
+  // Selected items
+  const [selectedNurse, setSelectedNurse] = useState(null);
+  const [selectedReport, setSelectedReport] = useState(null);
+  const [selectedPatient, setSelectedPatient] = useState(null);
+  
+  // Form states
+  const [assignmentForm, setAssignmentForm] = useState({
+    patient_id: '',
+    nurse_id: '',
+    room_bed: '',
+    acuity_level: 2,
+    notes: ''
+  });
+  const [taskForm, setTaskForm] = useState({
+    patient_id: '',
+    nurse_id: '',
+    task_type: 'vitals_due',
+    description: '',
+    priority: 'routine'
+  });
+  const [reviewNotes, setReviewNotes] = useState('');
+  
+  const [saving, setSaving] = useState(false);
+  const [nurseWorkload, setNurseWorkload] = useState(null);
+  
+  // Handoff notes and force clock-out
+  const [handoffNotes, setHandoffNotes] = useState([]);
+  const [forceClockOutOpen, setForceClockOutOpen] = useState(false);
+  const [forceClockOutReason, setForceClockOutReason] = useState('Forgot to clock out');
+  const [viewHandoffOpen, setViewHandoffOpen] = useState(false);
+  const [selectedHandoff, setSelectedHandoff] = useState(null);
+  
+  // Clock In/Out for Supervisor
+  const [myActiveShift, setMyActiveShift] = useState(null);
+  const [clockInOpen, setClockInOpen] = useState(false);
+  const [clockOutOpen, setClockOutOpen] = useState(false);
+  const [shiftType, setShiftType] = useState('day');
+  const [clockOutNotes, setClockOutNotes] = useState('');
+  const [clockingIn, setClockingIn] = useState(false);
+  const [clockingOut, setClockingOut] = useState(false);
+  
+  // Patient Search and Add Patient
+  const [allPatients, setAllPatients] = useState([]);
+  const [patientSearchQuery, setPatientSearchQuery] = useState('');
+  const [patientSearchResults, setPatientSearchResults] = useState([]);
+  const [searchingPatients, setSearchingPatients] = useState(false);
+  const [addPatientOpen, setAddPatientOpen] = useState(false);
+  const [newPatient, setNewPatient] = useState({
+    first_name: '',
+    last_name: '',
+    date_of_birth: '',
+    gender: 'male',
+    email: '',
+    phone: '',
+    address: '',
+    emergency_contact_name: '',
+    emergency_contact_phone: '',
+    insurance_provider: '',
+    insurance_id: '',
+    payment_type: 'insurance'
+  });
+  const [paymentType, setPaymentType] = useState('insurance');
+
+  // Access check
+  useEffect(() => {
+    const allowedRoles = ['nursing_supervisor', 'floor_supervisor', 'hospital_admin', 'super_admin', 'admin'];
+    if (user && !allowedRoles.includes(user.role)) {
+      toast.error('Access denied: Supervisor role required');
+      navigate('/');
+    }
+  }, [user, navigate]);
+
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const [dashRes, nursesRes, reportsRes, shiftsRes, unassignedRes, handoffRes] = await Promise.all([
+        nursingSupervisorAPI.getDashboard(),
+        nursingSupervisorAPI.listNurses({ on_shift_only: false }),
+        nursingSupervisorAPI.listReports({ status: 'submitted', limit: 20 }),
+        nursingSupervisorAPI.getCurrentShifts(),
+        nursingSupervisorAPI.getUnassignedPatients(),
+        nursingSupervisorAPI.getHandoffNotes({ hours: 24 })
+      ]);
+      
+      setDashboard(dashRes.data);
+      setNurses(nursesRes.data.nurses || []);
+      setReports(reportsRes.data.reports || []);
+      setCurrentShifts(shiftsRes.data.active_shifts || []);
+      setUnassignedPatients(unassignedRes.data.patients || []);
+      setHandoffNotes(handoffRes.data.handoff_notes || []);
+      
+      // Fetch bed management data
+      try {
+        const [wardsRes, censusRes, patientsRes] = await Promise.all([
+          bedManagementAPI.listWards(),
+          bedManagementAPI.getDashboard(),
+          patientAPI.getAll({ limit: 100 })
+        ]);
+        setWards(wardsRes.data.wards || []);
+        setBedCensus(censusRes.data || { summary: {}, wards: [] });
+        setAllPatients(patientsRes.data || []);
+      } catch (bedErr) {
+        console.error('Bed data fetch error:', bedErr);
+      }
+      
+      // Check supervisor's own shift status
+      try {
+        const shiftRes = await nurseAPI.getCurrentShift();
+        setMyActiveShift(shiftRes.data || null);
+      } catch (shiftErr) {
+        // No active shift or error
+        setMyActiveShift(null);
+      }
+    } catch (err) {
+      console.error('Dashboard fetch error:', err);
+      toast.error('Failed to load dashboard');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+    const interval = setInterval(fetchData, 60000);
+    return () => clearInterval(interval);
+  }, [fetchData]);
+
+  // Clock In Handler
+  const handleClockIn = async () => {
+    setClockingIn(true);
+    try {
+      await nurseAPI.clockIn({ shift_type: shiftType });
+      toast.success('Successfully clocked in!');
+      setClockInOpen(false);
+      fetchData(); // Refresh to get updated shift status
+    } catch (err) {
+      console.error('Clock in error:', err);
+      toast.error(getErrorMessage(err) || 'Failed to clock in');
+    } finally {
+      setClockingIn(false);
+    }
+  };
+  
+  // Clock Out Handler
+  const handleClockOut = async () => {
+    setClockingOut(true);
+    try {
+      await nurseAPI.clockOut(clockOutNotes || 'Shift completed');
+      toast.success('Successfully clocked out!');
+      setClockOutOpen(false);
+      setClockOutNotes('');
+      setMyActiveShift(null);
+      fetchData(); // Refresh
+    } catch (err) {
+      console.error('Clock out error:', err);
+      toast.error(getErrorMessage(err) || 'Failed to clock out');
+    } finally {
+      setClockingOut(false);
+    }
+  };
+  
+  // Calculate shift duration
+  const getShiftDuration = (startTime) => {
+    if (!startTime) return '0h 0m';
+    const start = new Date(startTime);
+    const now = new Date();
+    const diff = Math.floor((now - start) / 1000 / 60); // in minutes
+    const hours = Math.floor(diff / 60);
+    const minutes = diff % 60;
+    return `${hours}h ${minutes}m`;
+  };
+
+  // Patient Search
+  const handlePatientSearch = async (query) => {
+    setPatientSearchQuery(query);
+    if (!query || query.length < 2) {
+      setPatientSearchResults([]);
+      return;
+    }
+    
+    setSearchingPatients(true);
+    try {
+      const response = await patientAPI.getAll({ search: query });
+      setPatientSearchResults(response.data || []);
+    } catch (err) {
+      console.error('Patient search error:', err);
+      toast.error('Failed to search patients');
+    } finally {
+      setSearchingPatients(false);
+    }
+  };
+  
+  // Add Patient
+  const handleAddPatient = async (e) => {
+    e.preventDefault();
+    
+    if (paymentType === 'insurance' && (!newPatient.insurance_provider || !newPatient.insurance_id)) {
+      toast.error('Insurance information is required. Select "Pay Cash" to skip.');
+      return;
+    }
+    
+    setSaving(true);
+    try {
+      const patientData = {
+        ...newPatient,
+        payment_type: paymentType
+      };
+      const res = await patientAPI.create(patientData);
+      toast.success('Patient created successfully');
+      setAddPatientOpen(false);
+      setNewPatient({
+        first_name: '', last_name: '', date_of_birth: '', gender: 'male',
+        email: '', phone: '', address: '',
+        emergency_contact_name: '', emergency_contact_phone: '',
+        insurance_provider: '', insurance_id: '',
+        payment_type: 'insurance'
+      });
+      setPaymentType('insurance');
+      fetchData();
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Failed to create patient'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleAssignPatient = async () => {
+    if (!assignmentForm.patient_id || !assignmentForm.nurse_id) {
+      toast.error('Please select both patient and nurse');
+      return;
+    }
+    
+    setSaving(true);
+    try {
+      await nursingSupervisorAPI.assignPatient(assignmentForm);
+      toast.success('Patient assigned successfully');
+      setAssignPatientOpen(false);
+      setAssignmentForm({ patient_id: '', nurse_id: '', room_bed: '', acuity_level: 2, notes: '' });
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to assign patient');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleAssignTask = async () => {
+    if (!taskForm.patient_id || !taskForm.nurse_id || !taskForm.description) {
+      toast.error('Please fill all required fields');
+      return;
+    }
+    
+    setSaving(true);
+    try {
+      await nursingSupervisorAPI.assignTask(taskForm);
+      toast.success('Task assigned successfully');
+      setAssignTaskOpen(false);
+      setTaskForm({ patient_id: '', nurse_id: '', task_type: 'vitals_due', description: '', priority: 'routine' });
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to assign task');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleReviewReport = async () => {
+    if (!selectedReport || !reviewNotes.trim()) {
+      toast.error('Please add review notes');
+      return;
+    }
+    
+    setSaving(true);
+    try {
+      await nursingSupervisorAPI.reviewReport(selectedReport.id, reviewNotes);
+      toast.success('Report reviewed');
+      setReviewReportOpen(false);
+      setSelectedReport(null);
+      setReviewNotes('');
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to review report');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleViewNurseWorkload = async (nurse) => {
+    setSelectedNurse(nurse);
+    setViewNurseOpen(true);
+    try {
+      const res = await nursingSupervisorAPI.getNurseWorkload(nurse.id);
+      setNurseWorkload(res.data);
+    } catch (err) {
+      toast.error('Failed to load workload');
+    }
+  };
+
+  const handleForceClockOut = async () => {
+    if (!selectedNurse) return;
+    setSaving(true);
+    try {
+      await nursingSupervisorAPI.forceClockOut(selectedNurse.id, forceClockOutReason);
+      toast.success(`${selectedNurse.first_name} ${selectedNurse.last_name} has been clocked out`);
+      setForceClockOutOpen(false);
+      setSelectedNurse(null);
+      setForceClockOutReason('Forgot to clock out');
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to clock out nurse');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading && !dashboard) {
+    return (
+      <div className="space-y-6 p-6">
+        <Skeleton className="h-20 w-full" />
+        <div className="grid grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-24" />)}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6 p-6" data-testid="nursing-supervisor-dashboard">
+      {/* Header */}
+      <div className="flex items-center justify-between bg-white rounded-xl p-4 shadow-sm border">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-lg">
+            <Users className="w-7 h-7 text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">Nursing Supervisor</h1>
+            <p className="text-slate-500">Floor Management & Oversight</p>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          <PatientScanner 
+            buttonLabel="Scan Patient ID"
+            onPatientFound={(patient) => {
+              toast.success(`Patient verified: ${patient.first_name} ${patient.last_name} (MRN: ${patient.mrn})`);
+            }}
+          />
+          <Button onClick={() => setAddPatientOpen(true)} className="bg-sky-600 hover:bg-sky-700">
+            <Plus className="w-4 h-4 mr-2" />
+            Add Patient
+          </Button>
+          <Button onClick={() => setAssignPatientOpen(true)} className="bg-emerald-600 hover:bg-emerald-700">
+            <UserPlus className="w-4 h-4 mr-2" />
+            Assign Patient
+          </Button>
+          <Button onClick={() => setAssignTaskOpen(true)} variant="outline">
+            <Plus className="w-4 h-4 mr-2" />
+            Assign Task
+          </Button>
+          <Button variant="outline" size="icon" onClick={fetchData}>
+            <RefreshCw className="w-4 h-4" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Clock In/Out Status Card */}
+      <Card className={myActiveShift ? "border-emerald-200 bg-emerald-50/50" : "border-amber-200 bg-amber-50/50"}>
+        <CardContent className="py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center ${myActiveShift ? 'bg-emerald-100' : 'bg-amber-100'}`}>
+                {myActiveShift ? (
+                  <Timer className="w-6 h-6 text-emerald-600" />
+                ) : (
+                  <Clock className="w-6 h-6 text-amber-600" />
+                )}
+              </div>
+              <div>
+                {myActiveShift ? (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-emerald-500">ON SHIFT</Badge>
+                      <span className="text-sm font-medium text-emerald-700">
+                        {myActiveShift.shift_type?.toUpperCase()} Shift
+                      </span>
+                    </div>
+                    <p className="text-sm text-slate-600 mt-1">
+                      Started: {new Date(myActiveShift.clock_in_time).toLocaleTimeString()} • 
+                      Duration: <span className="font-semibold">{getShiftDuration(myActiveShift.clock_in_time)}</span>
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="font-medium text-amber-700">Not Clocked In</p>
+                    <p className="text-sm text-slate-500">Clock in to start your shift</p>
+                  </>
+                )}
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              {myActiveShift ? (
+                <Button 
+                  onClick={() => setClockOutOpen(true)}
+                  variant="outline"
+                  className="border-red-300 text-red-600 hover:bg-red-50"
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Clock Out
+                </Button>
+              ) : (
+                <Button 
+                  onClick={() => setClockInOpen(true)}
+                  className="bg-emerald-600 hover:bg-emerald-700"
+                >
+                  <LogIn className="w-4 h-4 mr-2" />
+                  Clock In
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Patient Search Bar */}
+      <Card>
+        <CardContent className="pt-4">
+          <div className="flex items-center gap-4">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                placeholder="Search patients by name or MRN..."
+                value={patientSearchQuery}
+                onChange={(e) => handlePatientSearch(e.target.value)}
+                className="pl-10"
+              />
+              {searchingPatients && (
+                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-gray-400" />
+              )}
+            </div>
+            <Button variant="outline" onClick={() => navigate('/patients')}>
+              <Users className="w-4 h-4 mr-2" />
+              View All Patients
+            </Button>
+          </div>
+          
+          {/* Search Results */}
+          {patientSearchResults.length > 0 && (
+            <div className="mt-4 border rounded-lg">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Patient</TableHead>
+                    <TableHead>MRN</TableHead>
+                    <TableHead>DOB</TableHead>
+                    <TableHead>Gender</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {patientSearchResults.slice(0, 5).map((patient) => (
+                    <TableRow key={patient.id}>
+                      <TableCell className="font-medium">
+                        {patient.first_name} {patient.last_name}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{patient.mrn}</Badge>
+                      </TableCell>
+                      <TableCell>{patient.date_of_birth}</TableCell>
+                      <TableCell className="capitalize">{patient.gender}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex gap-2 justify-end">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => navigate(`/patients/${patient.id}`)}
+                          >
+                            <Eye className="w-4 h-4 mr-1" />
+                            View
+                          </Button>
+                          <Button 
+                            size="sm"
+                            onClick={() => {
+                              setAssignmentForm({ ...assignmentForm, patient_id: patient.id });
+                              setSelectedPatient(patient);
+                              setAssignPatientOpen(true);
+                            }}
+                          >
+                            <UserPlus className="w-4 h-4 mr-1" />
+                            Assign
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              {patientSearchResults.length > 5 && (
+                <div className="p-2 text-center text-sm text-gray-500 border-t">
+                  Showing 5 of {patientSearchResults.length} results
+                </div>
+              )}
+            </div>
+          )}
+          
+          {patientSearchQuery.length >= 2 && patientSearchResults.length === 0 && !searchingPatients && (
+            <div className="mt-4 text-center py-4 text-gray-500">
+              No patients found matching "{patientSearchQuery}"
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+        <StatCard label="Nurses on Shift" value={dashboard?.nurses_on_shift || 0} icon={Users} color="emerald" />
+        <StatCard label="Total Nurses" value={dashboard?.total_nurses || 0} icon={Stethoscope} color="blue" />
+        <StatCard label="Active Assignments" value={dashboard?.active_assignments || 0} icon={UserCheck} color="purple" />
+        <StatCard label="Total Patients" value={dashboard?.total_patients || 0} icon={Activity} color="slate" />
+        <StatCard label="Reports to Review" value={dashboard?.pending_reports_for_review || 0} icon={FileText} color="amber" />
+        <StatCard label="Today's Reports" value={dashboard?.today_reports || 0} icon={FileCheck} color="emerald" />
+      </div>
+
+      {/* Tabs */}
+      <Tabs defaultValue="nurses" className="w-full">
+        <TabsList className="grid w-full grid-cols-6 max-w-3xl">
+          <TabsTrigger value="nurses">Nurses</TabsTrigger>
+          <TabsTrigger value="patients">
+            <Users className="w-4 h-4 mr-1.5 text-emerald-600" />
+            Patients
+          </TabsTrigger>
+          <TabsTrigger value="shifts">Current Shifts</TabsTrigger>
+          <TabsTrigger value="beds">
+            <Bed className="w-4 h-4 mr-1" />
+            Beds
+          </TabsTrigger>
+          <TabsTrigger value="handoff">
+            Handoff Notes
+            {handoffNotes.length > 0 && (
+              <Badge className="ml-2 bg-blue-500">{handoffNotes.length}</Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="reports">
+            Reports
+            {dashboard?.pending_reports_for_review > 0 && (
+              <Badge className="ml-2 bg-amber-500">{dashboard.pending_reports_for_review}</Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="unassigned">Unassigned</TabsTrigger>
+        </TabsList>
+
+        {/* Nurses Tab */}
+        <TabsContent value="nurses" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Nursing Staff</CardTitle>
+              <CardDescription>View all nurses and their current workload</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-lg border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nurse</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Shift</TableHead>
+                      <TableHead>Patients</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {nurses.map((nurse) => (
+                      <TableRow key={nurse.id}>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{nurse.first_name} {nurse.last_name}</p>
+                            <p className="text-sm text-gray-500">{nurse.email}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {nurse.active_shift ? (
+                            <Badge className="bg-emerald-100 text-emerald-700">On Shift</Badge>
+                          ) : (
+                            <Badge variant="outline">Off Duty</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {nurse.active_shift ? (
+                            <span className="text-sm">{nurse.active_shift.shift_type?.toUpperCase()}</span>
+                          ) : '-'}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">{nurse.patient_count || 0}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex gap-2 justify-end">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleViewNurseWorkload(nurse)}
+                            >
+                              <Eye className="w-4 h-4 mr-1" />
+                              View
+                            </Button>
+                            {nurse.active_shift && (
+                              <Button 
+                                size="sm" 
+                                variant="destructive"
+                                onClick={() => {
+                                  setSelectedNurse(nurse);
+                                  setForceClockOutOpen(true);
+                                }}
+                              >
+                                <Clock className="w-4 h-4 mr-1" />
+                                Clock Out
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {nurses.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-12 text-gray-500">
+                          No nurses found
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Patients Tab */}
+        <TabsContent value="patients" className="mt-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="w-5 h-5 text-emerald-600" />
+                  All Patients
+                </CardTitle>
+                <CardDescription>View and manage assigned patients</CardDescription>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Input
+                    placeholder="Search patients..."
+                    value={patientSearchQuery}
+                    onChange={(e) => handlePatientSearch(e.target.value)}
+                    className="pl-10 w-64"
+                  />
+                </div>
+                <Button onClick={() => setAddPatientOpen(true)} size="sm">
+                  <Plus className="w-4 h-4 mr-1" />
+                  Add Patient
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Patient Name</TableHead>
+                      <TableHead>MRN</TableHead>
+                      <TableHead>Age/Gender</TableHead>
+                      <TableHead>Insurance</TableHead>
+                      <TableHead>Assigned Nurse</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(patientSearchQuery.length >= 2 ? patientSearchResults : allPatients).length > 0 ? (
+                      (patientSearchQuery.length >= 2 ? patientSearchResults : allPatients).map((patient) => (
+                        <TableRow key={patient.id}>
+                          <TableCell className="font-medium">
+                            <div className="flex items-center gap-2">
+                              <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-semibold text-sm">
+                                {patient.first_name?.[0]}{patient.last_name?.[0]}
+                              </div>
+                              {patient.first_name} {patient.last_name}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{patient.mrn || 'N/A'}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            {patient.date_of_birth ? (
+                              <>
+                                {Math.floor((new Date() - new Date(patient.date_of_birth)) / (365.25 * 24 * 60 * 60 * 1000))}y
+                                <span className="text-muted-foreground ml-1">/ {patient.gender?.[0]?.toUpperCase()}</span>
+                              </>
+                            ) : (
+                              <span className="text-muted-foreground">{patient.gender || 'N/A'}</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {patient.insurance_provider ? (
+                              <Badge variant="secondary">{patient.insurance_provider}</Badge>
+                            ) : (
+                              <Badge variant="outline">Cash</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {patient.assigned_nurse ? (
+                              <span className="text-emerald-600">{patient.assigned_nurse}</span>
+                            ) : (
+                              <span className="text-amber-600 text-sm">Unassigned</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={patient.status === 'admitted' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}>
+                              {patient.status || 'Active'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => navigate(`/patients/${patient.id}`)}
+                              >
+                                <Eye className="w-4 h-4 mr-1" />
+                                View
+                              </Button>
+                              {!patient.assigned_nurse && (
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => {
+                                    setSelectedPatient(patient);
+                                    setAssignmentForm({...assignmentForm, patient_id: patient.id});
+                                    setAssignPatientOpen(true);
+                                  }}
+                                >
+                                  <UserPlus className="w-4 h-4 mr-1" />
+                                  Assign
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                          {loading ? (
+                            <div className="flex items-center justify-center gap-2">
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              Loading patients...
+                            </div>
+                          ) : patientSearchQuery.length >= 2 ? (
+                            'No patients found matching your search'
+                          ) : (
+                            'No patients registered yet'
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+              <div className="mt-4 text-sm text-muted-foreground">
+                Showing {(patientSearchQuery.length >= 2 ? patientSearchResults : allPatients).length} patients
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Current Shifts Tab */}
+        <TabsContent value="shifts" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Active Shifts</CardTitle>
+              <CardDescription>Currently clocked-in nursing staff</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {currentShifts.map((shift) => (
+                  <Card key={shift.id} className="border-l-4 border-l-emerald-500">
+                    <CardContent className="pt-4">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="font-medium">{shift.nurse_name}</p>
+                          <Badge className="mt-1">{shift.shift_type?.toUpperCase()}</Badge>
+                        </div>
+                        <Badge variant="secondary">{shift.patient_count || 0} patients</Badge>
+                      </div>
+                      <div className="mt-3 text-sm text-gray-500">
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-3 h-3" />
+                          Started: {new Date(shift.clock_in_time).toLocaleTimeString()}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+                {currentShifts.length === 0 && (
+                  <div className="col-span-full text-center py-12 text-gray-500">
+                    No active shifts
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Bed Management Tab */}
+        <TabsContent value="beds" className="mt-6">
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => navigate('/bed-management')}
+                  className="gap-2 bg-sky-600 hover:bg-sky-700"
+                >
+                  <Bed className="w-4 h-4" /> Full Bed Management
+                </Button>
+                <Button 
+                  onClick={() => navigate('/patients')}
+                  variant="outline"
+                  className="gap-2"
+                >
+                  <Users className="w-4 h-4" /> View All Patients
+                </Button>
+              </div>
+              <Button variant="outline" onClick={fetchData} size="sm">
+                <RefreshCw className="w-4 h-4 mr-2" /> Refresh
+              </Button>
+            </div>
+            
+            {/* Bed Census Summary */}
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              <Card className="bg-slate-50">
+                <CardContent className="p-4 text-center">
+                  <p className="text-2xl font-bold text-slate-800">{bedCensus.summary?.total_beds || 0}</p>
+                  <p className="text-sm text-slate-500">Total Beds</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-green-50 border-green-200">
+                <CardContent className="p-4 text-center">
+                  <p className="text-2xl font-bold text-green-700">{bedCensus.summary?.available || bedCensus.summary?.available_beds || 0}</p>
+                  <p className="text-sm text-green-600">Available</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-blue-50 border-blue-200">
+                <CardContent className="p-4 text-center">
+                  <p className="text-2xl font-bold text-blue-700">{bedCensus.summary?.occupied || bedCensus.summary?.occupied_beds || 0}</p>
+                  <p className="text-sm text-blue-600">Occupied</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-amber-50 border-amber-200">
+                <CardContent className="p-4 text-center">
+                  <p className="text-2xl font-bold text-amber-700">{bedCensus.summary?.reserved || bedCensus.summary?.reserved_beds || 0}</p>
+                  <p className="text-sm text-amber-600">Reserved</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-purple-50 border-purple-200">
+                <CardContent className="p-4 text-center">
+                  <p className="text-2xl font-bold text-purple-700">{bedCensus.summary?.overall_occupancy !== undefined ? `${Math.round(bedCensus.summary.overall_occupancy)}%` : (bedCensus.summary?.occupancy_rate ? `${Math.round(bedCensus.summary.occupancy_rate)}%` : '0%')}</p>
+                  <p className="text-sm text-purple-600">Occupancy</p>
+                </CardContent>
+              </Card>
+            </div>
+            
+            {/* Ward Overview */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Bed className="w-5 h-5 text-sky-600" />
+                  Ward Census
+                </CardTitle>
+                <CardDescription>Real-time bed availability by ward</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {wards.length > 0 ? (
+                  <div className="space-y-3">
+                    {wards.map((ward) => {
+                      const occupancy = ward.total_beds > 0 ? ((ward.occupied_beds || 0) / ward.total_beds * 100) : 0;
+                      const statusColor = occupancy >= 90 ? 'bg-red-500' : occupancy >= 70 ? 'bg-amber-500' : 'bg-green-500';
+                      
+                      return (
+                        <div key={ward.id} className="p-4 border rounded-lg hover:bg-slate-50">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-3 h-3 rounded-full ${statusColor}`} />
+                              <div>
+                                <p className="font-medium">{ward.name}</p>
+                                <p className="text-sm text-slate-500">
+                                  {ward.ward_type || 'General'} • {ward.specialty || 'Mixed'}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-semibold">
+                                {ward.available_beds || (ward.total_beds - (ward.occupied_beds || 0))} / {ward.total_beds || 0}
+                              </p>
+                              <p className="text-xs text-slate-500">Available Beds</p>
+                            </div>
+                          </div>
+                          <div className="w-full bg-slate-200 rounded-full h-2">
+                            <div 
+                              className={`h-2 rounded-full ${statusColor}`} 
+                              style={{ width: `${occupancy}%` }}
+                            />
+                          </div>
+                          <div className="flex justify-between mt-2 text-xs text-slate-500">
+                            <span>Occupied: {ward.occupied_beds || 0}</span>
+                            <span>Reserved: {ward.reserved_beds || 0}</span>
+                            <span>{Math.round(occupancy)}% Full</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-slate-500">
+                    <Bed className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                    <p>No wards configured yet.</p>
+                    <Button 
+                      variant="link" 
+                      onClick={() => navigate('/bed-management')}
+                      className="mt-2"
+                    >
+                      Set up wards in Bed Management →
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* Handoff Notes Tab */}
+        <TabsContent value="handoff" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ClipboardList className="w-5 h-5 text-blue-600" />
+                Shift Handoff Notes (Last 24 Hours)
+              </CardTitle>
+              <CardDescription>Notes from nurses who have clocked out, including their assigned patients</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[500px]">
+                <div className="space-y-4">
+                  {handoffNotes.map((note) => (
+                    <Card key={note.id} className="border-l-4 border-l-blue-500">
+                      <CardContent className="pt-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <p className="font-semibold">{note.nurse_name}</p>
+                              <Badge className="bg-blue-100 text-blue-700">
+                                {note.shift_type?.toUpperCase()}
+                              </Badge>
+                              {note.forced_clock_out && (
+                                <Badge variant="destructive">Forced Out</Badge>
+                              )}
+                            </div>
+                            <p className="text-sm text-gray-500 mt-1">
+                              Clocked out: {new Date(note.clock_out_time).toLocaleString()}
+                            </p>
+                            
+                            {/* Patients handled during this shift */}
+                            {note.patients && note.patients.length > 0 && (
+                              <div className="mt-3 p-2 bg-slate-50 rounded">
+                                <p className="text-xs font-medium text-slate-600 mb-1">Patients Assigned:</p>
+                                <div className="flex flex-wrap gap-1">
+                                  {note.patients.map((p, idx) => (
+                                    <Badge key={idx} variant="outline" className="text-xs">
+                                      {p.patient_name} {p.room_bed && `(${p.room_bed})`}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Handoff Notes Content */}
+                            <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+                              <p className="text-xs font-medium text-blue-800 mb-1">Handoff Notes:</p>
+                              <p className="text-sm text-blue-900 whitespace-pre-wrap">{note.handoff_notes}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                  {handoffNotes.length === 0 && (
+                    <div className="text-center py-12 text-gray-500">
+                      <ClipboardList className="w-10 h-10 mx-auto mb-3 text-gray-300" />
+                      <p>No handoff notes in the last 24 hours</p>
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Reports Tab */}
+        <TabsContent value="reports" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Shift Reports (Read-Only)</CardTitle>
+              <CardDescription>Review submitted reports from nursing staff</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[500px]">
+                <div className="space-y-4">
+                  {reports.map((report) => (
+                    <Card key={report.id} className={report.status === 'submitted' ? 'border-amber-200 bg-amber-50' : ''}>
+                      <CardContent className="pt-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium">{report.title}</p>
+                              <Badge className={
+                                report.status === 'submitted' ? 'bg-amber-100 text-amber-700' :
+                                report.status === 'reviewed' ? 'bg-emerald-100 text-emerald-700' :
+                                'bg-gray-100 text-gray-700'
+                              }>
+                                {report.status?.toUpperCase()}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-gray-600 mt-1">{report.nurse_name}</p>
+                            <p className="text-xs text-gray-400 mt-1">
+                              {report.shift_type?.toUpperCase()} • {new Date(report.created_at).toLocaleString()}
+                            </p>
+                            <p className="text-sm mt-2 line-clamp-2">{report.content}</p>
+                          </div>
+                          <div className="flex gap-2 ml-4">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => {
+                                setSelectedReport(report);
+                                setViewReportOpen(true);
+                              }}
+                            >
+                              <Eye className="w-4 h-4 mr-1" />
+                              View
+                            </Button>
+                            {report.status === 'submitted' && (
+                              <Button 
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedReport(report);
+                                  setReviewReportOpen(true);
+                                }}
+                              >
+                                <CheckCircle className="w-4 h-4 mr-1" />
+                                Review
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                  {reports.length === 0 && (
+                    <div className="text-center py-12 text-gray-500">
+                      No reports to review
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Unassigned Patients Tab */}
+        <TabsContent value="unassigned" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Unassigned Patients</CardTitle>
+              <CardDescription>Patients without a nurse assignment</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {unassignedPatients.map((patient) => (
+                  <Card key={patient.id} className="border-l-4 border-l-amber-500">
+                    <CardContent className="pt-4">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="font-medium">{patient.first_name} {patient.last_name}</p>
+                          <p className="text-sm text-gray-500">MRN: {patient.mrn || 'N/A'}</p>
+                        </div>
+                        <Button 
+                          size="sm"
+                          onClick={() => {
+                            setAssignmentForm({ ...assignmentForm, patient_id: patient.id });
+                            setSelectedPatient(patient);
+                            setAssignPatientOpen(true);
+                          }}
+                        >
+                          <UserPlus className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+                {unassignedPatients.length === 0 && (
+                  <div className="col-span-full text-center py-12 text-gray-500">
+                    All patients are assigned
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Assign Patient Dialog */}
+      <Dialog open={assignPatientOpen} onOpenChange={setAssignPatientOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assign Patient to Nurse</DialogTitle>
+            <DialogDescription>
+              {selectedPatient 
+                ? `Assign ${selectedPatient.first_name} ${selectedPatient.last_name} to a nurse`
+                : 'Select a patient and nurse for assignment'
+              }
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {!selectedPatient && (
+              <div className="space-y-2">
+                <Label>Patient</Label>
+                <Select 
+                  value={assignmentForm.patient_id} 
+                  onValueChange={(v) => setAssignmentForm({...assignmentForm, patient_id: v})}
+                >
+                  <SelectTrigger><SelectValue placeholder="Select patient" /></SelectTrigger>
+                  <SelectContent>
+                    {unassignedPatients.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.first_name} {p.last_name} ({p.mrn || 'No MRN'})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            
+            <div className="space-y-2">
+              <Label>Assign to Nurse</Label>
+              <Select 
+                value={assignmentForm.nurse_id} 
+                onValueChange={(v) => setAssignmentForm({...assignmentForm, nurse_id: v})}
+              >
+                <SelectTrigger><SelectValue placeholder="Select nurse" /></SelectTrigger>
+                <SelectContent>
+                  {/* Show on-shift nurses first, then others */}
+                  {nurses.length > 0 ? (
+                    <>
+                      {nurses.filter(n => n.active_shift).length > 0 && (
+                        <div className="px-2 py-1 text-xs font-semibold text-green-700 bg-green-50">On Shift</div>
+                      )}
+                      {nurses.filter(n => n.active_shift).map((n) => (
+                        <SelectItem key={n.id} value={n.id}>
+                          <span className="flex items-center gap-2">
+                            <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                            {n.first_name} {n.last_name} ({n.patient_count || 0} patients)
+                          </span>
+                        </SelectItem>
+                      ))}
+                      {nurses.filter(n => !n.active_shift).length > 0 && (
+                        <div className="px-2 py-1 text-xs font-semibold text-slate-500 bg-slate-50 mt-1">Available Nurses</div>
+                      )}
+                      {nurses.filter(n => !n.active_shift).map((n) => (
+                        <SelectItem key={n.id} value={n.id}>
+                          <span className="flex items-center gap-2">
+                            <span className="w-2 h-2 bg-slate-300 rounded-full"></span>
+                            {n.first_name} {n.last_name}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </>
+                  ) : (
+                    <div className="px-3 py-2 text-sm text-slate-500">No nurses available</div>
+                  )}
+                </SelectContent>
+              </Select>
+              {nurses.length === 0 && (
+                <p className="text-xs text-amber-600">No nurses found. Please ensure nurses are registered in the system.</p>
+              )}
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Room/Bed</Label>
+                <Input 
+                  placeholder="e.g., 301-A"
+                  value={assignmentForm.room_bed}
+                  onChange={(e) => setAssignmentForm({...assignmentForm, room_bed: e.target.value})}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Acuity Level (1-5)</Label>
+                <Select 
+                  value={String(assignmentForm.acuity_level)} 
+                  onValueChange={(v) => setAssignmentForm({...assignmentForm, acuity_level: parseInt(v)})}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">1 - Stable</SelectItem>
+                    <SelectItem value="2">2 - Low Risk</SelectItem>
+                    <SelectItem value="3">3 - Moderate</SelectItem>
+                    <SelectItem value="4">4 - High Risk</SelectItem>
+                    <SelectItem value="5">5 - Critical</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>Notes</Label>
+                <VoiceDictation
+                  onTranscriptionComplete={(text) => setAssignmentForm({...assignmentForm, notes: text})}
+                  context="nursing"
+                  targetField="assignment notes"
+                  appendMode={!!assignmentForm.notes}
+                  currentValue={assignmentForm.notes}
+                  buttonVariant="outline"
+                  buttonSize="sm"
+                  noteType="nursing_assessment"
+                  enableAiExpand={true}
+                />
+              </div>
+              <Textarea 
+                placeholder="Assignment notes... or use voice dictation"
+                value={assignmentForm.notes}
+                onChange={(e) => setAssignmentForm({...assignmentForm, notes: e.target.value})}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setAssignPatientOpen(false);
+              setSelectedPatient(null);
+              setAssignmentForm({ patient_id: '', nurse_id: '', room_bed: '', acuity_level: 2, notes: '' });
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={handleAssignPatient} disabled={saving}>
+              {saving ? 'Assigning...' : 'Assign Patient'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Assign Task Dialog */}
+      <Dialog open={assignTaskOpen} onOpenChange={setAssignTaskOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assign Task to Nurse</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Patient</Label>
+              <Select 
+                value={taskForm.patient_id} 
+                onValueChange={(v) => setTaskForm({...taskForm, patient_id: v})}
+              >
+                <SelectTrigger><SelectValue placeholder="Select patient" /></SelectTrigger>
+                <SelectContent>
+                  {unassignedPatients.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.first_name} {p.last_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Assign to Nurse</Label>
+              <Select 
+                value={taskForm.nurse_id} 
+                onValueChange={(v) => setTaskForm({...taskForm, nurse_id: v})}
+              >
+                <SelectTrigger><SelectValue placeholder="Select nurse" /></SelectTrigger>
+                <SelectContent>
+                  {nurses.length > 0 ? (
+                    <>
+                      {nurses.filter(n => n.active_shift).map((n) => (
+                        <SelectItem key={n.id} value={n.id}>
+                          <span className="flex items-center gap-2">
+                            <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                            {n.first_name} {n.last_name}
+                          </span>
+                        </SelectItem>
+                      ))}
+                      {nurses.filter(n => !n.active_shift).map((n) => (
+                        <SelectItem key={n.id} value={n.id}>
+                          <span className="flex items-center gap-2">
+                            <span className="w-2 h-2 bg-slate-300 rounded-full"></span>
+                            {n.first_name} {n.last_name}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </>
+                  ) : (
+                    <div className="px-3 py-2 text-sm text-slate-500">No nurses available</div>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Task Type</Label>
+                <Select 
+                  value={taskForm.task_type} 
+                  onValueChange={(v) => setTaskForm({...taskForm, task_type: v})}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="vitals_due">Vitals Check</SelectItem>
+                    <SelectItem value="medication_admin">Medication Admin</SelectItem>
+                    <SelectItem value="wound_care">Wound Care</SelectItem>
+                    <SelectItem value="lab_draw">Lab Draw</SelectItem>
+                    <SelectItem value="assessment">Assessment</SelectItem>
+                    <SelectItem value="discharge_prep">Discharge Prep</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Priority</Label>
+                <Select 
+                  value={taskForm.priority} 
+                  onValueChange={(v) => setTaskForm({...taskForm, priority: v})}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="stat">STAT</SelectItem>
+                    <SelectItem value="urgent">Urgent</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="routine">Routine</SelectItem>
+                    <SelectItem value="low">Low</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Description *</Label>
+              <Textarea 
+                placeholder="Task description..."
+                value={taskForm.description}
+                onChange={(e) => setTaskForm({...taskForm, description: e.target.value})}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAssignTaskOpen(false)}>Cancel</Button>
+            <Button onClick={handleAssignTask} disabled={saving}>
+              {saving ? 'Assigning...' : 'Assign Task'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Report Dialog */}
+      <Dialog open={viewReportOpen} onOpenChange={setViewReportOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Shift Report</DialogTitle>
+          </DialogHeader>
+          
+          {selectedReport && (
+            <ScrollArea className="max-h-[60vh]">
+              <div className="space-y-4 py-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-semibold text-lg">{selectedReport.title}</h3>
+                    <p className="text-sm text-gray-500">{selectedReport.nurse_name} • {selectedReport.shift_type?.toUpperCase()}</p>
+                  </div>
+                  <Badge className={
+                    selectedReport.status === 'submitted' ? 'bg-amber-100 text-amber-700' :
+                    selectedReport.status === 'reviewed' ? 'bg-emerald-100 text-emerald-700' :
+                    'bg-gray-100 text-gray-700'
+                  }>
+                    {selectedReport.status?.toUpperCase()}
+                  </Badge>
+                </div>
+                
+                <Separator />
+                
+                <div>
+                  <Label className="text-xs text-gray-500">Report Content</Label>
+                  <p className="mt-1 whitespace-pre-wrap">{selectedReport.content}</p>
+                </div>
+                
+                {selectedReport.patient_summary && (
+                  <div>
+                    <Label className="text-xs text-gray-500">Patient Summary</Label>
+                    <p className="mt-1 whitespace-pre-wrap">{selectedReport.patient_summary}</p>
+                  </div>
+                )}
+                
+                {selectedReport.critical_events && (
+                  <div>
+                    <Label className="text-xs text-gray-500">Critical Events</Label>
+                    <p className="mt-1 whitespace-pre-wrap text-red-700">{selectedReport.critical_events}</p>
+                  </div>
+                )}
+                
+                {selectedReport.pending_items && (
+                  <div>
+                    <Label className="text-xs text-gray-500">Pending Items</Label>
+                    <p className="mt-1 whitespace-pre-wrap">{selectedReport.pending_items}</p>
+                  </div>
+                )}
+                
+                {selectedReport.recommendations && (
+                  <div>
+                    <Label className="text-xs text-gray-500">Recommendations</Label>
+                    <p className="mt-1 whitespace-pre-wrap">{selectedReport.recommendations}</p>
+                  </div>
+                )}
+                
+                <div className="flex items-center gap-4 text-sm text-gray-500">
+                  <span>Patients: {selectedReport.patient_count}</span>
+                  <span>Submitted: {new Date(selectedReport.created_at).toLocaleString()}</span>
+                </div>
+                
+                {selectedReport.review_notes && (
+                  <Alert className="bg-emerald-50 border-emerald-200">
+                    <CheckCircle className="h-4 w-4 text-emerald-600" />
+                    <AlertTitle className="text-emerald-800">Supervisor Review</AlertTitle>
+                    <AlertDescription className="text-emerald-700">
+                      <p className="mt-1">{selectedReport.review_notes}</p>
+                      <p className="text-xs mt-2">Reviewed by {selectedReport.reviewed_by_name} on {new Date(selectedReport.reviewed_at).toLocaleString()}</p>
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+            </ScrollArea>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewReportOpen(false)}>Close</Button>
+            {selectedReport?.status === 'submitted' && (
+              <Button onClick={() => {
+                setViewReportOpen(false);
+                setReviewReportOpen(true);
+              }}>
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Review Report
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Review Report Dialog */}
+      <Dialog open={reviewReportOpen} onOpenChange={setReviewReportOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Review Report</DialogTitle>
+            <DialogDescription>
+              Add your review notes for this shift report
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {selectedReport && (
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <p className="font-medium">{selectedReport.title}</p>
+                <p className="text-sm text-gray-500">{selectedReport.nurse_name}</p>
+              </div>
+            )}
+            
+            <div className="space-y-2">
+              <Label>Review Notes *</Label>
+              <Textarea 
+                placeholder="Add your review comments, feedback, or follow-up items..."
+                value={reviewNotes}
+                onChange={(e) => setReviewNotes(e.target.value)}
+                rows={4}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setReviewReportOpen(false);
+              setReviewNotes('');
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={handleReviewReport} disabled={saving || !reviewNotes.trim()}>
+              {saving ? 'Submitting...' : 'Mark as Reviewed'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Nurse Workload Dialog */}
+      <Dialog open={viewNurseOpen} onOpenChange={setViewNurseOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Nurse Workload</DialogTitle>
+          </DialogHeader>
+          
+          {nurseWorkload && (
+            <div className="space-y-4 py-4">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center text-white font-bold">
+                  {nurseWorkload.nurse?.first_name?.[0]}{nurseWorkload.nurse?.last_name?.[0]}
+                </div>
+                <div>
+                  <p className="font-semibold">{nurseWorkload.nurse?.first_name} {nurseWorkload.nurse?.last_name}</p>
+                  <p className="text-sm text-gray-500">{nurseWorkload.nurse?.email}</p>
+                </div>
+              </div>
+              
+              <Separator />
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-3 bg-emerald-50 rounded-lg text-center">
+                  <p className="text-2xl font-bold text-emerald-700">{nurseWorkload.patient_count}</p>
+                  <p className="text-xs text-emerald-600">Assigned Patients</p>
+                </div>
+                <div className="p-3 bg-amber-50 rounded-lg text-center">
+                  <p className="text-2xl font-bold text-amber-700">{nurseWorkload.pending_tasks}</p>
+                  <p className="text-xs text-amber-600">Pending Tasks</p>
+                </div>
+                <div className="p-3 bg-red-50 rounded-lg text-center">
+                  <p className="text-2xl font-bold text-red-700">{nurseWorkload.overdue_tasks}</p>
+                  <p className="text-xs text-red-600">Overdue Tasks</p>
+                </div>
+                <div className="p-3 bg-blue-50 rounded-lg text-center">
+                  <p className="text-2xl font-bold text-blue-700">
+                    {nurseWorkload.active_shift ? 'Yes' : 'No'}
+                  </p>
+                  <p className="text-xs text-blue-600">On Shift</p>
+                </div>
+              </div>
+              
+              {nurseWorkload.active_shift && (
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <p className="text-sm font-medium">Current Shift</p>
+                  <p className="text-sm text-gray-600">
+                    {nurseWorkload.active_shift.shift_type?.toUpperCase()} • 
+                    Started {new Date(nurseWorkload.active_shift.clock_in_time).toLocaleTimeString()}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setViewNurseOpen(false);
+              setNurseWorkload(null);
+            }}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Force Clock-Out Dialog */}
+      <Dialog open={forceClockOutOpen} onOpenChange={setForceClockOutOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <Clock className="w-5 h-5" />
+              Force Clock-Out
+            </DialogTitle>
+            <DialogDescription>
+              This will end the nurse's shift and notify them.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedNurse && (
+            <div className="space-y-4 py-4">
+              <div className="p-3 bg-slate-50 rounded-lg">
+                <p className="font-medium">{selectedNurse.first_name} {selectedNurse.last_name}</p>
+                <p className="text-sm text-gray-500">{selectedNurse.email}</p>
+                {selectedNurse.active_shift && (
+                  <p className="text-sm text-emerald-600 mt-1">
+                    On shift since: {new Date(selectedNurse.active_shift.clock_in_time).toLocaleString()}
+                  </p>
+                )}
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Reason for Force Clock-Out</Label>
+                <Select 
+                  value={forceClockOutReason} 
+                  onValueChange={setForceClockOutReason}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Forgot to clock out">Forgot to clock out</SelectItem>
+                    <SelectItem value="Shift ended - system correction">Shift ended - system correction</SelectItem>
+                    <SelectItem value="Emergency shift change">Emergency shift change</SelectItem>
+                    <SelectItem value="Administrative action">Administrative action</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setForceClockOutOpen(false);
+              setSelectedNurse(null);
+            }}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleForceClockOut}
+              disabled={saving}
+            >
+              {saving ? 'Processing...' : 'Confirm Clock-Out'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Patient Dialog */}
+      <Dialog open={addPatientOpen} onOpenChange={setAddPatientOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="w-5 h-5 text-sky-600" />
+              Add New Patient
+            </DialogTitle>
+            <DialogDescription>
+              Register a new patient in the system
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleAddPatient} className="space-y-4 py-4">
+            {/* Basic Information */}
+            <div className="space-y-3">
+              <h4 className="font-medium text-sm text-gray-700">Basic Information</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>First Name *</Label>
+                  <Input
+                    value={newPatient.first_name}
+                    onChange={(e) => setNewPatient({...newPatient, first_name: e.target.value})}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Last Name *</Label>
+                  <Input
+                    value={newPatient.last_name}
+                    onChange={(e) => setNewPatient({...newPatient, last_name: e.target.value})}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Date of Birth *</Label>
+                  <Input
+                    type="date"
+                    value={newPatient.date_of_birth}
+                    onChange={(e) => setNewPatient({...newPatient, date_of_birth: e.target.value})}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Gender *</Label>
+                  <Select 
+                    value={newPatient.gender} 
+                    onValueChange={(v) => setNewPatient({...newPatient, gender: v})}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="male">Male</SelectItem>
+                      <SelectItem value="female">Female</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+            
+            <Separator />
+            
+            {/* Contact Information */}
+            <div className="space-y-3">
+              <h4 className="font-medium text-sm text-gray-700">Contact Information</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Email</Label>
+                  <Input
+                    type="email"
+                    value={newPatient.email}
+                    onChange={(e) => setNewPatient({...newPatient, email: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Phone</Label>
+                  <Input
+                    value={newPatient.phone}
+                    onChange={(e) => setNewPatient({...newPatient, phone: e.target.value})}
+                    placeholder="+233-XXX-XXXXXX"
+                  />
+                </div>
+                <div className="col-span-2 space-y-2">
+                  <Label>Address</Label>
+                  <Input
+                    value={newPatient.address}
+                    onChange={(e) => setNewPatient({...newPatient, address: e.target.value})}
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <Separator />
+            
+            {/* Emergency Contact */}
+            <div className="space-y-3">
+              <h4 className="font-medium text-sm text-gray-700">Emergency Contact</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Contact Name</Label>
+                  <Input
+                    value={newPatient.emergency_contact_name}
+                    onChange={(e) => setNewPatient({...newPatient, emergency_contact_name: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Contact Phone</Label>
+                  <Input
+                    value={newPatient.emergency_contact_phone}
+                    onChange={(e) => setNewPatient({...newPatient, emergency_contact_phone: e.target.value})}
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <Separator />
+            
+            {/* Payment & Insurance */}
+            <div className="space-y-3">
+              <h4 className="font-medium text-sm text-gray-700">Payment Information</h4>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Payment Type</Label>
+                  <Select value={paymentType} onValueChange={setPaymentType}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="insurance">Insurance</SelectItem>
+                      <SelectItem value="cash">Cash / Self-Pay</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {paymentType === 'insurance' && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Insurance Provider *</Label>
+                      <Select
+                        value={newPatient.insurance_provider}
+                        onValueChange={(value) => setNewPatient({...newPatient, insurance_provider: value})}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select provider" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {/* Government Insurance */}
+                          <SelectItem value="NHIS">NHIS (National Health Insurance)</SelectItem>
+                          
+                          {/* Private Health Insurance - Major Providers */}
+                          <SelectItem value="Acacia Health">Acacia Health Insurance</SelectItem>
+                          <SelectItem value="Apex Health Insurance">Apex Health Insurance</SelectItem>
+                          <SelectItem value="Cosmopolitan Health Insurance">Cosmopolitan Health Insurance</SelectItem>
+                          <SelectItem value="Enterprise Life">Enterprise Life Assurance</SelectItem>
+                          <SelectItem value="Glico Healthcare">Glico Healthcare</SelectItem>
+                          <SelectItem value="Metropolitan Insurance">Metropolitan Health Insurance</SelectItem>
+                          <SelectItem value="Nationwide Medical">Nationwide Medical Insurance</SelectItem>
+                          <SelectItem value="Phoenix Health Insurance">Phoenix Health Insurance</SelectItem>
+                          <SelectItem value="Premier Health Insurance">Premier Health Insurance</SelectItem>
+                          <SelectItem value="Star Assurance">Star Assurance Health</SelectItem>
+                          <SelectItem value="Vanguard Assurance">Vanguard Assurance</SelectItem>
+                          
+                          {/* Corporate/Group Plans */}
+                          <SelectItem value="SIC Insurance">SIC Insurance Company</SelectItem>
+                          <SelectItem value="Ghana Union Assurance">Ghana Union Assurance</SelectItem>
+                          <SelectItem value="Activa International">Activa International Insurance</SelectItem>
+                          <SelectItem value="Donewell Insurance">Donewell Insurance</SelectItem>
+                          <SelectItem value="Hollard Insurance">Hollard Insurance Ghana</SelectItem>
+                          <SelectItem value="Old Mutual">Old Mutual Ghana</SelectItem>
+                          <SelectItem value="Prudential Life">Prudential Life Insurance Ghana</SelectItem>
+                          
+                          {/* HMO / Managed Care */}
+                          <SelectItem value="AAR Health Services">AAR Health Services</SelectItem>
+                          <SelectItem value="Medivac Healthcare">Medivac Healthcare</SelectItem>
+                          
+                          {/* Other */}
+                          <SelectItem value="Other">Other Insurance Provider</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Insurance ID *</Label>
+                      <Input
+                        value={newPatient.insurance_id}
+                        onChange={(e) => setNewPatient({...newPatient, insurance_id: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <DialogFooter className="pt-4">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => {
+                  setAddPatientOpen(false);
+                  setNewPatient({
+                    first_name: '', last_name: '', date_of_birth: '', gender: 'male',
+                    email: '', phone: '', address: '',
+                    emergency_contact_name: '', emergency_contact_phone: '',
+                    insurance_provider: '', insurance_id: '',
+                    payment_type: 'insurance'
+                  });
+                  setPaymentType('insurance');
+                }}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" className="bg-sky-600 hover:bg-sky-700" disabled={saving}>
+                {saving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Create Patient
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Clock In Dialog */}
+      <Dialog open={clockInOpen} onOpenChange={setClockInOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <LogIn className="w-5 h-5 text-emerald-600" />
+              Clock In to Shift
+            </DialogTitle>
+            <DialogDescription>
+              Start your shift as Nursing Supervisor
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Select Shift Type</Label>
+              <Select value={shiftType} onValueChange={setShiftType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select shift type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="day">Day Shift (7AM - 3PM)</SelectItem>
+                  <SelectItem value="evening">Evening Shift (3PM - 11PM)</SelectItem>
+                  <SelectItem value="night">Night Shift (11PM - 7AM)</SelectItem>
+                  <SelectItem value="12hr_day">12-Hour Day (7AM - 7PM)</SelectItem>
+                  <SelectItem value="12hr_night">12-Hour Night (7PM - 7AM)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Alert>
+              <Clock className="w-4 h-4" />
+              <AlertTitle>Current Time</AlertTitle>
+              <AlertDescription>
+                {new Date().toLocaleString()}
+              </AlertDescription>
+            </Alert>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setClockInOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleClockIn} 
+              disabled={clockingIn}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              {clockingIn ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Clocking In...
+                </>
+              ) : (
+                <>
+                  <LogIn className="w-4 h-4 mr-2" />
+                  Clock In
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Clock Out Dialog */}
+      <Dialog open={clockOutOpen} onOpenChange={setClockOutOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <LogOut className="w-5 h-5 text-red-600" />
+              Clock Out
+            </DialogTitle>
+            <DialogDescription>
+              End your current shift
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {myActiveShift && (
+              <div className="p-4 bg-slate-50 rounded-lg">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-slate-500">Shift Type</p>
+                    <p className="font-medium">{myActiveShift.shift_type?.toUpperCase()}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500">Started At</p>
+                    <p className="font-medium">{new Date(myActiveShift.clock_in_time).toLocaleTimeString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500">Duration</p>
+                    <p className="font-medium text-emerald-600">{getShiftDuration(myActiveShift.clock_in_time)}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500">Current Time</p>
+                    <p className="font-medium">{new Date().toLocaleTimeString()}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label>Handoff Notes (Optional)</Label>
+              <Textarea
+                placeholder="Any notes for the next shift supervisor..."
+                value={clockOutNotes}
+                onChange={(e) => setClockOutNotes(e.target.value)}
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setClockOutOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleClockOut}
+              disabled={clockingOut}
+              variant="destructive"
+            >
+              {clockingOut ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Clocking Out...
+                </>
+              ) : (
+                <>
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Clock Out
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

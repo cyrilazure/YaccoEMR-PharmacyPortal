@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, status
+from fastapi import FastAPI, APIRouter, Depends, HTTPException, status, Body
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -9,9 +9,10 @@ from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
 from typing import List, Optional
 import uuid
-from datetime import datetime, timezone
-import hashlib
-import secrets
+from datetime import datetime, timezone, timedelta
+import jwt
+import bcrypt
+from enum import Enum
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -21,504 +22,1448 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
+# Initialize Database Service (supports both MongoDB and PostgreSQL)
+from db_service import init_db_service, get_db_service
+db_service = init_db_service(db)
+
+# Initialize V2 Database Service (simplified interface)
+from db_service_v2 import init_db_service_v2, get_db_service as get_db_v2
+db_service_v2 = init_db_service_v2(db)
+
+# Import security module
+from security import (
+    rate_limiter, audit_logger, InputSanitizer,
+    get_current_user, require_roles, require_platform_owner,
+    create_access_token, decode_access_token
+)
+from security.middleware import SecurityMiddleware, setup_security
+
+# JWT Configuration
+JWT_SECRET = os.environ.get('JWT_SECRET', 'yacco-emr-secret-key-2024')
+JWT_ALGORITHM = "HS256"
+JWT_EXPIRATION_HOURS = 24
+
 # Create the main app
-app = FastAPI(title="Yacco Health API", version="1.0.0")
-
-# Create a router with the /api prefix
+app = FastAPI(
+    title="Yacco EMR API",
+    description="Enterprise Healthcare Management System",
+    version="2.0.0"
+)
 api_router = APIRouter(prefix="/api")
-
-# Security
-security = HTTPBearer(auto_error=False)
+security = HTTPBearer()
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# ==================== MODELS ====================
+# Apply Security Middleware
+setup_security(app, db)
 
-# Ghana Regions
-GHANA_REGIONS = [
-    {"id": "greater-accra", "name": "Greater Accra", "capital": "Accra"},
-    {"id": "ashanti", "name": "Ashanti", "capital": "Kumasi"},
-    {"id": "central", "name": "Central", "capital": "Cape Coast"},
-    {"id": "eastern", "name": "Eastern", "capital": "Koforidua"},
-    {"id": "western", "name": "Western", "capital": "Sekondi-Takoradi"},
-    {"id": "western-north", "name": "Western North", "capital": "Sefwi Wiawso"},
-    {"id": "volta", "name": "Volta", "capital": "Ho"},
-    {"id": "oti", "name": "Oti", "capital": "Dambai"},
-    {"id": "northern", "name": "Northern", "capital": "Tamale"},
-    {"id": "savannah", "name": "Savannah", "capital": "Damongo"},
-    {"id": "north-east", "name": "North East", "capital": "Nalerigu"},
-    {"id": "upper-east", "name": "Upper East", "capital": "Bolgatanga"},
-    {"id": "upper-west", "name": "Upper West", "capital": "Wa"},
-    {"id": "bono", "name": "Bono", "capital": "Sunyani"},
-    {"id": "bono-east", "name": "Bono East", "capital": "Techiman"},
-    {"id": "ahafo", "name": "Ahafo", "capital": "Goaso"},
-]
+# ============ ENUMS ============
+class UserRole(str, Enum):
+    PHYSICIAN = "physician"
+    NURSE = "nurse"
+    NURSING_SUPERVISOR = "nursing_supervisor"
+    FLOOR_SUPERVISOR = "floor_supervisor"
+    SCHEDULER = "scheduler"
+    RECEPTIONIST = "receptionist"
+    ADMIN = "admin"
+    HOSPITAL_ADMIN = "hospital_admin"
+    HOSPITAL_IT_ADMIN = "hospital_it_admin"
+    FACILITY_ADMIN = "facility_admin"
+    BILLER = "biller"
+    SENIOR_BILLER = "senior_biller"
+    FINANCE_MANAGER = "finance_manager"
+    PHARMACIST = "pharmacist"
+    PHARMACY_TECH = "pharmacy_tech"
+    RADIOLOGY_STAFF = "radiology_staff"
+    RADIOLOGIST = "radiologist"
+    BED_MANAGER = "bed_manager"
+    RECORDS_OFFICER = "records_officer"
+    LAB_TECH = "lab_tech"
+    SUPER_ADMIN = "super_admin"
 
-FACILITY_TYPES = ["teaching_hospital", "regional_hospital", "district_hospital", "clinic", "chps_compound", "pharmacy"]
-USER_ROLES = ["it_admin", "facility_admin", "physician", "nurse", "pharmacist", "dispenser", "scheduler"]
+class OrderType(str, Enum):
+    LAB = "lab"
+    IMAGING = "imaging"
+    MEDICATION = "medication"
 
+class OrderStatus(str, Enum):
+    PENDING = "pending"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    CANCELLED = "cancelled"
+
+class AppointmentStatus(str, Enum):
+    SCHEDULED = "scheduled"
+    CHECKED_IN = "checked_in"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    CANCELLED = "cancelled"
+    NO_SHOW = "no_show"
+
+class Gender(str, Enum):
+    MALE = "male"
+    FEMALE = "female"
+    OTHER = "other"
+
+# ============ MODELS ============
+
+# User Models
 class UserBase(BaseModel):
     email: EmailStr
-    name: str
-    role: str
-    facility_id: Optional[str] = None
-    region_id: Optional[str] = None
-    phone: Optional[str] = None
-    is_active: bool = True
+    first_name: str
+    last_name: str
+    role: UserRole
+    department: Optional[str] = None
+    specialty: Optional[str] = None
+    organization_id: Optional[str] = None
 
 class UserCreate(UserBase):
     password: str
 
-class UserUpdate(BaseModel):
-    name: Optional[str] = None
-    role: Optional[str] = None
-    facility_id: Optional[str] = None
-    region_id: Optional[str] = None
-    phone: Optional[str] = None
-    is_active: Optional[bool] = None
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
 
 class User(UserBase):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
-    updated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
-
-class FacilityBase(BaseModel):
-    name: str
-    facility_type: str
-    region_id: str
-    address: Optional[str] = None
-    phone: Optional[str] = None
-    email: Optional[EmailStr] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     is_active: bool = True
-    nhis_registered: bool = False
+    is_temp_password: bool = False
 
-class FacilityCreate(FacilityBase):
-    pass
-
-class FacilityUpdate(BaseModel):
-    name: Optional[str] = None
-    facility_type: Optional[str] = None
-    region_id: Optional[str] = None
-    address: Optional[str] = None
-    phone: Optional[str] = None
-    email: Optional[EmailStr] = None
-    is_active: Optional[bool] = None
-    nhis_registered: Optional[bool] = None
-
-class Facility(FacilityBase):
-    model_config = ConfigDict(extra="ignore")
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
-    updated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
-
-class LoginRequest(BaseModel):
-    email: EmailStr
-    password: str
+class UserResponse(UserBase):
+    id: str
+    created_at: str
+    is_active: bool
+    organization_id: Optional[str] = None
 
 class LoginResponse(BaseModel):
     token: str
-    user: dict
+    user: UserResponse
 
-class StatsResponse(BaseModel):
-    total_users: int
-    total_facilities: int
-    total_pharmacies: int
-    active_users: int
-    regions_covered: int
+# Patient Models
+class PatientCreate(BaseModel):
+    mrn: Optional[str] = None  # Medical Record Number
+    first_name: str
+    last_name: str
+    date_of_birth: str
+    gender: Gender
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = None
+    address: Optional[str] = None
+    emergency_contact_name: Optional[str] = None
+    emergency_contact_phone: Optional[str] = None
+    insurance_provider: Optional[str] = None
+    insurance_id: Optional[str] = None
+    insurance_plan: Optional[str] = None
+    payment_type: Optional[str] = "insurance"  # 'insurance' or 'cash'
+    adt_notification: Optional[bool] = True  # ADT notification flag
 
-# ==================== HELPER FUNCTIONS ====================
+class Patient(PatientCreate):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    mrn: str = Field(default_factory=lambda: f"MRN{str(uuid.uuid4())[:8].upper()}")
+    organization_id: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class PatientResponse(BaseModel):
+    id: str
+    mrn: str
+    first_name: str
+    last_name: str
+    date_of_birth: str
+    gender: str
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    address: Optional[str] = None
+    emergency_contact_name: Optional[str] = None
+    emergency_contact_phone: Optional[str] = None
+    insurance_provider: Optional[str] = None
+    insurance_id: Optional[str] = None
+    insurance_plan: Optional[str] = None
+    payment_type: Optional[str] = None
+    adt_notification: Optional[bool] = True
+    organization_id: Optional[str] = None
+    created_at: str
+    updated_at: str
+
+# Vitals Model
+class VitalsCreate(BaseModel):
+    patient_id: str
+    blood_pressure_systolic: Optional[int] = None
+    blood_pressure_diastolic: Optional[int] = None
+    heart_rate: Optional[int] = None
+    respiratory_rate: Optional[int] = None
+    temperature: Optional[float] = None
+    oxygen_saturation: Optional[int] = None
+    weight: Optional[float] = None
+    height: Optional[float] = None
+    notes: Optional[str] = None
+
+class Vitals(VitalsCreate):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    organization_id: Optional[str] = None
+    recorded_by: str = ""
+    recorded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+# Problem/Diagnosis Model
+class ProblemCreate(BaseModel):
+    patient_id: str
+    icd_code: Optional[str] = None
+    description: str
+    onset_date: Optional[str] = None
+    status: str = "active"  # active, resolved, chronic
+    notes: Optional[str] = None
+
+class Problem(ProblemCreate):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    organization_id: Optional[str] = None
+    created_by: str = ""
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+# Medication Model
+class MedicationCreate(BaseModel):
+    patient_id: str
+    name: str
+    dosage: str
+    frequency: str
+    route: str  # oral, IV, topical, etc.
+    prescriber: Optional[str] = None
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    status: str = "active"  # active, discontinued, completed
+    notes: Optional[str] = None
+
+class Medication(MedicationCreate):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    organization_id: Optional[str] = None
+    created_by: str = ""
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+# Allergy Model
+class AllergyCreate(BaseModel):
+    patient_id: str
+    allergen: str
+    reaction: str
+    severity: str  # mild, moderate, severe
+    notes: Optional[str] = None
+
+class Allergy(AllergyCreate):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    organization_id: Optional[str] = None
+    created_by: str = ""
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+# Clinical Note Model
+class ClinicalNoteCreate(BaseModel):
+    patient_id: str
+    note_type: str  # progress_note, h_and_p, discharge_summary, etc.
+    chief_complaint: Optional[str] = None
+    subjective: Optional[str] = None
+    objective: Optional[str] = None
+    assessment: Optional[str] = None
+    plan: Optional[str] = None
+    content: Optional[str] = None  # For free-text notes
+
+class ClinicalNote(ClinicalNoteCreate):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    organization_id: Optional[str] = None
+    author_id: str = ""
+    author_name: str = ""
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    signed: bool = False
+
+# Order Model
+class OrderCreate(BaseModel):
+    patient_id: str
+    order_type: OrderType
+    description: str
+    priority: str = "routine"  # stat, urgent, routine
+    instructions: Optional[str] = None
+    diagnosis: Optional[str] = None
+
+class Order(OrderCreate):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    organization_id: Optional[str] = None
+    status: OrderStatus = OrderStatus.PENDING
+    ordered_by: str = ""
+    ordered_by_name: str = ""
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    completed_at: Optional[datetime] = None
+    result: Optional[str] = None
+
+# Appointment Model
+class AppointmentCreate(BaseModel):
+    patient_id: str
+    provider_id: str
+    appointment_type: str  # new_patient, follow_up, procedure, etc.
+    date: str
+    start_time: str
+    end_time: str
+    reason: Optional[str] = None
+    notes: Optional[str] = None
+
+class Appointment(AppointmentCreate):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    organization_id: Optional[str] = None
+    status: AppointmentStatus = AppointmentStatus.SCHEDULED
+    created_by: str = ""
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+# AI Documentation Request
+class AIDocumentationRequest(BaseModel):
+    patient_id: str
+    note_type: str
+    context: Optional[str] = None
+    symptoms: Optional[str] = None
+    findings: Optional[str] = None
+
+# ============ AUTH HELPERS ============
 
 def hash_password(password: str) -> str:
-    return hashlib.sha256(password.encode()).hexdigest()
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
 def verify_password(password: str, hashed: str) -> bool:
-    return hash_password(password) == hashed
+    return bcrypt.checkpw(password.encode(), hashed.encode())
 
-def generate_token() -> str:
-    return secrets.token_urlsafe(32)
+def create_token(user_id: str, role: str) -> str:
+    payload = {
+        "user_id": user_id,
+        "role": role,
+        "exp": datetime.now(timezone.utc) + timedelta(hours=JWT_EXPIRATION_HOURS)
+    }
+    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
-# Simple in-memory token store (for demo - use Redis in production)
-active_tokens = {}
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict:
+    try:
+        token = credentials.credentials
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        user = await db.users.find_one({"id": payload["user_id"]}, {"_id": 0, "password": 0})
+        if not user:
+            raise HTTPException(status_code=401, detail="User not found")
+        return user
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
-async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    if not credentials:
-        raise HTTPException(status_code=401, detail="Not authenticated")
+# ============ AUTH ROUTES ============
+
+@api_router.post("/auth/register", response_model=LoginResponse)
+async def register(user_data: UserCreate):
+    existing = await db.users.find_one({"email": user_data.email})
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already registered")
     
-    token = credentials.credentials
-    if token not in active_tokens:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    user = User(**user_data.model_dump(exclude={"password"}))
+    user_dict = user.model_dump()
+    user_dict["password"] = hash_password(user_data.password)
+    user_dict["created_at"] = user_dict["created_at"].isoformat()
     
-    user_id = active_tokens[token]
-    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    await db.users.insert_one(user_dict)
+    token = create_token(user.id, user.role.value)
+    
+    return LoginResponse(
+        token=token,
+        user=UserResponse(
+            id=user.id,
+            email=user.email,
+            first_name=user.first_name,
+            last_name=user.last_name,
+            role=user.role,
+            department=user.department,
+            specialty=user.specialty,
+            organization_id=user.organization_id,
+            created_at=user_dict["created_at"],
+            is_active=user.is_active
+        )
+    )
+
+# Login model with optional 2FA/OTP code
+class UserLoginWith2FA(BaseModel):
+    email: EmailStr
+    password: str
+    totp_code: Optional[str] = None
+    otp_session_id: Optional[str] = None
+    otp_code: Optional[str] = None
+
+# OTP Configuration
+OTP_ENABLED = os.environ.get('OTP_ENABLED', 'true').lower() == 'true'
+
+# Step 1: Initial login - validate credentials, check phone, send OTP
+@api_router.post("/auth/login/init")
+async def login_init(credentials: UserLogin):
+    """Step 1: Validate credentials and send OTP (or request phone if missing)"""
+    from otp_module import create_otp_session
+    
+    user = await db.users.find_one({"email": credentials.email}, {"_id": 0})
+    if not user or not verify_password(credentials.password, user["password"]):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    # Check if user's organization is active (unless super_admin)
+    if user.get("organization_id") and user.get("role") != "super_admin":
+        org = await db.organizations.find_one({"id": user["organization_id"]})
+        if org and org.get("status") != "active":
+            raise HTTPException(status_code=403, detail="Your organization is not active. Please contact support.")
+    
+    # If OTP is disabled, return token directly
+    if not OTP_ENABLED:
+        token = create_access_token(
+            user_id=user["id"], 
+            email=user["email"],
+            role=user["role"],
+            organization_id=user.get("organization_id")
+        )
+        user_response = {
+            "id": user["id"],
+            "email": user["email"],
+            "first_name": user.get("first_name", ""),
+            "last_name": user.get("last_name", ""),
+            "role": user.get("role"),
+            "department": user.get("department"),
+            "specialty": user.get("specialty"),
+            "organization_id": user.get("organization_id"),
+            "is_active": user.get("is_active", True)
+        }
+        return {
+            "otp_required": False,
+            "token": token,
+            "user": user_response
+        }
+    
+    # Get user's phone number
+    phone_number = user.get("phone") or user.get("phone_number")
+    
+    if not phone_number:
+        # Phone number is required - ask user to provide one
+        return {
+            "otp_required": True,
+            "phone_required": True,
+            "user_id": user["id"],
+            "message": "Please enter your phone number to receive OTP"
+        }
+    
+    # Create OTP session and send SMS
+    otp_result = await create_otp_session(
+        db,
+        user_id=user["id"],
+        phone_number=phone_number,
+        platform="emr",
+        user_name=f"{user.get('first_name', '')} {user.get('last_name', '')}"
+    )
+    
+    return {
+        "otp_required": True,
+        "phone_required": False,
+        "otp_session_id": otp_result["session_id"],
+        "phone_masked": otp_result["phone_masked"],
+        "expires_at": otp_result["expires_at"],
+        "sms_sent": otp_result["sms_sent"],
+        "message": "OTP sent to your registered phone number"
+    }
+
+
+# Step 1b: Submit phone number and send OTP
+@api_router.post("/auth/login/submit-phone")
+async def login_submit_phone(user_id: str = Body(...), phone_number: str = Body(...)):
+    """Submit phone number for user without one and send OTP"""
+    from otp_module import create_otp_session
+    
+    # Validate phone format (Ghana numbers)
+    clean_phone = ''.join(filter(str.isdigit, phone_number))
+    if len(clean_phone) < 9:
+        raise HTTPException(status_code=400, detail="Invalid phone number format")
+    
+    # Get user
+    user = await db.users.find_one({"id": user_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Update user's phone number
+    await db.users.update_one(
+        {"id": user_id},
+        {"$set": {"phone": phone_number, "phone_updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    # Create OTP session and send SMS
+    otp_result = await create_otp_session(
+        db,
+        user_id=user["id"],
+        phone_number=phone_number,
+        platform="emr",
+        user_name=f"{user.get('first_name', '')} {user.get('last_name', '')}"
+    )
+    
+    return {
+        "otp_session_id": otp_result["session_id"],
+        "phone_masked": otp_result["phone_masked"],
+        "expires_at": otp_result["expires_at"],
+        "sms_sent": otp_result["sms_sent"],
+        "message": "OTP sent to your phone number"
+    }
+
+
+# Step 2: Verify OTP and complete login
+@api_router.post("/auth/login/verify")
+async def login_verify(otp_session_id: str, otp_code: str):
+    """Step 2: Verify OTP and issue token"""
+    from otp_module import verify_otp, mark_otp_used
+    
+    # Verify OTP
+    result = await verify_otp(db, otp_session_id, otp_code)
+    
+    if not result["success"]:
+        raise HTTPException(status_code=401, detail=result["error"])
+    
+    # Get user
+    user = await db.users.find_one({"id": result["user_id"]}, {"_id": 0})
     if not user:
         raise HTTPException(status_code=401, detail="User not found")
     
-    return user
+    # Mark OTP as used
+    await mark_otp_used(db, otp_session_id)
+    
+    # Create token
+    token = create_token(user["id"], user["role"])
+    
+    return {
+        "token": token,
+        "user": {
+            "id": user["id"],
+            "email": user["email"],
+            "first_name": user["first_name"],
+            "last_name": user["last_name"],
+            "role": user["role"],
+            "department": user.get("department"),
+            "specialty": user.get("specialty"),
+            "organization_id": user.get("organization_id"),
+            "created_at": user["created_at"],
+            "is_active": user["is_active"]
+        }
+    }
 
-async def require_it_admin(user: dict = Depends(get_current_user)):
-    if user.get("role") != "it_admin":
-        raise HTTPException(status_code=403, detail="IT Admin access required")
-    return user
 
-# ==================== ROUTES ====================
+# Resend OTP endpoint
+@api_router.post("/auth/login/resend-otp")
+async def resend_login_otp(otp_session_id: str):
+    """Resend OTP for login"""
+    from otp_module import resend_otp
+    
+    result = await resend_otp(db, otp_session_id)
+    
+    if not result["success"]:
+        raise HTTPException(status_code=400, detail=result["error"])
+    
+    return {
+        "message": "OTP resent successfully",
+        "phone_masked": result["phone_masked"],
+        "expires_at": result["expires_at"]
+    }
+
+
+@api_router.post("/auth/login", response_model=LoginResponse)
+async def login(credentials: UserLoginWith2FA):
+    user = await db.users.find_one({"email": credentials.email}, {"_id": 0})
+    if not user or not verify_password(credentials.password, user["password"]):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    # Check if user's organization is active (unless super_admin)
+    if user.get("organization_id") and user.get("role") != "super_admin":
+        org = await db.organizations.find_one({"id": user["organization_id"]})
+        if org and org.get("status") != "active":
+            raise HTTPException(status_code=403, detail="Your organization is not active. Please contact support.")
+    
+    # Check if 2FA is enabled for this user
+    user_2fa = await db.user_2fa.find_one({"user_id": user["id"]})
+    if user_2fa and user_2fa.get("enabled"):
+        if not credentials.totp_code:
+            # 2FA is required but no code provided
+            raise HTTPException(
+                status_code=403, 
+                detail="2FA_REQUIRED",
+                headers={"X-2FA-Required": "true"}
+            )
+        
+        # Verify 2FA code using the helper function from twofa_module
+        from twofa_module import verify_totp
+        
+        # Try TOTP code first
+        is_valid = verify_totp(user_2fa["secret"], credentials.totp_code)
+        
+        # If not valid, try backup codes
+        if not is_valid:
+            backup_codes = user_2fa.get("backup_codes", [])
+            code_normalized = credentials.totp_code.upper().replace("-", "").replace(" ", "")
+            for bc in backup_codes:
+                if bc["code"].replace("-", "") == code_normalized and not bc.get("used", False):
+                    bc["used"] = True
+                    bc["used_at"] = datetime.now(timezone.utc).isoformat()
+                    await db.user_2fa.update_one(
+                        {"user_id": user["id"]},
+                        {"$set": {"backup_codes": backup_codes}}
+                    )
+                    is_valid = True
+                    break
+        
+        if not is_valid:
+            raise HTTPException(status_code=401, detail="Invalid 2FA code")
+        
+        # Update last used timestamp
+        await db.user_2fa.update_one(
+            {"user_id": user["id"]},
+            {"$set": {"last_used": datetime.now(timezone.utc).isoformat()}}
+        )
+    
+    token = create_token(user["id"], user["role"])
+    return LoginResponse(
+        token=token,
+        user=UserResponse(
+            id=user["id"],
+            email=user["email"],
+            first_name=user["first_name"],
+            last_name=user["last_name"],
+            role=user["role"],
+            department=user.get("department"),
+            specialty=user.get("specialty"),
+            organization_id=user.get("organization_id"),
+            created_at=user["created_at"],
+            is_active=user["is_active"]
+        )
+    )
+
+@api_router.get("/auth/me", response_model=UserResponse)
+async def get_me(current_user: dict = Depends(get_current_user)):
+    return UserResponse(**current_user)
+
+@api_router.post("/auth/refresh")
+async def refresh_token(current_user: dict = Depends(get_current_user)):
+    """Refresh JWT token"""
+    new_token = create_token(current_user["id"], current_user["role"])
+    return {"token": new_token, "message": "Token refreshed"}
+
+@api_router.post("/auth/password-reset/request")
+async def request_password_reset(email: EmailStr):
+    """Request password reset (sends reset token)"""
+    user = await db.users.find_one({"email": email}, {"_id": 0})
+    if not user:
+        # Don't reveal if email exists
+        return {"message": "If email exists, reset instructions have been sent"}
+    
+    # Generate reset token (valid for 1 hour)
+    reset_token = str(uuid.uuid4())
+    reset_expiry = (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat()
+    
+    await db.password_resets.insert_one({
+        "user_id": user["id"],
+        "email": email,
+        "token": reset_token,
+        "expires_at": reset_expiry,
+        "used": False,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    # In production, send email with reset link
+    # For now, return token (would be in email link)
+    return {
+        "message": "Password reset instructions sent",
+        "reset_token": reset_token  # Remove in production - would be sent via email
+    }
+
+@api_router.post("/auth/password-reset/confirm")
+async def confirm_password_reset(token: str, new_password: str):
+    """Reset password using reset token"""
+    reset_request = await db.password_resets.find_one({
+        "token": token,
+        "used": False
+    }, {"_id": 0})
+    
+    if not reset_request:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+    
+    # Check expiry
+    expires_at = datetime.fromisoformat(reset_request["expires_at"].replace("Z", "+00:00"))
+    if datetime.now(timezone.utc) > expires_at:
+        raise HTTPException(status_code=400, detail="Reset token has expired")
+    
+    # Update password
+    hashed_password = hash_password(new_password)
+    await db.users.update_one(
+        {"id": reset_request["user_id"]},
+        {"$set": {"password": hashed_password}}
+    )
+    
+    # Mark token as used
+    await db.password_resets.update_one(
+        {"token": token},
+        {"$set": {"used": True}}
+    )
+    
+    return {"message": "Password reset successful"}
+
+@api_router.post("/auth/change-password")
+async def change_password(
+    current_password: str,
+    new_password: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Change password for authenticated user"""
+    user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0})
+    
+    if not verify_password(current_password, user["password"]):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+    
+    hashed_password = hash_password(new_password)
+    await db.users.update_one(
+        {"id": current_user["id"]},
+        {"$set": {"password": hashed_password}}
+    )
+    
+    return {"message": "Password changed successfully"}
+
+# ============ USER ROUTES ============
+
+@api_router.get("/users", response_model=List[UserResponse])
+async def get_users(current_user: dict = Depends(get_current_user)):
+    query = {}
+    org_id = current_user.get("organization_id")
+    if org_id and current_user.get("role") not in ["super_admin", "hospital_admin"]:
+        # Regular staff can only see users in their org
+        query["organization_id"] = org_id
+    elif org_id and current_user.get("role") == "hospital_admin":
+        # Hospital admin sees their org users
+        query["organization_id"] = org_id
+    # Super admin sees all
+    
+    users = await db.users.find(query, {"_id": 0, "password": 0}).to_list(1000)
+    return [UserResponse(**u) for u in users]
+
+@api_router.get("/users/{user_id}", response_model=UserResponse)
+async def get_user(user_id: str, current_user: dict = Depends(get_current_user)):
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "password": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return UserResponse(**user)
+
+# ============ PATIENT ROUTES ============
+
+@api_router.post("/patients", response_model=PatientResponse)
+async def create_patient(patient_data: PatientCreate, current_user: dict = Depends(get_current_user)):
+    # Convert PatientCreate to dict
+    patient_dict = patient_data.model_dump()
+    
+    # Only remove mrn if it's None or empty string so Patient model can auto-generate
+    if not patient_dict.get('mrn') or patient_dict.get('mrn', '').strip() == '':
+        patient_dict.pop('mrn', None)
+    
+    patient = Patient(**patient_dict)
+    patient_dict = patient.model_dump()
+    patient_dict["created_at"] = patient_dict["created_at"].isoformat()
+    patient_dict["updated_at"] = patient_dict["updated_at"].isoformat()
+    # Add organization_id from current user
+    patient_dict["organization_id"] = current_user.get("organization_id")
+    await db.patients.insert_one(patient_dict)
+    return PatientResponse(**patient_dict)
+
+@api_router.get("/patients", response_model=List[PatientResponse])
+async def get_patients(
+    search: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    # Filter by organization_id (unless super_admin)
+    query = {}
+    org_id = current_user.get("organization_id")
+    if org_id and current_user.get("role") != "super_admin":
+        query["organization_id"] = org_id
+    
+    if search:
+        search_query = {
+            "$or": [
+                {"first_name": {"$regex": search, "$options": "i"}},
+                {"last_name": {"$regex": search, "$options": "i"}},
+                {"mrn": {"$regex": search, "$options": "i"}}
+            ]
+        }
+        if query:
+            query = {"$and": [query, search_query]}
+        else:
+            query = search_query
+    
+    patients = await db.patients.find(query, {"_id": 0}).to_list(1000)
+    return [PatientResponse(**p) for p in patients]
+
+@api_router.get("/patients/{patient_id}", response_model=PatientResponse)
+async def get_patient(patient_id: str, current_user: dict = Depends(get_current_user)):
+    query = {"id": patient_id}
+    org_id = current_user.get("organization_id")
+    if org_id and current_user.get("role") != "super_admin":
+        query["organization_id"] = org_id
+    
+    patient = await db.patients.find_one(query, {"_id": 0})
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+    return PatientResponse(**patient)
+
+@api_router.put("/patients/{patient_id}", response_model=PatientResponse)
+async def update_patient(patient_id: str, patient_data: PatientCreate, current_user: dict = Depends(get_current_user)):
+    query = {"id": patient_id}
+    org_id = current_user.get("organization_id")
+    if org_id and current_user.get("role") != "super_admin":
+        query["organization_id"] = org_id
+    
+    patient = await db.patients.find_one(query)
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+    
+    update_data = patient_data.model_dump()
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    await db.patients.update_one({"id": patient_id}, {"$set": update_data})
+    
+    updated = await db.patients.find_one({"id": patient_id}, {"_id": 0})
+    return PatientResponse(**updated)
+
+# ============ VITALS ROUTES ============
+
+@api_router.post("/vitals")
+async def create_vitals(vitals_data: VitalsCreate, current_user: dict = Depends(get_current_user)):
+    vitals = Vitals(**vitals_data.model_dump())
+    vitals.recorded_by = current_user["id"]
+    vitals_dict = vitals.model_dump()
+    vitals_dict["recorded_at"] = vitals_dict["recorded_at"].isoformat()
+    vitals_dict["organization_id"] = current_user.get("organization_id")
+    await db.vitals.insert_one(vitals_dict)
+    return {**vitals_dict, "_id": None}
+
+@api_router.get("/vitals/{patient_id}")
+async def get_patient_vitals(patient_id: str, current_user: dict = Depends(get_current_user)):
+    vitals = await db.vitals.find({"patient_id": patient_id}, {"_id": 0}).sort("recorded_at", -1).to_list(100)
+    return vitals
+
+# ============ PROBLEMS ROUTES ============
+
+@api_router.post("/problems")
+async def create_problem(problem_data: ProblemCreate, current_user: dict = Depends(get_current_user)):
+    problem = Problem(**problem_data.model_dump())
+    problem.created_by = current_user["id"]
+    problem.organization_id = current_user.get("organization_id")
+    problem_dict = problem.model_dump()
+    problem_dict["created_at"] = problem_dict["created_at"].isoformat()
+    await db.problems.insert_one(problem_dict)
+    return {**problem_dict, "_id": None}
+
+@api_router.get("/problems/{patient_id}")
+async def get_patient_problems(patient_id: str, current_user: dict = Depends(get_current_user)):
+    problems = await db.problems.find({"patient_id": patient_id}, {"_id": 0}).to_list(100)
+    return problems
+
+@api_router.put("/problems/{problem_id}")
+async def update_problem(problem_id: str, problem_data: ProblemCreate, current_user: dict = Depends(get_current_user)):
+    await db.problems.update_one({"id": problem_id}, {"$set": problem_data.model_dump()})
+    updated = await db.problems.find_one({"id": problem_id}, {"_id": 0})
+    return updated
+
+# ============ MEDICATIONS ROUTES ============
+
+@api_router.post("/medications")
+async def create_medication(med_data: MedicationCreate, current_user: dict = Depends(get_current_user)):
+    medication = Medication(**med_data.model_dump())
+    medication.created_by = current_user["id"]
+    medication.organization_id = current_user.get("organization_id")
+    med_dict = medication.model_dump()
+    med_dict["created_at"] = med_dict["created_at"].isoformat()
+    await db.medications.insert_one(med_dict)
+    return {**med_dict, "_id": None}
+
+@api_router.get("/medications/{patient_id}")
+async def get_patient_medications(patient_id: str, current_user: dict = Depends(get_current_user)):
+    meds = await db.medications.find({"patient_id": patient_id}, {"_id": 0}).to_list(100)
+    return meds
+
+@api_router.put("/medications/{medication_id}")
+async def update_medication(medication_id: str, med_data: MedicationCreate, current_user: dict = Depends(get_current_user)):
+    await db.medications.update_one({"id": medication_id}, {"$set": med_data.model_dump()})
+    updated = await db.medications.find_one({"id": medication_id}, {"_id": 0})
+    return updated
+
+# ============ ALLERGIES ROUTES ============
+
+@api_router.post("/allergies")
+async def create_allergy(allergy_data: AllergyCreate, current_user: dict = Depends(get_current_user)):
+    allergy = Allergy(**allergy_data.model_dump())
+    allergy.created_by = current_user["id"]
+    allergy_dict = allergy.model_dump()
+    allergy_dict["created_at"] = allergy_dict["created_at"].isoformat()
+    allergy_dict["organization_id"] = current_user.get("organization_id")
+    await db.allergies.insert_one(allergy_dict)
+    return {**allergy_dict, "_id": None}
+
+@api_router.get("/allergies/{patient_id}")
+async def get_patient_allergies(patient_id: str, current_user: dict = Depends(get_current_user)):
+    allergies = await db.allergies.find({"patient_id": patient_id}, {"_id": 0}).to_list(100)
+    return allergies
+
+# ============ CLINICAL NOTES ROUTES ============
+
+@api_router.post("/notes")
+async def create_note(note_data: ClinicalNoteCreate, current_user: dict = Depends(get_current_user)):
+    note = ClinicalNote(**note_data.model_dump())
+    note.author_id = current_user["id"]
+    note.author_name = f"{current_user['first_name']} {current_user['last_name']}"
+    note.organization_id = current_user.get("organization_id")
+    note_dict = note.model_dump()
+    note_dict["created_at"] = note_dict["created_at"].isoformat()
+    note_dict["updated_at"] = note_dict["updated_at"].isoformat()
+    await db.clinical_notes.insert_one(note_dict)
+    return {**note_dict, "_id": None}
+
+@api_router.get("/notes/{patient_id}")
+async def get_patient_notes(patient_id: str, current_user: dict = Depends(get_current_user)):
+    notes = await db.clinical_notes.find({"patient_id": patient_id}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return notes
+
+@api_router.put("/notes/{note_id}")
+async def update_note(note_id: str, note_data: ClinicalNoteCreate, current_user: dict = Depends(get_current_user)):
+    update_dict = note_data.model_dump()
+    update_dict["updated_at"] = datetime.now(timezone.utc).isoformat()
+    await db.clinical_notes.update_one({"id": note_id}, {"$set": update_dict})
+    updated = await db.clinical_notes.find_one({"id": note_id}, {"_id": 0})
+    return updated
+
+@api_router.post("/notes/{note_id}/sign")
+async def sign_note(note_id: str, current_user: dict = Depends(get_current_user)):
+    await db.clinical_notes.update_one({"id": note_id}, {"$set": {"signed": True}})
+    return {"message": "Note signed successfully"}
+
+# ============ ORDERS ROUTES ============
+
+@api_router.post("/orders")
+async def create_order(order_data: OrderCreate, current_user: dict = Depends(get_current_user)):
+    order = Order(**order_data.model_dump())
+    order.ordered_by = current_user["id"]
+    order.ordered_by_name = f"{current_user['first_name']} {current_user['last_name']}"
+    order.organization_id = current_user.get("organization_id")
+    order_dict = order.model_dump()
+    order_dict["created_at"] = order_dict["created_at"].isoformat()
+    order_dict["completed_at"] = None
+    await db.orders.insert_one(order_dict)
+    return {**order_dict, "_id": None}
+
+@api_router.get("/orders")
+async def get_orders(
+    patient_id: Optional[str] = None,
+    status: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    query = {}
+    org_id = current_user.get("organization_id")
+    if org_id and current_user.get("role") != "super_admin":
+        query["organization_id"] = org_id
+    if patient_id:
+        query["patient_id"] = patient_id
+    if status:
+        query["status"] = status
+    orders = await db.orders.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return orders
+
+@api_router.put("/orders/{order_id}/status")
+async def update_order_status(order_id: str, status: OrderStatus, current_user: dict = Depends(get_current_user)):
+    update = {"status": status.value}
+    if status == OrderStatus.COMPLETED:
+        update["completed_at"] = datetime.now(timezone.utc).isoformat()
+    await db.orders.update_one({"id": order_id}, {"$set": update})
+    updated = await db.orders.find_one({"id": order_id}, {"_id": 0})
+    return updated
+
+@api_router.put("/orders/{order_id}/result")
+async def add_order_result(order_id: str, result: str, current_user: dict = Depends(get_current_user)):
+    await db.orders.update_one({"id": order_id}, {"$set": {"result": result, "status": "completed", "completed_at": datetime.now(timezone.utc).isoformat()}})
+    updated = await db.orders.find_one({"id": order_id}, {"_id": 0})
+    return updated
+
+# ============ APPOINTMENTS ROUTES ============
+
+@api_router.get("/hospital/info")
+async def get_hospital_info(current_user: dict = Depends(get_current_user)):
+    """Get hospital information for the current user's hospital"""
+    hospital_id = current_user.get("hospital_id")
+    
+    if hospital_id:
+        hospital = await db.hospitals.find_one({"id": hospital_id}, {"_id": 0})
+        if hospital:
+            return {
+                "id": hospital.get("id"),
+                "name": hospital.get("name"),
+                "address": hospital.get("address"),
+                "phone": hospital.get("phone"),
+                "email": hospital.get("email"),
+                "region": hospital.get("region"),
+                "district": hospital.get("district"),
+                "location": hospital.get("location"),
+                "type": hospital.get("type"),
+                "nhis_accredited": hospital.get("nhis_accredited", False),
+                "logo_url": hospital.get("logo_url")
+            }
+    
+    # Fallback - check locations table
+    location_id = current_user.get("location_id")
+    if location_id:
+        location = await db.locations.find_one({"id": location_id}, {"_id": 0})
+        if location:
+            return {
+                "id": location.get("id"),
+                "name": location.get("name"),
+                "address": location.get("address"),
+                "phone": location.get("phone"),
+                "email": location.get("email"),
+                "region": location.get("region"),
+                "district": location.get("district"),
+                "logo_url": location.get("logo_url")
+            }
+    
+    # Last fallback - use organization info
+    org_id = current_user.get("organization_id")
+    if org_id:
+        org = await db.organizations.find_one({"id": org_id}, {"_id": 0})
+        if org:
+            return {
+                "id": org.get("id"),
+                "name": org.get("name"),
+                "address": org.get("address"),
+                "phone": org.get("phone"),
+                "email": org.get("email"),
+                "region": org.get("region"),
+                "district": org.get("district"),
+                "logo_url": org.get("logo_url")
+            }
+    
+    return {"name": "Hospital", "address": "", "phone": "", "email": "", "region": "", "district": "", "logo_url": None}
+
+@api_router.post("/appointments")
+async def create_appointment(appt_data: AppointmentCreate, current_user: dict = Depends(get_current_user)):
+    appt = Appointment(**appt_data.model_dump())
+    appt.created_by = current_user["id"]
+    appt.organization_id = current_user.get("organization_id")
+    appt_dict = appt.model_dump()
+    appt_dict["created_at"] = appt_dict["created_at"].isoformat()
+    await db.appointments.insert_one(appt_dict)
+    return {**appt_dict, "_id": None}
+
+@api_router.get("/appointments")
+async def get_appointments(
+    date: Optional[str] = None,
+    provider_id: Optional[str] = None,
+    patient_id: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    query = {}
+    org_id = current_user.get("organization_id")
+    if org_id and current_user.get("role") != "super_admin":
+        query["organization_id"] = org_id
+    if date:
+        query["date"] = date
+    if provider_id:
+        query["provider_id"] = provider_id
+    if patient_id:
+        query["patient_id"] = patient_id
+    appointments = await db.appointments.find(query, {"_id": 0}).sort("date", 1).to_list(1000)
+    return appointments
+
+@api_router.put("/appointments/{appt_id}/status")
+async def update_appointment_status(appt_id: str, status: AppointmentStatus, current_user: dict = Depends(get_current_user)):
+    await db.appointments.update_one({"id": appt_id}, {"$set": {"status": status.value}})
+    updated = await db.appointments.find_one({"id": appt_id}, {"_id": 0})
+    return updated
+
+# ============ AI DOCUMENTATION ROUTE ============
+
+@api_router.post("/ai/generate-note")
+async def generate_ai_note(request: AIDocumentationRequest, current_user: dict = Depends(get_current_user)):
+    """Generate AI-assisted clinical documentation using GPT-5.2"""
+    try:
+        from emergentintegrations.llm.chat import LlmChat, UserMessage
+        
+        api_key = os.environ.get('EMERGENT_LLM_KEY')
+        if not api_key:
+            raise HTTPException(status_code=500, detail="AI service not configured")
+        
+        # Get patient info for context
+        patient = await db.patients.find_one({"id": request.patient_id}, {"_id": 0})
+        if not patient:
+            raise HTTPException(status_code=404, detail="Patient not found")
+        
+        # Build the prompt based on note type
+        system_message = """You are a medical documentation assistant helping healthcare providers create clinical notes. 
+        Generate professional, accurate, and compliant medical documentation based on the information provided.
+        Use standard medical terminology and SOAP format when appropriate.
+        Be concise but thorough. Do not make up any clinical findings that were not provided."""
+        
+        prompt = f"""Generate a {request.note_type} for the following patient:
+        
+Patient: {patient['first_name']} {patient['last_name']}
+DOB: {patient['date_of_birth']}
+Gender: {patient['gender']}
+
+"""
+        if request.symptoms:
+            prompt += f"Symptoms/Chief Complaint: {request.symptoms}\n"
+        if request.findings:
+            prompt += f"Clinical Findings: {request.findings}\n"
+        if request.context:
+            prompt += f"Additional Context: {request.context}\n"
+        
+        prompt += "\nPlease generate a professional clinical note with appropriate sections (Subjective, Objective, Assessment, Plan) based on the information provided."
+        
+        chat = LlmChat(
+            api_key=api_key,
+            session_id=f"yacco-{current_user['id']}-{request.patient_id}",
+            system_message=system_message
+        ).with_model("openai", "gpt-5.2")
+        
+        user_message = UserMessage(text=prompt)
+        response = await chat.send_message(user_message)
+        
+        return {"generated_note": response, "note_type": request.note_type}
+        
+    except ImportError:
+        raise HTTPException(status_code=500, detail="AI service not available")
+    except Exception as e:
+        logger.error(f"AI generation error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"AI generation failed: {str(e)}")
+
+# ============ DASHBOARD STATS ============
+
+@api_router.get("/dashboard/stats")
+async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
+    """Get dashboard statistics based on user role"""
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    
+    total_patients = await db.patients.count_documents({})
+    today_appointments = await db.appointments.count_documents({"date": today})
+    pending_orders = await db.orders.count_documents({"status": "pending"})
+    recent_notes = await db.clinical_notes.count_documents({})
+    
+    # Get upcoming appointments
+    upcoming = await db.appointments.find(
+        {"date": {"$gte": today}, "status": "scheduled"},
+        {"_id": 0}
+    ).sort("date", 1).limit(5).to_list(5)
+    
+    # Enrich with patient names
+    for appt in upcoming:
+        patient = await db.patients.find_one({"id": appt["patient_id"]}, {"_id": 0, "first_name": 1, "last_name": 1})
+        if patient:
+            appt["patient_name"] = f"{patient['first_name']} {patient['last_name']}"
+    
+    return {
+        "total_patients": total_patients,
+        "today_appointments": today_appointments,
+        "pending_orders": pending_orders,
+        "recent_notes": recent_notes,
+        "upcoming_appointments": upcoming
+    }
+
+# ============ HEALTH CHECK ============
 
 @api_router.get("/")
 async def root():
-    return {"message": "Yacco Health API", "version": "1.0.0"}
+    return {"message": "Yacco EMR API", "version": "1.0.0", "status": "healthy"}
 
 @api_router.get("/health")
 async def health_check():
     return {"status": "healthy", "timestamp": datetime.now(timezone.utc).isoformat()}
 
-# Auth Routes
-@api_router.post("/auth/login", response_model=LoginResponse)
-async def login(request: LoginRequest):
-    user = await db.users.find_one({"email": request.email}, {"_id": 0})
-    if not user:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-    
-    if not verify_password(request.password, user.get("password_hash", "")):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-    
-    if not user.get("is_active", True):
-        raise HTTPException(status_code=401, detail="Account is disabled")
-    
-    token = generate_token()
-    active_tokens[token] = user["id"]
-    
-    # Remove password hash from response
-    user_response = {k: v for k, v in user.items() if k != "password_hash"}
-    
-    return LoginResponse(token=token, user=user_response)
-
-@api_router.post("/auth/logout")
-async def logout(user: dict = Depends(get_current_user)):
-    # Find and remove the token
-    token_to_remove = None
-    for token, user_id in active_tokens.items():
-        if user_id == user["id"]:
-            token_to_remove = token
-            break
-    if token_to_remove:
-        del active_tokens[token_to_remove]
-    return {"message": "Logged out successfully"}
-
-@api_router.get("/auth/me")
-async def get_me(user: dict = Depends(get_current_user)):
-    return user
-
-# Region Routes
-@api_router.get("/regions")
-async def get_regions():
-    return GHANA_REGIONS
-
-# User Routes (IT Admin only)
-@api_router.get("/users", response_model=List[dict])
-async def get_users(
-    role: Optional[str] = None,
-    region_id: Optional[str] = None,
-    is_active: Optional[bool] = None,
-    admin: dict = Depends(require_it_admin)
-):
-    query = {}
-    if role:
-        query["role"] = role
-    if region_id:
-        query["region_id"] = region_id
-    if is_active is not None:
-        query["is_active"] = is_active
-    
-    users = await db.users.find(query, {"_id": 0, "password_hash": 0}).to_list(1000)
-    return users
-
-@api_router.get("/users/{user_id}")
-async def get_user(user_id: str, admin: dict = Depends(require_it_admin)):
-    user = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return user
-
-@api_router.post("/users", response_model=dict)
-async def create_user(user_data: UserCreate, admin: dict = Depends(require_it_admin)):
-    # Check if email exists
-    existing = await db.users.find_one({"email": user_data.email}, {"_id": 1})
-    if existing:
-        raise HTTPException(status_code=400, detail="Email already registered")
-    
-    # Validate role
-    if user_data.role not in USER_ROLES:
-        raise HTTPException(status_code=400, detail=f"Invalid role. Must be one of: {USER_ROLES}")
-    
-    # Create user
-    user = User(**user_data.model_dump(exclude={"password"}))
-    user_dict = user.model_dump()
-    user_dict["password_hash"] = hash_password(user_data.password)
-    
-    # Insert into database (this will add _id to user_dict)
-    await db.users.insert_one(user_dict.copy())  # Use copy to avoid mutation
-    
-    # Return without password hash and without _id
-    response_dict = {k: v for k, v in user_dict.items() if k not in ["password_hash", "_id"]}
-    return response_dict
-
-@api_router.put("/users/{user_id}")
-async def update_user(user_id: str, update_data: UserUpdate, admin: dict = Depends(require_it_admin)):
-    user = await db.users.find_one({"id": user_id}, {"_id": 1})
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    update_dict = {k: v for k, v in update_data.model_dump().items() if v is not None}
-    if update_dict:
-        update_dict["updated_at"] = datetime.now(timezone.utc).isoformat()
-        await db.users.update_one({"id": user_id}, {"$set": update_dict})
-    
-    updated_user = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
-    return updated_user
-
-@api_router.delete("/users/{user_id}")
-async def delete_user(user_id: str, admin: dict = Depends(require_it_admin)):
-    result = await db.users.delete_one({"id": user_id})
-    if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="User not found")
-    return {"message": "User deleted successfully"}
-
-# Facility Routes
-@api_router.get("/facilities", response_model=List[dict])
-async def get_facilities(
-    facility_type: Optional[str] = None,
-    region_id: Optional[str] = None,
-    is_active: Optional[bool] = None,
-    admin: dict = Depends(require_it_admin)
-):
-    query = {}
-    if facility_type:
-        query["facility_type"] = facility_type
-    if region_id:
-        query["region_id"] = region_id
-    if is_active is not None:
-        query["is_active"] = is_active
-    
-    facilities = await db.facilities.find(query, {"_id": 0}).to_list(1000)
-    return facilities
-
-@api_router.get("/facilities/{facility_id}")
-async def get_facility(facility_id: str, admin: dict = Depends(require_it_admin)):
-    facility = await db.facilities.find_one({"id": facility_id}, {"_id": 0})
-    if not facility:
-        raise HTTPException(status_code=404, detail="Facility not found")
-    return facility
-
-@api_router.post("/facilities", response_model=dict)
-async def create_facility(facility_data: FacilityCreate, admin: dict = Depends(require_it_admin)):
-    # Validate facility type
-    if facility_data.facility_type not in FACILITY_TYPES:
-        raise HTTPException(status_code=400, detail=f"Invalid facility type. Must be one of: {FACILITY_TYPES}")
-    
-    # Validate region
-    valid_regions = [r["id"] for r in GHANA_REGIONS]
-    if facility_data.region_id not in valid_regions:
-        raise HTTPException(status_code=400, detail="Invalid region")
-    
-    facility = Facility(**facility_data.model_dump())
-    facility_dict = facility.model_dump()
-    
-    # Insert into database (this will add _id to facility_dict)
-    await db.facilities.insert_one(facility_dict.copy())  # Use copy to avoid mutation
-    
-    # Return without _id
-    response_dict = {k: v for k, v in facility_dict.items() if k != "_id"}
-    return response_dict
-
-@api_router.put("/facilities/{facility_id}")
-async def update_facility(facility_id: str, update_data: FacilityUpdate, admin: dict = Depends(require_it_admin)):
-    facility = await db.facilities.find_one({"id": facility_id}, {"_id": 1})
-    if not facility:
-        raise HTTPException(status_code=404, detail="Facility not found")
-    
-    update_dict = {k: v for k, v in update_data.model_dump().items() if v is not None}
-    if update_dict:
-        update_dict["updated_at"] = datetime.now(timezone.utc).isoformat()
-        await db.facilities.update_one({"id": facility_id}, {"$set": update_dict})
-    
-    updated_facility = await db.facilities.find_one({"id": facility_id}, {"_id": 0})
-    return updated_facility
-
-@api_router.delete("/facilities/{facility_id}")
-async def delete_facility(facility_id: str, admin: dict = Depends(require_it_admin)):
-    result = await db.facilities.delete_one({"id": facility_id})
-    if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="Facility not found")
-    return {"message": "Facility deleted successfully"}
-
-# Stats Route
-@api_router.get("/stats", response_model=StatsResponse)
-async def get_stats(admin: dict = Depends(require_it_admin)):
-    total_users = await db.users.count_documents({})
-    active_users = await db.users.count_documents({"is_active": True})
-    total_facilities = await db.facilities.count_documents({})
-    total_pharmacies = await db.facilities.count_documents({"facility_type": "pharmacy"})
-    
-    # Count unique regions with facilities
-    pipeline = [
-        {"$group": {"_id": "$region_id"}},
-        {"$count": "count"}
-    ]
-    regions_result = await db.facilities.aggregate(pipeline).to_list(1)
-    regions_covered = regions_result[0]["count"] if regions_result else 0
-    
-    return StatsResponse(
-        total_users=total_users,
-        total_facilities=total_facilities,
-        total_pharmacies=total_pharmacies,
-        active_users=active_users,
-        regions_covered=regions_covered
-    )
-
-# Seed Data Route (for initial setup)
-@api_router.post("/seed")
-async def seed_data():
-    # Check if already seeded
-    admin_exists = await db.users.find_one({"email": "admin@yacco.health"}, {"_id": 1})
-    if admin_exists:
-        return {"message": "Data already seeded"}
-    
-    # Create IT Admin user
-    admin_user = {
-        "id": str(uuid.uuid4()),
-        "email": "admin@yacco.health",
-        "name": "System Administrator",
-        "role": "it_admin",
-        "phone": "+233301234567",
-        "is_active": True,
-        "password_hash": hash_password("admin123"),
-        "created_at": datetime.now(timezone.utc).isoformat(),
-        "updated_at": datetime.now(timezone.utc).isoformat()
-    }
-    await db.users.insert_one(admin_user)
-    
-    # Create sample facilities
-    sample_facilities = [
-        {
-            "id": str(uuid.uuid4()),
-            "name": "Korle Bu Teaching Hospital",
-            "facility_type": "teaching_hospital",
-            "region_id": "greater-accra",
-            "address": "Guggisberg Avenue, Accra",
-            "phone": "+233302665401",
-            "email": "info@kbth.gov.gh",
-            "is_active": True,
-            "nhis_registered": True,
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "updated_at": datetime.now(timezone.utc).isoformat()
-        },
-        {
-            "id": str(uuid.uuid4()),
-            "name": "Komfo Anokye Teaching Hospital",
-            "facility_type": "teaching_hospital",
-            "region_id": "ashanti",
-            "address": "Okomfo Anokye Road, Kumasi",
-            "phone": "+233322022301",
-            "email": "info@kath.gov.gh",
-            "is_active": True,
-            "nhis_registered": True,
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "updated_at": datetime.now(timezone.utc).isoformat()
-        },
-        {
-            "id": str(uuid.uuid4()),
-            "name": "Cape Coast Teaching Hospital",
-            "facility_type": "teaching_hospital",
-            "region_id": "central",
-            "address": "Cape Coast",
-            "phone": "+233332132701",
-            "email": "info@ccth.gov.gh",
-            "is_active": True,
-            "nhis_registered": True,
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "updated_at": datetime.now(timezone.utc).isoformat()
-        },
-        {
-            "id": str(uuid.uuid4()),
-            "name": "Yacco Pharmacy - Accra Central",
-            "facility_type": "pharmacy",
-            "region_id": "greater-accra",
-            "address": "Oxford Street, Osu, Accra",
-            "phone": "+233244123456",
-            "email": "accra@yaccopharm.com",
-            "is_active": True,
-            "nhis_registered": True,
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "updated_at": datetime.now(timezone.utc).isoformat()
-        },
-        {
-            "id": str(uuid.uuid4()),
-            "name": "Yacco Pharmacy - Kumasi",
-            "facility_type": "pharmacy",
-            "region_id": "ashanti",
-            "address": "Adum, Kumasi",
-            "phone": "+233244789012",
-            "email": "kumasi@yaccopharm.com",
-            "is_active": True,
-            "nhis_registered": True,
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "updated_at": datetime.now(timezone.utc).isoformat()
-        }
-    ]
-    
-    await db.facilities.insert_many(sample_facilities)
-    
-    # Create sample users
-    sample_users = [
-        {
-            "id": str(uuid.uuid4()),
-            "email": "dr.mensah@kbth.gov.gh",
-            "name": "Dr. Kwame Mensah",
-            "role": "physician",
-            "region_id": "greater-accra",
-            "phone": "+233244111222",
-            "is_active": True,
-            "password_hash": hash_password("doctor123"),
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "updated_at": datetime.now(timezone.utc).isoformat()
-        },
-        {
-            "id": str(uuid.uuid4()),
-            "email": "nurse.ama@kath.gov.gh",
-            "name": "Ama Serwaa",
-            "role": "nurse",
-            "region_id": "ashanti",
-            "phone": "+233244333444",
-            "is_active": True,
-            "password_hash": hash_password("nurse123"),
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "updated_at": datetime.now(timezone.utc).isoformat()
-        },
-        {
-            "id": str(uuid.uuid4()),
-            "email": "pharm.kofi@yaccopharm.com",
-            "name": "Kofi Asante",
-            "role": "pharmacist",
-            "region_id": "greater-accra",
-            "phone": "+233244555666",
-            "is_active": True,
-            "password_hash": hash_password("pharm123"),
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "updated_at": datetime.now(timezone.utc).isoformat()
-        }
-    ]
-    
-    await db.users.insert_many(sample_users)
-    
-    return {"message": "Seed data created successfully", "admin_email": "admin@yacco.health", "admin_password": "admin123"}
-
-# Include the router in the main app
+# Include router and middleware
 app.include_router(api_router)
+
+# Include FHIR routes
+from fhir_routes import fhir_router, create_fhir_endpoints
+fhir_api_router = create_fhir_endpoints(db)
+app.include_router(fhir_router)
+
+# Include HIPAA Audit routes
+from audit_module import audit_router, create_audit_endpoints
+audit_api_router, log_audit_event = create_audit_endpoints(db, get_current_user)
+app.include_router(audit_router)
+
+# Include MyChart Patient Portal routes
+from mychart_module import mychart_router, create_mychart_endpoints
+mychart_api_router, get_portal_user = create_mychart_endpoints(db, JWT_SECRET, JWT_ALGORITHM)
+app.include_router(mychart_router)
+
+# Include HL7 v2 ADT routes
+from hl7_module import hl7_router, create_hl7_endpoints
+hl7_api_router = create_hl7_endpoints(db, get_current_user)
+app.include_router(hl7_router)
+
+# Include Clinical Features routes
+from clinical_module import clinical_router, create_clinical_endpoints
+clinical_api_router = create_clinical_endpoints(db, get_current_user)
+app.include_router(clinical_router)
+
+# Include Lab Results routes
+from lab_module import lab_router, create_lab_endpoints
+lab_api_router = create_lab_endpoints(db, get_current_user)
+app.include_router(lab_router)
+
+# Include Telehealth Video routes
+from telehealth_module import telehealth_router, create_telehealth_endpoints
+telehealth_api_router = create_telehealth_endpoints(db, get_current_user)
+app.include_router(telehealth_router)
+
+# Include Organization/Multi-tenant routes
+from organization_module import organization_router, create_organization_endpoints
+organization_api_router = create_organization_endpoints(db, get_current_user, hash_password)
+app.include_router(organization_router)
+
+# Include Pharmacy Portal routes
+from pharmacy_module import router as pharmacy_router, setup_routes as setup_pharmacy_routes
+pharmacy_api_router = setup_pharmacy_routes(db, get_current_user)
+app.include_router(pharmacy_api_router)
+
+# Include Billing routes
+from billing_module import router as billing_router, setup_routes as setup_billing_routes
+billing_api_router = setup_billing_routes(db, get_current_user)
+app.include_router(billing_api_router)
+
+# Include Reports routes
+from reports_module import router as reports_router, setup_routes as setup_reports_routes
+reports_api_router = setup_reports_routes(db, get_current_user)
+app.include_router(reports_api_router)
+
+# Include Imaging/DICOM routes
+from imaging_module import router as imaging_router, setup_routes as setup_imaging_routes
+imaging_api_router = setup_imaging_routes(db, get_current_user)
+app.include_router(imaging_api_router)
+
+# Include Clinical Decision Support routes
+from cds_module import router as cds_router, setup_routes as setup_cds_routes
+cds_api_router = setup_cds_routes(db, get_current_user)
+app.include_router(cds_api_router)
+
+# Include Records Sharing/HIE routes
+from records_sharing_module import router as records_sharing_router, setup_routes as setup_records_sharing_routes
+records_sharing_api_router = setup_records_sharing_routes(db, get_current_user)
+app.include_router(records_sharing_api_router)
+
+# Include RBAC (Role-Based Access Control) routes
+from rbac_module import rbac_router, create_rbac_endpoints
+rbac_api_router, check_permission, has_permission, require_any_permission = create_rbac_endpoints(db, get_current_user)
+app.include_router(rbac_router)
+
+# Include Two-Factor Authentication routes
+from twofa_module import twofa_router, create_2fa_endpoints
+twofa_api_router, verify_2fa_for_login, is_2fa_required = create_2fa_endpoints(db, get_current_user, verify_password, create_token)
+app.include_router(twofa_router)
+
+# Include Department Management routes
+from department_module import department_router, create_department_endpoints
+department_api_router = create_department_endpoints(db, get_current_user)
+app.include_router(department_router)
+
+# Include Consent Forms routes
+from consent_module import consent_router, create_consent_endpoints
+consent_api_router = create_consent_endpoints(db, get_current_user)
+app.include_router(consent_router)
+
+# Include Enhanced Authentication routes
+from auth_module import auth_router, create_auth_endpoints
+auth_api_router, create_enhanced_token, decode_enhanced_token, create_auth_session = create_auth_endpoints(db, get_current_user)
+app.include_router(auth_router)
+
+# Include Comprehensive Notification System
+from notification_module import notification_router, create_notification_endpoints
+notification_api_router, create_system_notification, create_template_notification = create_notification_endpoints(db, get_current_user)
+app.include_router(notification_router)
+
+# Include Nurse Portal Module
+from nurse_portal_module import nurse_router, create_nurse_portal_endpoints
+nurse_api_router = create_nurse_portal_endpoints(db, get_current_user)
+app.include_router(nurse_router)
+
+# Include Nursing Supervisor Module
+from nursing_supervisor_module import nursing_supervisor_router, create_nursing_supervisor_endpoints
+nursing_supervisor_api_router = create_nursing_supervisor_endpoints(db, get_current_user)
+app.include_router(nursing_supervisor_router)
+
+# Include Admin Portal Module
+from admin_portal_module import admin_router, create_admin_portal_endpoints
+admin_api_router = create_admin_portal_endpoints(db, get_current_user)
+app.include_router(admin_router)
+
+# Include Security & Compliance Module
+from security_compliance_module import security_router, create_security_endpoints
+security_api_router = create_security_endpoints(db, get_current_user)
+app.include_router(security_router)
+
+# Include Region-Based Hospital Discovery Module (Ghana)
+from region_module import region_router, create_region_endpoints
+region_api_router = create_region_endpoints(db, get_current_user, hash_password)
+app.include_router(region_router)
+
+# Include Hospital Admin Module
+from hospital_admin_module import hospital_admin_router, create_hospital_admin_endpoints
+hospital_admin_api_router = create_hospital_admin_endpoints(db, get_current_user, hash_password)
+app.include_router(hospital_admin_router)
+
+# Include Signup & Onboarding Module
+from signup_module import signup_router, create_signup_endpoints
+signup_api_router = create_signup_endpoints(db, hash_password, get_current_user)
+app.include_router(signup_router)
+
+# Include Hospital Dashboard Module
+from hospital_dashboard_module import hospital_dashboard_router, create_hospital_dashboard_endpoints
+hospital_dashboard_api_router = create_hospital_dashboard_endpoints(db, get_current_user)
+app.include_router(hospital_dashboard_router)
+
+# Include Hospital IT Admin Module (Super Admin IT)
+from hospital_it_admin_module import hospital_it_admin_router, create_hospital_it_admin_endpoints
+hospital_it_admin_api_router = create_hospital_it_admin_endpoints(db, get_current_user, hash_password)
+app.include_router(hospital_it_admin_router)
+
+# Include Email Notification Module
+from email_module import router as email_router
+app.include_router(email_router)
+
+# Include e-Prescribing Module
+from prescription_module import prescription_router, create_prescription_endpoints
+prescription_api_router = create_prescription_endpoints(db, get_current_user)
+app.include_router(prescription_router)
+
+# Include NHIS Claims & Billing Module
+from nhis_claims_module import nhis_router, create_nhis_endpoints
+nhis_api_router = create_nhis_endpoints(db, get_current_user)
+app.include_router(nhis_router)
+
+# Include Radiology Module
+from radiology_module import radiology_router, create_radiology_endpoints
+radiology_api_router = create_radiology_endpoints(db, get_current_user)
+app.include_router(radiology_router)
+
+# Include Bed Management Module
+from bed_management_module import bed_management_router, create_bed_management_endpoints
+bed_management_api_router = create_bed_management_endpoints(db, get_current_user)
+app.include_router(bed_management_router)
+
+
+# Include Finance Settings Module
+from finance_settings_module import router as finance_router, create_finance_endpoints
+finance_api_router = create_finance_endpoints(db, get_current_user)
+
+
+# Include Ambulance Module
+from ambulance_module import ambulance_router, create_ambulance_endpoints
+ambulance_api_router = create_ambulance_endpoints(db, get_current_user)
+app.include_router(ambulance_router)
+
+# Include Ghana Pharmacy Network Module
+from pharmacy_network_module import pharmacy_network_router, create_pharmacy_network_endpoints
+pharmacy_network_api_router = create_pharmacy_network_endpoints(db, get_current_user)
+app.include_router(pharmacy_network_router)
+
+# Include Ghana FDA Module
+from fda_module import fda_router, create_fda_endpoints
+fda_api_router = create_fda_endpoints(db, get_current_user)
+app.include_router(fda_router)
+
+# Include Notifications Module (Real-time alerts)
+from notifications_module import notifications_router, create_notification_endpoints as create_realtime_notifications
+notifications_api_router = create_realtime_notifications(db, get_current_user)
+app.include_router(notifications_router)
+
+# Include Supply Chain & Inventory Module
+from supply_chain_module import supply_chain_router, create_supply_chain_endpoints
+supply_chain_api_router = create_supply_chain_endpoints(db, get_current_user)
+app.include_router(supply_chain_router)
+
+# Include Billing Shifts Module (Shift-based billing controls)
+from billing_shifts_module import router as billing_shifts_router, create_billing_shifts_router
+billing_shifts_api_router = create_billing_shifts_router(db, get_current_user)
+app.include_router(billing_shifts_router)
+
+app.include_router(finance_router)
+
+# Voice Dictation Module
+from voice_dictation_module import create_voice_dictation_router
+voice_dictation_router = create_voice_dictation_router(db, get_current_user)
+app.include_router(voice_dictation_router)
+
+# PACS/DICOM Integration Module
+from pacs_integration_module import create_pacs_integration_router
+pacs_router = create_pacs_integration_router(db, get_current_user)
+app.include_router(pacs_router)
+
+# Interventional Radiology Module
+from interventional_radiology_module import create_ir_module_router
+ir_router = create_ir_module_router(db, get_current_user)
+app.include_router(ir_router)
+
+# Pharmacy Portal Module (Standalone pharmacy system)
+from pharmacy_portal_module import create_pharmacy_portal_router
+pharmacy_portal_router = create_pharmacy_portal_router(db)
+app.include_router(pharmacy_portal_router)
+
+# Pharmacy WebSocket Module (Real-time notifications)
+from pharmacy_ws_module import pharmacy_ws_router, create_pharmacy_ws_endpoints
+pharmacy_ws_endpoints = create_pharmacy_ws_endpoints(db)
+app.include_router(pharmacy_ws_router)
+
+# SMS/WhatsApp Notification Module (Arkesel API)
+from sms_notification_module import create_sms_router
+sms_router = create_sms_router(db)
+app.include_router(sms_router, prefix="/api")
+
+# Patient Referral Module
+from referral_module import create_referral_router
+referral_router = create_referral_router(db)
+app.include_router(referral_router)
+
+# Patient History Module
+from patient_history_module import create_patient_history_router
+patient_history_router = create_patient_history_router(db)
+app.include_router(patient_history_router)
+
+# Internal Staff Chat Module
+from staff_chat_module import create_staff_chat_router, create_chat_websocket_router
+staff_chat_router = create_staff_chat_router(db)
+app.include_router(staff_chat_router)
+chat_ws_router = create_chat_websocket_router(db)
+app.include_router(chat_ws_router)
+
+# Medication Database API
+from medication_database import get_all_medications, search_medications, get_medication_categories, get_medications_by_category
+
+@api_router.get("/medications/search")
+async def api_search_medications(
+    query: str = "",
+    category: str = None,
+    limit: int = 50
+):
+    """Search medications in the global database"""
+    results = search_medications(query, category, limit)
+    return {"medications": results, "total": len(results)}
+
+@api_router.get("/medications/categories")
+async def api_get_medication_categories():
+    """Get all medication categories"""
+    categories = get_medication_categories()
+    return {"categories": categories}
+
+@api_router.get("/medications/by-category/{category}")
+async def api_get_medications_by_category(category: str):
+    """Get all medications in a specific category"""
+    medications = get_medications_by_category(category)
+    return {"medications": medications, "total": len(medications)}
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -527,6 +1472,53 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ============ STARTUP - SEED SUPER ADMIN & REGIONS ============
+@app.on_event("startup")
+async def seed_super_admin():
+    """Create default super admin user and Ghana regions if not exists"""
+    try:
+        # Seed Super Admin
+        super_admin_email = "ygtnetworks@gmail.com"
+        existing = await db.users.find_one({"email": super_admin_email})
+        
+        if not existing:
+            super_admin_id = str(uuid.uuid4())
+            super_admin_user = {
+                "id": super_admin_id,
+                "email": super_admin_email,
+                "first_name": "Super",
+                "last_name": "Admin",
+                "role": "super_admin",
+                "department": "Platform Administration",
+                "specialty": None,
+                "organization_id": None,  # Super admin is not tied to any organization
+                "password": hash_password("test123"),
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "is_active": True,
+                "is_temp_password": False
+            }
+            await db.users.insert_one(super_admin_user)
+            logger.info(f"✅ Super Admin created: {super_admin_email}")
+        else:
+            logger.info(f"✅ Super Admin already exists: {super_admin_email}")
+        
+        # Seed Ghana Regions
+        from region_module import GHANA_REGIONS
+        for region in GHANA_REGIONS:
+            existing_region = await db.regions.find_one({"id": region["id"]})
+            if not existing_region:
+                region_doc = {
+                    **region,
+                    "is_active": True,
+                    "hospital_count": 0,
+                    "created_at": datetime.now(timezone.utc).isoformat()
+                }
+                await db.regions.insert_one(region_doc)
+        logger.info(f"✅ Ghana regions seeded: {len(GHANA_REGIONS)} regions")
+        
+    except Exception as e:
+        logger.error(f"❌ Error in startup seeding: {e}")
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
