@@ -328,8 +328,12 @@ async def create_facility(facility_data: FacilityCreate, admin: dict = Depends(r
     facility = Facility(**facility_data.model_dump())
     facility_dict = facility.model_dump()
     
-    await db.facilities.insert_one(facility_dict)
-    return facility_dict
+    # Insert into database (this will add _id to facility_dict)
+    await db.facilities.insert_one(facility_dict.copy())  # Use copy to avoid mutation
+    
+    # Return without _id
+    response_dict = {k: v for k, v in facility_dict.items() if k != "_id"}
+    return response_dict
 
 @api_router.put("/facilities/{facility_id}")
 async def update_facility(facility_id: str, update_data: FacilityUpdate, admin: dict = Depends(require_it_admin)):
