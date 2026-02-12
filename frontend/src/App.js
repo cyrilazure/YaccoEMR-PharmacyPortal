@@ -70,6 +70,9 @@ import PrescriptionTracking from "@/pages/PrescriptionTracking";
 // Internal Staff Chat
 import StaffChatPage from "@/pages/StaffChatPage";
 
+// HL7 ADT Integration
+import HL7ADTPortal from "@/pages/HL7ADTPortal";
+
 // Role-based redirect component
 function RoleBasedRedirect() {
   const { user } = useAuth();
@@ -273,6 +276,9 @@ function App() {
             
             {/* Internal Staff Chat */}
             <Route path="staff-chat" element={<StaffChatPage />} />
+            
+            {/* HL7 ADT Integration */}
+            <Route path="hl7-adt" element={<HL7ADTPortal />} />
           </Route>
           
           {/* Catch-all redirect to landing page */}
