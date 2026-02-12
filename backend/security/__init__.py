@@ -24,7 +24,7 @@ import re
 logger = logging.getLogger(__name__)
 
 # Security Configuration
-JWT_SECRET = os.environ.get('JWT_SECRET', 'yacco-health-super-secret-key-change-in-production')
+JWT_SECRET = os.environ.get('JWT_SECRET', 'yacco-emr-secret-key-2024')
 JWT_ALGORITHM = 'HS256'
 JWT_EXPIRATION_HOURS = 24
 RATE_LIMIT_WINDOW = 60  # seconds
