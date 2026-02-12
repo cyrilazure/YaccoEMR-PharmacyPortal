@@ -2209,6 +2209,160 @@ class YaccoEMRTester:
             self.log_test("Bed Management Census", False, error_msg)
             return False
 
+    def test_regions_endpoint(self):
+        """Test Regions Endpoint - GET /api/regions/ (should return all 16 Ghana regions)"""
+        response, error = self.make_request('GET', 'regions/')
+        if error:
+            self.log_test("GET /api/regions/", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            # Should return 16 Ghana regions
+            is_list = isinstance(data, list)
+            has_16_regions = len(data) == 16 if is_list else False
+            
+            # Check region structure
+            region_structure_valid = True
+            if is_list and len(data) > 0:
+                first_region = data[0]
+                required_fields = ['id', 'name', 'capital']
+                region_structure_valid = all(field in first_region for field in required_fields)
+            
+            # Look for specific Ghana regions
+            greater_accra_found = False
+            ashanti_found = False
+            if is_list:
+                region_names = [r.get('name', '').lower() for r in data]
+                greater_accra_found = any('greater accra' in name for name in region_names)
+                ashanti_found = any('ashanti' in name for name in region_names)
+            
+            success = is_list and has_16_regions and region_structure_valid and greater_accra_found and ashanti_found
+            details = f"Regions count: {len(data) if is_list else 'N/A'}, Structure valid: {region_structure_valid}, Greater Accra found: {greater_accra_found}, Ashanti found: {ashanti_found}"
+            self.log_test("GET /api/regions/", success, details)
+            return success
+        else:
+            try:
+                error_data = response.json()
+                error_msg = error_data.get('detail', f'Status: {response.status_code}')
+            except:
+                error_msg = f'Status: {response.status_code}'
+            self.log_test("GET /api/regions/", False, error_msg)
+            return False
+
+    def test_specific_region_endpoint(self):
+        """Test Specific Region Endpoint - GET /api/regions/{region_id} (using greater-accra as ID)"""
+        response, error = self.make_request('GET', 'regions/greater-accra')
+        if error:
+            self.log_test("GET /api/regions/{region_id}", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            # Check region data structure
+            has_id = 'id' in data
+            has_name = 'name' in data
+            has_capital = 'capital' in data
+            correct_region = data.get('name', '').lower() == 'greater accra'
+            correct_capital = data.get('capital', '').lower() == 'accra'
+            
+            success = has_id and has_name and has_capital and correct_region and correct_capital
+            details = f"Region: {data.get('name')}, Capital: {data.get('capital')}, ID: {data.get('id')}"
+            self.log_test("GET /api/regions/{region_id}", success, details)
+            return success
+        else:
+            try:
+                error_data = response.json()
+                error_msg = error_data.get('detail', f'Status: {response.status_code}')
+            except:
+                error_msg = f'Status: {response.status_code}'
+            self.log_test("GET /api/regions/{region_id}", False, error_msg)
+            return False
+
+    def test_region_facilities_endpoint(self):
+        """Test Region Facilities Endpoint - GET /api/regions/greater-accra/facilities"""
+        response, error = self.make_request('GET', 'regions/greater-accra/facilities')
+        if error:
+            self.log_test("GET /api/regions/greater-accra/facilities", False, error)
+            return False
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            # Should return facilities/hospitals in Greater Accra
+            is_list = isinstance(data, list)
+            has_facilities = len(data) > 0 if is_list else False
+            
+            # Check facility structure
+            facility_structure_valid = True
+            if is_list and has_facilities:
+                first_facility = data[0]
+                expected_fields = ['id', 'name', 'region']
+                facility_structure_valid = all(field in first_facility for field in expected_fields)
+                
+                # Check if region matches Greater Accra
+                correct_region = first_facility.get('region', '').lower() == 'greater accra'
+                facility_structure_valid = facility_structure_valid and correct_region
+            
+            success = is_list and facility_structure_valid
+            details = f"Facilities count: {len(data) if is_list else 'N/A'}, Structure valid: {facility_structure_valid}"
+            self.log_test("GET /api/regions/greater-accra/facilities", success, details)
+            return success
+        else:
+            try:
+                error_data = response.json()
+                error_msg = error_data.get('detail', f'Status: {response.status_code}')
+            except:
+                error_msg = f'Status: {response.status_code}'
+            self.log_test("GET /api/regions/greater-accra/facilities", False, error_msg)
+            return False
+
+    def run_region_api_tests(self):
+        """Run Region API tests as specified in review request"""
+        print("🧪 Starting Yacco EMR Ghana Region API Testing")
+        print("=" * 60)
+        print("Testing: Region endpoints for Ghana healthcare platform")
+        print(f"Backend URL: {self.base_url}")
+        print("Testing endpoints:")
+        print("- GET /api/regions/ (all 16 Ghana regions)")
+        print("- GET /api/regions/{region_id} (specific region)")
+        print("- GET /api/regions/greater-accra/facilities (region facilities)")
+        print("- GET /api/health (backend health check)")
+        print("=" * 60)
+        
+        # Test sequence for region APIs
+        tests = [
+            self.test_backend_health_check,
+            self.test_regions_endpoint,
+            self.test_specific_region_endpoint,
+            self.test_region_facilities_endpoint
+        ]
+        
+        for test in tests:
+            try:
+                test()
+            except Exception as e:
+                self.log_test(test.__name__, False, f"Exception: {str(e)}")
+        
+        # Print summary
+        print("\n" + "=" * 60)
+        print(f"📊 GHANA REGION API TEST SUMMARY")
+        print(f"Total Tests: {self.tests_run}")
+        print(f"Passed: {self.tests_passed}")
+        print(f"Failed: {self.tests_run - self.tests_passed}")
+        print(f"Success Rate: {(self.tests_passed/self.tests_run*100):.1f}%")
+        
+        # Print failed tests
+        failed_tests = [t for t in self.test_results if not t['success']]
+        if failed_tests:
+            print(f"\n❌ FAILED TESTS:")
+            for test in failed_tests:
+                print(f"  - {test['test']}: {test['details']}")
+        
+        return self.tests_passed == self.tests_run
+
     def run_yacco_emr_new_modules_tests(self):
         """Run tests for the new Yacco EMR backend modules as specified in review request"""
         print("🧪 Starting Yacco EMR New Backend Modules Testing")
