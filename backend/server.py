@@ -379,7 +379,7 @@ async def get_stats(admin: dict = Depends(require_it_admin)):
 @api_router.post("/seed")
 async def seed_data():
     # Check if already seeded
-    admin_exists = await db.users.find_one({"email": "admin@yacco.health"})
+    admin_exists = await db.users.find_one({"email": "admin@yacco.health"}, {"_id": 1})
     if admin_exists:
         return {"message": "Data already seeded"}
     
