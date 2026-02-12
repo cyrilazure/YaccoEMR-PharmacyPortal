@@ -1439,6 +1439,11 @@ app.include_router(staff_chat_router)
 chat_ws_router = create_chat_websocket_router(db)
 app.include_router(chat_ws_router)
 
+# Google Cloud Healthcare API Integration Module
+from google_healthcare_module import create_google_healthcare_router
+google_healthcare_router = create_google_healthcare_router(db)
+app.include_router(google_healthcare_router)
+
 # Medication Database API
 from medication_database import get_all_medications, search_medications, get_medication_categories, get_medications_by_category
 
