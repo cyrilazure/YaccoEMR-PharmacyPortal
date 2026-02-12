@@ -204,6 +204,37 @@ physician, nurse, nursing_supervisor, floor_supervisor, hospital_admin, pharmaci
 - All 16 Ghana regions confirmed
 - 28 pharmacies available in public endpoint
 
+### Restored Hospitals & Staff Credentials (February 12, 2026)
+
+**Super Admin:**
+- Email: `ygtnetworks@gmail.com` | Password: `test123`
+
+**Ashaiman Polyclinic (Greater Accra):**
+| Role | Email | Password |
+|------|-------|----------|
+| IT Admin | ashaiman@itadmin.com | ZXHoe0HxwupLPzvv |
+| Physician | physicianicu@pysicianicu.com | oQH7yw1HWq6ZRTzE |
+| Nurse | nurse@ashaiman.com | q1HfN4_6RHFj0jYD |
+| Hospital Admin | admin@ashaiman.com | 9Oxb3EoxptyNSkqu |
+
+**Eastern Region Regional Health Center (Koforidua):**
+| Role | Email | Password |
+|------|-------|----------|
+| IT Admin | itadmin@eastern.com | prueHX1C97H0AQqN |
+| Physician | physician@eastern.com | H5ry1bL0srAsN7RA |
+| Nurse | nurse@eastern.com | 0zzD7gwcoSq5I5tW |
+
+**Other Hospitals Created:**
+- Korle Bu Teaching Hospital (Greater Accra)
+- Komfo Anokye Teaching Hospital (Ashanti)
+- Cape Coast Teaching Hospital (Central)
+- Tamale Teaching Hospital (Northern)
+- Ho Municipal Hospital (Volta)
+- Effia-Nkwanta Regional Hospital (Western)
+- Bolgatanga Regional Hospital (Upper East)
+
+**Total: 9 hospitals across 8 regions**
+
 ---
 
 ## What's Been Implemented
