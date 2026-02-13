@@ -3503,6 +3503,50 @@ export default function PatientChart() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Confidentiality Notice - HIPAA/Privacy Compliance */}
+      <AlertDialog open={showConfidentialityNotice && !hasAcknowledgedConfidentiality}>
+        <AlertDialogContent className="max-w-lg" data-testid="confidentiality-notice">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-amber-600">
+              <Shield className="w-5 h-5" />
+              Confidentiality Notice
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="text-left space-y-3">
+                <p>
+                  You are about to access protected health information (PHI) for patient:
+                </p>
+                <div className="bg-slate-100 p-3 rounded-lg">
+                  <p className="font-semibold text-slate-800">{patient?.first_name} {patient?.last_name}</p>
+                  <p className="text-sm text-slate-600">MRN: {patient?.mrn}</p>
+                </div>
+                <p className="text-sm">
+                  By proceeding, you confirm that:
+                </p>
+                <ul className="text-sm list-disc pl-5 space-y-1">
+                  <li>You have a legitimate clinical need to access this patient's records</li>
+                  <li>You will only access information necessary for patient care</li>
+                  <li>You will not share this information with unauthorized individuals</li>
+                  <li>You understand that all access is logged and audited</li>
+                </ul>
+                <p className="text-xs text-slate-500 mt-4">
+                  Unauthorized access to patient records is a violation of privacy regulations and may result in disciplinary action.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction 
+              onClick={handleAcknowledgeConfidentiality}
+              className="bg-teal-600 hover:bg-teal-700"
+              data-testid="acknowledge-confidentiality-btn"
+            >
+              I Acknowledge &amp; Proceed
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
