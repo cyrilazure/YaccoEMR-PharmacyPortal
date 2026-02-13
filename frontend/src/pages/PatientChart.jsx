@@ -79,6 +79,37 @@ export default function PatientChart() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   
+  // Clinical Documentation States
+  const [nursingDocs, setNursingDocs] = useState([]);
+  const [physicianDocs, setPhysicianDocs] = useState([]);
+  const [nursingDocTypes, setNursingDocTypes] = useState([]);
+  const [physicianDocTypes, setPhysicianDocTypes] = useState([]);
+  const [showConfidentialityNotice, setShowConfidentialityNotice] = useState(true);
+  const [hasAcknowledgedConfidentiality, setHasAcknowledgedConfidentiality] = useState(false);
+  const [nursingDocDialogOpen, setNursingDocDialogOpen] = useState(false);
+  const [physicianDocDialogOpen, setPhysicianDocDialogOpen] = useState(false);
+  const [newNursingDoc, setNewNursingDoc] = useState({
+    doc_type: 'progress_note',
+    title: '',
+    content: '',
+    clinical_findings: '',
+    interventions: '',
+    patient_response: '',
+    plan_of_care: '',
+    shift_type: ''
+  });
+  const [newPhysicianDoc, setNewPhysicianDoc] = useState({
+    doc_type: 'progress_note',
+    title: '',
+    chief_complaint: '',
+    history_present_illness: '',
+    past_medical_history: '',
+    physical_exam: '',
+    assessment: '',
+    plan: '',
+    content: ''
+  });
+  
   // Location-based pharmacy filtering
   const [allPharmacies, setAllPharmacies] = useState([]);
   const [filteredPharmacies, setFilteredPharmacies] = useState([]);
