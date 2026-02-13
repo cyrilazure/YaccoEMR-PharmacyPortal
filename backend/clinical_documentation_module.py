@@ -252,6 +252,9 @@ def create_clinical_documentation_endpoints(db, get_current_user):
         log_dict = log_entry.model_dump(mode='json')
         await db.chart_audit_logs.insert_one(log_dict)
         
+        # Remove MongoDB _id if present
+        log_dict.pop('_id', None)
+        
         return log_entry
     
     # ============ ACCESS CONTROL HELPERS ============
@@ -449,6 +452,9 @@ def create_clinical_documentation_endpoints(db, get_current_user):
         
         doc_dict = doc.model_dump(mode='json')
         await db.nursing_documentation.insert_one(doc_dict)
+        
+        # Remove MongoDB _id from response
+        doc_dict.pop('_id', None)
         
         # Log creation
         await log_chart_access(
@@ -655,6 +661,9 @@ def create_clinical_documentation_endpoints(db, get_current_user):
         doc_dict = doc.model_dump(mode='json')
         await db.physician_documentation.insert_one(doc_dict)
         
+        # Remove MongoDB _id from response
+        doc_dict.pop('_id', None)
+        
         # Log creation
         await log_chart_access(
             patient_id=doc_data.patient_id,
@@ -842,6 +851,9 @@ def create_clinical_documentation_endpoints(db, get_current_user):
         
         assignment_dict = assignment.model_dump(mode='json')
         await db.patient_assignments.insert_one(assignment_dict)
+        
+        # Remove MongoDB _id from response
+        assignment_dict.pop('_id', None)
         
         return {"message": "Patient assignment created", "assignment": assignment_dict}
     
