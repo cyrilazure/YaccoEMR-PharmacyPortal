@@ -166,6 +166,24 @@ Last Updated: February 13, 2026
 - `GET /api/hl7/adt/events` - List ADT events
 - `GET /api/hl7/messages` - List HL7 messages
 
+### Clinical Documentation (NEW)
+- `GET /api/clinical-docs/doc-types/nursing` - Get nursing documentation types
+- `GET /api/clinical-docs/doc-types/physician` - Get physician documentation types
+- `GET /api/clinical-docs/nursing/{patient_id}` - Get nursing docs for patient
+- `POST /api/clinical-docs/nursing` - Create nursing documentation
+- `PUT /api/clinical-docs/nursing/{doc_id}` - Update nursing documentation
+- `POST /api/clinical-docs/nursing/{doc_id}/sign` - Sign nursing documentation
+- `GET /api/clinical-docs/physician/{patient_id}` - Get physician docs for patient
+- `POST /api/clinical-docs/physician` - Create physician documentation
+- `PUT /api/clinical-docs/physician/{doc_id}` - Update physician documentation
+- `POST /api/clinical-docs/physician/{doc_id}/sign` - Sign physician documentation
+- `GET /api/clinical-docs/assignments/{patient_id}` - Get patient assignments
+- `POST /api/clinical-docs/assignments` - Create patient assignment
+- `DELETE /api/clinical-docs/assignments/{id}` - End patient assignment
+- `GET /api/clinical-docs/audit-logs/{patient_id}` - Get patient audit logs
+- `GET /api/clinical-docs/audit-logs` - Get all audit logs (admin)
+- `GET /api/clinical-docs/audit-logs/suspicious` - Get suspicious activity alerts
+
 ### Patient Referrals
 - `GET /api/referrals/` - List referrals
 - `POST /api/referrals/` - Create referral
