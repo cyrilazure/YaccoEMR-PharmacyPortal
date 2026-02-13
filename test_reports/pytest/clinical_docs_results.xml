@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="12" time="1.855" timestamp="2026-02-13T00:34:21.487926+00:00" hostname="agent-env-ec729482-a0e8-4223-8413-e72b7e5108c3"><testcase classname="backend.tests.test_clinical_documentation.TestClinicalDocsAPINoAuth" name="test_nursing_doc_types" time="0.105" /><testcase classname="backend.tests.test_clinical_documentation.TestClinicalDocsAPINoAuth" name="test_physician_doc_types" time="0.043" /><testcase classname="backend.tests.test_clinical_documentation.TestPhysicianFlow" name="test_physician_get_nursing_docs" time="0.422" /><testcase classname="backend.tests.test_clinical_documentation.TestPhysicianFlow" name="test_physician_get_physician_docs" time="0.081" /><testcase classname="backend.tests.test_clinical_documentation.TestPhysicianFlow" name="test_physician_create_physician_doc" time="0.101"><failure message="requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)">/root/.venv/lib/python3.11/site-packages/requests/models.py:976: in json
+    return complexjson.loads(self.text, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/json/__init__.py:346: in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/json/decoder.py:337: in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/json/decoder.py:355: in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+
+During handling of the above exception, another exception occurred:
+backend/tests/test_clinical_documentation.py:164: in test_physician_create_physician_doc
+    print(f"Create Physician Doc Response: {response.json()}")
+                                            ^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/models.py:980: in json
+    raise RequestsJSONDecodeError(e.msg, e.doc, e.pos)
+E   requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)</failure></testcase><testcase classname="backend.tests.test_clinical_documentation.TestPhysicianFlow" name="test_physician_cannot_create_nursing_doc" time="0.046" /><testcase classname="backend.tests.test_clinical_documentation.TestNurseFlow" name="test_nurse_get_nursing_docs" time="0.402" /><testcase classname="backend.tests.test_clinical_documentation.TestNurseFlow" name="test_nurse_get_physician_docs" time="0.040" /><testcase classname="backend.tests.test_clinical_documentation.TestNurseFlow" name="test_nurse_create_nursing_doc" time="0.043" /><testcase classname="backend.tests.test_clinical_documentation.TestNurseFlow" name="test_nurse_cannot_create_physician_doc" time="0.041" /><testcase classname="backend.tests.test_clinical_documentation.TestAuditLogging" name="test_audit_logs_created_on_access" time="0.386" /><testcase classname="backend.tests.test_clinical_documentation.TestHealthCheck" name="test_api_health" time="0.041" /></testsuite></testsuites>
