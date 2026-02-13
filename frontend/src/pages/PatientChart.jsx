@@ -2497,6 +2497,437 @@ export default function PatientChart() {
           </Card>
         </TabsContent>
 
+        {/* Nursing Documentation Tab */}
+        <TabsContent value="nursing-docs" className="mt-6 space-y-6" data-testid="nursing-docs-content">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <ClipboardPlus className="w-5 h-5 text-teal-600" /> Nursing Documentation
+              </CardTitle>
+              {(user?.role === 'nurse' || user?.role === 'nursing_supervisor' || user?.role === 'floor_supervisor' || user?.role === 'super_admin') && (
+                <Dialog open={nursingDocDialogOpen} onOpenChange={setNursingDocDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button size="sm" className="gap-1 bg-teal-600 hover:bg-teal-700" data-testid="add-nursing-doc-btn">
+                      <Plus className="w-4 h-4" /> Add Documentation
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Create Nursing Documentation</DialogTitle>
+                      <DialogDescription>Document nursing assessments, interventions, and patient progress</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label>Documentation Type *</Label>
+                          <Select value={newNursingDoc.doc_type} onValueChange={(v) => setNewNursingDoc({...newNursingDoc, doc_type: v})}>
+                            <SelectTrigger data-testid="nursing-doc-type-select">
+                              <SelectValue placeholder="Select type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {nursingDocTypes.map((t) => (
+                                <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label>Shift</Label>
+                          <Select value={newNursingDoc.shift_type} onValueChange={(v) => setNewNursingDoc({...newNursingDoc, shift_type: v})}>
+                            <SelectTrigger data-testid="nursing-shift-select">
+                              <SelectValue placeholder="Select shift" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="morning">Morning</SelectItem>
+                              <SelectItem value="evening">Evening</SelectItem>
+                              <SelectItem value="night">Night</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <div>
+                        <Label>Title *</Label>
+                        <Input
+                          placeholder="e.g., Morning Assessment - Day 2"
+                          value={newNursingDoc.title}
+                          onChange={(e) => setNewNursingDoc({...newNursingDoc, title: e.target.value})}
+                          data-testid="nursing-doc-title"
+                        />
+                      </div>
+                      <div>
+                        <Label>Clinical Findings</Label>
+                        <Textarea
+                          placeholder="Document your clinical observations and findings..."
+                          value={newNursingDoc.clinical_findings}
+                          onChange={(e) => setNewNursingDoc({...newNursingDoc, clinical_findings: e.target.value})}
+                          rows={3}
+                          data-testid="nursing-clinical-findings"
+                        />
+                      </div>
+                      <div>
+                        <Label>Interventions Performed</Label>
+                        <Textarea
+                          placeholder="List nursing interventions performed..."
+                          value={newNursingDoc.interventions}
+                          onChange={(e) => setNewNursingDoc({...newNursingDoc, interventions: e.target.value})}
+                          rows={3}
+                          data-testid="nursing-interventions"
+                        />
+                      </div>
+                      <div>
+                        <Label>Patient Response</Label>
+                        <Textarea
+                          placeholder="Document patient response to interventions..."
+                          value={newNursingDoc.patient_response}
+                          onChange={(e) => setNewNursingDoc({...newNursingDoc, patient_response: e.target.value})}
+                          rows={2}
+                          data-testid="nursing-patient-response"
+                        />
+                      </div>
+                      <div>
+                        <Label>Plan of Care / Notes *</Label>
+                        <Textarea
+                          placeholder="Document the nursing plan and additional notes..."
+                          value={newNursingDoc.content}
+                          onChange={(e) => setNewNursingDoc({...newNursingDoc, content: e.target.value})}
+                          rows={4}
+                          data-testid="nursing-doc-content"
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setNursingDocDialogOpen(false)}>Cancel</Button>
+                      <Button onClick={handleCreateNursingDoc} disabled={saving} className="bg-teal-600 hover:bg-teal-700" data-testid="save-nursing-doc-btn">
+                        {saving ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Saving...</> : 'Save Documentation'}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              )}
+            </CardHeader>
+            <CardContent>
+              {user?.role === 'physician' && (
+                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-2 text-sm text-blue-700">
+                  <Eye className="w-4 h-4" />
+                  <span>Read-only view - Nursing documentation for patient reference</span>
+                </div>
+              )}
+              {nursingDocs.length === 0 ? (
+                <div className="text-center py-8 text-slate-500">
+                  <ClipboardPlus className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+                  <p>No nursing documentation found for this patient</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {nursingDocs.map((doc) => (
+                    <Card key={doc.id} className="border-l-4 border-l-teal-500" data-testid={`nursing-doc-${doc.id}`}>
+                      <CardHeader className="pb-2">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <CardTitle className="text-base flex items-center gap-2">
+                              {doc.title}
+                              {doc.status === 'signed' ? (
+                                <Badge className="bg-green-100 text-green-700 text-xs"><Check className="w-3 h-3 mr-1" /> Signed</Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-xs">Draft</Badge>
+                              )}
+                            </CardTitle>
+                            <CardDescription className="flex items-center gap-2 mt-1">
+                              <Badge variant="secondary" className="text-xs">{doc.doc_type?.replace('_', ' ')}</Badge>
+                              {doc.shift_type && <Badge variant="outline" className="text-xs">{doc.shift_type} shift</Badge>}
+                            </CardDescription>
+                          </div>
+                          <div className="text-right text-xs text-slate-500">
+                            <p className="font-medium">{doc.nurse_name}</p>
+                            <p>{formatDateTime(doc.created_at)}</p>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-2 space-y-2 text-sm">
+                        {doc.clinical_findings && (
+                          <div>
+                            <span className="font-medium text-slate-700">Clinical Findings:</span>
+                            <p className="text-slate-600 whitespace-pre-wrap">{doc.clinical_findings}</p>
+                          </div>
+                        )}
+                        {doc.interventions && (
+                          <div>
+                            <span className="font-medium text-slate-700">Interventions:</span>
+                            <p className="text-slate-600 whitespace-pre-wrap">{doc.interventions}</p>
+                          </div>
+                        )}
+                        {doc.patient_response && (
+                          <div>
+                            <span className="font-medium text-slate-700">Patient Response:</span>
+                            <p className="text-slate-600 whitespace-pre-wrap">{doc.patient_response}</p>
+                          </div>
+                        )}
+                        {doc.content && (
+                          <div>
+                            <span className="font-medium text-slate-700">Notes:</span>
+                            <p className="text-slate-600 whitespace-pre-wrap">{doc.content}</p>
+                          </div>
+                        )}
+                        {doc.can_sign && doc.status === 'draft' && (
+                          <div className="pt-2 border-t mt-2">
+                            <Button 
+                              size="sm" 
+                              onClick={() => handleSignNursingDoc(doc.id)}
+                              className="bg-green-600 hover:bg-green-700"
+                              data-testid={`sign-nursing-doc-${doc.id}`}
+                            >
+                              <Check className="w-4 h-4 mr-1" /> Sign Documentation
+                            </Button>
+                          </div>
+                        )}
+                        {doc.signed_at && (
+                          <div className="pt-2 border-t mt-2 text-xs text-green-700 flex items-center gap-1">
+                            <UserCheck className="w-3 h-3" />
+                            Signed by {doc.signed_by_name} on {formatDateTime(doc.signed_at)}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Physician Documentation Tab */}
+        <TabsContent value="physician-docs" className="mt-6 space-y-6" data-testid="physician-docs-content">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Stethoscope className="w-5 h-5 text-indigo-600" /> Physician Documentation
+              </CardTitle>
+              {(user?.role === 'physician' || user?.role === 'super_admin') && (
+                <Dialog open={physicianDocDialogOpen} onOpenChange={setPhysicianDocDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button size="sm" className="gap-1 bg-indigo-600 hover:bg-indigo-700" data-testid="add-physician-doc-btn">
+                      <Plus className="w-4 h-4" /> Add Documentation
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Create Physician Documentation</DialogTitle>
+                      <DialogDescription>Document clinical notes, assessments, and treatment plans</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label>Documentation Type *</Label>
+                          <Select value={newPhysicianDoc.doc_type} onValueChange={(v) => setNewPhysicianDoc({...newPhysicianDoc, doc_type: v})}>
+                            <SelectTrigger data-testid="physician-doc-type-select">
+                              <SelectValue placeholder="Select type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {physicianDocTypes.map((t) => (
+                                <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label>Title *</Label>
+                          <Input
+                            placeholder="e.g., Initial Assessment"
+                            value={newPhysicianDoc.title}
+                            onChange={(e) => setNewPhysicianDoc({...newPhysicianDoc, title: e.target.value})}
+                            data-testid="physician-doc-title"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label>Chief Complaint</Label>
+                        <Input
+                          placeholder="Patient's main reason for visit"
+                          value={newPhysicianDoc.chief_complaint}
+                          onChange={(e) => setNewPhysicianDoc({...newPhysicianDoc, chief_complaint: e.target.value})}
+                          data-testid="physician-chief-complaint"
+                        />
+                      </div>
+                      <div>
+                        <Label>History of Present Illness (HPI)</Label>
+                        <Textarea
+                          placeholder="Document the history of the present illness..."
+                          value={newPhysicianDoc.history_present_illness}
+                          onChange={(e) => setNewPhysicianDoc({...newPhysicianDoc, history_present_illness: e.target.value})}
+                          rows={3}
+                          data-testid="physician-hpi"
+                        />
+                      </div>
+                      <div>
+                        <Label>Past Medical History</Label>
+                        <Textarea
+                          placeholder="Document relevant past medical history..."
+                          value={newPhysicianDoc.past_medical_history}
+                          onChange={(e) => setNewPhysicianDoc({...newPhysicianDoc, past_medical_history: e.target.value})}
+                          rows={2}
+                          data-testid="physician-pmh"
+                        />
+                      </div>
+                      <div>
+                        <Label>Physical Examination</Label>
+                        <Textarea
+                          placeholder="Document physical exam findings..."
+                          value={newPhysicianDoc.physical_exam}
+                          onChange={(e) => setNewPhysicianDoc({...newPhysicianDoc, physical_exam: e.target.value})}
+                          rows={3}
+                          data-testid="physician-pe"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label>Assessment / Diagnosis</Label>
+                          <Textarea
+                            placeholder="Clinical assessment and diagnosis..."
+                            value={newPhysicianDoc.assessment}
+                            onChange={(e) => setNewPhysicianDoc({...newPhysicianDoc, assessment: e.target.value})}
+                            rows={3}
+                            data-testid="physician-assessment"
+                          />
+                        </div>
+                        <div>
+                          <Label>Plan</Label>
+                          <Textarea
+                            placeholder="Treatment plan and recommendations..."
+                            value={newPhysicianDoc.plan}
+                            onChange={(e) => setNewPhysicianDoc({...newPhysicianDoc, plan: e.target.value})}
+                            rows={3}
+                            data-testid="physician-plan"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label>Additional Notes</Label>
+                        <Textarea
+                          placeholder="Any additional clinical notes..."
+                          value={newPhysicianDoc.content}
+                          onChange={(e) => setNewPhysicianDoc({...newPhysicianDoc, content: e.target.value})}
+                          rows={2}
+                          data-testid="physician-additional-notes"
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setPhysicianDocDialogOpen(false)}>Cancel</Button>
+                      <Button onClick={handleCreatePhysicianDoc} disabled={saving} className="bg-indigo-600 hover:bg-indigo-700" data-testid="save-physician-doc-btn">
+                        {saving ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Saving...</> : 'Save Documentation'}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              )}
+            </CardHeader>
+            <CardContent>
+              {(user?.role === 'nurse' || user?.role === 'nursing_supervisor') && (
+                <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-2 text-sm text-amber-700">
+                  <Lock className="w-4 h-4" />
+                  <span>Read-only view - Physician documentation for clinical reference</span>
+                </div>
+              )}
+              {physicianDocs.length === 0 ? (
+                <div className="text-center py-8 text-slate-500">
+                  <Stethoscope className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+                  <p>No physician documentation found for this patient</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {physicianDocs.map((doc) => (
+                    <Card key={doc.id} className="border-l-4 border-l-indigo-500" data-testid={`physician-doc-${doc.id}`}>
+                      <CardHeader className="pb-2">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <CardTitle className="text-base flex items-center gap-2">
+                              {doc.title}
+                              {doc.status === 'signed' ? (
+                                <Badge className="bg-green-100 text-green-700 text-xs"><Check className="w-3 h-3 mr-1" /> Signed</Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-xs">Draft</Badge>
+                              )}
+                            </CardTitle>
+                            <CardDescription className="mt-1">
+                              <Badge variant="secondary" className="text-xs">{doc.doc_type?.replace(/_/g, ' ')}</Badge>
+                            </CardDescription>
+                          </div>
+                          <div className="text-right text-xs text-slate-500">
+                            <p className="font-medium">{doc.physician_name}</p>
+                            <p>{formatDateTime(doc.created_at)}</p>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-2 space-y-3 text-sm">
+                        {doc.chief_complaint && (
+                          <div>
+                            <span className="font-medium text-slate-700">Chief Complaint:</span>
+                            <p className="text-slate-600">{doc.chief_complaint}</p>
+                          </div>
+                        )}
+                        {doc.history_present_illness && (
+                          <div>
+                            <span className="font-medium text-slate-700">History of Present Illness:</span>
+                            <p className="text-slate-600 whitespace-pre-wrap">{doc.history_present_illness}</p>
+                          </div>
+                        )}
+                        {doc.past_medical_history && (
+                          <div>
+                            <span className="font-medium text-slate-700">Past Medical History:</span>
+                            <p className="text-slate-600 whitespace-pre-wrap">{doc.past_medical_history}</p>
+                          </div>
+                        )}
+                        {doc.physical_exam && (
+                          <div>
+                            <span className="font-medium text-slate-700">Physical Examination:</span>
+                            <p className="text-slate-600 whitespace-pre-wrap">{doc.physical_exam}</p>
+                          </div>
+                        )}
+                        {doc.assessment && (
+                          <div className="bg-slate-50 p-3 rounded">
+                            <span className="font-medium text-slate-700">Assessment:</span>
+                            <p className="text-slate-600 whitespace-pre-wrap">{doc.assessment}</p>
+                          </div>
+                        )}
+                        {doc.plan && (
+                          <div className="bg-blue-50 p-3 rounded">
+                            <span className="font-medium text-blue-700">Plan:</span>
+                            <p className="text-slate-600 whitespace-pre-wrap">{doc.plan}</p>
+                          </div>
+                        )}
+                        {doc.content && (
+                          <div>
+                            <span className="font-medium text-slate-700">Additional Notes:</span>
+                            <p className="text-slate-600 whitespace-pre-wrap">{doc.content}</p>
+                          </div>
+                        )}
+                        {doc.can_sign && doc.status === 'draft' && (
+                          <div className="pt-2 border-t mt-2">
+                            <Button 
+                              size="sm" 
+                              onClick={() => handleSignPhysicianDoc(doc.id)}
+                              className="bg-green-600 hover:bg-green-700"
+                              data-testid={`sign-physician-doc-${doc.id}`}
+                            >
+                              <Check className="w-4 h-4 mr-1" /> Sign Documentation
+                            </Button>
+                          </div>
+                        )}
+                        {doc.signed_at && (
+                          <div className="pt-2 border-t mt-2 text-xs text-green-700 flex items-center gap-1">
+                            <UserCheck className="w-3 h-3" />
+                            Signed by {doc.signed_by_name} on {formatDateTime(doc.signed_at)}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
       </Tabs>
 
       {/* New e-Prescription Dialog */}
