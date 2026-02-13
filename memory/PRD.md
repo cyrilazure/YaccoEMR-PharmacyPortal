@@ -219,6 +219,7 @@ WDS_SOCKET_PORT=443
 │   ├── security/             # Authentication & authorization
 │   ├── hl7_module.py         # HL7 v2 ADT module
 │   ├── google_healthcare_module.py  # Google Healthcare API
+│   ├── clinical_documentation_module.py  # Nursing/Physician docs & audit
 │   ├── referral_module.py    # Patient referrals
 │   ├── region_module.py      # Region-based login
 │   └── server.py             # Main application
@@ -226,6 +227,7 @@ WDS_SOCKET_PORT=443
 │   └── src/
 │       ├── pages/
 │       │   ├── HL7ADTPortal.jsx     # HL7/ADT dashboard
+│       │   ├── PatientChart.jsx     # Patient chart with clinical docs tabs
 │       │   ├── PatientReferralPage.jsx
 │       │   └── Layout.jsx           # Navigation
 │       └── components/ui/    # Shadcn UI components
@@ -233,7 +235,20 @@ WDS_SOCKET_PORT=443
 
 ---
 
-## Future Enhancements
+## Upcoming Tasks (P0)
+
+### Phase 2: Supervisor Dashboard
+- Build "Unit Overview Dashboard" for NurseSupervisorDashboard.jsx
+- Build "Unit Overview Dashboard" for FloorSupervisorDashboard.jsx
+- Display all patients in unit with documentation status
+- Quick access to patient charts
+
+### Phase 3: Audit Log Viewer
+- Admin UI to view/filter audit logs
+- Suspicious activity dashboard
+- Export audit reports
+
+## Future Enhancements (P1-P2)
 
 1. **Google Healthcare API** - Full FHIR resource management
 2. **HL7 Message Routing** - Automated message routing between facilities
