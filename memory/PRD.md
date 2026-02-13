@@ -130,6 +130,9 @@ Last Updated: February 13, 2026
 - **IT Admin**: `ashaiman@itadmin.com` / `ZXHoe0HxwupLPzvv`
 - **Physician ICU**: `physicianicu@pysicianicu.com` / `q4EqVHzNEiobz6NC`
 - **Nurse Supervisor**: `nursesupervisor@nursesupervisor.com` / `CbboeUs7oxiI2gaX`
+- **Test Physician**: `testdoctor@yacco.health` / `Test123!` (NEW)
+- **Test Nurse**: `testnurse@yacco.health` / `Test123!` (NEW)
+- **Test Supervisor**: `testsupervisor@yacco.health` / `Test123!` (NEW)
 
 ### Northern Region - Tamale Teaching Hospital
 - **IT Admin**: `itadmin@yacco.reginal.com` / `ixYbFGkLYSLHqqJA`
