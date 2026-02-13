@@ -205,6 +205,138 @@ export default function PatientChart() {
     fetchPharmacyNetworkData();
     fetchFDAData();
     fetchRoutedPrescriptions();
+    fetchClinicalDocumentation();
+  }, [id]);
+
+  // Fetch clinical documentation (nursing and physician docs)
+  const fetchClinicalDocumentation = async () => {
+    try {
+      // Fetch document types first
+      const [nursingTypesRes, physicianTypesRes] = await Promise.all([
+        clinicalDocsAPI.getNursingDocTypes().catch(() => ({ data: { doc_types: [] } })),
+        clinicalDocsAPI.getPhysicianDocTypes().catch(() => ({ data: { doc_types: [] } }))
+      ]);
+      setNursingDocTypes(nursingTypesRes.data.doc_types || []);
+      setPhysicianDocTypes(physicianTypesRes.data.doc_types || []);
+      
+      // Fetch documents for the patient
+      const [nursingRes, physicianRes] = await Promise.all([
+        clinicalDocsAPI.getNursingDocs(id).catch(() => ({ data: { documents: [] } })),
+        clinicalDocsAPI.getPhysicianDocs(id).catch(() => ({ data: { documents: [] } }))
+      ]);
+      setNursingDocs(nursingRes.data.documents || []);
+      setPhysicianDocs(physicianRes.data.documents || []);
+    } catch (err) {
+      console.error('Failed to fetch clinical documentation', err);
+    }
+  };
+
+  // Create nursing documentation
+  const handleCreateNursingDoc = async () => {
+    if (!newNursingDoc.title || !newNursingDoc.content) {
+      toast.error('Title and content are required');
+      return;
+    }
+    
+    setSaving(true);
+    try {
+      await clinicalDocsAPI.createNursingDoc({
+        patient_id: id,
+        ...newNursingDoc
+      });
+      toast.success('Nursing documentation created');
+      setNursingDocDialogOpen(false);
+      setNewNursingDoc({
+        doc_type: 'progress_note',
+        title: '',
+        content: '',
+        clinical_findings: '',
+        interventions: '',
+        patient_response: '',
+        plan_of_care: '',
+        shift_type: ''
+      });
+      fetchClinicalDocumentation();
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.detail || 'Failed to create documentation');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Create physician documentation
+  const handleCreatePhysicianDoc = async () => {
+    if (!newPhysicianDoc.title) {
+      toast.error('Title is required');
+      return;
+    }
+    
+    setSaving(true);
+    try {
+      await clinicalDocsAPI.createPhysicianDoc({
+        patient_id: id,
+        ...newPhysicianDoc
+      });
+      toast.success('Physician documentation created');
+      setPhysicianDocDialogOpen(false);
+      setNewPhysicianDoc({
+        doc_type: 'progress_note',
+        title: '',
+        chief_complaint: '',
+        history_present_illness: '',
+        past_medical_history: '',
+        physical_exam: '',
+        assessment: '',
+        plan: '',
+        content: ''
+      });
+      fetchClinicalDocumentation();
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.detail || 'Failed to create documentation');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Sign nursing documentation
+  const handleSignNursingDoc = async (docId) => {
+    try {
+      await clinicalDocsAPI.signNursingDoc(docId);
+      toast.success('Documentation signed');
+      fetchClinicalDocumentation();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to sign documentation');
+    }
+  };
+
+  // Sign physician documentation
+  const handleSignPhysicianDoc = async (docId) => {
+    try {
+      await clinicalDocsAPI.signPhysicianDoc(docId);
+      toast.success('Documentation signed');
+      fetchClinicalDocumentation();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to sign documentation');
+    }
+  };
+
+  // Acknowledge confidentiality notice
+  const handleAcknowledgeConfidentiality = () => {
+    setHasAcknowledgedConfidentiality(true);
+    setShowConfidentialityNotice(false);
+    // Store in session storage so it persists during session
+    sessionStorage.setItem(`confidentiality_ack_${id}`, 'true');
+  };
+
+  // Check if confidentiality was already acknowledged this session
+  useEffect(() => {
+    const acknowledged = sessionStorage.getItem(`confidentiality_ack_${id}`);
+    if (acknowledged === 'true') {
+      setHasAcknowledgedConfidentiality(true);
+      setShowConfidentialityNotice(false);
+    }
   }, [id]);
 
   const fetchPharmacyNetworkData = async () => {
