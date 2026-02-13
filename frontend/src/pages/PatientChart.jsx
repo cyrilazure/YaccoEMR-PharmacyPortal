@@ -4,7 +4,7 @@ import { useAuth } from '@/lib/auth';
 import { 
   patientAPI, vitalsAPI, problemsAPI, medicationsAPI, 
   allergiesAPI, notesAPI, ordersAPI, aiAPI, labAPI, radiologyAPI, prescriptionAPI,
-  pharmacyNetworkAPI, fdaAPI, prescriptionRoutingAPI
+  pharmacyNetworkAPI, fdaAPI, prescriptionRoutingAPI, clinicalDocsAPI
 } from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -31,13 +31,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from 'sonner';
 import { calculateAge, formatDate, formatDateTime, getStatusColor } from '@/lib/utils';
 import { 
   ArrowLeft, User, Heart, AlertTriangle, Pill, FileText, ClipboardList,
   Plus, Activity, Thermometer, Droplets, Wind, Scale, Ruler,
   Sparkles, Check, Loader2, Calendar, FlaskConical, TrendingUp, TrendingDown, Scan, Send,
-  Building2, Phone, MapPin, Clock, Shield, Truck, Search, ExternalLink, CheckCircle, XCircle, Package, X, Mic
+  Building2, Phone, MapPin, Clock, Shield, Truck, Search, ExternalLink, CheckCircle, XCircle, Package, X, Mic,
+  Stethoscope, ClipboardPlus, Eye, Edit, Lock, UserCheck
 } from 'lucide-react';
 import VoiceDictation from '@/components/VoiceDictation';
 import DicomViewer from '@/components/DicomViewer';
