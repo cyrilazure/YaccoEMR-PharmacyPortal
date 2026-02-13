@@ -7,7 +7,7 @@ import pytest
 import requests
 import os
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://yacco-emr-testing.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://emr-supervisor-dash.preview.emergentagent.com').rstrip('/')
 
 
 class TestWebSocketStats:

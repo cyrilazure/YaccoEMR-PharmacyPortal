@@ -2373,7 +2373,7 @@ class YaccoEMRTester:
         print("🧪 Starting Yacco EMR New Backend Modules Testing")
         print("=" * 60)
         print("Testing: e-Prescribing, NHIS Claims, Radiology, Bed Management")
-        print("Backend URL: https://yacco-emr-testing.preview.emergentagent.com")
+        print("Backend URL: https://emr-supervisor-dash.preview.emergentagent.com")
         print("Super Admin: ygtnetworks@gmail.com / test123")
         print("=" * 60)
         

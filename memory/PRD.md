@@ -133,7 +133,7 @@ GOOGLE_CLOUD_PROJECT=my-second-project-36094
 
 ### Frontend (.env)
 ```
-REACT_APP_BACKEND_URL=https://yacco-emr-testing.preview.emergentagent.com
+REACT_APP_BACKEND_URL=https://emr-supervisor-dash.preview.emergentagent.com
 WDS_SOCKET_PORT=443
 ```
 
