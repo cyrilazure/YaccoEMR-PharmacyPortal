@@ -957,3 +957,37 @@ export const pacsAPI = {
   sendOrmMessage: (data) => api.post('/pacs/hl7/orm', data),
 };
 
+// Clinical Documentation APIs (Nursing & Physician Docs with RBAC)
+export const clinicalDocsAPI = {
+  // Nursing Documentation
+  getNursingDocs: (patientId, docType, limit = 50) => 
+    api.get(`/clinical-docs/nursing/${patientId}`, { params: { doc_type: docType, limit } }),
+  createNursingDoc: (data) => api.post('/clinical-docs/nursing', data),
+  updateNursingDoc: (docId, data) => api.put(`/clinical-docs/nursing/${docId}`, data),
+  signNursingDoc: (docId) => api.post(`/clinical-docs/nursing/${docId}/sign`),
+  
+  // Physician Documentation
+  getPhysicianDocs: (patientId, docType, limit = 50) => 
+    api.get(`/clinical-docs/physician/${patientId}`, { params: { doc_type: docType, limit } }),
+  createPhysicianDoc: (data) => api.post('/clinical-docs/physician', data),
+  updatePhysicianDoc: (docId, data) => api.put(`/clinical-docs/physician/${docId}`, data),
+  signPhysicianDoc: (docId) => api.post(`/clinical-docs/physician/${docId}/sign`),
+  
+  // Patient Assignments (for access control)
+  getAssignments: (patientId, activeOnly = true) => 
+    api.get(`/clinical-docs/assignments/${patientId}`, { params: { active_only: activeOnly } }),
+  createAssignment: (data) => api.post('/clinical-docs/assignments', data),
+  endAssignment: (assignmentId) => api.delete(`/clinical-docs/assignments/${assignmentId}`),
+  
+  // Audit Logs
+  getPatientAuditLogs: (patientId, params) => 
+    api.get(`/clinical-docs/audit-logs/${patientId}`, { params }),
+  getAllAuditLogs: (params) => api.get('/clinical-docs/audit-logs', { params }),
+  getSuspiciousActivity: (days = 7) => 
+    api.get('/clinical-docs/audit-logs/suspicious', { params: { days } }),
+  
+  // Document Types
+  getNursingDocTypes: () => api.get('/clinical-docs/doc-types/nursing'),
+  getPhysicianDocTypes: () => api.get('/clinical-docs/doc-types/physician'),
+};
+
