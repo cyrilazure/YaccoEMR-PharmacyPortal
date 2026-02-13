@@ -1444,6 +1444,11 @@ from google_healthcare_module import create_google_healthcare_router
 google_healthcare_router = create_google_healthcare_router(db)
 app.include_router(google_healthcare_router)
 
+# Clinical Documentation Module (Nursing & Physician Docs with RBAC)
+from clinical_documentation_module import clinical_docs_router, create_clinical_documentation_endpoints
+clinical_docs_api_router = create_clinical_documentation_endpoints(db, get_current_user)
+app.include_router(clinical_docs_router)
+
 # Medication Database API
 from medication_database import get_all_medications, search_medications, get_medication_categories, get_medications_by_category
 
