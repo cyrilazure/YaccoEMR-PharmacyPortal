@@ -1173,6 +1173,12 @@ export default function PatientChart() {
           <TabsTrigger value="labs" data-testid="tab-labs">Labs</TabsTrigger>
           <TabsTrigger value="imaging" data-testid="tab-imaging">Imaging</TabsTrigger>
           <TabsTrigger value="pharmacy" data-testid="tab-pharmacy">Pharmacy</TabsTrigger>
+          <TabsTrigger value="nursing-docs" data-testid="tab-nursing-docs" className="flex items-center gap-1">
+            <ClipboardPlus className="w-3.5 h-3.5" /> Nursing
+          </TabsTrigger>
+          <TabsTrigger value="physician-docs" data-testid="tab-physician-docs" className="flex items-center gap-1">
+            <Stethoscope className="w-3.5 h-3.5" /> Physician
+          </TabsTrigger>
           <TabsTrigger value="notes" data-testid="tab-notes">Notes</TabsTrigger>
           <TabsTrigger value="orders" data-testid="tab-orders">Orders</TabsTrigger>
         </TabsList>
